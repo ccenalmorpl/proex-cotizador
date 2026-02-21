@@ -1,0 +1,50 @@
+{
+  "uid": "app-cotizador-proex-card",
+  "type": "app",
+  "config": {
+    "description": "Cotizador PROEX - CRM card para configuración y generación de cotizaciones personalizadas. Gestiona clientes, artículos, contenedores, transitarios, documentación y genera cotizaciones finales.",
+    "name": "Cotizador PROEX",
+    "distribution": "private",
+    "auth": {
+      "type": "static",
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.companies.read",
+        "crm.objects.companies.write",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write",
+        "crm.objects.line_items.read",
+        "crm.objects.line_items.write",
+        "crm.objects.quotes.read",
+        "crm.objects.quotes.write",
+        "crm.schemas.custom.read",
+        "crm.schemas.deals.read",
+        "crm.schemas.contacts.read",
+        "crm.schemas.companies.read",
+        "crm.objects.products.read",
+        "crm.schemas.custom.write",
+        "crm.objects.custom.write",
+        "crm.objects.owners.read",
+        "hubdb"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [
+        "https://api.hubapi.com",
+        "https://hvw14az2bf.execute-api.eu-south-2.amazonaws.com"
+      ],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@proex.com",
+      "documentationUrl": "https://proex.com/docs/cotizador",
+      "supportUrl": "https://proex.com/support",
+      "supportPhone": "+34900000000"
+    }
+  }
+}

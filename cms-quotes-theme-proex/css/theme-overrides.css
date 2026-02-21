@@ -1,0 +1,110 @@
+{%- set color_scheme = {
+  'primary': 'rgba(' ~ theme.global_colors.primary_color.color|convert_rgb ~ ', ' ~ theme.global_colors.primary_color.opacity * 0.01 ~ ')',
+  'secondary': 'rgba(' ~ theme.global_colors.secondary_color.color|convert_rgb ~ ', ' ~ theme.global_colors.secondary_color.opacity * 0.01 ~ ')',
+  'button_background': 'rgba(' ~ theme.button_settings.button_background_color.color|convert_rgb ~ ', ' ~ theme.button_settings.button_background_color.opacity * 0.01 ~ ')',
+  'button_font': 'rgba(' ~ theme.button_settings.button_font_color.color|convert_rgb ~ ', ' ~ theme.button_settings.button_font_color.opacity * 0.01 ~ ')',
+  'banner_font': 'rgba(' ~ theme.banner_settings.banner_font_color.color|convert_rgb ~ ', ' ~ theme.banner_settings.banner_font_color.opacity * 0.01 ~ ')'
+}-%}
+
+{# Handles cases where google fonts may need to be wrapped in quotes #}
+{% macro fontQuotes(font_object) %}
+  {% set font_set = font_object.font_set %}
+  {% set font = font_object.font %}
+  {% if font_set == "GOOGLE" %} '{{ font|replace("'", "") }}' {% else %} {{ font }} {% endif %}
+{% endmacro %}
+
+{%- set primary_font = fontQuotes(theme.global_fonts.primary_font)|render|trim ~ ', Helvetica, Arial, sans-serif' %}
+{%- set secondary_font = fontQuotes(theme.global_fonts.secondary_font)|render|trim ~ ', Helvetica, Arial, sans-serif' %}
+
+.hs-quotes {
+  font-family: {{ secondary_font }};
+  color: {{ theme.global_fonts.secondary_font.color }};
+}
+
+.hs-quotes h1,
+.hs-quotes h2,
+.hs-quotes h3,
+.hs-quotes h4,
+.hs-quotes h5,
+.hs-quotes h6 {
+  font-family: {{ primary_font }};
+  color: {{ theme.global_fonts.primary_font.color }};
+}
+
+.hs-quotes--modern .comments-text_wrapper > div {
+  border-color: {{ theme.global_fonts.secondary_font.color }};
+}
+
+.hs-quotes--modern .discount-notice {
+  color: {{ theme.global_fonts.secondary_font.color }};
+}
+
+.hs-quotes--original .terms_wrapper > div::before {
+  background-color: {{ color_scheme.primary }};
+}
+
+.hs-quotes--bold {
+  font-family: {{ secondary_font }};
+}
+
+.hs-quotes--minimal th,
+.hs-quotes--bold .checkout,
+.hs-quotes--bold .hero__background,
+.hs-quotes--basic .line-items__table th,
+.hs-quotes--basic .totals__row.title,
+.hs-quotes--basic .line-items__total-name,
+.hs-quotes--basic .scheduled-payments__table th {
+  background-color: {{ color_scheme.secondary }};
+}
+
+.hs-quotes--minimal table,
+.hs-quotes--minimal td,
+.hs-quotes--minimal th,
+.hs-quotes .comments,
+.hs-quotes .terms,
+.hs-quotes .annotation {
+  border-color: {{ color_scheme.secondary }};
+}
+
+.hs-quotes .signature__field:before {
+  border-color: {{ theme.global_fonts.secondary_font.color }};
+}
+
+.hs-quotes button {
+  background: {{ color_scheme.button_background }};
+  color: {{ color_scheme.button_font }};
+  font-family: {{ secondary_font }};
+}
+
+.hs-quotes #esignature__loading-spinner, /* TODO: Remove ID April 2023 */
+.hs-quotes .esignature__loading-spinner {
+  border-top-color: {{ color_scheme.primary }} !important;
+}
+
+.hs-quotes #payment__loading-spinner {
+  border-top-color: {{ color_scheme.button_background }} !important;
+}
+
+.hs-quotes .payment__button--icon {
+  fill: {{ color_scheme.button_font }};
+}
+
+.hs-quotes .banner {
+  background-color: {{ color_scheme.primary }};
+  color: {{ color_scheme.banner_font }};
+}
+
+.hs-quotes .banner h1,
+.hs-quotes .banner h2,
+.hs-quotes .banner h3,
+.hs-quotes .banner h4,
+.hs-quotes .banner h5,
+.hs-quotes .banner h6 {
+  color: {{ color_scheme.banner_font }};
+}
+
+{% if theme.global_colors.primary_color.color == '#FFFFFF' %}
+  .hs-quotes.hs-quotes--original .comments-text_wrapper > div {
+    background: rgba(0,0,0,0.1) !important;
+  }
+{% endif %}

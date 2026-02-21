@@ -1,0 +1,73 @@
+<!--
+  templateType: "none"
+  isAvailableForNewContent: false
+-->
+<!doctype html>
+{% from '../../imports/mock_data.html' import SAMPLE_TEMPLATE_DATA as mock_data %}
+
+{% set template_data = template_data || mock_data %}
+{% set module_data = template_data.module_data %}
+{% set QUOTE = template_data.quote || mock_data.quote %}
+{% set CURRENCY = QUOTE.hs_currency || 'USD' %}
+{% set LOCALE = QUOTE.hs_locale || 'en-US' %}
+{% set TIMEZONE = QUOTE.hs_timezone || 'US/Eastern' %}
+{% set ASSOCIATED_OBJECTS = QUOTE.associated_objects %}
+{% set LINE_ITEMS = ASSOCIATED_OBJECTS.line_items_by_start_date ? ASSOCIATED_OBJECTS.line_items_by_start_date.PRESENT : ASSOCIATED_OBJECTS.line_items %}
+{% set ADDITIONAL_FEES = ASSOCIATED_OBJECTS.additional_fees %}
+{% set RECIPIENT_CONTACTS = ASSOCIATED_OBJECTS.contacts %}
+{% set DEAL = ASSOCIATED_OBJECTS.deal %}
+{% set RECIPIENT_COMPANY = ASSOCIATED_OBJECTS.company %}
+{% set TOTALS = ASSOCIATED_OBJECTS.totals %}
+{% set QUOTE_TOTAL = TOTALS.total_first_payment || mock_data.associated_objects.totals.total_first_payment %}
+{% set SUB_TOTALS = TOTALS.subtotals %}
+
+{# Retrieve translations for the template #}
+{% set template_translations = load_translations('../_locales', html_lang, 'en') %}
+
+{# Setting personalization token values to variables #}
+{% set ptoken_comments = "{{ personalization_token('template_data.quote.hs_comments', '') }}" %}
+{% set ptoken_terms = "{{ personalization_token('template_data.quote.hs_terms', '') }}" %}
+{% set ptoken_sender_full_name = template_translations.sender_contact_name.message %}
+{% set ptoken_sender_title = "{{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }}" %}
+{% set ptoken_sender_email = "{{ personalization_token('template_data.quote.hs_sender_email', '') }}" %}
+{% set ptoken_sender_phone = "{{ personalization_token('template_data.quote.hs_sender_phone', '') }}" %}
+
+<html lang="{{ html_lang }}" {{ html_lang_dir }}>
+  <head>
+    <title>{{ QUOTE.hs_title|sanitize_html }}</title>
+    {% if brand_settings.primaryFavicon && brand_settings.primaryFavicon.src %}
+      <link rel="shortcut icon" href="{{ brand_settings.primaryFavicon.src }}" />
+    {% elif site_settings.favicon_src %}
+      <link rel="shortcut icon" href="{{ site_settings.favicon_src }}" />
+    {% endif %}
+
+    <meta name="description" content="{{ page_meta.meta_description }}">
+    {{ require_css(get_asset_url("../../css/shared.css")) }}
+    {{ require_css(get_asset_url("../../css/theme-overrides.css")) }}
+    {% block stylesheet %}
+      {# Add stylesheet file(s) here #}
+    {% endblock stylesheet %}
+    <script
+      type="application/javascript"
+      src="https://static.hsappstatic.com/quote-cookies-js/ex/quote-cookies.js"
+      async
+    >
+    </script>
+    {{ standard_header_includes }}
+  </head>
+
+    {% block header %}
+      {# Add header content here #}
+    {% endblock header %}
+
+    {% block body %}
+      {# Add body content here #}
+    {% endblock body %}
+
+    {% block footer %}
+      {# Add footer content here #}
+    {% endblock footer %}
+
+    {{ standard_footer_includes }}
+
+</html>

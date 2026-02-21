@@ -1,0 +1,12 @@
+{
+  "uid": "card-cotizador-proex-card",
+  "type": "card",
+  "config": {
+    "name": "Cotizador PROEX",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/Cotizador.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

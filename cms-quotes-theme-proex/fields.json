@@ -1,0 +1,116 @@
+[
+  {
+    "type": "group",
+    "name": "global_colors",
+    "label": "Global colors",
+    "children": [
+      {
+        "type": "color",
+        "name": "primary_color",
+        "label": "Primary color",
+        "inherited_value": {
+          "property_value_paths": {
+            "color": "brandSettings.primaryColor"
+          }
+        },
+        "default": {
+          "color": "#33475b",
+          "opacity": 100
+        }
+      },
+      {
+        "type": "color",
+        "name": "secondary_color",
+        "label": "Secondary color",
+        "default": {
+          "color": "#f5f5f5",
+          "opacity": 100
+        }
+      }
+    ]
+  },
+  {
+    "type": "group",
+    "name": "global_fonts",
+    "label": "Global fonts",
+    "children": [
+      {
+        "type": "font",
+        "name": "primary_font",
+        "label": "Primary font",
+        "load_external_fonts": true,
+        "visibility": {
+          "hidden_subfields": {
+            "styles": true,
+            "size": true
+          }
+        },
+        "default": {
+          "font": "Montserrat",
+          "font_set": "GOOGLE",
+          "color": "#33475b",
+          "google_font_variants": ["400", "700"]
+        }
+      },
+      {
+        "type": "font",
+        "name": "secondary_font",
+        "label": "Secondary font",
+        "load_external_fonts": true,
+        "visibility": {
+          "hidden_subfields": {
+            "styles": true,
+            "size": true
+          }
+        },
+        "default": {
+          "font": "Montserrat",
+          "font_set": "GOOGLE",
+          "color": "#33475b",
+          "google_font_variants": ["400", "700"]
+        }
+      }
+    ]
+  },
+  {
+    "type": "group",
+    "name": "button_settings",
+    "label": "Button settings",
+    "children": [
+      {
+        "type": "color",
+        "name": "button_background_color",
+        "label": "Button background color",
+        "default": {
+          "color": "#4C76B8",
+          "opacity": 100
+        }
+      },
+      {
+        "type": "color",
+        "name": "button_font_color",
+        "label": "Button font color",
+        "default": {
+          "color": "#FFFFFF",
+          "opacity": 100
+        }
+      }
+    ]
+  },
+  {
+    "type": "group",
+    "name": "banner_settings",
+    "label": "Banner settings",
+    "children": [
+      {
+        "type": "color",
+        "name": "banner_font_color",
+        "label": "Banner font color",
+        "default": {
+          "color": "#FFFFFF",
+          "opacity": 100
+        }
+      }
+    ]
+  }
+]
