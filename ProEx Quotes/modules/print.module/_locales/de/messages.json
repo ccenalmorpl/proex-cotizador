@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Angebot drucken",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Button-Text",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Drucken",
+    "description" : "",
+    "placeholders" : null
+  }
+}

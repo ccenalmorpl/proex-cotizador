@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "CMS pasiūlymų tema",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "Visuotinės spalvos",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "Pirminė spalva",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "Antrinė spalva",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "Visuotiniai šriftai",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "Pirminis šriftas",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "Antrinis šriftas",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "Mygtuko nuostatos",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "Mygtuko fono spalva",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "Mygtuko šrifto spalva",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "Reklamjuostės nuostatos",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "Reklamjuostės šrifto spalva",
+    "description": "",
+    "placeholders": null
+  }
+}

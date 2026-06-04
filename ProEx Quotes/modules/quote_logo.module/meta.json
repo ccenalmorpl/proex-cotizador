@@ -1,0 +1,11 @@
+{
+  "global" : false,
+  "content_types" : [ "QUOTE_TEMPLATE", "QUOTE" ],
+  "master_language" : "en",
+  "inline_help_text" : "By default, your quotes will show the company logo from Account Defaults or Website Pages if you have these set up. You may choose to override these using the toggle below.",
+  "host_template_types" : [ "QUOTE" ],
+  "module_id" : 188472829051,
+  "label" : "Logo",
+  "icon" : "../../../mV0_d-cms-quotes-theme_hubspot/cms-quotes-theme/images/icons/logo.svg",
+  "is_available_for_new_content" : true
+}

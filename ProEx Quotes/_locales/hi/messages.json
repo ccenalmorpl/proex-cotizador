@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "CMS कोट का थीम",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "ग्लोबल कलर",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "प्राइमरी कलर",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "सेकंडरी कलर",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "ग्लोबल फ़ॉन्ट्स",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "प्राइमरी फ़ॉन्ट",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "सेकंडरी फ़ॉन्ट",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "बटन सेटिंग्स",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "बटन का बैकग्राउंड कलर",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "बटन फ़ॉन्ट कलर",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "बैनर सेटिंग्स",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "बैनर फ़ॉन्ट कलर",
+    "description": "",
+    "placeholders": null
+  }
+}

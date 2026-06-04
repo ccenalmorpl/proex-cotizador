@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Offert skapad",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Offert skapad:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Offert skapad text",
+    "description" : "",
+    "placeholders" : null
+  }
+}

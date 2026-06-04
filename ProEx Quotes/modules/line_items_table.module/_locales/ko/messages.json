@@ -1,0 +1,627 @@
+{
+  "default_text.after_discount.default" : {
+    "message" : "<span class=\"discount-notice highlighted\">{{ discount_amount }} 할인 후</span>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.annual.default" : {
+    "message" : "매년",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.annually.default" : {
+    "message" : "매년",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.day.default" : {
+    "message" : "일",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.days.default" : {
+    "message" : "일",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_five_years.default" : {
+    "message" : "/ 5년",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_four_years.default" : {
+    "message" : "/ 4년",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_month.default" : {
+    "message" : "/ 월",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_quarter.default" : {
+    "message" : "/ 분기",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_six_months.default" : {
+    "message" : "/ 6개월",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_three_years.default" : {
+    "message" : "/ 3년",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_two_weeks.default" : {
+    "message" : "/ 2주",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_two_years.default" : {
+    "message" : "/ 2년",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_week.default" : {
+    "message" : "/ 주",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_year.default" : {
+    "message" : "/ 년",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.first_payment_date.default" : {
+    "message" : "첫 결제: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.for_months.default" : {
+    "message" : "{{ line_item.hs_term_in_months }}{{ month_text }} 동안",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.for_years.default" : {
+    "message" : "{{ year }} {{ year_text }} 동안",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.frequency_subtotal.default" : {
+    "message" : "{{ frequency_text }} 소계",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_charges.default" : {
+    "message" : "향후 결제",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_one_time_date_delay.default" : {
+    "message" : "{{ formatted_first_payment_date }}의 {{ formatted_price }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_one_time_relative_delay.default" : {
+    "message" : " 최초 결제 후 {{ billing_delay_period }}{{ billing_delay_unit }} 이내 {{ formatted_price }} 결제",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_date_delay.default" : {
+    "message" : "{{ formatted_first_payment_date }}에 시작되는 {{ formatted_price }} {{ recurring_frequency }} ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_date_delay_fixed.default" : {
+    "message" : "{{ number_of_payments }}{{ payment_pluralized }}용으로 {{ formatted_first_payment_date }}에 시작되는 {{ formatted_price }}{{ recurring_frequency }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_relative_delay.default" : {
+    "message" : "최초 결제 후 {{ billing_delay_period }}{{ billing_delay_unit }}부터 {{ formatted_price }}/{{ recurring_frequency }} 결제",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_relative_delay_fixed.default" : {
+    "message" : "최초 결제 후 {{ billing_delay_period }}{{ billing_delay_unit }}부터 {{ formatted_price }}/{{ recurring_frequency }} 결제(총 {{ number_of_payments }}{{ payment_pluralized }})",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax.default" : {
+    "message" : "+{{ taxAmount }} {{line_item.hs_tax_label }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax_with_label.default" : {
+    "message" : "+{{ taxAmount }} {{ taxLabel }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax_without_label.default" : {
+    "message" : "+{{ taxAmount }} 세금",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.month.default" : {
+    "message" : "월",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.monthly.default" : {
+    "message" : "매달",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.months.default" : {
+    "message" : "월",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.one_time.default" : {
+    "message" : "일회성",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment.default" : {
+    "message" : "결제",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment_due_date.default" : {
+    "message" : "결제 만기: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment_start_date.default" : {
+    "message" : "결제 시작: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payments.default" : {
+    "message" : "결제",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_five_years.default" : {
+    "message" : "5년마다",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_four_years.default" : {
+    "message" : "4년마다",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_six_months.default" : {
+    "message" : "6개월마다",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_three_years.default" : {
+    "message" : "3년마다",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_two_weeks.default" : {
+    "message" : "2주마다",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_two_years.default" : {
+    "message" : "2년마다",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent.default" : {
+    "message" : "{{ percentage_amount }}%",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_discount.default" : {
+    "message" : "{{ fee_amount }}% 할인",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_fee.default" : {
+    "message" : "{{ fee_amount }}% 수수료",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_tax.default" : {
+    "message" : "{{ fee_amount }}% 세금",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.quarterly.default" : {
+    "message" : "분기별",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.relative_payment_due_date.default" : {
+    "message" : "결제 만기: 최초 결제 후 {{ billing_delay_period }}{{ billing_delay_unit }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.relative_payment_start_date.default" : {
+    "message" : "결제 시작: 최초 결제 후 {{ billing_delay_period }}{{ billing_delay_unit }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.tax.default" : {
+    "message" : "세금",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.week.default" : {
+    "message" : "주",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.weekly.default" : {
+    "message" : "매주",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.weeks.default" : {
+    "message" : "주",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.year.default" : {
+    "message" : "년",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.years.default" : {
+    "message" : "년",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_heading.label" : {
+    "message" : "표 제목 표시",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_other_fees.label" : {
+    "message" : "기타 수수료 표시",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_other_fees_temp.label" : {
+    "message" : "일회성 할인, 수수료, 세금 보기",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_payment_starts.inline_help_text" : {
+    "message" : "각 라인 항목 아래에 향후 청구 날짜가 있는 \"결제 시작\" 텍스트를 표시합니다.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_payment_starts.label" : {
+    "message" : "결제 시작 날짜 표시",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_subtotals.label" : {
+    "message" : "소계 표시",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_totals_table.default" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.inline_help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.label" : {
+    "message" : "Booleano",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.placeholder" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "due_now_title.default" : {
+    "message" : "지금 만기",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_title.inline_help_text" : {
+    "message" : "이 레이블은 체크아웃 후 남은 결제액이 있을 때 \"합계 텍스트\"를 대체합니다.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_title.label" : {
+    "message" : "지금 만기 텍스트",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.label" : {
+    "message" : "열",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.line_item_name_heading.default" : {
+    "message" : "항목",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.line_item_name_heading.label" : {
+    "message" : "라인 항목 이름 제목",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.payment_summary_heading.default" : {
+    "message" : "결제",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.payment_summary_heading.label" : {
+    "message" : "결제 요약 제목",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.display_future_payments_summary_table.label" : {
+    "message" : "향후 결제 요약 표 표시",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.display_heading.label" : {
+    "message" : "표 제목 표시",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.default" : {
+    "message" : "향후 결제 요약",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.inline_help_text" : {
+    "message" : "향후 결제 요약 표에 제목 추가",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.label" : {
+    "message" : "표 제목",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.label" : {
+    "message" : "향후 결제 요약 표",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.default" : {
+    "message" : "제품 및 서비스",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.inline_help_text" : {
+    "message" : "라인 항목 표에 제목 추가",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.label" : {
+    "message" : "표 제목",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.amount" : {
+    "message" : "합계",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.description" : {
+    "message" : "설명",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.discount" : {
+    "message" : "단가 할인",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_cost_of_goods_sold" : {
+    "message" : "단가",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_images" : {
+    "message" : "이미지",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_recurring_billing_start_date" : {
+    "message" : "시작 날짜",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_sku" : {
+    "message" : "항목 SKU",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_term_in_months" : {
+    "message" : "기간",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_url" : {
+    "message" : "URL",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.item_description" : {
+    "message" : "항목 및 설명",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.name" : {
+    "message" : "항목 이름",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.price" : {
+    "message" : "단가",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.quantity" : {
+    "message" : "항목 수량",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.quantity_amount" : {
+    "message" : "수량 및 합계",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.recurringbillingfrequency" : {
+    "message" : "결제 빈도",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.label" : {
+    "message" : "열 속성 선택",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.inline_help_text" : {
+    "message" : "열에 제목 추가",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.label" : {
+    "message" : "열 제목",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.placeholder" : {
+    "message" : "열 설명",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.label" : {
+    "message" : "라인 항목 열",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.background_color.label" : {
+    "message" : "배경색",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_later_text.default" : {
+    "message" : "나중에 작업할 항목",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_later_text.label" : {
+    "message" : "나중에 작업할 텍스트",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_now_text.default" : {
+    "message" : "지금 작업할 항목",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_now_text.label" : {
+    "message" : "지금 만기 텍스트",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.font_style.label" : {
+    "message" : "글꼴 스타일",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.label" : {
+    "message" : "라인 항목 부제목",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "line_items_table",
+    "description" : null,
+    "placeholders" : null
+  },
+  "other_fees_title.default" : {
+    "message" : "기타 요금",
+    "description" : "",
+    "placeholders" : null
+  },
+  "pedido_de_compra.default" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.inline_help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.label" : {
+    "message" : "Texto",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.placeholder" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.validation_regex" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "subtotal_title.default" : {
+    "message" : "소계",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.default" : {
+    "message" : "총 계약 가치",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.inline_help_text" : {
+    "message" : "이 값을 정확히 설명하려면 텍스트를 사용자 정의하십시오. (조건이 설정되지 않은 경우 기본값은 연간 가격입니다.)",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.label" : {
+    "message" : "총 계약 가치 텍스트",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_title.default" : {
+    "message" : "합계",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_title.label" : {
+    "message" : "합계 텍스트",
+    "description" : "",
+    "placeholders" : null
+  }
+}

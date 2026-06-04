@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "견적서 만료",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "견적서 만료:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "견적서 만료 텍스트",
+    "description" : "",
+    "placeholders" : null
+  }
+}

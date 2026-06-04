@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Buyer company",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Κύρια διεύθυνση εταιρείας αγοραστή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Πόλη, πολιτεία και zip εταιρείας αγοραστή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Χώρα εταιρείας αγοραστή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Επωνυμία εταιρείας αγοραστή",
+    "description" : "",
+    "placeholders" : null
+  }
+}

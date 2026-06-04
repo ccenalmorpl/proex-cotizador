@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Wycena wygasa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Ta wycena wygaśnie",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Tekst wygaśnięcia wyceny",
+    "description" : "",
+    "placeholders" : null
+  }
+}

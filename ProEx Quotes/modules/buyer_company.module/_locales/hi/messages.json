@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "खरीदने वाली कंपनी",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "खरीदने वाली कंपनी का मुख्य पता",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "खरीदने वाली कंपनी का शहर, राज्य, और जिप कोड",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "खरीदने वाली कंपनी का देश",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "खरीदने वाली कंपनी का नाम",
+    "description" : "",
+    "placeholders" : null
+  }
+}

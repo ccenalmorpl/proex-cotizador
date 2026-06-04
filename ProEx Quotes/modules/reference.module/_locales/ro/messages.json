@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Referință",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "Referință: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "Număr de referință",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Scadent acum",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Această etichetă înlocuiește „Text total ofertă” când există plăți scadente după finalizarea comenzii.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Text Total scadent acum",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Total ofertă",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Textul pentru suma ofertei totale",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Text Total ofertă",
+    "description" : "",
+    "placeholders" : null
+  }
+}

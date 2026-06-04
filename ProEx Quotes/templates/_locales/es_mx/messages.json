@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Monto",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Comentarios",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Comentarios de",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Esta cotización caducó.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Contacta con tu representante de ventas para obtener más detalles.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Elemento y descripción",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Otras tarifas",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Preparado por:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Precio",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Productos y servicios",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Términos de compra",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Cantidad",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Cotización creada por:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Subtotales",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Total",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Precio unitario",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Memorando de crédito",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Número del memorando de crédito",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Total del memorando de crédito",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "N.º de orden de compra",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Fecha del memorando de crédito",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Todas las tarifas se muestran en {{ currency_code }} y están sujetas a impuestos sobre las ventas (según corresponda).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Tabla de elementos de pedido del memorando de crédito",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Cant.",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Impuesto",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "impuesto",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Impuesto",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "después de {{ discount_amount }} de descuento",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Factura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Número de factura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Fecha de la factura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Todas las tarifas se indican en {{ currency_code }} y están sujetas al impuesto sobre las ventas (según corresponda).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Número de PO",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Tabla de elementos de línea de factura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "después de {{ discount_amount }} de descuento",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Cant.",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Pago",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Saldo pendiente",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Impuesto",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "impuesto",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Impuesto",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Facturar a",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Enviar a",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Dirección fiscal",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Fecha de vencimiento",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "descuento",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% de descuento",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% de descuento",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Subtotal",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Pagos futuros",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Pagos que vencen más tarde.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Resumen",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Esta cotización no está disponible.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Contacta con tu representante de ventas para obtener más detalles.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "N/A",
+    "description": "",
+    "placeholders": null
+  }
+}

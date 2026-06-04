@@ -1,0 +1,537 @@
+{% from '../../imports/mock_data.html' import SAMPLE_TEMPLATE_DATA as mock_data %}
+
+{% set QUOTE = template_data.quote || mock_data.quote %}
+{% set CURRENCY = QUOTE.hs_currency || 'USD' %}
+{% set LOCALE = QUOTE.hs_locale || 'en-US' %}
+{% set LANGUAGE = QUOTE.hs_language || 'en' %}
+{% set DISPLAY_TCV_ON_QUOTE = QUOTE.hs_display_tcv_on_quote %}
+{% set ASSOCIATED_OBJECTS = QUOTE.associated_objects %}
+{% set DEAL = ASSOCIATED_OBJECTS.deal %}
+{%- set BENEFICIO = DEAL["margen_cliente"] / 100 + 1 %}
+{%- if module.pedido_de_compra != "" %}
+  {% set PEDIDOSCOMPRA = template_data.quote.associated_objects.deal.associated_objects.custom_objects._2_44410785 %}
+  {%- for PEDIDOCOMPRA in PEDIDOSCOMPRA %}
+  {%- if PEDIDOCOMPRA.hs_object_id|string == module.pedido_de_compra %}
+    {%- set LINE_ITEMS = PEDIDOCOMPRA.associated_objects.custom_objects._2_44410828 %}
+  {%- endif %}
+  {%- endfor %}
+{%- else %}
+  {% set LINE_ITEMS = ASSOCIATED_OBJECTS.line_items_by_start_date ? ASSOCIATED_OBJECTS.line_items_by_start_date.PRESENT : ASSOCIATED_OBJECTS.line_items %}
+{%- endif %}
+{% set FUTURE_PAYMENTS = ASSOCIATED_OBJECTS.line_items_by_start_date.FUTURE %}
+{% set ADDITIONAL_FEES = ASSOCIATED_OBJECTS.additional_fees %}
+{% set TOTALS = ASSOCIATED_OBJECTS.totals %}
+{% set SUB_TOTALS = TOTALS.subtotals %}
+{% set SHOULD_DISPLAY_LINE_ITEM_TAXES = TOTALS.tax_total is number %}
+{% set TAXABLE_LINE_ITEMS = LINE_ITEMS|selectattr("hs_tax_amount", "number")|list %}
+{% set MAYBE_SHARED_TAX_LABEL = (TAXABLE_LINE_ITEMS|first).hs_tax_label %}
+{% set MAYBE_SHARED_TAX_RATE = (TAXABLE_LINE_ITEMS|first).hs_tax_rate %}
+
+{% set LINE_ITEMS_WITH_SHARED_TAX_LABEL = TAXABLE_LINE_ITEMS|selectattr("hs_tax_label", "equalto", MAYBE_SHARED_TAX_LABEL)|list %}
+{% set LINE_ITEMS_WITH_SHARED_TAX_RATE = TAXABLE_LINE_ITEMS|selectattr("hs_tax_rate", "equalto", MAYBE_SHARED_TAX_RATE)|list %}
+
+{% set HAS_SHARED_TAX_LABEL = TAXABLE_LINE_ITEMS|length == LINE_ITEMS_WITH_SHARED_TAX_LABEL|length %}
+{% set HAS_SHARED_TAX_RATE = TAXABLE_LINE_ITEMS|length == LINE_ITEMS_WITH_SHARED_TAX_RATE|length %}
+
+{% require_css %}
+  <style>
+    {% if module.line_item_subheadings.background_color.color && module.line_item_subheadings.background_color.opacity %}
+      .line-items__table tr.line-items__subheading {
+        background-color: rgba({{ module.line_item_subheadings.background_color.color|convert_rgb }}, {{ module.line_item_subheadings.background_color.opacity / 100 }}) !important;
+      }
+    {% endif %}
+
+    .line-items__table tr.line-items__subheading td {
+      {{ module.line_item_subheadings.font_style.css|escape_html }}
+    }
+  </style>
+{% end_require_css %}
+
+{# Module macros #}
+
+{% macro subtotal_section(frequency, frequency_text) %}
+  {% set subtotal_frequency = SUB_TOTALS|attr(frequency) %}
+  {% if subtotal_frequency %}
+    <div class="totals__row {{ subtotal_frequency.discount ? '' :'bordered'}}">
+      <div>
+        {{ module.default_text.frequency_subtotal|render|sanitize_html }}
+      </div>
+      <div class="dotted__row"></div>
+      <div>
+        <span class="currency__content">
+          {{ subtotal_frequency.subtotal|format_currency_value(locale=LOCALE, currency=CURRENCY)|sanitize_html }}<br />
+        </span>
+      </div>
+    </div>
+    {% if subtotal_frequency.discount %}
+      {% set discount_amount = subtotal_frequency.discount|format_currency_value(locale=LOCALE, currency=CURRENCY) %}
+      <div class="totals-row__discount">
+        <span class="discount-notice">
+          <span class="currency__content">
+            {{ module.default_text.after_discount|render|sanitize_html }}
+          </span>
+        </span>
+      </div>
+    {% endif %}
+  {% endif %}
+{% endmacro %}
+
+{% macro recurring_frequency_text(frequency) %}
+  {% if frequency == 'weekly' %}
+    {{ module.default_text.every_week }}
+  {% elif frequency == 'biweekly' %}
+    {{ module.default_text.every_two_weeks }}
+  {% elif frequency == 'monthly' %}
+    {{ module.default_text.every_month }}
+  {% elif frequency == 'quarterly' %}
+    {{ module.default_text.every_quarter }}
+  {% elif frequency == 'per_six_months' %}
+    {{ module.default_text.every_six_months }}
+  {% elif frequency == 'annually' %}
+    {{ module.default_text.every_year }}
+  {% elif frequency == 'per_two_years' %}
+    {{ module.default_text.every_two_years }}
+  {% elif frequency == 'per_three_years' %}
+    {{ module.default_text.every_three_years }}
+  {% elif frequency == 'per_four_years' %}
+    {{ module.default_text.every_four_years }}
+  {% elif frequency == 'per_five_years' %}
+    {{ module.default_text.every_five_years }}
+  {% endif %}
+{% endmacro %}
+
+{% macro recurring_billing_frequency_text(frequency) %}
+  {% if frequency == 'weekly' %}
+    {{ module.default_text.weekly }}
+  {% elif frequency == 'biweekly' %}
+    {{ module.default_text.per_two_weeks }}
+  {% elif frequency == 'monthly' %}
+    {{ module.default_text.monthly }}
+  {% elif frequency == 'quarterly' %}
+    {{ module.default_text.quarterly }}
+  {% elif frequency == 'annually' %}
+    {{ module.default_text.annually }}
+  {% elif frequency == 'per_six_months' %}
+    {{ module.default_text.per_six_months }}
+  {% elif frequency == 'per_two_years' %}
+    {{ module.default_text.per_two_years }}
+  {% elif frequency == 'per_three_years' %}
+    {{ module.default_text.per_three_years }}
+  {% elif frequency == 'per_four_years' %}
+    {{ module.default_text.per_four_years }}
+  {% elif frequency == 'per_five_years' %}
+    {{ module.default_text.per_five_years }}
+  {% endif %}
+{% endmacro %}
+
+{% macro first_payment_text(line_item) %}
+  {% if line_item.hs_billing_start_delay_type == 'hs_recurring_billing_start_date' %}
+    {% set formatted_first_payment_date = line_item.hs_recurring_billing_start_date|int|format_date('long', 'UTC', LOCALE) %}
+    {{ line_item.recurringbillingfrequency ? module.default_text.payment_start_date : module.default_text.payment_due_date }}
+  {% elif line_item.hs_billing_start_delay_type == 'hs_billing_start_delay_days' %}
+    {% set billing_delay_period = line_item.hs_billing_start_delay_days %}
+    {% set billing_delay_unit = billing_delay_period == 1 ? module.default_text.day : module.default_text.days %}
+    {{ line_item.recurringbillingfrequency ? module.default_text.relative_payment_start_date : module.default_text.relative_payment_due_date }}
+  {% elif line_item.hs_billing_start_delay_type == 'hs_billing_start_delay_months' %}
+    {% set billing_delay_period = line_item.hs_billing_start_delay_months %}
+    {% set billing_delay_unit = billing_delay_period == 1 ? module.default_text.month : module.default_text.months %}
+    {{ line_item.recurringbillingfrequency ? module.default_text.relative_payment_start_date : module.default_text.relative_payment_due_date }}
+  {% endif %}
+{% endmacro %}
+
+{% macro amount_cell(line_item, include_quantity_and_price) %}
+  {% set price_with_frequency = line_item.price|format_currency_value(locale=LOCALE, currency=CURRENCY, maxDecimalDigits=6) ~ " " ~ recurring_frequency_text(line_item.recurringbillingfrequency) %}
+  {% set amount_with_frequency = line_item.amount|format_currency_value(locale=LOCALE, currency=CURRENCY) ~ " " ~ recurring_frequency_text(line_item.recurringbillingfrequency) %}
+  {% set has_fixed_discount = line_item.hs_total_discount|float > 0 %}
+  {% set has_percent_discount = line_item.hs_discount_percentage|float > 0 %}
+  {% set has_discount = has_fixed_discount or has_percent_discount %}
+  <div class="currency__container">
+    <span class="currency__content">
+      {% if include_quantity_and_price %}
+        {{ line_item.quantity is number ? line_item.quantity|format_number(LOCALE)|sanitize_html ~ "&nbsp;x&nbsp;" : line_item.quantity|sanitize_html }}
+        {% if has_discount %}
+          <s>{{ price_with_frequency|render|sanitize_html }}</s>
+        {% else %}
+          {{ price_with_frequency|render|sanitize_html }}
+        {% endif %}
+      {% else %}
+        {{ amount_with_frequency|render|sanitize_html }}
+      {% endif %}
+    </span>
+
+    {% if has_discount %}
+      {% if has_percent_discount %}
+        {% set percentage_amount = line_item.hs_discount_percentage %}
+        {% set discount_amount = "<span class='currency__content'>{{ module.default_text.percent|render|sanitize_html }}</span>" %}
+      {% else %}
+        {% set discount_amount = "<span class='currency__content'>{{ line_item.hs_total_discount|format_currency_value(locale=LOCALE, currency=CURRENCY)|render|sanitize_html }}</span>" %}
+      {% endif %}
+      <span class="currency__content--full-width">
+        {{ module.default_text.after_discount|render|sanitize_html }}
+        {% if include_quantity_and_price %}
+          <strong class="currency__content--amount-with-frequency">&nbsp;{{ amount_with_frequency|render|sanitize_html }}</strong>
+        {% endif %}
+      </span>
+    {% endif %}
+
+     {% if SHOULD_DISPLAY_LINE_ITEM_TAXES %}
+      {% set taxAmount = (line_item.hs_tax_amount or 0)|format_currency_value(locale=LOCALE, currency=CURRENCY, maxDecimalDigits=6) %}
+      {% set taxLabel = line_item.hs_tax_label or (HAS_SHARED_TAX_LABEL ? MAYBE_SHARED_TAX_LABEL : null) %}
+      <span class="discount-notice currency__content currency__content--full-width">
+        {% if taxLabel %}
+          {{ module.default_text.line_item_tax_with_label|render|sanitize_html }}
+        {% else %}
+          {{ module.default_text.line_item_tax_without_label|render|sanitize_html }}
+        {% endif %}
+      </span>
+    {% endif %}
+
+    {% if line_item.hs_term_in_months %}
+      <span class="discount-notice currency__content currency__content--full-width">
+        {% if line_item.hs_term_in_months|divisible(12) %}
+          {% set year = line_item.hs_term_in_months / 12|round(0, 'floor') %}
+          {% set year_text = year > 1 ? module.default_text.years : module.default_text.year %}
+          {{ module.default_text.for_years|render|sanitize_html }}
+        {% else %}
+          {% set month_text = line_item.hs_term_in_months > 1 ? module.default_text.months : module.default_text.month %}
+          {{ module.default_text.for_months|render|sanitize_html }}
+        {% endif %}
+      </span>
+    {% else %}
+      {% set frequency = line_item.recurringbillingfrequency %}
+      {% set payments_count = line_item.hs_recurring_billing_number_of_payments %}
+      {% if (frequency == 'weekly' or frequency == 'biweekly') and payments_count %}
+        <span class="discount-notice currency__content currency__content--full-width">
+          {% set week = frequency == 'weekly' ? payments_count : payments_count * 2 %}
+          {% set week_text = week > 1 ? module.default_text.weeks : module.default_text.week %}
+          {{ module.default_text.for_weeks|render|sanitize_html }}
+        </span>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro line_items_table_rows(line_items, message, is_future_payments) %}
+  {% if message %}
+    <tr class="line-items__subheading">
+      <td colspan="100%">{{ message|render|sanitize_html }}</td>
+    </tr>
+  {% endif %}
+  {% for unit in line_items %}
+    <tr class="line-items__item-row">
+    {% for item in module.line_item_column %}
+        {% set property_value = unit[item.column_property] %}
+        {% if item.column_property == 'hs_images' %}
+          <td><img class="line-items__image" style="max-width: 150px; height: auto;" src="{{ property_value|escape_attr }}" /></td>
+        {% elif ["name", "name_en", "name_fr"] is containing item.column_property %}
+          {%- set da_name = unit.name %}
+          {%- if item.column_property == "name_en" and unit.name_en != "" %}
+            {%- set da_name = unit.name_en %}          
+          {%- elif item.column_property == "name_fr" and unit.name_en != "" %}
+            {%- set da_name = unit.name_fr %}
+          {%- endif %}
+          <td>
+            <span>{{ da_name|sanitize_html }}</span>
+            {% if module.display_payment_starts and is_future_payments %}
+              <div class="line-item-future-payment">{{ first_payment_text(unit)|render|sanitize_html }}</div>
+            {% endif %}
+          </td>
+        {% elif item.column_property == 'item_description' %}
+          <td>
+            <span class="item-name">{{ unit.name|sanitize_html }}</span>
+            <div class="line-item-description">{{ unit.description|sanitize_html }}</div>
+            {% if module.display_payment_starts and is_future_payments %}
+              <div class="line-item-future-payment">{{ first_payment_text(unit)|render|sanitize_html }}</div>
+            {% endif %}
+          </td>
+        {% elif item.column_property == 'description' %}
+          <td>
+            <div class="line-item-description">{{ unit.description|sanitize_html }}</div>
+          </td>
+        {% elif item.column_property == 'amount' %}
+          <td class="{{ cell_print_max_width_class|escape_attr }}">
+            {{ amount_cell(unit, false) }}
+          </td>
+        {% elif item.column_property == 'quantity' %}
+          <td class="{{ cell_print_max_width_class|escape_attr }}">
+            {{ property_value is number ? property_value|format_number(LOCALE)|sanitize_html : property_value|sanitize_html }}
+          </td>
+        {% elif item.column_property == 'quantity_amount' %}
+          <td class="{{ cell_print_max_width_class|escape_attr }}">
+            {{ amount_cell(unit, true) }}
+          </td>
+        {% elif item.column_property == 'hs_cost_of_goods_sold' %}
+          <td class="{{ cell_print_max_width_class|escape_attr }}">
+            <span class="currency__content">{{ property_value|format_currency_value(locale=LOCALE, currency=CURRENCY, maxDecimalDigits=6)|sanitize_html }}</span>
+          </td>
+        {% elif item.column_property == 'hs_recurring_billing_start_date' %}
+          <td class="{{ cell_print_max_width_class|escape_attr }}">
+            {% if property_value %}
+              {{ property_value|int|format_date('long', 'UTC', LOCALE)|sanitize_html }}
+            {% endif %}
+          </td>
+        {% elif item.column_property == 'recurringbillingfrequency' %}
+          <td class="{{ cell_print_max_width_class|escape_attr }}">
+            {{ recurring_billing_frequency_text(unit.recurringbillingfrequency)|render|sanitize_html }}
+          </td>
+        {% elif ['price', 'unit_price', 'amount'] is containing item.column_property %}
+          <td class="{{ cell_print_max_width_class|escape_attr }}">
+            <div class="currency__container">
+              <span class="currency__content">
+                {% if unit["hs_product_type"] == "inventory" %}
+                  {{ (property_value * BENEFICIO)|format_currency_value(locale=LOCALE, currency=CURRENCY, maxDecimalDigits=6)|sanitize_html }}&nbsp;
+                {%- else %}
+                  {{ (property_value)|format_currency_value(locale=LOCALE, currency=CURRENCY, maxDecimalDigits=6)|sanitize_html }}&nbsp;                  
+                {%- endif %}
+              </span>
+              <span class="currency__content">
+                {{ recurring_frequency_text(unit.recurringbillingfrequency)|render|sanitize_html }}
+              </span>
+            </div>
+          </td>
+        {% elif item.column_property == 'discount' %}
+          {% if unit.hs_discount_percentage|float > 0 %}
+            <td class="{{ cell_print_max_width_class|escape_attr }}">
+              {% set percentage_amount = unit.hs_discount_percentage %}
+              {{ module.default_text.percent|render|sanitize_html }}
+            </td>
+          {% elif unit.hs_total_discount|float > 0 %}
+            <td class="{{ cell_print_max_width_class|escape_attr }}">
+              <span class="currency__content">
+                {{ property_value|format_currency_value(locale=LOCALE, currency=CURRENCY, maxDecimalDigits=6)|sanitize_html }}
+              </span>
+            </td>
+          {% else %}
+            <td class="{{ cell_print_max_width_class|escape_attr }}"></td>
+          {% endif %}
+        {% else %}
+          <td class="{{ cell_print_max_width_class|escape_attr }}">{{ property_value|sanitize_html }}</td>
+        {% endif %}
+      {% endfor %}
+    </tr>
+  {% endfor %}
+{% endmacro %}
+
+{# Module content #}
+
+{% if LINE_ITEMS|length > 0 or FUTURE_PAYMENTS|length > 0 %}
+  {% if module.display_heading %}
+    <h2 class="line-items__table-h2">{{ module.heading|sanitize_html }}</h2>
+  {% endif %}
+
+  {% set table_class = 'line-items__table' %}
+  {% set cell_print_max_width_class = 'line-items__cell--max-width-'  ~ module.line_item_column|length %}
+
+  {% if module.line_item_column|length > 5 %}
+    {% set table_class = table_class ~ ' line-items__table-with-many-columns' %}
+  {% endif %}
+
+  <div class="line-items__table-scrollable">
+    <table class="{{ table_class|escape_attr }}">
+      <thead class="line-items__table-header--main">
+        <tr>
+        {% for title in module.line_item_column %}
+          <th scope="col">{{ title.column_title|sanitize_html }}</th>
+        {% endfor %}
+        </tr>
+      </thead>
+      <tbody id="line-items__table-body">
+        {% set has_present_line_items = LINE_ITEMS|length > 0 %}
+        {% set has_future_line_items = FUTURE_PAYMENTS|length > 0 %}
+        {% set has_both_line_items = has_present_line_items and has_future_line_items %}
+
+        {% if has_present_line_items %}
+          {{ line_items_table_rows(LINE_ITEMS, has_both_line_items ? module.line_item_subheadings.due_now_text : null) }}
+        {% endif %}
+        {% if has_future_line_items %}
+          {{ line_items_table_rows(FUTURE_PAYMENTS, has_both_line_items ? module.line_item_subheadings.due_later_text : null, true) }}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{%- if module.display_totals_table %}
+<div class="line-items__totals">
+  {% if SUB_TOTALS|length > 0 && module.display_subtotals %}
+    {% if module.display_subtotal_title and module.subtotal_title|length > 0 %}
+      <div class="totals__row title">
+        {{ module.subtotal_title|sanitize_html }}
+      </div>
+    {% endif %}
+
+    {# Sets subtotals based on recurring billing frequency data using the subtotal_section macro set at the top of this file #}
+    {{ subtotal_section("weekly", module.default_text.weekly) }}
+    {{ subtotal_section("biweekly", module.default_text.per_two_weeks) }}
+    {{ subtotal_section("monthly", module.default_text.monthly) }}
+    {{ subtotal_section("quarterly", module.default_text.quarterly) }}
+    {{ subtotal_section("per_six_months", module.default_text.per_six_months) }}
+    {{ subtotal_section("annually", module.default_text.annual) }}
+    {{ subtotal_section("per_two_years", module.default_text.per_two_years) }}
+    {{ subtotal_section("per_three_years", module.default_text.per_three_years) }}
+    {{ subtotal_section("per_four_years", module.default_text.per_four_years) }}
+    {{ subtotal_section("per_five_years", module.default_text.per_five_years) }}
+    {{ subtotal_section("one_time", module.default_text.one_time) }}
+
+  {% endif %}
+
+  {% if SHOULD_DISPLAY_LINE_ITEM_TAXES && additional_fees|length == 0 && module.display_subtotals %}
+    <div class="totals__row bordered">
+      <div>
+        <span>{{ module.default_text.tax|render|sanitize_html }}</span>
+        {% if HAS_SHARED_TAX_RATE %}
+          <span> ({{ MAYBE_SHARED_TAX_RATE|float|format_number(LOCALE, 6) }}%)</span>
+        {% endif %}
+      </div>
+      <div class="dotted__row"></div>
+      <div>
+        <span class="currency__content">
+          {{ TOTALS.tax_total|format_currency_value(locale=LOCALE, currency=CURRENCY)|sanitize_html }}
+        </span>
+      </div>
+    </div>
+  {% endif %}
+
+  {%- if ADDITIONAL_FEES|length > 0 && module.display_other_fees -%}
+
+    {%- for fee in ADDITIONAL_FEES -%}
+      <div class="totals__row bordered">
+        <div>{{ fee.name|sanitize_html }}</div>
+        <div class="dotted__row"></div>
+        <div>
+          {% if fee.is_percentage == true %}
+          {% set fee_amount = fee.amount %}
+
+          {# The format_currency filter will localize the display of negative numbers #}
+          {% set fee_value = fee.monetary_value|format_currency_value(locale=LOCALE, currency=CURRENCY) %}
+
+          <div class="fee__container">
+            <span class="currency__content">{{ fee_value|sanitize_html }}</span>
+
+            {% if fee.category == 'DISCOUNT' %}
+            <span class="currency__content">{{ module.default_text.percent_discount|render|sanitize_html }}</span>
+            {% elif fee.category == 'FEE' %}
+            <span class="currency__content">{{ module.default_text.percent_fee|render|sanitize_html }}</span>
+            {% elif fee.category == 'TAX' %}
+            <span class="currency__content">{{ module.default_text.percent_tax|render|sanitize_html }}</span>
+            {% endif %}
+          </div>
+
+          {% else %}
+          <span class="currency__content">
+            {{ fee.monetary_value|format_currency_value(locale=LOCALE, currency=CURRENCY)|sanitize_html }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+
+  {%- endif -%}
+
+  {% if module.display_totals %}
+    <div class="totals__container">
+      <div class="line-items__total-name">{{ (FUTURE_PAYMENTS|length > 0 ? module.due_now_title|sanitize_html : module.total_title|sanitize_html) }}</div>
+      <div class="dotted__row"></div>
+      <div class="line-items__total-value currency__content">
+        {{ TOTALS.total_first_payment|format_currency_value(locale=LOCALE, currency=CURRENCY)|sanitize_html }}
+      </div>
+      {% if DISPLAY_TCV_ON_QUOTE %}
+        <div class="totals__container--break"></div>
+        <div class="line-items__total-name total-contract-value">{{ module.total_contract_value_title|sanitize_html }}</div>
+        <div class="dotted__row"></div>
+        <div class="line-items__total-value currency__content total-contract-value">
+          {{ TOTALS.total_contract_value|format_currency_value(locale=LOCALE, currency=CURRENCY, maxDecimalDigits=6)|sanitize_html }}
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{%- endif %}
+{# Future Payments Summary Table #}
+
+{% macro recurring_payment_text(future_line_item) %}
+  {% set formatted_price = future_line_item.amount|format_currency_value(locale=LOCALE, currency=CURRENCY, maxDecimalDigits=6) %}
+  {% set recurring_frequency = recurring_frequency_text(future_line_item.recurringbillingfrequency) %}
+  {% set number_of_payments = future_line_item.hs_recurring_billing_number_of_payments %}
+  {% set payment_pluralized = number_of_payments == 1 ? module.default_text.payment : module.default_text.payments %}
+  {% set is_fixed_billing = future_line_item.hs_recurring_billing_terms == 'FIXED' %}
+
+  {% if future_line_item.hs_billing_start_delay_type == 'hs_recurring_billing_start_date' %}
+    {% set formatted_first_payment_date = future_line_item.hs_recurring_billing_start_date|int|format_date('long', 'UTC', LOCALE) %}
+    {% if future_line_item.recurringbillingfrequency %}
+      {{ is_fixed_billing ? module.default_text.future_recurring_date_delay_fixed : module.default_text.future_recurring_date_delay }}
+    {% else %}
+      {{ module.default_text.future_one_time_date_delay }}
+    {% endif %}
+  {% elif future_line_item.hs_billing_start_delay_type == 'hs_billing_start_delay_days' %}
+    {% set billing_delay_period = future_line_item.hs_billing_start_delay_days %}
+    {% set billing_delay_unit = billing_delay_period == 1 ? module.default_text.day : module.default_text.days %}
+    {% if future_line_item.recurringbillingfrequency %}
+      {{ is_fixed_billing ? module.default_text.future_recurring_relative_delay_fixed : module.default_text.future_recurring_relative_delay }}
+    {% else %}
+      {{ module.default_text.future_one_time_relative_delay }}
+    {% endif %}
+  {% elif future_line_item.hs_billing_start_delay_type == 'hs_billing_start_delay_months' %}
+    {% set billing_delay_period = future_line_item.hs_billing_start_delay_months %}
+    {% set billing_delay_unit = billing_delay_period == 1 ? module.default_text.month : module.default_text.months %}
+    {% if future_line_item.recurringbillingfrequency %}
+      {{ is_fixed_billing ? module.default_text.future_recurring_relative_delay_fixed : module.default_text.future_recurring_relative_delay }}
+    {% else %}
+      {{ module.default_text.future_one_time_relative_delay }}
+    {% endif %}
+  {% endif %}
+{% endmacro %}
+
+{% macro future_payments_summary_table_rows(future_line_items) %}
+  {% if future_line_items|length > 0 %}
+    {% for future_line_item in future_line_items %}
+      <tr class="{{ loop.first ? 'future-payment__group--first' : '' }} {{ loop.last ? 'future-payment__group--last' : '' }}">
+        <td>{{ future_line_item.name|sanitize_html }}</td>
+        <td>{{ recurring_payment_text(future_line_item)|render|sanitize_html }}</td>
+      </tr>
+    {% endfor %}
+  {% endif %}
+{% endmacro %}
+
+{% if module.future_payments_summary_table.display_future_payments_summary_table and FUTURE_PAYMENTS|length > 0 %}
+  {% if module.future_payments_summary_table.display_heading %}
+    <h3>{{ module.future_payments_summary_table.heading|sanitize_html }}</h3>
+  {% endif %}
+
+  {# One time line items do not have a recurringbillingfrequency, so we select line items where recurringbillingfrequency is null, undefined, or empty string #}
+  {# recurringbillingfrequency has a default value of undefined, but if the line item frequency is changed to monthly, and back to one time, the value becomes empty string #}
+  {% set future_one_time = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'within', [null, undefined, '']) %}
+  {% set future_weekly = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'equalto', 'weekly') %}
+  {% set future_biweekly = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'equalto', 'biweekly') %}
+  {% set future_monthly = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'equalto', 'monthly') %}
+  {% set future_quarterly = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'equalto', 'quarterly') %}
+  {% set future_per_six_months = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'equalto', 'per_six_months') %}
+  {% set future_annually = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'equalto', 'annually') %}
+  {% set future_per_two_years = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'equalto', 'per_two_years') %}
+  {% set future_per_three_years = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'equalto', 'per_three_years') %}
+  {% set future_per_four_years = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'equalto', 'per_four_years') %}
+  {% set future_per_five_years = FUTURE_PAYMENTS|selectattr('recurringbillingfrequency', 'equalto', 'per_five_years') %}
+
+  <div class="line-items__table-scrollable">
+    <table class="line-items__table line-items__future-payments-summary">
+      <thead class="line-items__table-header--main">
+        <tr>
+          <th scope="col">{{ module.future_payments_summary_table.columns.line_item_name_heading|sanitize_html }}</th>
+          <th scope="col">{{ module.future_payments_summary_table.columns.payment_summary_heading|sanitize_html }}</th>
+        </tr>
+      </thead>
+      <tbody id="line-items__table-body">
+        {{ future_payments_summary_table_rows(future_one_time) }}
+        {{ future_payments_summary_table_rows(future_weekly) }}
+        {{ future_payments_summary_table_rows(future_biweekly) }}
+        {{ future_payments_summary_table_rows(future_monthly) }}
+        {{ future_payments_summary_table_rows(future_quarterly) }}
+        {{ future_payments_summary_table_rows(future_per_six_months) }}
+        {{ future_payments_summary_table_rows(future_annually) }}
+        {{ future_payments_summary_table_rows(future_per_two_years) }}
+        {{ future_payments_summary_table_rows(future_per_three_years) }}
+        {{ future_payments_summary_table_rows(future_per_four_years) }}
+        {{ future_payments_summary_table_rows(future_per_five_years) }}
+      </tbody>
+    </table>
+  </div>
+{% endif %}

@@ -1,0 +1,627 @@
+{
+  "default_text.after_discount.default" : {
+    "message" : "<span class=\"discount-notice highlighted\">nakon popusta od {{ discount_amount }}</span>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.annual.default" : {
+    "message" : "Godišnje",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.annually.default" : {
+    "message" : "Godišnje",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.day.default" : {
+    "message" : "dan",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.days.default" : {
+    "message" : "dana",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_five_years.default" : {
+    "message" : "/ 5 godina",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_four_years.default" : {
+    "message" : "/ 4 godine",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_month.default" : {
+    "message" : "/ mjesec",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_quarter.default" : {
+    "message" : "/ kvartal",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_six_months.default" : {
+    "message" : "/ 6 mjeseci",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_three_years.default" : {
+    "message" : "/ 3 godine",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_two_weeks.default" : {
+    "message" : "/ 2 tjedna",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_two_years.default" : {
+    "message" : "/ 2 godine",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_week.default" : {
+    "message" : "/ tjedan",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_year.default" : {
+    "message" : "/ godinu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.first_payment_date.default" : {
+    "message" : "Prvo plaćanje: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.for_months.default" : {
+    "message" : "za {{ line_item.hs_term_in_months }} {{ month_text }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.for_years.default" : {
+    "message" : "za {{ year }} {{ year_text }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.frequency_subtotal.default" : {
+    "message" : "međuzbroj {{ frequency_text }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_charges.default" : {
+    "message" : "Buduća plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_one_time_date_delay.default" : {
+    "message" : "{{ formatted_price }} {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_one_time_relative_delay.default" : {
+    "message" : "{{ formatted_price }} s rokom dospijeća {{ billing_delay_period }} {{ billing_delay_unit }} nakon početnog plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_date_delay.default" : {
+    "message" : "{{ formatted_price }} {{ recurring_frequency }} s početkom{{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_date_delay_fixed.default" : {
+    "message" : "{{ formatted_price }} {{ recurring_frequency }} s početkom{{ formatted_first_payment_date }} za {{ number_of_payments }} {{ payment_pluralized }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_relative_delay.default" : {
+    "message" : "{{ formatted_price }} {{ recurring_frequency }} s početkom {{ billing_delay_period }} {{ billing_delay_unit }} nakon početnog plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_relative_delay_fixed.default" : {
+    "message" : "{{ formatted_price }} {{ recurring_frequency }} s početkom {{ billing_delay_period }} {{ billing_delay_unit }} nakon početnog plaćanja za {{ number_of_payments }} {{ payment_pluralized }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax.default" : {
+    "message" : "+ {{ taxAmount }} {{line_item.hs_tax_label }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax_with_label.default" : {
+    "message" : "+{{ taxAmount }} {{ taxLabel }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax_without_label.default" : {
+    "message" : "+ porez od {{ taxAmount }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.month.default" : {
+    "message" : "mjesec",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.monthly.default" : {
+    "message" : "Mjesečno",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.months.default" : {
+    "message" : "mjeseci",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.one_time.default" : {
+    "message" : "Jednokratno",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment.default" : {
+    "message" : "plaćanje",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment_due_date.default" : {
+    "message" : "Dospijeće plaćanje je na datum: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment_start_date.default" : {
+    "message" : "Plaćanje započinje na datum: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payments.default" : {
+    "message" : "plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_five_years.default" : {
+    "message" : "Svakih pet godina",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_four_years.default" : {
+    "message" : "Svake četiri godine",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_six_months.default" : {
+    "message" : "Svakih šest mjeseci",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_three_years.default" : {
+    "message" : "Svake tri godine",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_two_weeks.default" : {
+    "message" : "Svaka dva tjedna",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_two_years.default" : {
+    "message" : "Svake dvije godine",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent.default" : {
+    "message" : "{{ percentage_amount }} %",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_discount.default" : {
+    "message" : "{{ fee_amount }} % popusta",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_fee.default" : {
+    "message" : "Naknada od {{ fee_amount }}%",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_tax.default" : {
+    "message" : "{{ fee_amount }}% poreza",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.quarterly.default" : {
+    "message" : "Tromjesečno",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.relative_payment_due_date.default" : {
+    "message" : "Dospijeće plaćanja: {{ billing_delay_period }} {{ billing_delay_unit }} nakon početnog plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.relative_payment_start_date.default" : {
+    "message" : "Plaćanje započinje: {{ billing_delay_period }} {{ billing_delay_unit }} nakon početnog plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.tax.default" : {
+    "message" : "Porez",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.week.default" : {
+    "message" : "tjedan",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.weekly.default" : {
+    "message" : "Tjedno",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.weeks.default" : {
+    "message" : "tjedni",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.year.default" : {
+    "message" : "godina",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.years.default" : {
+    "message" : "godine",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_heading.label" : {
+    "message" : "Prikaz naslova tablice",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_other_fees.label" : {
+    "message" : "Prikaži ostale naknade",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_other_fees_temp.label" : {
+    "message" : "Prikaz jednokratnih popusta, naknada i poreza",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_payment_starts.inline_help_text" : {
+    "message" : "Prikaz teksta „Datum početka plaćanja“ ispod svake stavke linije s budućim datumom naplate.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_payment_starts.label" : {
+    "message" : "Prikaz datuma počeka plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_subtotals.label" : {
+    "message" : "Prikaži podzbrojeve",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_totals_table.default" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.inline_help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.label" : {
+    "message" : "Booleano",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.placeholder" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "due_now_title.default" : {
+    "message" : "Dospijeće sada",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_title.inline_help_text" : {
+    "message" : "Ova oznaka predstavlja \"tekst o ukupnom iznosu\" kada postoje plaćanja s rokom dospijeća nakon završetka kupnje.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_title.label" : {
+    "message" : "Tekst s dospijećem sada",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.label" : {
+    "message" : "Stupci",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.line_item_name_heading.default" : {
+    "message" : "Stavka",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.line_item_name_heading.label" : {
+    "message" : "Zaglavlje s nazivom stavke linije",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.payment_summary_heading.default" : {
+    "message" : "Plaćanje",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.payment_summary_heading.label" : {
+    "message" : "Zaglavlje sa sažetkom plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.display_future_payments_summary_table.label" : {
+    "message" : "Prikaz tablice sažetka budućih plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.display_heading.label" : {
+    "message" : "Prikaz naslova tablice",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.default" : {
+    "message" : "Sažetak budućih plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.inline_help_text" : {
+    "message" : "Dodajte zaglavlje tablici sažetka budućih plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.label" : {
+    "message" : "Naslov tablice",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.label" : {
+    "message" : "Tablica sažetka budućih plaćanja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.default" : {
+    "message" : "Proizvodi i usluge",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.inline_help_text" : {
+    "message" : "Dodajte naslov tablici stavki linije",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.label" : {
+    "message" : "Naslov tablice",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.amount" : {
+    "message" : "Ukupno",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.description" : {
+    "message" : "Opis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.discount" : {
+    "message" : "Jedinični popust",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_cost_of_goods_sold" : {
+    "message" : "Jedinična cijena",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_images" : {
+    "message" : "Slika",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_recurring_billing_start_date" : {
+    "message" : "Datum početka",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_sku" : {
+    "message" : "Jedinica za skladištenje zaliha stavke",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_term_in_months" : {
+    "message" : "Termin",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_url" : {
+    "message" : "URL",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.item_description" : {
+    "message" : "Stavka i opis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.name" : {
+    "message" : "Naziv stavke",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.price" : {
+    "message" : "Jedinična cijena",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.quantity" : {
+    "message" : "Količina stavke",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.quantity_amount" : {
+    "message" : "Količina i ukupni iznos",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.recurringbillingfrequency" : {
+    "message" : "Učestalost fakturiranja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.label" : {
+    "message" : "Odaberite svojstvo stupca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.inline_help_text" : {
+    "message" : "Dodajte naslov svojem stupcu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.label" : {
+    "message" : "Naziv stupca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.placeholder" : {
+    "message" : "Opis stupca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.label" : {
+    "message" : "Stupac stavke",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.background_color.label" : {
+    "message" : "Boja pozadine",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_later_text.default" : {
+    "message" : "Stavke s kasnijim dospijećem",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_later_text.label" : {
+    "message" : "Tekst s kasnijim dospijećem",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_now_text.default" : {
+    "message" : "Stavke s dospijećem sada",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_now_text.label" : {
+    "message" : "Tekst s dospijećem sada",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.font_style.label" : {
+    "message" : "Stil fonta",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.label" : {
+    "message" : "Podnaslovi stavki linije",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "line_items_table",
+    "description" : null,
+    "placeholders" : null
+  },
+  "other_fees_title.default" : {
+    "message" : "Ostale naknade",
+    "description" : "",
+    "placeholders" : null
+  },
+  "pedido_de_compra.default" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.inline_help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.label" : {
+    "message" : "Texto",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.placeholder" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.validation_regex" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "subtotal_title.default" : {
+    "message" : "Podzbrojevi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.default" : {
+    "message" : "Ukupna ugovorena vrijednost",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.inline_help_text" : {
+    "message" : "Prilagodite tekst za ispravan opis ove vrijednosti. (Ako nisu postavljeni uvjeti, zadana je godišnja vrijednost.)",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.label" : {
+    "message" : "Tekst ukupne ugovorene vrijednosti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_title.default" : {
+    "message" : "Ukupno",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_title.label" : {
+    "message" : "Tekst o ukupnom iznosu",
+    "description" : "",
+    "placeholders" : null
+  }
+}

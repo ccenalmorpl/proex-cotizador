@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Сума",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Коментари",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Коментари от",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Тази оферта е изтекла",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Моля, свържете се с Вашия търговски представител за повече подробности.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Елемент и описание",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Други такси",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Приготвено от:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Цена",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Продукти и услуги",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Условия за покупка",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Количество",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Оферта, създадена от",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Междинни суми",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Общо",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Цена на брой",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Credit Memo",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Номер на кредитно известие",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Обща сума кредитно известие",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Пор. #",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Дата на кредитно известие",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Всички такси са изброени в {{ currency_code }} и за тях има данък върху продажбите (ако е приложимо).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Таблица със списъчни елементи за кредитно известие",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Кол.",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Данък",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "данък",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Данък",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "след отстъпка от {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Фактура",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Номер на фактура",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Датата на фактурата",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Всички такси са изброени в {{ currency_code }} и за тях има данък върху продажбите (ако е приложимо).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Номер на поръчка",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Фактура за таблица със списъчни елементи",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "след отстъпка от {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Кол.",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Плащане",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Дължим остатък",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Данък",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "данък",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Данък",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Фактуриране на",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Изпращане до",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Данъчен адрес",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Краен срок",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "отстъпка",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% отстъпка",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% отстъпка",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Междинна сума",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Бъдещи плащания",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Плащания, дължими по-късно.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Резюме",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Тази оферта не е налична.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Моля, свържете се с Вашия търговски представител за повече подробности.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Неприложимо",
+    "description": "",
+    "placeholders": null
+  }
+}

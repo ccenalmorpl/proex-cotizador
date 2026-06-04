@@ -1,0 +1,22 @@
+{
+  "include_hubspot_avatar.label" : {
+    "message" : "送信者のHubSpotアバターを含める",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "送信者ユーザー",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.default" : {
+    "message" : "{{ ptoken_sender_full_name }} - {{ personalization_token('template_data.quote.hs_sender_company_name', '') }} {{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.label" : {
+    "message" : "送信者情報",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Natisni ponudbo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Besedilo gumba",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Natisni",
+    "description" : "",
+    "placeholders" : null
+  }
+}

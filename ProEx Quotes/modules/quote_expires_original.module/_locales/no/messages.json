@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote expires",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Dette tilbudet utløper",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Tilbudet utløper tekst",
+    "description" : "",
+    "placeholders" : null
+  }
+}

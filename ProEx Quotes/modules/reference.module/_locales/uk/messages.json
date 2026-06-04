@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Посилання",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "Посилання: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "Номер посилання",
+    "description" : "",
+    "placeholders" : null
+  }
+}

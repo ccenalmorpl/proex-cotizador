@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Company logo image",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "This does not apply when overriding the default logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Logo max height",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "By default, your quotes will show the company logo from Account Defaults or Website Pages if you have these set up. You may choose to override these using the toggle below.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Override default logo in this template",
+    "description" : "",
+    "placeholders" : null
+  }
+}

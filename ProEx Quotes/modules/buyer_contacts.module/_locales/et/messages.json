@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Ostja kontaktandmed",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "Ostja kontaktisiku meil",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Ostja kontakti ametinimetus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Ostja kontaktisiku nimi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Ostja kontaktisiku telefon",
+    "description" : "",
+    "placeholders" : null
+  }
+}

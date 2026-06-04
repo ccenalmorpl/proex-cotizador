@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "הדפס הצעת מחיר",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "טקסט לחצן",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "הדפס",
+    "description" : "",
+    "placeholders" : null
+  }
+}

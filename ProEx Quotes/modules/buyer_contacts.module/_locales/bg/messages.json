@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Лица за контакт на купувача",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "Имейл за контакт с купувача",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Длъжност на контакта на купувача",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Име за контакт на купувача",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Телефонен номер за контакт с купувача",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -36,14 +36,12 @@ logger = logging.getLogger(__name__)
 # Cargar variables de entorno
 load_dotenv()
 
-
 def get_hubspot_client() -> HubSpot:
     """Obtener cliente de HubSpot autenticado."""
     access_token = os.getenv("HUBSPOT_ACCESS_TOKEN")
     if not access_token:
         raise ValueError("HUBSPOT_ACCESS_TOKEN no encontrado en variables de entorno")
     return HubSpot(access_token=access_token)
-
 
 def create_contenedor_schema(client: HubSpot) -> str:
     """
@@ -155,6 +153,13 @@ def create_contenedor_schema(client: HubSpot) -> str:
             "type": "string",
             "fieldType": "text",
             "description": "Número del precinto de seguridad del container"
+        },
+        {
+            "name": "documentos_a_generar",
+            "label": "Documentos a Generar",
+            "type": "string",
+            "fieldType": "text",
+            "description": "Documentos a generar para este contenedor (separados por punto y coma, ej: bl;packing_list)"
         }
     ]
 
@@ -187,7 +192,6 @@ def create_contenedor_schema(client: HubSpot) -> str:
     except Exception as e:
         logger.error(f"❌ Error creando objeto CONTENEDOR: {e}")
         raise
-
 
 def create_elemento_schema(client: HubSpot, contenedor_object_type_id: str) -> str:
     """
@@ -344,6 +348,34 @@ def create_elemento_schema(client: HubSpot, contenedor_object_type_id: str) -> s
             "description": "ID del line item original (para dual tracking con sistema actual)"
         },
         {
+            "name": "nombre_en",
+            "label": "Nombre (EN)",
+            "type": "string",
+            "fieldType": "text",
+            "description": "Nombre del artículo en inglés"
+        },
+        {
+            "name": "nombre_fr",
+            "label": "Nombre (FR)",
+            "type": "string",
+            "fieldType": "text",
+            "description": "Nombre del artículo en francés"
+        },
+        {
+            "name": "formato",
+            "label": "Formato",
+            "type": "string",
+            "fieldType": "text",
+            "description": "Formato del artículo"
+        },
+        {
+            "name": "marca",
+            "label": "Marca",
+            "type": "string",
+            "fieldType": "text",
+            "description": "Marca del artículo"
+        },
+        {
             "name": "fecha_creacion",
             "label": "Fecha de Creación",
             "type": "datetime",
@@ -382,7 +414,6 @@ def create_elemento_schema(client: HubSpot, contenedor_object_type_id: str) -> s
     except Exception as e:
         logger.error(f"❌ Error creando objeto ELEMENTO: {e}")
         raise
-
 
 def main():
     """Función principal."""
@@ -434,7 +465,6 @@ def main():
     except Exception as e:
         logger.error(f"❌ Error en el proceso: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

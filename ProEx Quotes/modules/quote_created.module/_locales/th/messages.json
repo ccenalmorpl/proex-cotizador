@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "วันที่เสนอราคา",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "วันที่เสนอราคา:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "ข้อความวันที่เสนอราคา",
+    "description" : "",
+    "placeholders" : null
+  }
+}

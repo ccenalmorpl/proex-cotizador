@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Imprimare ofertă",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Text buton",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Imprimare",
+    "description" : "",
+    "placeholders" : null
+  }
+}

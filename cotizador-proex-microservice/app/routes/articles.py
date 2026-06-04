@@ -20,7 +20,6 @@ from app.utils.property_helpers import get_model_property_names, parse_hubspot_p
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-
 @router.get("/product/list", response_model=ProductListResponse)
 async def search_products(
     query: str = Query(
@@ -36,21 +35,7 @@ async def search_products(
         le=100
     )
 ):
-    """Search for products in HubSpot by name.
-
-    This endpoint searches for products whose name contains the provided query string.
-    The search is case-insensitive.
-
-    Args:
-        query: Search string to filter products by name (e.g., "vino").
-        limit: Maximum number of products to return (default: 100, max: 100).
-
-    Returns:
-        ProductListResponse with list of matching products and total count.
-
-    Raises:
-        HTTPException: If API error occurs during search.
-    """
+    """Busca productos por nombre (CONTAINS_TOKEN, case-insensitive) limitados a hs_product_type=inventory + tipo_articulo=fabricante + activo=Activo."""
     try:
         client = hubspot_client.get_client()
 
@@ -68,6 +53,7 @@ async def search_products(
                         {"propertyName": "name", "operator": "CONTAINS_TOKEN", "value": f"*{query}*"},
                         {"propertyName": "hs_product_type", "operator": "EQ", "value": "inventory"},
                         {"propertyName": "tipo_articulo", "operator": "EQ", "value": "fabricante"},
+                        {"propertyName": "activo", "operator": "EQ", "value": "Activo"},
                     ]
                 }
             ],
@@ -101,7 +87,6 @@ async def search_products(
     except Exception as e:
         logger.error(f"Error searching products: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/services/list", response_model=ProductListResponse)
 async def list_services(
@@ -145,12 +130,16 @@ async def list_services(
             public_object_search_request=search_request
         )
 
-        # Parse results
+        # Parse results, excluding transitario and comisiones products
         products = []
         if search_response.results:
             for result in search_response.results:
                 product_data = parse_hubspot_properties(result.id, result.properties, ProductItem)
-                products.append(ProductItem(**product_data))
+                item = ProductItem(**product_data)
+                tipo_articulo = (item.tipo_articulo or "").strip().lower()
+                if tipo_articulo in {"transitario", "comisiones"}:
+                    continue
+                products.append(item)
 
         total = len(products)
         logger.info(f"Found {total} services")
@@ -165,7 +154,6 @@ async def list_services(
     except Exception as e:
         logger.error(f"Error listing services: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/services/providers/list", response_model=ProviderListResponse)
 async def list_service_providers(
@@ -187,22 +175,7 @@ async def list_service_providers(
         le=100
     )
 ):
-    """List providers filtered by tipo_proveedor for services panel.
-
-    This endpoint returns providers that match the specified tipo_proveedor,
-    used to populate the provider select in the services panel.
-
-    Args:
-        tipo_proveedor: Required provider type to filter by.
-        query: Optional search string to filter by name or cardcode.
-        limit: Maximum number of providers to return (default: 100, max: 100).
-
-    Returns:
-        ProviderListResponse with list of matching providers and total count.
-
-    Raises:
-        HTTPException: If API error occurs during search.
-    """
+    """Lista los proveedores con `tipo_proveedor` indicado, opcionalmente filtrados por nombre/cardcode con `query`. Usado para poblar el select de proveedores en el panel de servicios."""
     try:
         client = hubspot_client.get_client()
 
@@ -294,7 +267,6 @@ async def list_service_providers(
         logger.error(f"Error listing service providers: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/provider/{provider_id}", response_model=ProductProviderResponse)
 async def get_provider(
     provider_id: str = Path(
@@ -304,20 +276,7 @@ async def get_provider(
         min_length=1
     )
 ):
-    """Get provider/supplier company information by provider ID (cardcode).
-
-    This endpoint retrieves the provider information from HubSpot's custom object "Proveedores"
-    by searching for a matching cardcode field.
-
-    Args:
-        provider_id: Provider card code / identifier to search for.
-
-    Returns:
-        ProductProviderResponse with provider company data (id, name, cardcode, lugar_de_la_carga_envio).
-
-    Raises:
-        HTTPException: If provider not found or API error occurs.
-    """
+    """Devuelve los datos del proveedor cuyo cardcode coincide con `provider_id` (custom object Proveedores `2-43108800`)."""
     try:
         client = hubspot_client.get_client()
 
@@ -400,7 +359,6 @@ async def get_provider(
         logger.error(f"Error getting provider information: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/providers/list", response_model=ProviderListResponse)
 async def search_providers(
     query: str = Query(
@@ -416,21 +374,7 @@ async def search_providers(
         le=100
     )
 ):
-    """Search for providers in HubSpot by name or cardcode.
-
-    This endpoint searches the custom object 'proveedores' whose properties
-    'name' or 'cardcode' contain the provided query string (case-insensitive).
-
-    Args:
-        query: Search string to filter providers (e.g., "JUICE" or "P0159").
-        limit: Maximum number of providers to return (default: 100, max: 100).
-
-    Returns:
-        ProductProviderResponse with list of matching providers and total count.
-
-    Raises:
-        HTTPException: If an API error occurs during search.
-    """
+    """Busca proveedores con tipo_proveedor=fabricante en `proveedores` (`2-43108800`) por coincidencia parcial en `name` o `cardcode` (case-insensitive)."""
     try:
         client = hubspot_client.get_client()
 

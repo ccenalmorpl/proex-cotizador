@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Buyer contacts",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "Buyer contact email",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Buyer contact job title",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Buyer contact name",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Buyer contact phone",
+    "description" : "",
+    "placeholders" : null
+  }
+}

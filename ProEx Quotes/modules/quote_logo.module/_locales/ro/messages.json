@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Imagine logo companie",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Această situație nu se aplică atunci când se înlocuiește sigla implicită",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Înălțime max. siglă",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Implicit, ofertele dvs. vor afișa logoul companiei din Valori implicite cont sau Pagini site web, dacă le-ați configurat. Puteți alege să îl înlocuiți cu ajutorul elementului de comutare de mai jos.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Înlocuire logo implicit în acest șablon",
+    "description" : "",
+    "placeholders" : null
+  }
+}

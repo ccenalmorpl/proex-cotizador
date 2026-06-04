@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "참조",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "참조: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "참조 번호",
+    "description" : "",
+    "placeholders" : null
+  }
+}

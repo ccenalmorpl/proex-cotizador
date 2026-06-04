@@ -1,0 +1,222 @@
+{
+  "amount": {
+    "message": "Số tiền",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Nhận xét",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Nhận xét từ",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Báo giá này đã hết hạn.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Vui lòng liên lạc với đại diện bán hàng của bạn để biết thêm chi tiết.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Mặt hàng & mô tả",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Các khoản phí khác",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Người lập:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Giá",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Sản phẩm & dịch vụ",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Điều khoản mua hàng",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Số lượng",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Người tạo báo giá:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Tổng phụ",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Tổng số",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Đơn giá",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Hóa đơn",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Số hóa đơn",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Ngày lập hóa đơn",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Mọi khoản phí được liệt kê trong {{ currency_code }} và tuân theo thuế bán hàng (nếu áp dụng).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Số PO",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Bảng mục dòng hóa đơn",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "sau khi chiết khấu {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Số lượng",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Thanh toán",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Số dư đến hạn",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Thuế",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "thuế",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Thuế",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Người nhận thanh toán",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Gửi đến",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Địa chỉ thuế",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Ngày đến hạn",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "giảm giá",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "chiết khấu {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "Giảm {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Tổng phụ",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Các khoản thanh toán trong tương lai",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Khoản thanh toán sẽ đến hạn sau.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "1{{ personalization_token('template_data.quote.hs_sender_lastname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_firstname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Tổng",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Báo giá này là không có sẵn.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Vui lòng liên lạc với đại diện bán hàng của bạn để biết thêm chi tiết.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Không khả dụng",
+    "description": "",
+    "placeholders": null
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Iznos",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Komentari",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Komentari osobe",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Ponuda je istekla.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Obratite se prodajnom predstavniku za više pojedinosti.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Stavka i opis",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Ostale naknade",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Pripremio/la:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Cijena",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Proizvodi i usluge",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Uvjeti kupnje",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Količina",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Ponudu izradio/la:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Podzbrojevi",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Ukupno",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Jedinična cijena",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Kreditna bilješka",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Broj kreditne bilješke",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Ukupni iznos kreditne bilješke",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Broj narudžbenice",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Datum kreditne bilješke",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Sve naknade navedene su u {{ currency_code }} i podliježu porezu na promet (ako je primjenjiv).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Tablica stavki linije kreditne bilješke",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Količina",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Porez",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "porez",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Porez",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "nakon popusta u iznosu od {{ discount_amount }} ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Faktura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Broj fakture",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Datum fakture",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Sve naknade navedene su na {{ currency_code }} i podliježu porezu na promet (ako je primjenjiv).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Broj narudžbenice",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Tablica stavki linije računa",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "nakon popusta u iznosu od {{ discount_amount }} ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Količina",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Plaćanje",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Dugovani iznos",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Porez",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "porez",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Porez",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Račun za",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Otpremi u",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Adresa za porez",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Datum dospijeća",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "popust",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }} % popusta",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "Popust od {{ fee_amount }} %",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Međusuma",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Buduća plaćanja",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Plaćanja s kasnijim dospijećem.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Sažetak",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Ova ponuda nije dostupna.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Obratite se prodajnom predstavniku za više pojedinosti.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "N/A",
+    "description": "",
+    "placeholders": null
+  }
+}

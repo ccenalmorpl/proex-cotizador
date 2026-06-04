@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Pag-expire ng quote",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Pag-expire ng quote:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Text na pag-expire ng quote",
+    "description" : "",
+    "placeholders" : null
+  }
+}

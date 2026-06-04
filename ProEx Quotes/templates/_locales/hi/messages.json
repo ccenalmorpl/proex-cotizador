@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "राशि",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "कमेंट",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "कमेंट करने वाला",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "यह कोटेशन समाप्त हो गया है।",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "कृपया अधिक जानकारी के लिए अपने विक्रय प्रतिनिधि से संपर्क करें।",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "आइटम और उसकी जानकारी",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "अन्य फ़ीस",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "बनाने वाला:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "कीमत",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "प्रॉडक्ट और सर्विसेज़",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "खरीदारी के टर्म्स",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "मात्रा",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "क्वोट बनाने वाला:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "सबटोटल",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "टोटल",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "यूनिट का मूल्य",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "क्रेडिट मेमो",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "क्रेडिट मेमो नंबर",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "क्रेडिट मेमो टोटल",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "P.O. #",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "क्रेडिट मेमो की तिथि",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "सभी फीस, {{ currency_code }} में सूचीबद्ध हैं और सेल्स टैक्स (जैसे भी लागू हो) के अधीन हैं।",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "क्रेडिट मेमो लाइन आइटम टेबल",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "मात्रा",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "टैक्स",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "टैक्स",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "टैक्स",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "{{ discount_amount }} छूट के बाद",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "इनवॉइस",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "इनवॉइस नंबर",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "इनवॉइस की तारीख",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "सभी फीस, {{ currency_code }} में सूचीबद्ध हैं और सेल्स टैक्स (जैसे भी लागू हो) के अधीन हैं।",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "PO नंबर",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "इनवॉइस लाइन आइटम टेबल",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "{{ discount_amount }} छूट के बाद",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "मात्रा",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "पेमेंट",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "देय बैलेंस",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "टैक्स",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "टैक्स",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "टैक्स",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "बिल पाने वाला",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "यहां भेजें",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "टैक्स एड्रेस",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "देय तिथि",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "डिस्काउंट",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% का डिस्काउंट",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% बंद",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "सबटोटल",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "आगे आने वाले भुगतान",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "भुगतान बाद के लिए देय हैं।",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "समरी",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "यह कोटेशन उपलब्ध नहीं है | ",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "कृपया अधिक जानकारी के लिए अपने विक्रय प्रतिनिधि से संपर्क करें।",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "लागू नहीं",
+    "description": "",
+    "placeholders": null
+  }
+}

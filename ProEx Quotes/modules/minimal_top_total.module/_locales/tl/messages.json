@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Kailangan nang bayaran ngayon",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Pinapalitan ng label na ito ang \"teksto na Kabuuang Quote\" kapag mayroong mga pagbabayad na kailangan nang bayaran pagkatapos ng pag-check out.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Teksto na kabuuan ng kailangan nang bayaran ngayon",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Kabuuan na quote",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Kabuuan",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Ang teksto para sa kabuuang halaga ng quote",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Text na kabuuang quote",
+    "description" : "",
+    "placeholders" : null
+  }
+}

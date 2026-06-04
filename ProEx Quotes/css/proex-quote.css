@@ -1,0 +1,516 @@
+*,
+:after,
+:before {
+  box-sizing: border-box;
+}
+
+.hs-quotes--basic {
+  /*padding-bottom: 100px;
+  max-width: calc(60% + 30px);*/
+  width: 100%;
+  margin: 0 auto;
+}
+
+.hs-quotes--basic .header {
+  font-size: 30px;
+}
+
+.hs-quotes--basic .logo_wrapper {
+  padding-bottom: 10px;
+  padding-top: 10px;
+}
+
+.hs-quotes--basic .logo_wrapper > div {
+  display: flex;
+  align-items: center;
+}
+
+.hs-quotes--basic b {
+  font-weight: 600;
+}
+
+.hs-quotes--basic .header_wrapper {
+  font-size: 30px;
+  text-align: center;
+  margin-bottom: 18px;
+  margin-top: 18px;
+}
+
+.hs-quotes.hs-quotes--basic h1 {
+  display: inline;
+  line-height: normal;
+  font-size: 30px;
+}
+
+.hs-quotes--basic .letterhead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 48px;
+  padding-top: 39px;
+}
+
+.hs-quotes--basic .sender-company_wrapper img {
+  border-radius: 0;
+  padding-bottom: 8px;
+}
+
+.hs-quotes--basic .sender-company_wrapper p:first-child {
+  margin-top: 0;
+}
+
+.hs-quotes--basic .sender-company_wrapper p:last-child {
+  margin-bottom: 0;
+}
+
+/* Line items table styles */
+
+.line-items__table-future-charges {
+  margin: 1rem 0;
+}
+
+.line-items__table .line-item-future-payment {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.future-charges-header th,
+.hs-quotes--basic .line-items__table thead th {
+  font-weight: 600;
+  font-size: 12px;
+  height: 3.7em;
+  text-transform: uppercase;
+}
+
+.hs-quotes--basic .line-items__table,
+.hs-quotes--basic .line-items__table th,
+.hs-quotes--basic .line-items__table td {
+  border-color: #000000;
+}
+
+.hs-quotes--basic .totals__row {
+  padding-left: 1.71em;
+  padding-right: 1.71em;
+  padding-top: 1.2em;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  display: flex;
+  justify-content: space-between;
+}
+
+.hs-quotes--basic .line-items__total {
+  display: flex;
+  width: 100%;
+  max-width: 300px;
+  margin: 15px 0;
+  border-width: 1px;
+  border-style: solid;
+  float: right;
+}
+
+.hs-quotes--basic .line-items__totals {
+  margin-bottom: 2em;
+}
+
+/* Add a top border to the totals area when future charges table is displayed */
+.line-items__table-future-charges + .line-items__totals .totals__row:first-child {
+  border-top: 1px solid;
+}
+
+.hs-quotes--basic .line-items__table+.line-items__totals>.totals__row:first-child {
+  border-top: 0;
+}
+
+.hs-quotes--basic .totals__row.title {
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid;
+  padding-top: 0.82em;
+  padding-bottom: 0.82em;
+  text-transform: uppercase;
+}
+
+.hs-quotes--basic .totals-row__discount {
+  border-bottom: 1px solid;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  padding-bottom: 1.2em;
+  padding-left: 1.71em;
+  padding-right: 1.71em;
+  text-align: right;
+}
+
+.hs-quotes--basic .totals__row.bordered {
+  padding-bottom: 1.2em;
+  border-bottom: 1px solid;
+}
+
+.hs-quotes--basic .totals__container {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  max-width: 60%;
+  margin-left: auto;
+  margin-bottom: 2em;
+  margin-top: 15px;
+}
+
+.hs-quotes--basic .totals__container--break {
+  display: none;
+}
+
+.hs-quotes--basic .totals__container>div:not(.dotted__row) {
+  font-weight: 600;
+}
+
+.hs-quotes--basic .dotted__row {
+  display: none;
+}
+
+.hs-quotes--basic .line-items__total-name {
+  text-align: right;
+  padding-top: 1.2em;
+  padding-bottom: 1.2em;
+  padding-left: 1.71em;
+  padding-right: 1.71em;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.hs-quotes--basic .line-items__total-value {
+  text-align: right;
+  padding-top: 1.2em;
+  padding-bottom: 1.2em;
+  padding-left: 1.71em;
+  padding-right: 1.71em;
+  border-width: 1px;
+  border-style: solid;
+  margin-left: -1px;
+}
+
+.hs-quotes--basic .total-contract-value {
+  margin-top: -1px;
+}
+
+.hs-quotes--basic .payment {
+  clear: both;
+}
+
+.hs-quotes--basic .line-items__payment {
+  text-align: right;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.hs-quotes--basic #payment-button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+
+.hs-quotes--basic .line-items__table.totals {
+  border-top: none;
+}
+
+.totals_row,
+.future-charges-header,
+.hs-quotes--basic .line-items__table tr > th {
+  vertical-align: middle;
+}
+
+.hs-quotes--basic .line-items__table tr > th:first-child,
+.hs-quotes--basic .line-items__table tr > td:first-child,
+.hs-quotes--basic .line-items__table tr > th:last-child,
+.hs-quotes--basic .line-items__table tr > td:last-child {
+  padding-left: 1.71em;
+  padding-right: 1.71em;
+}
+
+.hs-quotes--basic .line-items__table-with-many-columns tr > th:first-child,
+.hs-quotes--basic .line-items__table-with-many-columns tr > td:first-child,
+.hs-quotes--basic .line-items__table-with-many-columns tr > th:last-child,
+.hs-quotes--basic .line-items__table-with-many-columns tr > td:last-child {
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.hs-quotes--basic .line-items__table td,
+.hs-quotes--basic .line-items__table th {
+  border-width: 1px 0px 1px;
+}
+
+/* End Line items table styles */
+
+.hs-quotes--basic .quote-total {
+  display: flex;
+  width: 42%;
+  min-width: 100px;
+  justify-content: space-between;
+  border-style: solid;
+  border-width: 0 0px 1px;
+  margin-bottom: 24px;
+  font-weight: 600;
+  padding-bottom: 4px;
+}
+
+.hs-quotes--basic .comments > div,
+.hs-quotes--basic .terms > div {
+  border: 1px solid;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.hs-quotes--basic .comments h4,
+.hs-quotes--basic .terms h4 {
+  line-height: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 0;
+}
+
+.hs-quotes--basic .comments p,
+.hs-quotes--basic .terms p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.hs-quotes--basic .comments,
+.hs-quotes--basic .terms {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.hs-quotes .comments .hs_cos_wrapper_type_rich_text > *,
+.hs-quotes .terms .hs_cos_wrapper_type_rich_text > * {
+  overflow-wrap: break-word;
+}
+
+.hs-quotes--basic .signature {
+  margin-top: 35px;
+}
+
+.hs-quotes--basic .signature h3 {
+  font-weight: 600;
+}
+
+.hs-quotes.hs-quotes--basic .signature__box {
+  margin-top: 65px;
+}
+.hs-quotes.hs-quotes--basic .signature__field {
+  font-weight: normal;
+  width: 35%;
+  line-height: 2.3;
+  margin-bottom: 56px;
+}
+
+.hs-quotes.hs-quotes--basic .signature__field:last-child {
+  margin-bottom: 20px;
+}
+
+.hs-quotes.hs-quotes--basic .signature__field:before {
+  width: 100%;
+}
+
+.hs-quotes--basic .signature hr {
+  background-color: #dfe3eb;
+  border: 0px;
+  height: 1px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.hs-quotes.hs-quotes--basic .esignature__verify-button {
+  min-width: 120px;
+  width: auto;
+}
+
+.hs-quotes--basic .payment__button--checkout:hover,
+.hs-quotes.hs-quotes--basic .esignature__verify-button:hover,
+.hs-quotes--basic .hs-download__button:hover {
+  cursor: pointer;
+}
+
+.hs-quotes--basic .payment__button--checkout:hover,
+.hs-quotes--basic .payment__button--checkout:active,
+.hs-quotes--basic .payment__button--checkout:focus,
+.hs-quotes.hs-quotes--basic .esignature__verify-button:hover,
+.hs-quotes.hs-quotes--basic .esignature__verify-button:active,
+.hs-quotes.hs-quotes--basic .esignature__verify-button:focus,
+.hs-quotes--basic .hs-download__button:hover,
+.hs-quotes--basic .hs-download__button:active,
+.hs-quotes--basic .hs-download__button:focus {
+  opacity: 0.9;
+}
+
+.hs-quotes--basic .scheduled-payments__table tr {
+  border: 1px solid black;
+}
+
+.hs-quotes--basic .scheduled-payments__table td,
+.hs-quotes--basic .scheduled-payments__table th {
+  padding: 15px;
+}
+
+@media screen and (max-width: 980px) {
+  .hs-quotes--basic {
+    max-width: unset;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .hs-quotes--basic .letterhead {
+    flex-direction: column;
+  }
+  .hs-quotes--basic .sender-company_wrapper img {
+    padding-top: 15px;
+  }
+  .hs-quotes--basic .logo_wrapper > div {
+    justify-content: center;
+  }
+  .hs-quotes.hs-quotes--basic .signature__field {
+    width: 100%;
+  }
+  .hs-quotes--basic .line-items {
+    display: block;
+    overflow-x: scroll;
+  }
+  .hs-quotes--basic .totals__container {
+    max-width: unset;
+  }
+  .hs-quotes--basic .payment__button--checkout {
+    width: 100%;
+  }
+  .hs-quotes.hs-quotes--basic .esignature__profile {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hs-quotes.hs-quotes--basic .esignature__verify-button {
+    width: 100%;
+    margin-top: 15px;
+  }
+}
+
+@media screen {
+  body > table > tfoot {
+    display: none;
+  }
+}
+
+@media print {
+  .hs-quotes--basic {
+    max-width: unset;
+  }
+
+  .hs-quotes--basic .line-items__total-name {
+    float: left;
+  }
+
+  .hs-quotes--basic .comments,
+  .hs-quotes--basic .terms {
+    break-inside: avoid;
+  }
+  
+  /** POSITIONS **/
+  footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: block;
+  }
+  body > table > tfoot {
+    display: block;
+    opacity: 0;
+    height: auto;
+  }
+  section { 
+    break-inside: avoid;
+  }
+}
+
+/*** CUSTOM ***/
+
+html {
+  font-family: 'Roboto';
+}
+body > table,
+footer {
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
+body > table > tfoot td,
+footer {
+  text-align: center;
+  font-size: 10px;
+}
+
+h1 {
+  color: #7A8D9D;
+  font-size: 26px;
+  margin-block-end: 1.25em;
+}
+pre {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.header-data {
+  width: 100%;
+}
+.header-data td {
+  /*width: 25%;*/
+  font-size: 14px;
+}
+.header {
+  display: grid;
+  grid-template-columns: 4fr 2fr;
+  gap: 1rem;
+}
+
+.quotes-proex .line-items__table {
+  border: none;
+}
+.quotes-proex .line-items__table th {
+  background-color: transparent;
+  border-bottom: 2px solid black;
+  padding: 4px 6px;
+  height: 16px;
+}
+
+.summary-top {
+  width: 100%;
+  margin-block-start: 1rem;
+  border-collapse: collapse;
+}
+.summary-top td {
+  padding: 4px;
+}
+.summary-top > tbody > tr:nth-child(1) > td {
+  font-size: 10px;
+  font-weight: bold;
+}
+.summary-top > tbody > tr:not(:first-child) > td:nth-child(odd):not(:first-child) {
+  border-inline-start: 1px solid black;
+}
+.summary-top > tbody > tr:last-child > td {
+  font-weight: bold;
+}
+
+.summary-totals {
+  width: 100%;
+  margin-block-start: 4px;
+  margin-block-end: 1rem;
+  border-block: 2px solid black;
+}
+.summary-totals td {
+  text-align: center;
+  padding-block: 4px;
+}
+
+.summary-totals > tbody > tr:nth-child(odd) > td {
+  font-weight: bold;
+}
+.summary-total-euros {
+  font-size: 24px;
+}

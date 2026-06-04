@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "บริษัทผู้ซื้อ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "ที่อยู่หลักของบริษัทผู้ซื้อ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "เมือง รัฐ และรหัสไปรษณีย์ของบริษัทผู้ซื้อ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "ประเทศของบริษัทผู้ซื้อ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "ชื่อบริษัทผู้ซื้อ",
+    "description" : "",
+    "placeholders" : null
+  }
+}

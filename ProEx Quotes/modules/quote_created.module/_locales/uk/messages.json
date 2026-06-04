@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote created",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Цінова пропозиція створена:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Текст створеної цінової пропозиції",
+    "description" : "",
+    "placeholders" : null
+  }
+}

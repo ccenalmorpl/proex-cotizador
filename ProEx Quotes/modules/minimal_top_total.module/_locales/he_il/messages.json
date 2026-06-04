@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "תאריך היעד הוא כעת",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "תווית זו מחליפה את 'טקסט סכום הצעת מחיר' כאשר נותרו תשלומים לחיוב לאחר הצ'ק-אאוט.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "טקסט סכום כולל לתשלום כעת",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "סך הכול",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "הטקסט של הסכום הכולל של הצעת המחיר",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "טקסט סכום הצעת מחיר",
+    "description" : "",
+    "placeholders" : null
+  }
+}

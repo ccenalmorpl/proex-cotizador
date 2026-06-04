@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Tulosta tarjous",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Painiketeksti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Tulosta",
+    "description" : "",
+    "placeholders" : null
+  }
+}

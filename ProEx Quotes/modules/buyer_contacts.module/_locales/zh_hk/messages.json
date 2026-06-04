@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "買家聯絡人",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "買家聯絡人電郵",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "買家聯絡人職稱",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "買家聯絡人姓名",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "買家聯絡人電話",
+    "description" : "",
+    "placeholders" : null
+  }
+}

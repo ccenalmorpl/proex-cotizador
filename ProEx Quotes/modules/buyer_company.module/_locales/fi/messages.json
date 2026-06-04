@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Ostajayritys",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Ostavan yrityksen pääosoite",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Ostavan yrityksen kaupunki, maa ja postinumero",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Ostavan yrityksen maa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Ostavan yrityksen nimi",
+    "description" : "",
+    "placeholders" : null
+  }
+}

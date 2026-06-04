@@ -1,0 +1,22 @@
+{
+  "include_hubspot_avatar.label" : {
+    "message" : "Вставити аватар відправника в HubSpot",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Sender user",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.default" : {
+    "message" : "{{ ptoken_sender_full_name }} — {{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }} {{ personalization_token('template_data.quote.hs_sender_company_name', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.label" : {
+    "message" : "Інформація щодо відправника",
+    "description" : "",
+    "placeholders" : null
+  }
+}

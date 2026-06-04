@@ -1,0 +1,41 @@
+{# associated company data: name, address, city, state, zip, country #}
+{% from '../../imports/mock_data.html' import SAMPLE_TEMPLATE_DATA as mock_data %}
+{% set module_data = template_data.module_data %}
+{% set QUOTE = template_data.quote || mock_data.quote %}
+{% set BUYER_COMPANY = QUOTE.associated_objects.company %}
+{% set BUYER_CONTACTS = QUOTE.associated_objects.contacts %}
+
+{% if module.show_company_name && BUYER_COMPANY.name %}
+  <span>
+    <b>{{ format_company_name(BUYER_COMPANY.name, BUYER_CONTACTS|length == 0 or module_data|attr('buyer_contacts')|attr('hidden') == true)|sanitize_html }}</b>
+  </span>
+  <br>
+{% endif %}
+
+{% set address_lines = format_address(
+    QUOTE.hs_locale or 'en-us',
+    {
+      address: module.show_company_address and BUYER_COMPANY.address ? BUYER_COMPANY.address : '',
+      address2: module.show_company_address and BUYER_COMPANY.address2 ? BUYER_COMPANY.address2 : '',
+      city: module.show_company_city_state_zip and BUYER_COMPANY.city ? BUYER_COMPANY.city : '',
+      state: module.show_company_city_state_zip and BUYER_COMPANY.state ? BUYER_COMPANY.state : '',
+      zip: module.show_company_city_state_zip and BUYER_COMPANY.zip ? BUYER_COMPANY.zip : '',
+      country: module.show_company_country and BUYER_COMPANY.country ? BUYER_COMPANY.country : '',
+    }
+  )
+%}
+
+<address style="font-style: normal">
+  {% for line in address_lines %}
+    {{ line|sanitize_html }}<br />
+  {% endfor %}
+</address>
+
+{% if module.show_company_name && BUYER_COMPANY.name ||
+  module.show_company_address && BUYER_COMPANY.address ||
+  module.show_company_city_state_zip && BUYER_COMPANY.city && BUYER_COMPANY.state && BUYER_COMPANY.zip ||
+  module.show_company_country && BUYER_COMPANY.country
+%}
+  <br>
+  <br>
+{% endif %}

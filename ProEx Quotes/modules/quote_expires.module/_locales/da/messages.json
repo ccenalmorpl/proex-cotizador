@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Tilbud udløber",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Tilbud udløber:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Tekst for tilbud udløber",
+    "description" : "",
+    "placeholders" : null
+  }
+}

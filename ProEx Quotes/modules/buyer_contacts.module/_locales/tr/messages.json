@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Buyer contacts",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "Alıcı iletişim kişisi e-posta adresi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Alıcı iletişim kişisi iş unvanı",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Alıcı iletişim kişisi adı",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Alıcı iletişim kişisi telefonu",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "রেফারেন্স",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "রেফারেন্স: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "রেফারেন্স নম্বর",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Amount",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Comments",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Comments from",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "This quote has expired.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Please contact your sales rep for further details.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Item & Description",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Other fees",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Prepared by:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Price",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Products & Services",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Purchase terms",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Quantity",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Quote created by:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Subtotals",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Total",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Unit price",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Credit Memo",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Credit Memo number",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Credit memo total",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "P.O. #",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Credit Memo date",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "All fees are listed in {{ currency_code }} and are subject to sales tax (as applicable).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Credit Memo line items table",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Qty",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Tax",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "tax",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Tax",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "after {{ discount_amount }} discount",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Invoice",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Invoice number",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Invoice date",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "All fees are listed in {{ currency_code }} and are subject to sales tax (as applicable).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "PO number",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Invoice line items table",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "after {{ discount_amount }} discount",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Qty",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Payment",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Balance due",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Tax",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "tax",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Tax",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Bill to",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Ship to",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Tax address",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Due date",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "discount",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% discount",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% off",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Subtotal",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Future Payments",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Payments that are due later.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Summary",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "This quote is unavailable.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Please contact your sales rep for further details.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "N/A",
+    "description": "",
+    "placeholders": null
+  }
+}

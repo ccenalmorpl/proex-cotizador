@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Spausdinti pasiūlymą",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Mygtuko tekstas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Spausdinti",
+    "description" : "",
+    "placeholders" : null
+  }
+}

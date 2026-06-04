@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Buyer contacts",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "Pirkėjo kontaktinio asmens el. paštas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Pirkėjo kontaktinio asmens pareigos",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Pirkėjo kontaktinio asmens vardas ir pavardė",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Pirkėjo kontaktinio asmens telefonas",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "amount": {
+    "message": "จำนวนเงิน",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "หมายเหตุ",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "ความคิดเห็นจาก",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "ใบเสนอราคานี้หมดอายุแล้ว",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "โปรดติดต่อเจ้าหน้าที่ฝ่ายขายที่ดูแลคุณเพื่อขอรายละเอียดเพิ่มเติม",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "รายการและคำอธิบาย",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "ค่าธรรมเนียมอื่นๆ",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "เตรียมโดย:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "ราคา",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "ผลิตภัณฑ์และบริการ",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "ข้อกำหนดในการซื้อ",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "ปริมาณ",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "สร้างใบเสนอราคาโดย:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "ยอดรวมย่อย",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "ยอดรวมทั้งหมด",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "ราคาต่อหน่วย",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "ใบแจ้งหนี้",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "หมายเลขใบแจ้งหนี้",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "วันที่ของใบแจ้งหนี้",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "ค่าธรรมเนียมทั้งหมดจะระบุเป็น {{ currency_code }} และรวมภาษีการขาย (หากมี)",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "หมายเลข PO",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "ตารางรายการบรรทัดของใบแจ้งหนี้",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "หลังหักส่วนลด {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "จำนวน",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "การชำระเงิน",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "ยอดเงินครบกำหนด",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "ภาษี",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "ภาษี",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "ภาษี",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "ส่งใบเรียกเก็บเงินถึง",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "จัดส่งไปที่",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Tax address",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "วันที่ครบกำหนด",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "ส่วนลด",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}ลด %",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "ส่วนลด {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "ยอดรวมย่อย",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "การชำระเงินในอนาคต",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "การชำระเงินที่จะครบกำหนดในภายหลัง",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "สรุป",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "ไม่สามารถแสดงใบเสนอราคา",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "โปรดติดต่อเจ้าหน้าที่ฝ่ายขายที่ดูแลคุณเพื่อขอรายละเอียดเพิ่มเติม",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "ไม่เกี่ยวข้อง",
+    "description": "",
+    "placeholders": null
+  }
+}

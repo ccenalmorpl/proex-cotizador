@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "公司徽标图片",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "当覆盖默认徽标时，这不适用",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "徽标最大高度",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "默认情况下，如果你进行了这些设置，则你的报价将显示来自帐户默认设置或网站页面的公司徽标。你可以选择使用下面的切换来覆盖这些设置。",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "徽标",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "覆盖此模板中的默认徽标",
+    "description" : "",
+    "placeholders" : null
+  }
+}

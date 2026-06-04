@@ -1,0 +1,627 @@
+{
+  "default_text.after_discount.default" : {
+    "message" : "<span class=\"discount-notice highlighted\">etter {{ discount_amount }} i rabatt</span>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.annual.default" : {
+    "message" : "Årlig",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.annually.default" : {
+    "message" : "Årlig",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.day.default" : {
+    "message" : "dag",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.days.default" : {
+    "message" : "dager",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_five_years.default" : {
+    "message" : "/ 5 år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_four_years.default" : {
+    "message" : "/ 4 år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_month.default" : {
+    "message" : "/ måned",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_quarter.default" : {
+    "message" : "/ kvartal",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_six_months.default" : {
+    "message" : "/ 6 måneder",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_three_years.default" : {
+    "message" : "/ 3 år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_two_weeks.default" : {
+    "message" : "/2 uker",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_two_years.default" : {
+    "message" : "/ 2 år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_week.default" : {
+    "message" : "/uke",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_year.default" : {
+    "message" : "/ år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.first_payment_date.default" : {
+    "message" : "Første betaling {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.for_months.default" : {
+    "message" : "for {{ line_item.hs_term_in_months }} {{ month_text }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.for_years.default" : {
+    "message" : "i {{ year }} {{ year_text }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.frequency_subtotal.default" : {
+    "message" : "{{ frequency_text }} totalt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_charges.default" : {
+    "message" : "Fremtidige betalinger",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_one_time_date_delay.default" : {
+    "message" : "{{ formatted_price }} den {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_one_time_relative_delay.default" : {
+    "message" : "{{ formatted_price }} forfaller {{ billing_delay_period }} {{ billing_delay_unit }} etter innledende betaling",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_date_delay.default" : {
+    "message" : "{{ formatted_price }} {{ recurring_frequency }} begynner {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_date_delay_fixed.default" : {
+    "message" : "{{ formatted_price }} {{ recurring_frequency }} begynner {{ formatted_first_payment_date }} for {{ number_of_payments }} {{ payment_pluralized }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_relative_delay.default" : {
+    "message" : "{{ formatted_price }} {{ recurring_frequency }} begynner {{ billing_delay_period }} {{ billing_delay_unit }} etter første betaling",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_relative_delay_fixed.default" : {
+    "message" : "{{ formatted_price }} {{ recurring_frequency }} begynner {{ billing_delay_period }} {{ billing_delay_unit }} etter første betaling for {{ number_of_payments }} {{ payment_pluralized }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax.default" : {
+    "message" : "+{{ taxAmount }} {{line_item.hs_tax_label }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax_with_label.default" : {
+    "message" : "+{{ taxAmount }} {{ taxLabel }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax_without_label.default" : {
+    "message" : "+{{ taxAmount }} skatt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.month.default" : {
+    "message" : "måned",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.monthly.default" : {
+    "message" : "Månedlig",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.months.default" : {
+    "message" : "måneder",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.one_time.default" : {
+    "message" : "Engangs",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment.default" : {
+    "message" : "betaling",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment_due_date.default" : {
+    "message" : "Betaling forfaller: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment_start_date.default" : {
+    "message" : "Betaling starter: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payments.default" : {
+    "message" : "betalinger",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_five_years.default" : {
+    "message" : "Per fem år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_four_years.default" : {
+    "message" : "Per fire år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_six_months.default" : {
+    "message" : "Per seks måneder",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_three_years.default" : {
+    "message" : "Per tre år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_two_weeks.default" : {
+    "message" : "Én gang på to uker",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_two_years.default" : {
+    "message" : "Per to år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent.default" : {
+    "message" : "{{ percentage_amount }} %",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_discount.default" : {
+    "message" : "{{ fee_amount }} % rabatt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_fee.default" : {
+    "message" : "{{ fee_amount }} % gebyr",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_tax.default" : {
+    "message" : "{{ fee_amount }} % skatt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.quarterly.default" : {
+    "message" : "Kvartalsvis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.relative_payment_due_date.default" : {
+    "message" : "Betaling forfaller: {{ billing_delay_period }} {{ billing_delay_unit }} etter første betaling",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.relative_payment_start_date.default" : {
+    "message" : "Betaling begynner: {{ billing_delay_period }} {{ billing_delay_unit }} etter første betaling",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.tax.default" : {
+    "message" : "Skatt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.week.default" : {
+    "message" : "uke",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.weekly.default" : {
+    "message" : "Ukentlig",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.weeks.default" : {
+    "message" : "uker",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.year.default" : {
+    "message" : "år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.years.default" : {
+    "message" : "år",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_heading.label" : {
+    "message" : "Vis tabelloverskrift",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_other_fees.label" : {
+    "message" : "Vis andre gebyrer",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_other_fees_temp.label" : {
+    "message" : "Vis engangsrabatter, gebyrer og skatter",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_payment_starts.inline_help_text" : {
+    "message" : "Vis «Betaling starter»-teksten under hvert linjeelement som har en faktureringsdato i fremtiden.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_payment_starts.label" : {
+    "message" : "Vis startdato for betaling",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_subtotals.label" : {
+    "message" : "Vis delsummer",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_totals_table.default" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.inline_help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.label" : {
+    "message" : "Booleano",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.placeholder" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "due_now_title.default" : {
+    "message" : "Forfaller nå",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_title.inline_help_text" : {
+    "message" : "Denne etiketten erstatter «Totalt tekst» når det er mer som skal betales etter betalingen.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_title.label" : {
+    "message" : "Forfaller nå-tekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.label" : {
+    "message" : "Kolonner",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.line_item_name_heading.default" : {
+    "message" : "Element",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.line_item_name_heading.label" : {
+    "message" : "Overskrift for linjeelementnavn",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.payment_summary_heading.default" : {
+    "message" : "Betaling",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.payment_summary_heading.label" : {
+    "message" : "Overskrift for betalingsoppsummering",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.display_future_payments_summary_table.label" : {
+    "message" : "Vis oppsummeringstabell for fremtidige betalinger",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.display_heading.label" : {
+    "message" : "Vis tabelloverskrift",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.default" : {
+    "message" : "Oppsummering av fremtidige betalinger",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.inline_help_text" : {
+    "message" : "Legg til en overskrift for oppsummeringstabellen for fremtidige betalinger",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.label" : {
+    "message" : "Tabelloverskrift",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.label" : {
+    "message" : "Oppsummeringstabell for fremtidige betalinger",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.default" : {
+    "message" : "Produkter og tjenester",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.inline_help_text" : {
+    "message" : "Legg til en overskrift i tabellen for linjeelementer",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.label" : {
+    "message" : "Tabelloverskrift",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.amount" : {
+    "message" : "Totalsum",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.description" : {
+    "message" : "Beskrivelse",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.discount" : {
+    "message" : "Enhetsrabatt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_cost_of_goods_sold" : {
+    "message" : "Enhetskostnad",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_images" : {
+    "message" : "Bilde",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_recurring_billing_start_date" : {
+    "message" : "Startdato",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_sku" : {
+    "message" : "Element-SKU",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_term_in_months" : {
+    "message" : "Periode",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_url" : {
+    "message" : "URL",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.item_description" : {
+    "message" : "Element og beskrivelse",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.name" : {
+    "message" : "Elementnavn",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.price" : {
+    "message" : "Enhetspris",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.quantity" : {
+    "message" : "Antall elementer",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.quantity_amount" : {
+    "message" : "Antall og totalt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.recurringbillingfrequency" : {
+    "message" : "Faktureringshyppighet",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.label" : {
+    "message" : "Velg kolonneegenskap",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.inline_help_text" : {
+    "message" : "Gi kolonnen en tittel",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.label" : {
+    "message" : "Kolonnetittel",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.placeholder" : {
+    "message" : "Kolonnebeskrivelse",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.label" : {
+    "message" : "Linjeelementkolonne",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.background_color.label" : {
+    "message" : "Bakgrunnsfarge",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_later_text.default" : {
+    "message" : "Elementer som forfaller senere",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_later_text.label" : {
+    "message" : "Tekst for forfaller senere",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_now_text.default" : {
+    "message" : "Elementer som forfaller nå",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_now_text.label" : {
+    "message" : "Forfaller nå-tekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.font_style.label" : {
+    "message" : "Skriftstil",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.label" : {
+    "message" : "Underoverskrifter for linjeelement",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "line_items_table",
+    "description" : null,
+    "placeholders" : null
+  },
+  "other_fees_title.default" : {
+    "message" : "Andre avgifter",
+    "description" : "",
+    "placeholders" : null
+  },
+  "pedido_de_compra.default" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.inline_help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.label" : {
+    "message" : "Texto",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.placeholder" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.validation_regex" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "subtotal_title.default" : {
+    "message" : "Deltotaler",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.default" : {
+    "message" : "Total kontraktverdi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.inline_help_text" : {
+    "message" : "Tilpass teksten for å nøyaktig beskrive denne verdien. (Standardverdien er en årlig verdi hvis ingen vilkår er satt.)",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.label" : {
+    "message" : "Total kontraktsverditekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_title.default" : {
+    "message" : "Totalsum",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_title.label" : {
+    "message" : "Totalt tekst",
+    "description" : "",
+    "placeholders" : null
+  }
+}

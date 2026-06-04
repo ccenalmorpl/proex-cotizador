@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "कंपनी के लोगो की इमेज",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "यह डिफ़ॉल्ट लोगो को ओवरराइड करते समय लागू नहीं होता है",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "लोगो की अधिकतम लंबाई",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "अगर आपने ये सेट अप कर लिया है, तो आपके कोटेशन में डिफॉल्ट अकाउंट या वेबसाइट पेजों पर कंपनी का लोगो डिफ़ॉल्ट रूप से दिखेगा। नीचे दिए गए टॉगल का उपयोग करके आप इन्हें ओवरराइड करने का विकल्प चुन सकते हैं।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "लोगो",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "इस टेम्पलेट में डिफ़ॉल्ट लोगो को ओवरराइड करें",
+    "description" : "",
+    "placeholders" : null
+  }
+}

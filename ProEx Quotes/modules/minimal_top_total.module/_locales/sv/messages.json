@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Förfaller nu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Den här etiketten ersätter \"Offert total text\" när det finns betalningar som ska betalas efter kassan.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Total text som ska vara inne nu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Offert totalt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Totalt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Texten för det totala offertbeloppet",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Text för Offertsumma",
+    "description" : "",
+    "placeholders" : null
+  }
+}

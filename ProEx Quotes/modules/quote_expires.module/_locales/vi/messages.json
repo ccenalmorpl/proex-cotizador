@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Báo giá hết hạn",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Báo giá hết hạn:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Văn bản báo giá hết hạn",
+    "description" : "",
+    "placeholders" : null
+  }
+}

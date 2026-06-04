@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "I-print ang quote",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Button text",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "I-print",
+    "description" : "",
+    "placeholders" : null
+  }
+}

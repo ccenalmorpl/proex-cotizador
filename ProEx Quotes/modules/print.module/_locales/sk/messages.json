@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Vytlačiť cenovú ponuku",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Text tlačidla",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Tlač",
+    "description" : "",
+    "placeholders" : null
+  }
+}

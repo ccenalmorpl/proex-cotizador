@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "公司標誌圖片",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "覆寫預設標誌時不適用此項",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "標誌高度上限",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "依預設，你的報價會顯示「帳戶預設」或「網站頁面」所設立的公司標誌。你可以選擇使用下方切換功能覆寫這些選項。",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "標誌",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "覆寫此範本中的預設標誌",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "금액",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "메모",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "메모 발신자",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "이 견적은 만료되었습니다.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "자세한 내용을 확인하려면 영업 담당자에게 문의하십시오.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "항목 및 설명",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "기타 요금",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "작성자:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "가격",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "제품 및 서비스",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "구매 약관",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "수량",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "견적서 작성자:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "소계",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "합계",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "단가",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "크레딧 메모",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "크레딧 메모 번호",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "크레딧 메모 합계",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "P.O. #",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "크레딧 메모 날짜",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "모든 수수료는 {{ currency_code }} 단위로 나열되어 있으며 판매세가 적용됩니다(해당하는 경우).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "크레딧 메모 라인 항목 표",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "수량",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "세금",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "세금",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "세금",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "{{ discount_amount }} 할인 후",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "인보이스",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "인보이스 번호",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "인보이스 날짜",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "모든 수수료는 {{ currency_code }} 단위로 나열되어 있으며 판매세가 적용됩니다(해당하는 경우).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "PO 번호",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "인보이스 라인 항목 표",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "{{ discount_amount }} 할인 후",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "수량",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "결제",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "미납액",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "세금",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "세금",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "세금",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "청구 대상",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "배송 대상",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "납세 주소",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "만기일",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "할인",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% 할인",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% 할인",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "소계",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "향후 결제",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "나중에 해야 할 결제.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_lastname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_firstname', '')}}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "요약",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "이 견적서를 사용할 수 없습니다.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "자세한 내용을 확인하려면 영업 담당자에게 문의하십시오.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "해당 없음",
+    "description": "",
+    "placeholders": null
+  }
+}

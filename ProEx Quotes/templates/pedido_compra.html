@@ -1,0 +1,267 @@
+<!--
+  templateType: quote
+  isAvailableForNewContent: true
+  label: Pedido de Compra
+  screenshotPath: ../images/basic.png
+-->
+
+{% extends './layouts/base-quote.html' %}
+
+{%- set PEDIDOCOMPRA = [] %}
+{% set PEDIDOSCOMPRA = template_data.quote.associated_objects.deal.associated_objects.custom_objects._2_44410785 %}
+{%- for pedido in PEDIDOSCOMPRA %}
+  {%- if pedido.hs_object_id|string == module.pedido_de_compra %}
+    {%- do PEDIDOCOMPRA.append(pedido) %}
+  {%- endif %}
+{%- endfor %}
+{%- if PEDIDOCOMPRA|length > 0 %}
+{%- set PEDIDOCOMPRA = PEDIDOCOMPRA[0] %}
+{%- else %}
+{%- set PEDIDOCOMPRA = {} %}
+{%- endif %}
+
+{% block stylesheet %}
+  {{ require_css(get_asset_url("../css/proex-quote.css")) }}
+{% endblock stylesheet %}
+
+{%- block header %}
+<header class="header">
+  <div class="header-left-column">
+    <h1>
+      {{ template_translations.request_order.title.message }}
+    </h1>
+    <table class="header-data">
+      <tr>
+        <td style="padding-block-end: 1rem;">
+          <b>{{ template_translations.header.po_number.message }}:</b>
+        </td>
+        <td style="padding-block-end: 1rem;">          
+          <b>{{ }}</b> {# Which field #} 
+        </td>
+        <td style="padding-block-end: 1rem;">
+          <b>{{ template_translations.header.po_date.message }}:</b>
+        </td>
+        <td style="padding-block-end: 1rem;">          
+          <b>{{ today()|format_date('dd/MMMM/yyyy') }}</b>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="4" style="padding: 1em; border: 1px solid black;font-weight: bold; text-align: center;"> {# Number #}
+          {{ template_translations.header.po_warning.message }}<br>
+          <span style="font-size: 20px;">PO - {{ PEDIDOCOMPRA.numatcard }}</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div class="header-right-column">
+    {% module "logo" path="../modules/quote_logo",
+      company_logo_image={"src": get_asset_url('/ProEx Quotes/images/proex-logo-cotizacion.png')},
+      override_default_logo=True
+    %}
+    {% module "buyer_company" path="../modules/buyer_company" %}
+  </div>
+  
+  
+</header>
+{%- endblock header %}
+
+{% block body %}
+
+{% require_css %}
+  <style>
+    {% if module_data|attr('buyer_company')|attr('hidden') &&
+      module_data|attr('buyer_contacts')|attr('hidden') &&
+      module_data|attr('reference')|attr('hidden') &&
+      module_data|attr('quote_created')|attr('hidden') &&
+      module_data|attr('quote_expires')|attr('hidden') &&
+      module_data|attr('sender_company')|attr('hidden') &&
+      module_data|attr('sender_contact')|attr('hidden')
+    %}
+      .hs-quotes--basic .letterhead { display: none; }
+    {% endif %}
+
+    {% if !QUOTE.hs_payment_enabled %}
+      .hs-quotes--basic .line-items__payment { display: none; }
+    {% endif %}
+
+    {% if module_data|attr('payment-schedule')|attr('hidden') || !ASSOCIATED_OBJECTS.payment_schedule %}
+      .hs-quotes .payment-schedule { display: none; }
+    {% endif %}
+  </style>
+{% end_require_css %}
+
+<div class="hs-quotes hs-quotes--basic quotes-proex">
+  <section aria-label="line-items">
+    {% module "line_items_table"
+      path="../modules/line_items_table"
+      display_heading="false"
+      line_item_column=[
+        {
+          "column_title": template_translations.line_items.code.message,
+          "column_property": "sku"
+        },
+        {
+          "column_title": template_translations.line_items.item.message,
+          "column_property": "name"
+        },
+        {
+          "column_title": template_translations.line_items.colis.message,
+          "column_property": "colis"
+        },
+        {
+          "column_title": template_translations.line_items.weight.message,
+          "column_property": "weight"
+        },
+        {
+          "column_title": template_translations.line_items.qty.message,
+          "column_property": "quantity"
+        },
+        {
+          "column_title": template_translations.line_items.unit.message,
+          "column_property": "unit"
+        },
+        {
+          "column_title": template_translations.line_items.unit_price.message,
+          "column_property": "unit_price"
+        },
+        {
+          "column_title": template_translations.line_items.total.message,
+          "column_property": "amount"
+        }
+      ]
+      subtotal_title={{ template_translations.subtotal_table_title.message }}
+      display_subtotal_title={{ false }}
+      other_fees_title={{ template_translations.other_fees.message }}
+    %}
+    
+    {%- if ptoken_comments %}
+    <section class="comments">
+      {% module "comments"
+        label="Comments"
+        path="@hubspot/rich_text"
+        html={{
+          "<h4>" ~ template_translations.comments.message ~ "</h4>" ~
+          ptoken_comments
+        }}
+      %}
+    </section>
+    {%- endif %}
+    {%- if ptoken_terms %}
+    <section class="terms">
+      {% module "terms"
+        label="Terms"
+        path="@hubspot/rich_text"
+        html={{
+          "<h4>" ~ template_translations.purchase_terms.message ~ "</h4>" ~
+          ptoken_terms
+        }}
+      %}
+    </section>
+    
+    <section class="summary">
+      <table class="summary-top">
+        <tbody>
+          <tr>
+            <td colspan="4" style="font-size: 14px;">
+              <b>{{ template_translations.summary.buyer.message }}: </b> 
+            </td>
+          </tr>
+          <tr>
+            <td colspan="4">
+               {{ template_translations.summary.signature.message }}
+            </td>
+          </tr>
+          <tr>
+            <td style="width: 50%">
+               <b>{{ template_translations.summary.invoice.message }}</b>
+            </td>
+            <td></td>
+            <td style="width: 50%;padding-left: 40px;">
+               <b>{{ template_translations.summary.send_invoice.message }}</b>
+            </td>
+            <td></td>            
+          </tr>
+          <tr>
+            <td style="font-size: 10px;">
+<pre>PROEX DRINKS GROUP, S.A.AVDA. AMERICO
+VESPUCIO 5
+EDIF. CARTUJA, BLOQUE A-2 PLANTA
+MODULOS 7 Y 8
+41092 ISLA DE LA CARTUJA (SEVILLA)
+C.I.F.: A-41992975
+</pre>
+            </td>
+            <td></td>
+            <td style="font-size: 10px;padding-left: 40px;">
+<pre>PROEX DRINKS GROUP, S.A. (PROEX BUILDING)
+POLIGONO INDUSTRIAL 03-PEI
+PEYSI GUADARRANQUE
+11360 SAN ROQUE (CADIZ)
+ESPAÑA
+ATTN ACCOUNTING/ADMINISTRATION DEPARTMENT
+TEL: +34 856223943 / accounting@proex.es
+</pre>            
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td colspan="4" style="padding: 4px; border: 1px solid black;">
+              {{ template_translations.summary.important.message }}<br>
+              {{ template_translations.summary.important_message.message }}<br>              
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="summary-totals">
+        <tr>
+          <td> {# TOTAL COLIS #}
+              {{ template_translations.summary.total_net.message }}<br>
+              {{  }}
+          </td>
+          <td> {# NET WEIGHT KG #}
+              {{ template_translations.summary.vat.message }}<br>
+              {{  }}
+          </td>
+          <td> {# GROSS WEIGHT KG #}
+              {{ template_translations.summary.total_vat.message }}<br>
+              {{  }}
+          </td>
+          <td class="summary-total-euros"> {# TOTAL EUROS #}
+              {{ template_translations.summary.total_euros.message }}<br>
+              {{ DEAL.amount }}
+          </td>
+        </tr>
+      </table>
+    </section>
+
+    {#<div class="payment-schedule">
+      {% module "payment-schedule" path="@hubspot/quote_payment_schedule" %}
+    </div>
+
+    <div class="line-items__payment">
+      {% module "payment" path="@hubspot/quote_payment" %}
+    </div>#}
+
+  </section>
+  
+  {%- endif %}
+  {#<section class="signature">
+    {% module "signature" path="@hubspot/quote_signature" %}
+  </section>#}
+
+  <section>
+    {% module "download" path="@hubspot/quote_download" %}
+  </section>
+</div>
+{% endblock body %}
+
+{%- block footer %}
+<p style="text-align:center;">
+  <b>PROEX DRINKS GROUP S.A.</b>, Avda. Américo Vespucio 5. Edif. Cartuja, bloque A, 2a planta, Modulos 7 y 8. 41092 Sevilla (Sevilla) España. <b>C.I.F. A41992975</b> .I.R.M.
+de Sevilla. Tomo 2808 Sección 8a Hoja SE-33385 Folio 125. <b>Commercial Office.</b>- Proex Building. Avda. Virgen del Carmen S/N. 11201 Algeciras (Cádiz) España.
+  <b>Tel.</b>- <a href="tel:+34856223943">+34 856 223 943</a> / <a href="tel:+34956635795">+34 956 635 795</a> - <b>Fax.</b>- +34 956 668 137 - <b>Email.</b>- <a href="mailto:customerservice@proexdg.com" target="_blank">customerservice@proexdg.com</a> - <b><a href="https://www.proexdg.com" target="_blank">www.proexdg.com</a></b>
+</p>
+<p style="text-align:center;">
+<b>SGS ISO</b> 9001:2015 CERTIFICATE ES16/20592 
+</p>
+{%- endblock footer %}

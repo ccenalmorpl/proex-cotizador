@@ -1,0 +1,11 @@
+[ {
+  "id" : "quote_expires_text",
+  "name" : "quote_expires_text",
+  "label" : "Quote expires text",
+  "required" : false,
+  "locked" : false,
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text",
+  "default" : "Quote expires:"
+} ]

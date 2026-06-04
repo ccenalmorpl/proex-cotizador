@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Summa",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Kommentit",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Kommentit kohteesta",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Tämä tarjous on erääntynyt.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Ota yhteyttä myyntiedustajaan saadaksesi lisätietoja.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Kohde ja kuvaus",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Muut maksut",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Valmistelija:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Hinta",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Tuotteet ja palvelut",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Kaupan ehdot",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Määrä",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Tarjouksen luoja:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Välisummat",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Yhteensä",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Yksikköhinta",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Hyvityslasku",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Hyvityslaskun numero",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Hyvityslaskun kokonaissumma",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Ostotilausnro",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Hyvityslaskun päivämäärä",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Kaikki maksut on lueteltu kohdassa {{ currency_code }} ja niihin sovelletaan myyntiveroa (mikäli sovellettavissa).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Hyvityslaskun rivikohtien taulukko",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Määrä",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Vero",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "vero",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Vero",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "{{ discount_amount }} alennuksen jälkeen",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Lasku",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Laskun numero",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Laskun päivämäärä",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Kaikki maksut on lueteltu kohdassa {{ currency_code }} ja niihin sovelletaan myyntiveroa (mikäli sovellettavissa).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Ostotilausnumero",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Laskun rivikohtien taulukko",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "{{ discount_amount }} alennuksen jälkeen",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Määrä",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Maksu",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Saldo erääntyy",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Vero",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "vero",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Vero",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Laskutusosoite",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Toimitusosoite",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Verotusosoite",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Eräpäivä",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "alennus",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }} % alennus",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }} %:n alennus",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Välisumma",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Tulevat maksut",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Myöhemmin erääntyvät maksut.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Yhteenveto",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Tämä tarjous ei ole käytettävissä.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Ota yhteyttä myyntiedustajaan saadaksesi lisätietoja.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "-",
+    "description": "",
+    "placeholders": null
+  }
+}

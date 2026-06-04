@@ -1,0 +1,627 @@
+{
+  "default_text.after_discount.default" : {
+    "message" : "<span class=\"discount-notice highlighted\">después de {{ discount_amount }} de descuento</span>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.annual.default" : {
+    "message" : "Anual",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.annually.default" : {
+    "message" : "Anual",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.day.default" : {
+    "message" : "día",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.days.default" : {
+    "message" : "días",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_five_years.default" : {
+    "message" : "/ 5 años",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_four_years.default" : {
+    "message" : "/ 4 años",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_month.default" : {
+    "message" : "/mes",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_quarter.default" : {
+    "message" : "/trimestre",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_six_months.default" : {
+    "message" : "/semestre",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_three_years.default" : {
+    "message" : "/trienio",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_two_weeks.default" : {
+    "message" : "/2 semanas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_two_years.default" : {
+    "message" : "/bienio",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_week.default" : {
+    "message" : "/semana",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.every_year.default" : {
+    "message" : "/año",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.first_payment_date.default" : {
+    "message" : "Primer pago: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.for_months.default" : {
+    "message" : "durante {{ line_item.hs_term_in_months }} {{ month_text }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.for_years.default" : {
+    "message" : "para {{ year }} {{ year_text }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.frequency_subtotal.default" : {
+    "message" : "Subtotal {{ frequency_text }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_charges.default" : {
+    "message" : "Pagos futuros",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_one_time_date_delay.default" : {
+    "message" : "{{ formatted_price }} el {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_one_time_relative_delay.default" : {
+    "message" : "{{ formatted_price }} con vencimiento {{ billing_delay_period }} {{ billing_delay_unit }} después del pago inicial",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_date_delay.default" : {
+    "message" : "{{ formatted_price }}/{{ recurring_frequency }} a partir del {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_date_delay_fixed.default" : {
+    "message" : "{{ formatted_price }}/{{ recurring_frequency }} a partir del {{ formatted_first_payment_date }} durante {{ number_of_payments }} {{ payment_pluralized }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_relative_delay.default" : {
+    "message" : "{{ formatted_price }} {{ recurring_frequency }} a partir de {{ billing_delay_period }} {{ billing_delay_unit }} después del pago inicial",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.future_recurring_relative_delay_fixed.default" : {
+    "message" : "{{ formatted_price }} {{ recurring_frequency }} a partir de {{ billing_delay_period }} {{ billing_delay_unit }} después del pago inicial por {{ number_of_payments }} {{ payment_pluralized }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax.default" : {
+    "message" : "+{{ taxAmount }} {{line_item.hs_tax_label }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax_with_label.default" : {
+    "message" : "+{{ taxAmount }} {{ taxLabel }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.line_item_tax_without_label.default" : {
+    "message" : "+{{ taxAmount }} de impuesto",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.month.default" : {
+    "message" : "mes",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.monthly.default" : {
+    "message" : "Mensual",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.months.default" : {
+    "message" : "meses",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.one_time.default" : {
+    "message" : "Por única vez",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment.default" : {
+    "message" : "pago",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment_due_date.default" : {
+    "message" : "Vencimiento del pago: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payment_start_date.default" : {
+    "message" : "Comienzo del pago: {{ formatted_first_payment_date }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.payments.default" : {
+    "message" : "pagos",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_five_years.default" : {
+    "message" : "Por cinco años",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_four_years.default" : {
+    "message" : "por cuatro años",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_six_months.default" : {
+    "message" : "semestral",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_three_years.default" : {
+    "message" : "trianual",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_two_weeks.default" : {
+    "message" : "Por dos semanas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.per_two_years.default" : {
+    "message" : "bianual",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent.default" : {
+    "message" : "{{ percentage_amount }}%",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_discount.default" : {
+    "message" : "{{ fee_amount }} % de descuento",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_fee.default" : {
+    "message" : "Tasa del {{ fee_amount }} %",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.percent_tax.default" : {
+    "message" : "Impuesto del {{ fee_amount }}%",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.quarterly.default" : {
+    "message" : "Trimestral",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.relative_payment_due_date.default" : {
+    "message" : "Vencimiento del pago: {{ billing_delay_period }} {{ billing_delay_unit }} después del pago inicial",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.relative_payment_start_date.default" : {
+    "message" : "El pago comienza: {{ billing_delay_period }} {{ billing_delay_unit }} después del pago inicial",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.tax.default" : {
+    "message" : "Impuesto",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.week.default" : {
+    "message" : "semana",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.weekly.default" : {
+    "message" : "Semanal",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.weeks.default" : {
+    "message" : "semanas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.year.default" : {
+    "message" : "año",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_text.years.default" : {
+    "message" : "años",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_heading.label" : {
+    "message" : "Mostrar encabezado de la tabla",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_other_fees.label" : {
+    "message" : "Mostrar otras tarifas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_other_fees_temp.label" : {
+    "message" : "Mostrar descuentos, cargos e impuestos únicos",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_payment_starts.inline_help_text" : {
+    "message" : "Muestra el texto \"Comienzo del pago\" debajo de cada elemento que tenga una fecha de facturación futura.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_payment_starts.label" : {
+    "message" : "Mostrar fecha de inicio de pago",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_subtotals.label" : {
+    "message" : "Mostrar subtotales",
+    "description" : "",
+    "placeholders" : null
+  },
+  "display_totals_table.default" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.inline_help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.label" : {
+    "message" : "Booleano",
+    "description" : null,
+    "placeholders" : null
+  },
+  "display_totals_table.placeholder" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "due_now_title.default" : {
+    "message" : "Vence ahora",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_title.inline_help_text" : {
+    "message" : "Esta etiqueta sustituye a \"Texto del total\" cuando hay pagos pendientes después del pago.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_title.label" : {
+    "message" : "Texto de vencimiento inmediato",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.label" : {
+    "message" : "Columnas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.line_item_name_heading.default" : {
+    "message" : "Artículo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.line_item_name_heading.label" : {
+    "message" : "Subtítulo de nombre de elementos de pedido",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.payment_summary_heading.default" : {
+    "message" : "Pago",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.columns.payment_summary_heading.label" : {
+    "message" : "Encabezado de resumen de pagos",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.display_future_payments_summary_table.label" : {
+    "message" : "Mostrar tabla de resumen de los pagos futuros",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.display_heading.label" : {
+    "message" : "Mostrar encabezado de la tabla",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.default" : {
+    "message" : "Resumen de pagos futuros",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.inline_help_text" : {
+    "message" : "Agregar un encabezado a la tabla de resumen de los pagos futuros",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.heading.label" : {
+    "message" : "Encabezado de la tabla",
+    "description" : "",
+    "placeholders" : null
+  },
+  "future_payments_summary_table.label" : {
+    "message" : "Tabla de resumen de los pagos futuros",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.default" : {
+    "message" : "Productos y servicios",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.inline_help_text" : {
+    "message" : "Agrega un encabezado a la tabla de artículos de línea",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading.label" : {
+    "message" : "Encabezado de la tabla",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.amount" : {
+    "message" : "Total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.description" : {
+    "message" : "Descripción",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.discount" : {
+    "message" : "Descuento unitario",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_cost_of_goods_sold" : {
+    "message" : "Coste por unidad",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_images" : {
+    "message" : "Imagen",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_recurring_billing_start_date" : {
+    "message" : "Fecha de inicio",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_sku" : {
+    "message" : "Ref. del artículo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_term_in_months" : {
+    "message" : "Término",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.hs_url" : {
+    "message" : "URL",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.item_description" : {
+    "message" : "Artículo y descripción",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.name" : {
+    "message" : "Nombre del artículo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.price" : {
+    "message" : "Precio unitario",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.quantity" : {
+    "message" : "Cantidad de artículos",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.quantity_amount" : {
+    "message" : "Cantidad y total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.choices.recurringbillingfrequency" : {
+    "message" : "Frecuencia de facturación",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_property.label" : {
+    "message" : "Seleccionar propiedad de la columna",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.inline_help_text" : {
+    "message" : "Agrega un título a la columna",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.label" : {
+    "message" : "Título de la columna",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.column_title.placeholder" : {
+    "message" : "Descripción de la columna",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_column.label" : {
+    "message" : "Columna de elemento de pedido",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.background_color.label" : {
+    "message" : "Color de fondo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_later_text.default" : {
+    "message" : "Artículos que vencen más adelante",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_later_text.label" : {
+    "message" : "Texto de vencimiento más adelante",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_now_text.default" : {
+    "message" : "Artículos que vencen ya",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.due_now_text.label" : {
+    "message" : "Texto de vencimiento inmediato",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.font_style.label" : {
+    "message" : "Estilo de fuente",
+    "description" : "",
+    "placeholders" : null
+  },
+  "line_item_subheadings.label" : {
+    "message" : "Subtítulos de elementos de pedido",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "line_items_table",
+    "description" : null,
+    "placeholders" : null
+  },
+  "other_fees_title.default" : {
+    "message" : "Otros cargos",
+    "description" : "",
+    "placeholders" : null
+  },
+  "pedido_de_compra.default" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.inline_help_text" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.label" : {
+    "message" : "Texto",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.placeholder" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "pedido_de_compra.validation_regex" : {
+    "message" : "",
+    "description" : null,
+    "placeholders" : null
+  },
+  "subtotal_title.default" : {
+    "message" : "Subtotales",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.default" : {
+    "message" : "Valor total del contrato",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.inline_help_text" : {
+    "message" : "Personaliza el texto para describir con precisión este valor. (El valor predeterminado es un valor anual si no se establecen términos).",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_contract_value_title.label" : {
+    "message" : "Texto del valor total del contrato",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_title.default" : {
+    "message" : "Total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_title.label" : {
+    "message" : "Texto del total",
+    "description" : "",
+    "placeholders" : null
+  }
+}

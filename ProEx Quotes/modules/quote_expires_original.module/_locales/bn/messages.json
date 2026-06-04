@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote expires",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "এই উদ্ধৃতির মেয়াদ শেষ হবে",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "কোটের মেয়াদ শেষ হবে টেক্সট",
+    "description" : "",
+    "placeholders" : null
+  }
+}

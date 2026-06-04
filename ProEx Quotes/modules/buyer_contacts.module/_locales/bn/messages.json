@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Buyer contacts",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "ক্রেতার যোগাযোগের ইমেইল",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "ক্রেতা যোগাযোগ কাজের শিরোনাম",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "ক্রেতার যোগাযোগের নাম",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "ক্রেতার যোগাযোগের ফোন",
+    "description" : "",
+    "placeholders" : null
+  }
+}

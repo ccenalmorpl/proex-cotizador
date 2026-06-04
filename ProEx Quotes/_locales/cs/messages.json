@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "Název motivu v systému CMS",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "Barvy celku",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "Primární barva",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "Sekundární barva",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "Fonty celku",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "Primární font",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "Sekundární font",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "Nastavení tlačítka",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "Barva pozadí tlačítka",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "Barva písma tlačítka",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "Nastavení banneru",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "Barva písma banneru",
+    "description": "",
+    "placeholders": null
+  }
+}

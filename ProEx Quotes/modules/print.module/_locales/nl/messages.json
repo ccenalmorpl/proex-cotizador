@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Prijsopgave afdrukken",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Knoptekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Afdrukken",
+    "description" : "",
+    "placeholders" : null
+  }
+}

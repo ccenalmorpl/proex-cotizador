@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Сумма",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Комментарии",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Комментарии от",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Истек срок действия этого ценового предложения.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Обратитесь к своему торговому представителю для получения дополнительной информации.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Товар и описание",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Другие сборы",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Кем подготовлено:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Цена",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Продукты и услуги",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Условия покупки",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Количество",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Кем создано ценовое предложение:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Промежуточные суммы",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Итоговая сумма",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Цена единицы товара",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Кредит-нота",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Номер кредит-ноты",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Общая сумма кредит-ноты",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "№ счета к оплате",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Дата кредит-ноты",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Все сборы указаны в {{ currency_code }} и облагаются налогом с продаж (если применимо).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Таблица позиций кредит-ноты",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Кол-во",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Налог",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "налог",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Налог",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "после применения скидки {{ discount_amount }} ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Счет-фактура",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Номер счета-фактуры",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Дата выставления счета",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Все сборы указаны в {{ currency_code }} и облагаются налогом с продаж (если применимо).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Номер заказа на поставку",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Таблица позиций счета-фактуры",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "после применения скидки {{ discount_amount }} ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Кол-во",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Оплата",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Остаток к погашению",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Налог",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "налог",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Налог",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Адресат выставления счета:",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Доставить",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Налоговый адрес",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Срок оплаты",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "скидка",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "скидка {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "Скидка {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Промежуточная сумма",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Будущие платежи",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Платежи, подлежащие оплате позже.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Обзор",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Это ценовое предложение недоступно.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Обратитесь к своему торговому представителю для получения дополнительной информации.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Нет данных",
+    "description": "",
+    "placeholders": null
+  }
+}

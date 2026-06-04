@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "Thème des devis CMS",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "Couleurs globales",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "Couleur primaire",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "Couleur secondaire",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "Polices globales",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "Police principale",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "Police secondaire",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "Paramètres de bouton",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "Couleur d'arrière-plan du bouton",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "Couleur de la police du bouton",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "Paramètres de bannière",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "Couleur de police de la bannière",
+    "description": "",
+    "placeholders": null
+  }
+}

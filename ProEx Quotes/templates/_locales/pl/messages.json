@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Kwota",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Komentarze",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Komentarze od",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Ta wycena wygasła.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Skontaktuj się ze sprzedawcą, żeby uzyskać więcej szczegółów.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Pozycja i opis",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Inne opłaty",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Przygotowane przez:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Cena",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Produkty i usługi",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Warunki zakupu",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Ilość",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Wycena utworzona przez:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Podsumowanie",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Suma",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Cena jednostkowa",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Nota uznaniowa",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Numer noty uznaniowej",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Suma noty uznaniowej",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Zamówienie zakupu nr",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Data noty uznaniowej",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Wszystkie opłaty podano w {{ currency_code }} i podlegają one podatkowi od sprzedaży (w stosownych przypadkach).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Tabela pozycji noty uznaniowej",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Ilość",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Podatek",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "podatek",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Podatek",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "z uwzględnieniem zniżki w wysokości {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Faktura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Numer faktury",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Data faktury",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Wszystkie opłaty podano w {{ currency_code }} i podlegają one podatkowi od sprzedaży (w stosownych przypadkach).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Numer ZZ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Tabela faktury pozycji",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "z uwzględnieniem zniżki w wysokości {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Ilość",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Płatność",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Do zapłaty",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Podatek",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "podatek",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Podatek",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Nabywca:",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Wyślij do",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Adres podatkowy",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Termin",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "rabat",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% rabatu",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% rabatu",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Podsuma",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Przyszłe płatności",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Płatności z późniejszym terminem.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Podsumowanie",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Ta wycena jest niedostępna.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Skontaktuj się ze sprzedawcą, żeby uzyskać więcej szczegółów.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Nd.",
+    "description": "",
+    "placeholders": null
+  }
+}

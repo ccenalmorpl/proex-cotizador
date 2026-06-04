@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Imagem do logótipo da empresa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Isto não se aplica quando se anula o logótipo predefinido",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Altura máxima do logótipo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Por predefinição, as suas citações mostrarão o logótipo da companhia das Predefinições de Conta ou Páginas de Website se as tiver configurado. Pode optar por ignorá-las utilizando o alternador em baixo.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logótipo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Ignorar o logótipo predefinido neste modelo",
+    "description" : "",
+    "placeholders" : null
+  }
+}

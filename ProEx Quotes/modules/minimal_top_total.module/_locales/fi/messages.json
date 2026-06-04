@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Erääntyy nyt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Tämä merkintä korvaa \"Tarjouksen teksti yhteensä\", kun kassan jälkeen on erääntyneitä maksuja.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Nyt erääntyvät yhteensä -teksti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Tarjouksen kokonaismäärä",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Yhteensä",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Tarjouksen kokonaissumman teksti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Tarjouksen summan teksti",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "会社ロゴの画像",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "これは、既定のロゴを変更する際には適用されません",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "ロゴの最大の高さ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "既定では、見積もりにはアカウントの既定値またはウェブサイトページの会社ロゴが表示されます（設定した場合）。下の切り替えスイッチを使用して、変更することもできます。",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "ロゴ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "このテンプレートの既定のロゴよりも優先使用",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Ajánlat létrehozva",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Árajánlat készült:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "„Árajánlat készült” szövege",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "การอ้างอิง",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "การอ้างอิง: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "หมายเลขอ้างอิง",
+    "description" : "",
+    "placeholders" : null
+  }
+}

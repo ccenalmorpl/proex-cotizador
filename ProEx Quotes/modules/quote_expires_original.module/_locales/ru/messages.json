@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote expires",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Срок действия данного ценового предложения истекает",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Текст срока действия ценового предложения",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Ettevõtte logo pilt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "See ei kehti, kui kirjutate üle vaikelogo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Logo max kõrgus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Vaikimisi kuvatakse teie pakkumusel ettevõtte logo konto vaikesätetest või veebilehe lehtedelt, kui olete need seadistanud. Võite need lasta üle kirjutada järgneva tumbleriga.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Kirjutage vaikelogo mallis üle",
+    "description" : "",
+    "placeholders" : null
+  }
+}

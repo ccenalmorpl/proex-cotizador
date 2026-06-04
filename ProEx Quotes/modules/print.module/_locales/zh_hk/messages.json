@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "列印報價",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "按鈕文字",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "列印",
+    "description" : "",
+    "placeholders" : null
+  }
+}

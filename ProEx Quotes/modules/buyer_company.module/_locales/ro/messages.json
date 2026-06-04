@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Compania cumpărătorului",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Adresa principală a companiei cumpărătorului",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Orașul, statul și codul poștal al companiei cumpărătorului",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Țara companiei cumpărătorului",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Numele companiei cumpărătorului",
+    "description" : "",
+    "placeholders" : null
+  }
+}

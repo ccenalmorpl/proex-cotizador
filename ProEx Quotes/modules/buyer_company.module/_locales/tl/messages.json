@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Bumibiling kompanya",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Pangunahing address ng bumibiling kompanya",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Lungsod, estado, at zip ng bumibiling kompanya",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Bansa ng bumibiling kompanya",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Pangalan ng bumibiling kompanya",
+    "description" : "",
+    "placeholders" : null
+  }
+}

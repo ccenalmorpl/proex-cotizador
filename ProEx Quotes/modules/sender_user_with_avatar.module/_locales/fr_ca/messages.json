@@ -1,0 +1,22 @@
+{
+  "include_hubspot_avatar.label" : {
+    "message" : "Inclure l'avatar HubSpot de l'expéditeur",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Utilisateur expéditeur",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.default" : {
+    "message" : "{{ ptoken_sender_full_name }} - {{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }} {{ personalization_token('template_data.quote.hs_sender_company_name', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.label" : {
+    "message" : "Renseignements sur l'expéditeur",
+    "description" : "",
+    "placeholders" : null
+  }
+}

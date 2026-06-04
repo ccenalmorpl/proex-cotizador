@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Penawaran dibuat",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Penawaran dibuat:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Teks penawaran dibuat",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Referensi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "Referensi: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "Nomor referensi",
+    "description" : "",
+    "placeholders" : null
+  }
+}

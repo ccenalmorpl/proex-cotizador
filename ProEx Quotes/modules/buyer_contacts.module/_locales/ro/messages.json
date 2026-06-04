@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Contactele cumpărătorului",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "E-mail de contact cumpărător",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Titlu funcție contact cumpărător",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Nume contact cumpărător",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Număr de telefon de contact cumpărător",
+    "description" : "",
+    "placeholders" : null
+  }
+}

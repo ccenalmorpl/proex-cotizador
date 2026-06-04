@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Ofertă creată",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Ofertă creată:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Text Ofertă creată",
+    "description" : "",
+    "placeholders" : null
+  }
+}

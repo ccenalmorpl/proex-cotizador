@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "구매자 회사",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "구매자 회사 본 주소",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "구매자 회사 시, 도 및 우편번호",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "구매자 회사 국가",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "구매자 회사 이름",
+    "description" : "",
+    "placeholders" : null
+  }
+}

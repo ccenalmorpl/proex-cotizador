@@ -1,0 +1,222 @@
+{
+  "amount": {
+    "message": "Halaga",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Mga komento",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Mga komento mula sa",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Nag-expire na ang quote",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Makipag-ugnayan sa iyong sales rep para sa higit pang detalye.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Item at Paglalarawan",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Iba pang Bayarin",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Inihanda ni:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Presyo",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Mga Produkto at Serbisyo",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Mga term ng pagbili",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Dami",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Quote na ginawa ni:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Mga subtotal",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Kabuuan",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Presyo ng Yunit",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Invoice",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Numero ng invoice",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Petsa ng invoice",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Nakalista ang lahat ng fee sa {{ currency_code }} at napapailalim sa buwis sa pagbebenta (tulad ng naangkop).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "PO number",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Invoice line items table",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "pagkatapos ng {{ discount_amount }} diskwento",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Dami",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Pagbabayad",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Balanse na dapat nang bayaran",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Buwis",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "buwis",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Buwis",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "I-bill kay/sa",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Ipadala kay/sa",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Address ng buwis",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Takdang petsa",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "diskwento",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% diskwento",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% off",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Subtotal",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Mga Pagbabayad sa Hinaharap",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Mga pagbabayad na malapit nang bayaran.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Buod",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Hindi na available ang quote na ito",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Makipag-ugnayan sa iyong sales rep para sa higit pang detalye.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Hindi Naaangkop",
+    "description": "",
+    "placeholders": null
+  }
+}

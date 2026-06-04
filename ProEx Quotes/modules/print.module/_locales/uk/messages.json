@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Роздрукувати цінову пропозицію",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Текст кнопки",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Друкувати",
+    "description" : "",
+    "placeholders" : null
+  }
+}

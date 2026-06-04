@@ -1,21 +1,15 @@
-"""Deal-related API routes.
-
-This module defines all endpoints related to HubSpot deals.
-"""
-
 import json
 import logging
 import requests
 import time
-import threading
 from typing import Any, Optional, List
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, HTTPException, Path
 from hubspot import HubSpot
 from hubspot.crm.associations import BatchInputPublicObjectId
 from hubspot.crm.associations.models import PublicObjectId
-from hubspot.crm.objects import PublicObjectSearchRequest, Filter, FilterGroup, BatchInputSimplePublicObjectId, SimplePublicObjectId, BatchReadInputSimplePublicObjectId
+from hubspot.crm.objects import PublicObjectSearchRequest, Filter, FilterGroup
 from itertools import islice
 
 from app.models.schemas import (
@@ -42,6 +36,9 @@ from app.models.schemas import (
     DealArticlesResponse,
     ArticleWithProvider,
     UpdateContainersRequest,
+    UpdateSingleContainerRequest,
+    UpdateSingleContainerResponse,
+    ContainerConfigEdit,
     DealContainersResponse,
     ContainerItem,
     UniqueContainerItem,
@@ -65,57 +62,56 @@ from app.models.schemas import (
     PublishQuoteResponse
 )
 from app.services.hubspot_client import hubspot_client
+from app.services.jobs_store import create_job, update_job, get_latest_job_by_deal
+from app.services.jobs_queue import enqueue_job
+from app.shared import hubdb_client
+from app.core.custom_objects_constants import OBJECT_TYPE_CONTENEDOR
 from app.services.quote_helpers import (
     build_association,
     create_quote_via_api,
     create_line_item_via_api,
     associate_line_item_to_quote_v4,
-    normalize_hs_date
+    batch_create_line_items_via_api,
+    batch_associate_line_items_to_quote_v4,
+    normalize_hs_date,
 )
-from app.services.custom_objects import process_deal_custom_objects_from_line_items
+from app.services.custom_objects import (
+    get_contenedores_by_deal,
+    get_elementos_by_contenedor,
+    get_elementos_by_deal,
+    update_elemento,
+    delete_elemento,
+    update_contenedor,
+    batch_create_elementos_with_associations,
+    batch_update_custom_objects,
+    touch_pagos_for_contenedores,
+    _normalize_for_diff,
+)
 from app.core.constants import AssociationType
-from app.utils.property_helpers import safe_convert, build_update_properties, parse_hubspot_properties, compute_tipo_iva_repercutido
+from app.utils.iva_helpers import recalcular_contenedor, recalcular_contenedores
+from app.utils.property_helpers import safe_convert, build_update_properties, parse_hubspot_properties, compute_tipo_iva_repercutido, compute_default_tipo_iva, resolve_product_iva, round_price, round_margin, enforce_line_item_price_rounding
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# Global dictionary to track background job status
-# Structure: {deal_id: {"status": "pending"|"completed"|"error", "started_at": timestamp, "completed_at": timestamp, "error": str}}
-_background_jobs_status = {}
+CUSTOM_OBJECTS_JOB_TYPE = "quotes_publish_custom_objects"
 
 
-def _background_job_wrapper(deal_id: str):
-    """
-    Wrapper function that tracks the status of background job execution.
-    """
+def parse_fecha_caducidad(value) -> Optional[int]:
+    """Parsea una propiedad date de HubSpot a timestamp UTC en ms (acepta entero/string en ms o fecha YYYY-MM-DD)."""
+    if not value:
+        return None
     try:
-        # Mark job as started
-        _background_jobs_status[deal_id] = {
-            "status": "processing",
-            "started_at": datetime.now().isoformat(),
-            "completed_at": None,
-            "error": None
-        }
-        logger.info(f"🚀 [JOB] Background job started for deal {deal_id}")
-
-        # Execute the actual job
-        process_deal_custom_objects_from_line_items(deal_id)
-
-        # Mark job as completed
-        _background_jobs_status[deal_id].update({
-            "status": "completed",
-            "completed_at": datetime.now().isoformat()
-        })
-        logger.info(f"✅ [JOB] Background job completed successfully for deal {deal_id}")
-
-    except Exception as e:
-        # Mark job as failed
-        _background_jobs_status[deal_id].update({
-            "status": "error",
-            "completed_at": datetime.now().isoformat(),
-            "error": str(e)
-        })
-        logger.error(f"❌ [JOB] Background job failed for deal {deal_id}: {e}", exc_info=True)
+        return int(value)
+    except (ValueError, TypeError):
+        try:
+            from datetime import datetime, timezone
+            dt = datetime.strptime(str(value), "%Y-%m-%d")
+            dt_utc = dt.replace(tzinfo=timezone.utc)
+            return int(dt_utc.timestamp() * 1000)
+        except Exception as e:
+            logger.warning(f"Could not parse fecha_caducidad value '{value}': {e}")
+            return None
 
 
 def _get_associated_ids(deal_id: str, to_object_type: str) -> List[str]:
@@ -205,14 +201,11 @@ def _get_associated_ids(deal_id: str, to_object_type: str) -> List[str]:
 
     return ids
 
-
 def get_associated_contacts(deal_id: str) -> List[str]:
     return _get_associated_ids(deal_id, "contacts")
 
-
 def get_associated_companies(deal_id: str) -> List[str]:
     return _get_associated_ids(deal_id, "companies")
-
 
 def _get_line_item_to_product_ids(line_item_ids: List[str], access_token: str) -> dict:
     """
@@ -251,7 +244,6 @@ def _get_line_item_to_product_ids(line_item_ids: List[str], access_token: str) -
         except Exception as e:
             logger.warning(f"[associations] line_items->products batch read error: {e}")
     return out
-
 
 def _get_line_items_by_tipo(deal_id: str, tipo_articulo: str) -> List[str]:
     """
@@ -293,7 +285,6 @@ def _get_line_items_by_tipo(deal_id: str, tipo_articulo: str) -> List[str]:
 
     logger.warning(f"[Filter] Filtered to {len(filtered_ids)} line items with tipo_articulo={tipo_articulo}")
     return filtered_ids
-
 
 def _get_providers_by_tipo(deal_id: str, tipo_proveedor: str) -> List[str]:
     """
@@ -356,14 +347,12 @@ def _get_providers_by_tipo(deal_id: str, tipo_proveedor: str) -> List[str]:
     logger.warning(f"[providers-batch-filter] Total filtered providers: {len(matched_ids)}")
     return matched_ids
 
-
 # Container SKU mapping (tipo from frontend -> HubSpot Product SKU)
 CONTAINER_SKU_MAP = {
     "D20DR": "CONTAINER-D20DR",
     "D40DR": "CONTAINER-D40DR",
-    "CAMION16P": "CONTAINER-CAMION16P",
-    "PALETS": "CONTAINER-PALETS",
     "TRAILER80": "CONTAINER-TRAILER80",
+    "TRAILER 80": "CONTAINER-TRAILER80",  # alias: HubSpot property value includes space
 }
 
 # hs_product_type: values accepted when classifying line items (EN + ES; compare in lowercase)
@@ -371,28 +360,23 @@ HS_PRODUCT_TYPE_CONTAINER = {"container", "contenedor"}
 HS_PRODUCT_TYPE_SERVICE = {"service", "servicio", "flete"}
 HS_PRODUCT_TYPE_ARTICLE = {"inventory", "non_inventory", "articulo"}
 
-
 def _normalize_hs_product_type(value: Any) -> str:
     """Normalize hs_product_type for comparison (lowercase, stripped)."""
     if value is None:
         return ""
     return str(value).strip().lower()
 
-
 def _is_container_product_type(product_type: str) -> bool:
     """True if hs_product_type indicates a container (container, contenedor)."""
     return _normalize_hs_product_type(product_type) in HS_PRODUCT_TYPE_CONTAINER
-
 
 def _is_service_product_type(product_type: str) -> bool:
     """True if hs_product_type indicates a service (service, servicio, flete)."""
     return _normalize_hs_product_type(product_type) in HS_PRODUCT_TYPE_SERVICE
 
-
 def _is_article_product_type(product_type: str) -> bool:
     """True if hs_product_type indicates an article (inventory, non_inventory, articulo)."""
     return _normalize_hs_product_type(product_type) in HS_PRODUCT_TYPE_ARTICLE
-
 
 # Reglas unificadas para READ: filtrar line items por propiedades del line item (hs_product_type + tipo_articulo)
 def _line_item_is_article(props: dict) -> bool:
@@ -401,19 +385,16 @@ def _line_item_is_article(props: dict) -> bool:
     ta = (props.get("tipo_articulo") or "").strip().lower()
     return pt in HS_PRODUCT_TYPE_ARTICLE and ta == "fabricante"
 
-
 def _line_item_is_service(props: dict) -> bool:
     """True si el line item es servicio: hs_product_type = service (solo)."""
     pt = _normalize_hs_product_type((props.get("hs_product_type") or ""))
     return pt in HS_PRODUCT_TYPE_SERVICE
-
 
 def _line_item_is_container(props: dict) -> bool:
     """True si el line item es contenedor: hs_product_type = container y tipo_articulo = transitario."""
     pt = _normalize_hs_product_type((props.get("hs_product_type") or ""))
     ta = (props.get("tipo_articulo") or "").strip().lower()
     return pt in HS_PRODUCT_TYPE_CONTAINER and ta == "transitario"
-
 
 # Valores exactos que HubSpot acepta al escribir (enums). No usar "Service" ni "ex" minúscula.
 def _hs_product_type_for_hubspot(value: Any) -> str:
@@ -429,14 +410,12 @@ def _hs_product_type_for_hubspot(value: Any) -> str:
         return "container"
     return "service"
 
-
 def _tipo_iva_repercutido_for_hubspot(value: Any) -> str:
     """HubSpot espera tipo_iva_repercutido en mayúsculas (EX, R21, EI21, etc.)."""
     if value is None or (isinstance(value, str) and not value.strip()):
         return "R21"
     s = str(value).strip().upper()
     return s or "R21"
-
 
 def sanitize_string_for_json(value: str) -> str:
     """
@@ -463,7 +442,6 @@ def sanitize_string_for_json(value: str) -> str:
 
     return sanitized
 
-
 def create_line_item_with_association(
     client: HubSpot,
     deal_id: str,
@@ -476,8 +454,16 @@ def create_line_item_with_association(
     cardcode: Optional[str] = None,
     almacen: Optional[str] = None,
     tipo_iva_repercutido: Optional[str] = None,
+    tipo_iva_soportado: Optional[str] = None,
     tipo_articulo: Optional[str] = None,
-    hs_product_type: Optional[str] = None
+    hs_product_type: Optional[str] = None,
+    peso_neto: Optional[str] = None,
+    peso_bruto: Optional[str] = None,
+    name_en: Optional[str] = None,
+    name_fr: Optional[str] = None,
+    description: Optional[str] = None,
+    formato: Optional[str] = None,
+    marca: Optional[str] = None
 ) -> Optional[str]:
     """
     Create a HubSpot line item and associate it with a deal
@@ -508,12 +494,18 @@ def create_line_item_with_association(
             "hs_product_id": str(product_id),
             "quantity": quantity,
             "price": product_price,
-            "name": product_name
+            "name": product_name,
+            "hs_currency": "EUR"
         }
 
-        # Add margen_unitario if provided (HubSpot stores as percentage: 12 for 12%)
+        # Add hs_sku (HubSpot product internal ID)
+        if sku:
+            line_item_properties["hs_sku"] = str(sku)
+
         if margen_unitario is not None:
-            line_item_properties["margen_unitario"] = str(margen_unitario)
+            margen_round = round_margin(margen_unitario)
+            if margen_round is not None:
+                line_item_properties["margen_unitario"] = str(margen_round)
 
         # Add cardcode if provided (used for FLETES line items with transitario cardcode)
         if cardcode is not None:
@@ -527,11 +519,32 @@ def create_line_item_with_association(
         if tipo_iva_repercutido is not None:
             line_item_properties["tipo_iva_repercutido"] = str(tipo_iva_repercutido)
 
+        # Add tipo_iva_soportado if provided
+        if tipo_iva_soportado is not None:
+            line_item_properties["tipo_iva_soportado"] = str(tipo_iva_soportado)
+
         # Add tipo_articulo and hs_product_type so line items are correctly classified in HubSpot
         if tipo_articulo is not None and str(tipo_articulo).strip():
             line_item_properties["tipo_articulo"] = str(tipo_articulo).strip().lower()
         if hs_product_type is not None and str(hs_product_type).strip():
             line_item_properties["hs_product_type"] = str(hs_product_type).strip()
+
+        if peso_neto is not None:
+            line_item_properties["peso_neto"] = str(peso_neto)
+        if peso_bruto is not None:
+            line_item_properties["peso_bruto"] = str(peso_bruto)
+        if name_en is not None:
+            line_item_properties["name_en"] = str(name_en)
+        if name_fr is not None:
+            line_item_properties["name_fr"] = str(name_fr)
+        if description is not None:
+            line_item_properties["description"] = str(description)
+        if formato is not None:
+            line_item_properties["formato"] = str(formato)
+        if marca is not None:
+            line_item_properties["marca_certificado"] = str(marca)
+
+        enforce_line_item_price_rounding(line_item_properties)
 
         # Create line item using SDK
         created_line_item = client.crm.line_items.basic_api.create(
@@ -596,7 +609,6 @@ def create_line_item_with_association(
         logger.error(f"Error creating line item for product {product_id}: {e}")
         return None
 
-
 def create_container_line_item(
     client: HubSpot,
     deal_id: str,
@@ -650,8 +662,11 @@ def create_container_line_item(
             "numero_container": str(container_number),  # Sequential container number
             "ocupacion": str(sanitized_config.get("ocupacion", 0)),  # Occupancy percentage from config
             "peso_neto": str(sanitized_config.get("pesoNeto", 0)),  # Net weight in kg from config
-            "container_config": json.dumps(sanitized_config, ensure_ascii=False)  # JSON string of sanitized config
+            "container_config": json.dumps(sanitized_config, ensure_ascii=False),  # JSON string of sanitized config
+            "hs_currency": "EUR"
         }
+
+        enforce_line_item_price_rounding(line_item_properties)
 
         # Create line item using SDK
         created_line_item = client.crm.line_items.basic_api.create(
@@ -716,7 +731,6 @@ def create_container_line_item(
         logger.error(f"Error creating container line item for product {product_id}: {e}")
         return None
 
-
 def create_article_line_item(
     client: HubSpot,
     deal_id: str,
@@ -755,8 +769,11 @@ def create_article_line_item(
             "name": f"{deal_id}-{container_number:03d} - {product_name}",
             "tipo_articulo": "fabricante",
             "hs_product_type": "Articulo",
-            "numero_container": str(container_number)
+            "numero_container": str(container_number),
+            "hs_currency": "EUR"
         }
+
+        enforce_line_item_price_rounding(line_item_properties)
 
         # Create line item using SDK
         created_line_item = client.crm.line_items.basic_api.create(
@@ -821,102 +838,55 @@ def create_article_line_item(
         logger.error(f"Error creating article line item for product {product_id}: {e}")
         return None
 
+VALID_PREPRINTS_LANGUAGES = ("ES", "EN", "FR")
+
 
 def determine_preprints_language(
     deal_language: Optional[str],
     contact_data: Optional[ContactData],
     company_data: Optional[CompanyData]
 ) -> str:
-    """Determine the language for document printing.
-
-    Priority:
-    1. deal.preprints_language (if set, this takes precedence)
-    2. contact.hs_language (if deal language is not set)
-    3. company.langcode (if contact language is not set)
-    4. Default to "ES" if none of the above are set
-
-    Only ES, EN, FR are valid values. Any other value defaults to ES.
-
-    Args:
-        deal_language: Current value of deal.preprints_language.
-        contact_data: Contact data with hs_language field.
-        company_data: Company data with langcode field.
-
-    Returns:
-        Language code (ES, EN, or FR).
-    """
-    valid_languages = ["es", "en", "fr"]
-
-    # Priority 1: Deal language (if already set)
+    """Idioma para imprimir documentos. Precedencia: deal.preprints_language → contact.hs_language → company.langcode → "ES". Sólo ES/EN/FR son válidos."""
     if deal_language:
         normalized = deal_language.strip().upper()
-        if normalized in [lang.upper() for lang in valid_languages]:
+        if normalized in VALID_PREPRINTS_LANGUAGES:
             return normalized
 
-    # Priority 2: Contact language
     if contact_data and contact_data.hs_language:
         normalized = contact_data.hs_language.strip().upper()
-        if normalized in [lang.upper() for lang in valid_languages]:
+        if normalized in VALID_PREPRINTS_LANGUAGES:
             return normalized
 
-    # Priority 3: Company language
     if company_data and company_data.langcode:
         normalized = company_data.langcode.strip().upper()
-        if normalized in [lang.upper() for lang in valid_languages]:
+        if normalized in VALID_PREPRINTS_LANGUAGES:
             return normalized
 
-    # Default: ES
     return "ES"
-
 
 def determine_proyecto(
     contact_data: Optional[ContactData],
     company_data: Optional[CompanyData]
 ) -> Optional[str]:
-    """Determine the project/origin channel for beverage fair analytics.
-
-    Priority:
-    1. contact.proyecto__canal_de_origen_ (if set)
-    2. company.project (fallback if contact project is not set)
-
-    Args:
-        contact_data: Contact data with proyecto__canal_de_origen_ field.
-        company_data: Company data with project field.
-
-    Returns:
-        Project name or None if not available.
-    """
-    # Priority 1: Contact project
+    """Proyecto/canal de origen del lead. Precedencia: contact.proyecto__canal_de_origen_ → company.project."""
     if contact_data and contact_data.proyecto__canal_de_origen_:
         return contact_data.proyecto__canal_de_origen_
 
-    # Priority 2: Company project
     if company_data and company_data.project:
         return company_data.project
 
     return None
 
-
 def get_property_options(property_name: str, object_type: str = "deals") -> List[PropertyOption]:
-    """Get property options from HubSpot API using the SDK.
-
-    Args:
-        property_name: The name of the property to get options for.
-        object_type: The object type (deals, contacts, companies, etc.).
-
-    Returns:
-        List of PropertyOption objects with label and value.
-    """
+    """Devuelve las opciones (label, value) de una propiedad SELECT/RADIO de HubSpot."""
     try:
         client = hubspot_client.get_client()
 
-        # Get property info using the HubSpot SDK
         property_info = client.crm.properties.core_api.get_by_name(
             object_type=object_type,
             property_name=property_name
         )
 
-        # Extract options from the property info
         if hasattr(property_info, 'options') and property_info.options:
             return [
                 PropertyOption(
@@ -933,7 +903,6 @@ def get_property_options(property_name: str, object_type: str = "deals") -> List
         logger.error(f"Error getting property options for {property_name}: {e}")
         return []
 
-
 @router.get("/{deal_id}/client", response_model=ClientDataResponse)
 async def get_deal_client_data(
     deal_id: str = Path(
@@ -942,33 +911,18 @@ async def get_deal_client_data(
         example="46298478914"
     )
 ):
-    """Get client data for a deal including contact, company, and deal properties.
+    """Devuelve los datos cliente del deal: contact (readonly), company y propiedades del deal usadas en ClienteTab.
 
-    This endpoint retrieves:
-    - Contact: firstname, lastname, country (readonly)
-    - Company: name, tipo_cliente, residennum, cif, pais_de_operaciones
-    - Deal: tipo_de_venta, tipo_contenedor, margen_cliente, dias_libres, naviera,
-            preprints_language, project, commission fields
-
-    Note: Documentation-related fields are now available via GET /{deal_id}/documentacion endpoint.
-
-    Args:
-        deal_id: HubSpot deal ID.
-
-    Returns:
-        ClientDataResponse with contact, company, and deal information.
-
-    Raises:
-        HTTPException: If deal not found or API error occurs.
+    Las propiedades de documentación están en el endpoint GET /{deal_id}/documentacion.
     """
     try:
 
         client = hubspot_client.get_client()
 
-        # Step 1: Get deal properties
         deal_properties = [
             'tipo_de_venta',
             'tipo_contenedor',
+            'carga_por_palets',
             'margen_cliente',
             'dias_libres',
             'naviera',
@@ -977,7 +931,10 @@ async def get_deal_client_data(
             'codigo_intermediario',
             'repercutir_a_cliente',
             'tipo_comision',
-            'importe_comision'
+            'importe_comision',
+            'fecha_caducidad_cotizacion',
+            'tipo_iva_comision',
+            'tipo_iva_comision_soportado'
         ]
 
         logger.warning(f"Fetching deal {deal_id} with properties: {deal_properties}")
@@ -987,12 +944,11 @@ async def get_deal_client_data(
             associations=['contacts', 'companies']
         )
 
-        # Step 1.5: Fetch ALL property options in parallel (OPTIMIZATION)
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
         # Define all properties to fetch upfront
         all_properties_to_fetch = [
-            ('country', 'contacts'),
+            ('country', 'companies'),
             ('pais_de_operaciones', 'companies'),
             ('tipo_cliente', 'companies'),
             ('tipo_de_venta', 'deals'),
@@ -1020,8 +976,6 @@ async def get_deal_client_data(
                     logger.error(f"Error fetching options for {prop_name}: {e}")
                     property_options_cache[prop_name] = []
 
-
-        # Step 2: Get associated contact
         contact_data = None
 
         try:
@@ -1035,23 +989,10 @@ async def get_deal_client_data(
                 # Get contact details
                 contact = client.crm.contacts.basic_api.get_by_id(
                     contact_id,
-                    properties=['firstname', 'lastname', 'country', 'hs_language', 'proyecto__canal_de_origen_']
+                    properties=['hs_language', 'proyecto__canal_de_origen_']
                 )
 
-                # Get country label from options (using cache)
-                country_value = contact.properties.get('country')
-                country_label = country_value
-                if country_value:
-                    country_options = property_options_cache.get('country', [])
-                    for option in country_options:
-                        if option.value == country_value:
-                            country_label = option.label
-                            break
-
                 contact_data = ContactData(
-                    firstname=contact.properties.get('firstname'),
-                    lastname=contact.properties.get('lastname'),
-                    country=country_label,  # Country label for display
                     hs_language=contact.properties.get('hs_language'),
                     proyecto__canal_de_origen_=contact.properties.get('proyecto__canal_de_origen_')
                 )
@@ -1061,7 +1002,6 @@ async def get_deal_client_data(
         except Exception as contact_error:
             logger.warning(f"Error fetching contact data: {contact_error}")
 
-        # Step 3: Get associated company
         company_data = None
 
         try:
@@ -1096,11 +1036,21 @@ async def get_deal_client_data(
                     options=tipo_cliente_options
                 ) if tipo_cliente_options else None
 
+                # Get country label from options (using cache)
+                country_value = company.properties.get('country')
+                country_label = country_value
+                if country_value:
+                    country_options = property_options_cache.get('country', [])
+                    for option in country_options:
+                        if option.value == country_value:
+                            country_label = option.label
+                            break
+
                 company_data = CompanyData(
                     name=company.properties.get('name'),
                     pais_de_operaciones=pais_de_operaciones_label,  # Use label instead of value
                     country_entrega=company.properties.get('country_entrega'),
-                    country=company.properties.get('country'),
+                    country=country_label,  # Use label instead of value
                     langcode=company.properties.get('langcode'),
                     project=company.properties.get('project'),
                     residennum=company.properties.get('residennum'),
@@ -1114,7 +1064,6 @@ async def get_deal_client_data(
         except Exception as company_error:
             logger.warning(f"Error fetching company data: {company_error}")
 
-        # Step 4: Build deal client data with options
         tipo_venta_value = deal.properties.get('tipo_de_venta')
         tipo_contenedor_value = deal.properties.get('tipo_contenedor')
         naviera_value = deal.properties.get('naviera')
@@ -1149,8 +1098,6 @@ async def get_deal_client_data(
         repercutir_a_cliente_options = property_options_cache.get('repercutir_a_cliente', [])
         tipo_comision_options = property_options_cache.get('tipo_comision', [])
 
-
-        # Step 4.5: Get intermediary fields with fallback logic
         # Priority 1: Deal fields (if already saved)
         # Priority 2: Commission provider data (if associated)
         codigo_intermediario_value = deal.properties.get('codigo_intermediario')
@@ -1257,6 +1204,31 @@ async def get_deal_client_data(
         except Exception as e:
             logger.warning(f"Error fetching commission provider for deal {deal_id}: {e}")
 
+        # Resolve IVA defaults from comisiones product (Fase 4E)
+        iva_comision_defaults = None
+        residennum = company_data.residennum if company_data else None
+        try:
+            comision_search = client.crm.products.search_api.do_search(
+                public_object_search_request={
+                    "filterGroups": [{"filters": [{"propertyName": "tipo_articulo", "operator": "EQ", "value": "comisiones"}]}],
+                    "properties": [
+                        "name", "tipo_iva_soportado", "tipo_iva_repercutido",
+                        "tipo_iva_soportado_eu", "tipo_iva_repercutido_eu",
+                        "tipo_iva_soportado_ex", "tipo_iva_repercutido_ex"
+                    ],
+                    "limit": 1
+                }
+            )
+            if comision_search.results:
+                comision_props = comision_search.results[0].properties
+                iva_comision_defaults = {
+                    "repercutido": resolve_product_iva(comision_props, residennum, "repercutido"),
+                    "soportado": resolve_product_iva(comision_props, residennum, "soportado")
+                }
+                logger.info(f"[client-data] iva_comision_defaults resolved: {iva_comision_defaults}")
+        except Exception as e:
+            logger.warning(f"[client-data] Error resolving iva_comision_defaults: {e}")
+
         deal_client_data = DealClientData(
             tipo_de_venta=PropertyWithOptions(
                 value=tipo_venta_value,
@@ -1290,10 +1262,14 @@ async def get_deal_client_data(
                 options=tipo_comision_options
             ),
             importe_comision=importe_comision_value,
-            commission_provider_info=commission_provider_info
+            carga_por_palets=safe_convert(deal.properties.get('carga_por_palets'), bool),
+            fecha_caducidad_cotizacion=parse_fecha_caducidad(deal.properties.get('fecha_caducidad_cotizacion')),
+            tipo_iva_comision=deal.properties.get('tipo_iva_comision') or None,
+            tipo_iva_comision_soportado=deal.properties.get('tipo_iva_comision_soportado') or None,
+            commission_provider_info=commission_provider_info,
+            iva_comision_defaults=iva_comision_defaults
         )
 
-        # Step 5: Get client classification from company tipo_cliente field
         clasificacion = None
         if company_data and company_data.tipo_cliente:
             # Get the label for clasificacion (to match frontend expectations)
@@ -1304,14 +1280,10 @@ async def get_deal_client_data(
                         clasificacion = option.label
                         break
 
-
-        # Step 6: Determine project/origin channel
         proyecto = determine_proyecto(contact_data, company_data)
 
-        # Step 7: Build response
         return ClientDataResponse(
             success=True,
-            contact=contact_data,
             company=company_data,
             deal=deal_client_data,
             clasificacion=clasificacion,
@@ -1322,7 +1294,6 @@ async def get_deal_client_data(
         logger.error(f"Error in get_deal_client_data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/{deal_id}/client", response_model=BaseResponse)
 async def update_deal_client_data(
     data: UpdateClientDataRequest,
@@ -1332,32 +1303,10 @@ async def update_deal_client_data(
         example="46298478914"
     )
 ):
-    """Update client data for a deal from ClienteTab.
-
-    This endpoint updates:
-    - Company: tipo_cliente
-    - Deal: tipo_de_venta, tipo_contenedor, margen_cliente
-
-    Note:
-    - Contact fields (country) are readonly and not updated
-    - dias_libres is managed in TransitarioTab, not here
-
-    All fields are optional and only non-null values will be updated.
-
-    Args:
-        deal_id: HubSpot deal ID.
-        data: UpdateClientDataRequest with company and deal data to update.
-
-    Returns:
-        BaseResponse indicating success or failure.
-
-    Raises:
-        HTTPException: If deal not found or API error occurs.
-    """
+    """Actualiza el cliente del deal desde ClienteTab: company.tipo_cliente y deal.{tipo_de_venta, tipo_contenedor, margen_cliente}. Sólo se aplican los campos no-null. country (contact) es readonly y dias_libres se gestiona en TransitarioTab."""
     try:
         client = hubspot_client.get_client()
 
-        # Step 1: Update contact if contact data is provided
         if data.contact is not None:
             try:
                 # Get contact associations using the SDK
@@ -1386,7 +1335,6 @@ async def update_deal_client_data(
                 logger.error(f"Error updating contact data: {contact_error}", exc_info=True)
                 raise HTTPException(status_code=500, detail=f"Error updating contact: {str(contact_error)}")
 
-        # Step 2: Update company if company data is provided
         if data.company is not None:
             try:
                 # Get company associations using the SDK
@@ -1415,7 +1363,6 @@ async def update_deal_client_data(
                 logger.error(f"Error updating company data: {company_error}", exc_info=True)
                 raise HTTPException(status_code=500, detail=f"Error updating company: {str(company_error)}")
 
-        # Step 3: Update deal if deal data is provided
         if data.deal is not None:
             # Build properties dict dynamically from model
             deal_properties = build_update_properties(data.deal, UpdateDealData)
@@ -1431,7 +1378,6 @@ async def update_deal_client_data(
                 )
                 logger.warning(f"Deal {deal_id} updated successfully")
 
-            # Step 3.5: Manage intermediario (commission provider) association
             if data.deal.codigo_intermediario is not None:
                 codigo_intermediario = data.deal.codigo_intermediario.strip()
 
@@ -1547,7 +1493,6 @@ async def update_deal_client_data(
         logger.error(f"Error in update_deal_client_data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/{deal_id}/documentacion", response_model=DealDocumentacionResponse)
 async def get_deal_documentacion_data(
     deal_id: str = Path(
@@ -1556,56 +1501,33 @@ async def get_deal_documentacion_data(
         example="46298478914"
     )
 ):
-    """Get documentacion data for a deal from DocumentacionTab.
-
-    This endpoint retrieves all documentation-related fields:
-    - Language settings (preprints_language)
-    - Fiscal address (direccion_fiscal, inherited from company if empty)
-    - Logistics documentation (tramitar_carga, documentos_a_generar, texto_en_bl, etc.)
-    - Certificate of origin (consignee, shipper, notify, certificado_origen_mercancia)
-    - Payment method and texts (metodo_pago_plantilla, banco_cobro, etc.)
-    - Generated texts (texto_banco, texto_forma_pago, texto_informacion_expediente, texto_base_oferta)
-
-    Args:
-        deal_id: HubSpot deal ID.
-
-    Returns:
-        DealDocumentacionResponse with deal documentacion data.
-
-    Raises:
-        HTTPException: If deal not found or API error occurs.
-    """
+    """Devuelve los datos de documentación del deal para DocumentacionTab (idioma, dirección fiscal, documentación logística, certificado de origen, método de pago y textos generados)."""
     try:
         client = hubspot_client.get_client()
 
-        # Properties to fetch
         deal_properties = [
-            # Idioma global
             'preprints_language',
-            # Documentación
             'direccion_fiscal',
-            # Documentación Logística
-            'tramitar_carga',
+            'direccion_de_entrega',
+            'desagregar_cotizacion',
             'documentos_a_generar',
             'texto_en_bl',
             'comentarios_logistica',
             'comentarios_transitario',
-            # Certificado de Origen
             'consignee',
             'shipper',
             'notify',
             'certificado_origen_mercancia',
-            # Método de Pago & Textos
+            'observaciones',
             'metodo_pago_plantilla',
             'banco_cobro',
             'cotizacion_rapida',
             'texto_adicional_metodo_pago',
-            'texto_firma_aceptacion_cliente',
-            # Textos Generados
             'texto_banco',
             'texto_forma_pago',
-            'texto_informacion_expediente',
-            'texto_base_oferta'
+            'texto_base_oferta',
+            'cif',
+            'referencia_cotizacion'
         ]
 
         logger.warning(f"Fetching documentacion for deal {deal_id}")
@@ -1640,36 +1562,62 @@ async def get_deal_documentacion_data(
                     logger.error(f"Error fetching options for {prop_name}: {e}")
                     property_options_cache[prop_name] = []
 
-        # Get company for direccion_fiscal fallback
+        # Get company for direccion_fiscal, cif fallback y langcode (idioma fallback).
         company_address = None
+        company_cif = None
+        company_langcode = None
         try:
             company_ids = get_associated_companies(deal_id)
             if company_ids:
                 company_id = company_ids[0]
                 company = client.crm.companies.basic_api.get_by_id(
                     company_id,
-                    properties=['address']
+                    properties=['address', 'cif', 'langcode']
                 )
                 company_address = company.properties.get('address')
+                company_cif = company.properties.get('cif')
+                company_langcode = company.properties.get('langcode')
         except Exception as e:
-            logger.warning(f"Error fetching company for direccion_fiscal fallback: {e}")
+            logger.warning(f"Error fetching company for fallback fields: {e}")
+
+        # Contact hs_language como segundo fallback para preprints_language.
+        contact_hs_language = None
+        try:
+            contact_ids = get_associated_contacts(deal_id)
+            if contact_ids:
+                contact = client.crm.contacts.basic_api.get_by_id(
+                    contact_ids[0],
+                    properties=['hs_language']
+                )
+                contact_hs_language = contact.properties.get('hs_language')
+        except Exception as e:
+            logger.warning(f"Error fetching contact for hs_language fallback: {e}")
 
         # Extract values
         direccion_fiscal_value = deal.properties.get('direccion_fiscal')
         if not direccion_fiscal_value and company_address:
             direccion_fiscal_value = company_address
 
+        cif_value = deal.properties.get('cif') or company_cif or None
+
+        resolved_preprints_language = determine_preprints_language(
+            deal.properties.get('preprints_language'),
+            ContactData(hs_language=contact_hs_language) if contact_hs_language else None,
+            CompanyData(langcode=company_langcode) if company_langcode else None,
+        )
+
         # Build response
         deal_documentacion_data = DealDocumentacionData(
-            # Idioma global
+            # Idioma global — alineado con /client: precedencia deal → contact → company → "ES".
             preprints_language=PropertyWithOptions(
-                value=deal.properties.get('preprints_language'),
+                value=resolved_preprints_language,
                 options=property_options_cache.get('preprints_language', [])
             ) if property_options_cache.get('preprints_language') else None,
             # Documentación
             direccion_fiscal=direccion_fiscal_value,
+            direccion_de_entrega=deal.properties.get('direccion_de_entrega'),
             # Documentación Logística
-            tramitar_carga=safe_convert(deal.properties.get('tramitar_carga'), bool),
+            desagregar_cotizacion=safe_convert(deal.properties.get('desagregar_cotizacion'), bool),
             documentos_a_generar=PropertyWithOptions(
                 value=deal.properties.get('documentos_a_generar'),
                 options=property_options_cache.get('documentos_a_generar', [])
@@ -1682,6 +1630,7 @@ async def get_deal_documentacion_data(
             shipper=deal.properties.get('shipper'),
             notify=deal.properties.get('notify'),
             certificado_origen_mercancia=deal.properties.get('certificado_origen_mercancia'),
+            observaciones=deal.properties.get('observaciones'),
             # Método de Pago & Textos
             metodo_pago_plantilla=PropertyWithOptions(
                 value=deal.properties.get('metodo_pago_plantilla'),
@@ -1693,12 +1642,13 @@ async def get_deal_documentacion_data(
             ) if property_options_cache.get('banco_cobro') else None,
             cotizacion_rapida=safe_convert(deal.properties.get('cotizacion_rapida'), bool),
             texto_adicional_metodo_pago=deal.properties.get('texto_adicional_metodo_pago'),
-            texto_firma_aceptacion_cliente=deal.properties.get('texto_firma_aceptacion_cliente'),
             # Textos Generados
             texto_banco=deal.properties.get('texto_banco'),
             texto_forma_pago=deal.properties.get('texto_forma_pago'),
-            texto_informacion_expediente=deal.properties.get('texto_informacion_expediente'),
-            texto_base_oferta=deal.properties.get('texto_base_oferta')
+            texto_base_oferta=deal.properties.get('texto_base_oferta'),
+            # Identificación y Referencia
+            cif=cif_value,
+            referencia_cotizacion=deal.properties.get('referencia_cotizacion')
         )
 
         return DealDocumentacionResponse(
@@ -1710,7 +1660,6 @@ async def get_deal_documentacion_data(
         logger.error(f"Error in get_deal_documentacion_data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/{deal_id}/documentacion", response_model=BaseResponse)
 async def update_deal_documentacion_data(
     data: UpdateDocumentacionRequest,
@@ -1720,27 +1669,7 @@ async def update_deal_documentacion_data(
         example="46298478914"
     )
 ):
-    """Update documentacion data for a deal from DocumentacionTab.
-
-    This endpoint updates all documentation-related fields:
-    - Language settings (preprints_language)
-    - Logistics documentation (tramitar_carga, documentos_a_generar, texto_en_bl, etc.)
-    - Certificate of origin (consignee, shipper, notify, certificado_origen_mercancia)
-    - Payment method and texts (metodo_pago_plantilla, banco_cobro, etc.)
-    - Generated texts (texto_banco, texto_forma_pago, texto_informacion_expediente)
-
-    All fields are optional and only non-null values will be updated.
-
-    Args:
-        deal_id: HubSpot deal ID.
-        data: UpdateDocumentacionRequest with deal documentacion data to update.
-
-    Returns:
-        BaseResponse indicating success or failure.
-
-    Raises:
-        HTTPException: If deal not found or API error occurs.
-    """
+    """Actualiza los campos de documentación del deal desde DocumentacionTab. Sólo se aplican los no-null."""
     try:
         client = hubspot_client.get_client()
 
@@ -1760,6 +1689,38 @@ async def update_deal_documentacion_data(
                 )
                 logger.warning(f"Deal {deal_id} documentacion updated successfully")
 
+                # Propaga documentos_a_generar a los contenedores ya existentes
+                # para mantenerlos en sync con el deal (su valor se fija al
+                # crearlos). Best-effort: el deal ya quedó guardado, así que un
+                # fallo aquí no debe tumbar la respuesta.
+                if "documentos_a_generar" in deal_properties:
+                    try:
+                        valor = deal_properties["documentos_a_generar"]
+                        contenedores = get_contenedores_by_deal(
+                            client, deal_id, properties=["nombre"]
+                        )
+                        if contenedores:
+                            items = [
+                                {
+                                    "id": c["id"],
+                                    "properties": {"documentos_a_generar": valor},
+                                }
+                                for c in contenedores
+                            ]
+                            actualizados = batch_update_custom_objects(
+                                client, OBJECT_TYPE_CONTENEDOR, items
+                            )
+                            logger.info(
+                                f"[documentacion] documentos_a_generar propagado a "
+                                f"{actualizados}/{len(contenedores)} contenedores del deal {deal_id}"
+                            )
+                    except Exception as e:
+                        logger.warning(
+                            f"[documentacion] no se pudo propagar documentos_a_generar "
+                            f"a contenedores del deal {deal_id}: {e}",
+                            exc_info=True,
+                        )
+
         return BaseResponse(
             success=True,
             error=None
@@ -1771,7 +1732,6 @@ async def update_deal_documentacion_data(
         logger.error(f"Error in update_deal_documentacion_data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/{deal_id}/articles", response_model=DealArticlesResponse)
 async def get_deal_articles(
     deal_id: str = Path(
@@ -1780,18 +1740,7 @@ async def get_deal_articles(
         example="46298478914"
     )
 ):
-    """Get articles with tipo_articulo=fabricante and providers with tipo_proveedor=fabricante for a deal (separate arrays).
-
-    Flujo:
-      1) Asociaciones de line items del deal
-      2) Filtrar solo line items con tipo_articulo == "fabricante"
-      3) Para cada line item filtrado: obtener product_id y datos del producto
-      4) Obtener asociaciones de proveedores (custom object 2-43108800) del deal
-      5) Filtrar proveedores por tipo_proveedor == "fabricante"
-      6) Devolver:
-         - articles: artículos de fabricante con cardcode del proveedor habitual del producto
-         - providers: proveedores de tipo fabricante (únicos)
-    """
+    """Devuelve dos arrays separados para el deal: artículos con tipo_articulo=fabricante (con cardcode del proveedor habitual) y proveedores con tipo_proveedor=fabricante (deduplicados)."""
     try:
         client = hubspot_client.get_client()
 
@@ -1813,6 +1762,7 @@ async def get_deal_articles(
         # También guardamos el tipo_iva_repercutido de cada line item
         product_ids: list[str] = []
         line_item_tipo_iva: dict[str, str] = {}  # product_id -> tipo_iva_repercutido del line item
+        line_item_tipo_iva_sop: dict[str, str] = {}  # product_id -> tipo_iva_soportado del line item
 
         # Split into batches of 100 (HubSpot limit) - Define here for use throughout the function
         batch_size = 100
@@ -1834,7 +1784,7 @@ async def get_deal_articles(
                 batch_ids = line_item_ids[i:i + batch_size]
 
                 batch_payload = {
-                    "properties": ["hs_product_id", "hs_product_type", "tipo_articulo", "tipo_iva_repercutido"],
+                    "properties": ["hs_product_id", "hs_product_type", "tipo_articulo", "tipo_iva_repercutido", "tipo_iva_soportado"],
                     "inputs": [{"id": str(lid)} for lid in batch_ids]
                 }
 
@@ -1866,6 +1816,9 @@ async def get_deal_articles(
                 tipo_iva = props.get("tipo_iva_repercutido")
                 if tipo_iva:
                     line_item_tipo_iva[product_id] = tipo_iva
+                tipo_iva_sop = props.get("tipo_iva_soportado")
+                if tipo_iva_sop:
+                    line_item_tipo_iva_sop[product_id] = tipo_iva_sop
 
             product_ids = list(dict.fromkeys(product_ids))
 
@@ -1886,13 +1839,11 @@ async def get_deal_articles(
                         "name", "hs_sku", "cardcode", "codigo_proveedor", "peso_neto",
                         # Price fields for negotiation
                         "hs_price_eur", "ultimo_precio_compra", "ultimo_precio_evaluado", "margen_unitario",
-                        # VAT type
-                        "tipo_iva_repercutido",
+                        # VAT types
+                        "tipo_iva_repercutido", "tipo_iva_soportado",
                         # Container capacity fields
                         "unidades_cam16", "unidades_d20dr", "unidades_d40dr",
-                        "unidades_d20w", "unidades_d40hd", "unidades_d45hd",
-                        "unidades_d45w", "unidades_palet", "unidades_r20rf",
-                        "unidades_r40rf", "unidades_tra80"
+                        "unidades_palet", "unidades_tra80"
                     ],
                     "inputs": [{"id": str(pid)} for pid in batch_ids]
                 }
@@ -1924,10 +1875,13 @@ async def get_deal_articles(
                     product_data["provider_name"] = None
                     product_data["provider_id"] = None
 
-                    # Override tipo_iva_repercutido with the value from the line item (if exists)
+                    # Override tipo_iva_repercutido/soportado with the value from the line item (if exists)
                     if product_id in line_item_tipo_iva:
                         product_data["tipo_iva_repercutido"] = line_item_tipo_iva[product_id]
                         logger.info(f"[articles] Using line item tipo_iva_repercutido for product {product_id}: {line_item_tipo_iva[product_id]}")
+                    if product_id in line_item_tipo_iva_sop:
+                        product_data["tipo_iva_soportado"] = line_item_tipo_iva_sop[product_id]
+                        logger.info(f"[articles] Using line item tipo_iva_soportado for product {product_id}: {line_item_tipo_iva_sop[product_id]}")
 
                     # Create ArticleWithProvider instance
                     articles.append(ArticleWithProvider(**product_data))
@@ -2031,23 +1985,10 @@ async def get_deal_articles(
                     art.provider_id = prov_index[art.provider_cardcode].id
                     art.provider_name = prov_index[art.provider_cardcode].name
 
-        # 5) Build lugar_carga options from the lugar_carga_options dictionary
-        lugar_carga_property_options: List[PropertyOption] = []
-
-        # Add options from provider field
-        for value, label in lugar_carga_options.items():
-            lugar_carga_property_options.append(
-                PropertyOption(value=value, label=label)
-            )
-
-        # Always add "Almacen PROEX" option
-        almacen_proex_option = PropertyOption(
-            value="almacen_proex",
-            label="Almacen PROEX"
-        )
-        # Check if it's not already in the list
-        if not any(opt.value == "almacen_proex" for opt in lugar_carga_property_options):
-            lugar_carga_property_options.append(almacen_proex_option)
+        lugar_carga_property_options: List[PropertyOption] = [
+            PropertyOption(value=value, label=label)
+            for value, label in lugar_carga_options.items()
+        ]
 
         logger.info(f"[articles] Built {len(lugar_carga_property_options)} lugar_carga options")
 
@@ -2068,32 +2009,19 @@ async def get_deal_articles(
         logger.error(f"Error in get_deal_articles: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/{deal_id}/articles", response_model=BaseResponse)
 async def update_deal_articles(
     data: UpdateArticlesRequest,
     deal_id: str = Path(..., description="HubSpot deal ID")
 ):
-    """
-    Fully optimized ArticlesTab update endpoint:
-    - Batch search SKUs
-    - Batch search providers
-    - Batch delete line items (fabricante)
-    - Batch delete containers
-    - Correct delete for providers (NO batch API)
-    - Batch get products
-    - Create line items
-    - Associate providers
-    """
+    """Reemplaza los line items de tipo artículo y los proveedores asociados al deal a partir del payload de ArticlesTab."""
 
     try:
         client = hubspot_client.get_client()
         access_token = client.access_token
         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
 
-        # ---------------------------------------------------
         # 0. NORMALIZAR PAYLOAD
-        # ---------------------------------------------------
         if not isinstance(data, UpdateArticlesRequest):
 
             if isinstance(data, dict) and "line_items" in data:
@@ -2107,11 +2035,9 @@ async def update_deal_articles(
 
         logger.warning(f"[articles] Processing {len(data.line_items)} SKUs and {len(data.providers)} providers")
 
-        # ---------------------------------------------------
         # 0.5. GET DEAL ALMACEN AND DETERMINE IVA TYPE
-        # ---------------------------------------------------
         deal_almacen = None
-        tipo_iva_repercutido = "R21"  # Default: NACIONAL
+        residennum = None
 
         try:
             deal = client.crm.deals.basic_api.get_by_id(
@@ -2124,6 +2050,26 @@ async def update_deal_articles(
         except Exception as e:
             logger.warning(f"[articles] Could not fetch deal almacen: {e}")
 
+        # Ensure deal has EUR as currency so all line items inherit it
+        try:
+            client.crm.deals.basic_api.update(
+                deal_id=deal_id,
+                simple_public_object_input={"properties": {"deal_currency_code": "EUR"}}
+            )
+        except Exception as e:
+            logger.warning(f"[articles] Could not set deal_currency_code: {e}")
+
+        # Save lugar_carga to deal property
+        if data.lugar_carga:
+            try:
+                client.crm.deals.basic_api.update(
+                    deal_id=deal_id,
+                    simple_public_object_input={"properties": {"lugar_carga": data.lugar_carga}}
+                )
+                logger.info(f"[articles] Saved lugar_carga '{data.lugar_carga}' to deal {deal_id}")
+            except Exception as e:
+                logger.warning(f"[articles] Could not save lugar_carga to deal: {e}")
+
         # Get company residence type to determine IVA
         try:
             company_ids = get_associated_companies(deal_id)
@@ -2134,67 +2080,30 @@ async def update_deal_articles(
                     properties=["residennum"]
                 )
                 residennum = company.properties.get("residennum")
-                tipo_iva_repercutido = compute_tipo_iva_repercutido(residennum)
-                logger.warning(f"[articles] Company residence: {residennum or 'NACIONAL'} -> IVA: {tipo_iva_repercutido}")
+                logger.warning(f"[articles] Company residence: {residennum or 'NACIONAL'}")
             else:
-                logger.warning(f"[articles] No company found, using default IVA: R21")
+                logger.warning(f"[articles] No company found, using default IVA")
         except Exception as e:
             logger.warning(f"[articles] Error getting company residence, using default IVA: {e}")
 
-        # ---------------------------------------------------
         # 1. SKUs + PROVIDERS (UNIQUE)
-        # ---------------------------------------------------
-        hs_skus = list({item.hs_sku for item in data.line_items})
+        hs_skus = list({item.id for item in data.line_items})
         cardcodes = list({p.cardcode for p in data.providers})
 
         logger.warning(f"[articles] Unique SKUs={len(hs_skus)}, unique providers={len(cardcodes)}")
 
-
-        # ---------------------------------------------------
-        # 2. BATCH OR-SEARCH — PRODUCTS
-        # ---------------------------------------------------
-        from itertools import islice
-
+        # 2. MAP PRODUCT IDs
+        # hs_sku en el payload contiene el hs_object_id del producto
+        # (el campo hs_sku en HubSpot está vacío en productos nuevos)
         def chunk(arr, size):
             it = iter(arr)
             return iter(lambda: list(islice(it, size)), [])
 
-        sku_to_product_id = {}
-        search_url = "https://api.hubapi.com/crm/v3/objects/products/search"
+        # Mapa identidad: "hs_sku" (= hs_object_id) → product_id
+        sku_to_product_id = {pid: pid for pid in hs_skus}
+        logger.warning(f"[products] Using product IDs directly: {hs_skus}")
 
-        logger.warning(f"[products] Searching SKUs in OR batches")
-
-        for batch_skus in chunk(hs_skus, 3):
-            filter_groups = [
-                {"filters": [{"propertyName": "hs_sku", "operator": "EQ", "value": sku}]}
-                for sku in batch_skus
-            ]
-
-            payload = {
-                "filterGroups": filter_groups,
-                "properties": ["hs_sku", "name"],
-                "limit": 100
-            }
-
-            resp = requests.post(search_url, headers=headers, json=payload, timeout=15)
-
-            if not resp.ok:
-                logger.error(f"[products] Search batch failed: {resp.status_code} - {resp.text}")
-                continue
-
-            for item in resp.json().get("results", []):
-                props = item.get("properties", {})
-                sku = props.get("hs_sku")
-                if not sku:
-                    continue
-
-                sku_to_product_id[sku] = item.get("id")
-                logger.warning(f"[products] SKU={sku} -> Product {item.get('id')}")
-
-
-        # ---------------------------------------------------
         # 3. BATCH OR-SEARCH — PROVIDERS (custom object)
-        # ---------------------------------------------------
         cardcode_to_provider_id = {}
         prov_search_url = "https://api.hubapi.com/crm/v3/objects/2-43108800/search"
 
@@ -2227,10 +2136,7 @@ async def update_deal_articles(
                 cardcode_to_provider_id[cc] = provider_id
                 logger.warning(f"[providers] cardcode={cc} -> provider={provider_id}")
 
-
-        # ---------------------------------------------------
         # 4+5. SINGLE BATCH READ → DELETE fabricante + containers
-        # ---------------------------------------------------
 
         # 1. Get IDs once
         all_line_items = _get_associated_ids(deal_id, "line_items")
@@ -2285,10 +2191,7 @@ async def update_deal_articles(
             except Exception as e:
                 logger.error(f"[cleanup] container batch delete failed: {e}")
 
-
-        # ---------------------------------------------------
         # 6. DELETE PROVIDERS tipo_proveedor=fabricante (INDIVIDUAL — REQUIRED)
-        # ---------------------------------------------------
         fabricante_ids = _get_providers_by_tipo(deal_id, "fabricante")
         logger.warning(f"[providers-delete] fabricante providers={len(fabricante_ids)}")
 
@@ -2304,16 +2207,18 @@ async def update_deal_articles(
             except Exception as e:
                 logger.error(f"[providers-delete] error deleting {provider_id}: {e}")
 
-
-        # ---------------------------------------------------
         # 7. BATCH GET PRODUCT DETAILS (FAST)
-        # ---------------------------------------------------
         product_ids = list(sku_to_product_id.values())
 
         batch_read = {
             "properties": [
                 "name", "hs_sku", "hs_price_eur", "ultimo_precio_compra",
-                "ultimo_precio_evaluado"
+                "ultimo_precio_evaluado", "peso_neto", "peso_bruto", "name_en", "name_fr",
+                "description",
+                "formato", "marca_certificado",
+                "tipo_iva_soportado", "tipo_iva_repercutido",
+                "tipo_iva_soportado_eu", "tipo_iva_repercutido_eu",
+                "tipo_iva_soportado_ex", "tipo_iva_repercutido_ex"
             ],
             "inputs": [{"id": pid} for pid in product_ids]
         }
@@ -2326,11 +2231,8 @@ async def update_deal_articles(
             item.id: item.properties for item in (resp.results or [])
         }
 
-
-        # ---------------------------------------------------
         # 8. CREATE LINE ITEMS (ONE BY ONE)
-        # ---------------------------------------------------
-        sku_to_margin = {item.hs_sku: item.margen_unitario for item in data.line_items}
+        sku_to_margin = {item.id: item.margen_unitario for item in data.line_items}
         line_items_created = []
 
         for sku, product_id in sku_to_product_id.items():
@@ -2341,7 +2243,16 @@ async def update_deal_articles(
                 continue
 
             price = props.get("hs_price_eur") or props.get("ultimo_precio_compra") or props.get("ultimo_precio_evaluado") or "0"
+            price = round_price(price) or 0
             margin = sku_to_margin.get(sku)
+
+            logger.warning(
+                f"[articles] product={product_id} sku={sku} RAW_PRODUCT_PROPS={dict(props)}"
+            )
+
+            # Resolve IVA from product properties per residency
+            iva_rep = resolve_product_iva(props, residennum, "repercutido")
+            iva_sop = resolve_product_iva(props, residennum, "soportado")
 
             line_item_id = create_line_item_with_association(
                 client=client,
@@ -2352,18 +2263,23 @@ async def update_deal_articles(
                 product_price=str(price),
                 margen_unitario=margin,
                 almacen=deal_almacen,
-                tipo_iva_repercutido=tipo_iva_repercutido,
+                tipo_iva_repercutido=iva_rep,
+                tipo_iva_soportado=iva_sop,
                 tipo_articulo="fabricante",
-                hs_product_type="Articulo"
+                hs_product_type="Articulo",
+                peso_neto=props.get("peso_neto"),
+                peso_bruto=props.get("peso_bruto"),
+                name_en=props.get("name_en"),
+                name_fr=props.get("name_fr"),
+                description=props.get("description"),
+                formato=props.get("formato"),
+                marca=props.get("marca_certificado")
             )
 
             if line_item_id:
                 line_items_created.append(line_item_id)
 
-
-        # ---------------------------------------------------
         # 9. ASSOCIATE PROVIDERS (INDIVIDUAL — REQUIRED)
-        # ---------------------------------------------------
         for provider_id in cardcode_to_provider_id.values():
             assoc_url = f"https://api.hubapi.com/crm/v4/objects/2-43108800/{provider_id}/associations/deals/{deal_id}"
             payload = [{"associationCategory": "USER_DEFINED", "associationTypeId": 286}]
@@ -2372,16 +2288,12 @@ async def update_deal_articles(
             if not resp.ok:
                 logger.error(f"[providers-assoc] Failed provider {provider_id}: {resp.status_code} - {resp.text}")
 
-
-        # ---------------------------------------------------
         # 10. DONE
-        # ---------------------------------------------------
         return BaseResponse(success=True, error=None)
 
     except Exception as e:
         logger.error(f"Error in update_deal_articles: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/{deal_id}/services", response_model=DealServicesResponse)
 async def get_deal_services(
@@ -2408,7 +2320,6 @@ async def get_deal_services(
 
         services = []
 
-        # STEP 1: BATCH READ all line items
         if not line_item_ids:
             logger.warning(f"[services] No line items for deal {deal_id} -> returning empty services")
             return DealServicesResponse(success=True, error=None, services=[])
@@ -2420,7 +2331,7 @@ async def get_deal_services(
         for i in range(0, len(line_item_ids), batch_size):
             batch_ids = line_item_ids[i:i + batch_size]
             batch_payload = {
-                "properties": ["hs_product_id", "hs_product_type", "price", "name", "cardcode", "tipo_articulo", "tipo_iva_repercutido"],
+                "properties": ["hs_product_id", "hs_product_type", "price", "name", "cardcode", "tipo_articulo", "tipo_iva_repercutido", "tipo_iva_soportado"],
                 "inputs": [{"id": str(lid)} for lid in batch_ids]
             }
 
@@ -2439,7 +2350,7 @@ async def get_deal_services(
             props = li.get("properties", {})
             logger.warning(f"[services] line_item[{idx}] id={li.get('id')} hs_product_type={props.get('hs_product_type')!r} hs_product_id={props.get('hs_product_id')}")
 
-        # Regla unificada: servicios = hs_product_type = service, excluyendo tipo_articulo = transitario
+        # Regla unificada: servicios = hs_product_type = service, excluyendo tipo_articulo = transitario/comisiones
         service_line_items = []
         unique_cardcodes = set()
         product_ids_to_fetch = []
@@ -2449,8 +2360,8 @@ async def get_deal_services(
             if not _line_item_is_service(props):
                 continue
             tipo_articulo = (props.get("tipo_articulo") or "").strip().lower()
-            if tipo_articulo == "transitario":
-                continue  # Los de tipo_articulo=transitario quedan fuera del read de servicios
+            if tipo_articulo in {"transitario", "comisiones"}:
+                continue  # Los de tipo_articulo=transitario/comisiones quedan fuera del read de servicios
             product_id_raw = props.get("hs_product_id")
             product_id = str(product_id_raw) if product_id_raw else str(line_item.get("id") or "")
             if not product_id:
@@ -2487,12 +2398,15 @@ async def get_deal_services(
                 except Exception as e:
                     logger.error(f"[services] Error batch read products: {e}")
             for s in service_line_items:
-                if not s["product_name"] and s["product_id"] in product_map:
-                    s["product_name"] = product_map[s["product_id"]].get("name") or ""
+                # Usar siempre el nombre del catálogo de productos (no el nombre del line item,
+                # que puede incluir el prefijo del contenedor: "55475214336-001 - SEGURO MERCANCÍA")
+                if s["product_id"] in product_map:
+                    s["product_name"] = product_map[s["product_id"]].get("name") or s["product_name"]
+                elif not s["product_name"]:
+                    s["product_name"] = ""
 
         logger.warning(f"[services] Filtered to {len(service_line_items)} service line items (hs_product_type=service)")
 
-        # STEP 4: BATCH SEARCH all providers by cardcodes
         cardcode_to_provider = {}  # cardcode -> {id, name}
 
         if unique_cardcodes:
@@ -2550,7 +2464,6 @@ async def get_deal_services(
                     except Exception as e:
                         logger.warning(f"[services] Error searching cardcode {cardcode}: {e}")
 
-        # STEP 5: Group service line items by (product_id, cardcode) to get unique services
         # Since each service is now replicated per container, we need to deduplicate
         unique_services_map = {}  # key: (product_id, cardcode) -> service data
 
@@ -2567,6 +2480,7 @@ async def get_deal_services(
                 provider_info = cardcode_to_provider.get(cardcode, {}) if cardcode else {}
                 price = float(props.get("price") or 0)
                 tipo_iva_repercutido = props.get("tipo_iva_repercutido") or None
+                tipo_iva_soportado = props.get("tipo_iva_soportado") or None
 
                 unique_services_map[unique_key] = {
                     "product_id": product_id,
@@ -2576,10 +2490,10 @@ async def get_deal_services(
                     "provider_name": provider_info.get("name"),
                     "provider_cardcode": cardcode if cardcode else None,
                     "price": price,
-                    "tipo_iva_repercutido": tipo_iva_repercutido
+                    "tipo_iva_repercutido": tipo_iva_repercutido,
+                    "tipo_iva_soportado": tipo_iva_soportado
                 }
 
-        # STEP 6: Build unique service items
         for service_data in unique_services_map.values():
             services.append(ServiceItem(
                 product_id=service_data["product_id"],
@@ -2589,7 +2503,8 @@ async def get_deal_services(
                 provider_name=service_data["provider_name"],
                 provider_cardcode=service_data["provider_cardcode"],
                 price=service_data["price"],
-                tipo_iva_repercutido=service_data.get("tipo_iva_repercutido")
+                tipo_iva_repercutido=service_data.get("tipo_iva_repercutido"),
+                tipo_iva_soportado=service_data.get("tipo_iva_soportado")
             ))
             logger.info(f"[services] Unique service: {service_data['product_name']} with provider {service_data['provider_cardcode']}")
 
@@ -2607,7 +2522,6 @@ async def get_deal_services(
         logger.error(f"Error in get_deal_services: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/{deal_id}/services", response_model=BaseResponse)
 async def update_deal_services(
     data: UpdateServicesRequest,
@@ -2617,42 +2531,16 @@ async def update_deal_services(
         example="46298478914"
     )
 ):
-    """Update service line items for a deal from ServiciosTab.
-
-    This endpoint:
-    1. Receives a list of services with product_id, product_name, provider_id, provider_cardcode, and price
-    2. Removes existing service line items (hs_product_type = service)
-    3. Removes existing service provider associations (tipo_proveedor NOT in fabricante, transitario, comisiones)
-    4. Fetches all containers associated with the deal
-    5. Determines IVA type (tipo_iva_repercutido) based on company residence (R21, EX, EI21)
-    6. For each service × container, creates a line item with:
-       - name: "{container_name} - {service_name}"
-       - quantity: 1
-       - price: service price (per container)
-       - numero_container: links to container
-       - tipo_iva_repercutido: IVA type
-    7. Associates the service providers with the deal
-
-    Args:
-        deal_id: HubSpot deal ID.
-        data: UpdateServicesRequest with services array.
-
-    Returns:
-        BaseResponse indicating success or failure.
-    """
+    """Sustituye los line items de servicios y los proveedores asociados al deal a partir de ServiciosTab. Crea un line item por servicio × contenedor con tipo_iva_repercutido derivado de la residencia de la empresa."""
     try:
         client = hubspot_client.get_client()
         access_token = client.access_token
         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
         batch_size = 100
 
-        # Handle both Pydantic model and dict input
         if isinstance(data, dict):
             data = UpdateServicesRequest(**data)
 
-        logger.warning(f"[services] Processing {len(data.services)} services for deal {deal_id}")
-
-        # Step 0.5: Get deal almacen
         deal_almacen = None
         try:
             deal_basic = client.crm.deals.basic_api.get_by_id(
@@ -2660,333 +2548,561 @@ async def update_deal_services(
                 properties=["almacen"]
             )
             deal_almacen = deal_basic.properties.get("almacen")
-            if deal_almacen:
-                logger.warning(f"[services] Deal almacen: {deal_almacen}")
         except Exception as e:
             logger.warning(f"[services] Could not fetch deal almacen: {e}")
 
-        # Step 1: BATCH READ line items and products, then BATCH DELETE
-        existing_line_item_ids = _get_associated_ids(deal_id, "line_items")
-        logger.warning(f"[services] Found {len(existing_line_item_ids)} total existing line items")
+        try:
+            client.crm.deals.basic_api.update(
+                deal_id=deal_id,
+                simple_public_object_input={"properties": {"deal_currency_code": "EUR"}}
+            )
+        except Exception as e:
+            logger.warning(f"[services] Could not set deal_currency_code: {e}")
 
-        service_line_item_ids_to_delete = []
+        existing_line_item_ids = _get_associated_ids(deal_id, "line_items")
+
+        servicios_existentes = {}  # (hs_product_id, numero_container) -> {id, properties}
+        container_line_items = []
 
         if existing_line_item_ids:
-            # BATCH READ all line items
             batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
-            batch_size = 100
-            all_line_items = []
-
             for i in range(0, len(existing_line_item_ids), batch_size):
                 batch_ids = existing_line_item_ids[i:i + batch_size]
                 batch_payload = {
-                    "properties": ["hs_product_id", "hs_product_type"],
-                    "inputs": [{"id": str(lid)} for lid in batch_ids]
+                    "properties": [
+                        "name", "hs_product_id", "hs_product_type",
+                        "tipo_articulo", "numero_container",
+                        "price", "precio_de_coste", "cardcode",
+                        "tipo_iva_repercutido", "tipo_iva_soportado",
+                        "almacen",
+                    ],
+                    "inputs": [{"id": str(lid)} for lid in batch_ids],
+                }
+                try:
+                    resp = requests.post(batch_url, headers=headers, json=batch_payload, timeout=30)
+                    if not resp.ok:
+                        logger.error(f"[services] batch read failed: {resp.status_code} - {resp.text}")
+                        continue
+                    for item in resp.json().get("results", []):
+                        props = item.get("properties", {}) or {}
+                        tipo_articulo = (props.get("tipo_articulo") or "").strip().lower()
+                        product_type = (props.get("hs_product_type") or "").strip().lower()
+                        if _line_item_is_service(props) and tipo_articulo not in {"transitario", "comisiones"}:
+                            key = (
+                                str(props.get("hs_product_id") or "").strip(),
+                                (props.get("numero_container") or "").strip(),
+                            )
+                            servicios_existentes[key] = {
+                                "id": item.get("id"),
+                                "properties": props,
+                            }
+                        if _is_container_product_type(product_type):
+                            container_line_items.append({
+                                "id": item.get("id"),
+                                "name": props.get("name", ""),
+                                "numero_container": props.get("numero_container", ""),
+                            })
+                except Exception as e:
+                    logger.error(f"[services] error in batch read line items: {e}")
+
+        residennum = ""
+        equ = ""
+        try:
+            company_ids = get_associated_companies(deal_id)
+            if company_ids:
+                company_id = company_ids[0]
+                company_url = f"https://api.hubapi.com/crm/v3/objects/companies/{company_id}"
+                company_response = requests.get(
+                    company_url, headers=headers,
+                    params={"properties": "residennum,equ"}, timeout=10,
+                )
+                if company_response.ok:
+                    company_props = company_response.json().get("properties", {}) or {}
+                    residennum = company_props.get("residennum") or ""
+                    equ = company_props.get("equ") or ""
+        except Exception as e:
+            logger.error(f"[services] error fetching company residence: {e}")
+
+        service_product_tipo_map = {}
+        service_product_hs_type_map = {}
+        service_product_iva_props = {}
+        service_product_price_map = {}  # pid -> round_price(hs_price_eur)
+        if data.services:
+            service_product_ids = list({str(s.product_id) for s in data.services})
+            try:
+                prod_batch_url = "https://api.hubapi.com/crm/v3/objects/products/batch/read"
+                iva_props_list = [
+                    "tipo_iva_soportado", "tipo_iva_repercutido",
+                    "tipo_iva_soportado_eu", "tipo_iva_repercutido_eu",
+                    "tipo_iva_soportado_ex", "tipo_iva_repercutido_ex",
+                ]
+                for i in range(0, len(service_product_ids), batch_size):
+                    batch_ids = service_product_ids[i:i + batch_size]
+                    batch_payload = {
+                        "properties": ["tipo_articulo", "hs_product_type", "hs_price_eur"] + iva_props_list,
+                        "inputs": [{"id": pid} for pid in batch_ids],
+                    }
+                    resp = requests.post(prod_batch_url, headers=headers, json=batch_payload, timeout=30)
+                    if resp.ok:
+                        for product in resp.json().get("results", []):
+                            pid = str(product.get("id") or "")
+                            if not pid:
+                                continue
+                            props = product.get("properties", {}) or {}
+                            service_product_tipo_map[pid] = (props.get("tipo_articulo") or "").strip().lower() or "servicio"
+                            hs_type = (props.get("hs_product_type") or "").strip()
+                            service_product_hs_type_map[pid] = hs_type if hs_type else "Servicio"
+                            service_product_iva_props[pid] = {k: props.get(k) for k in iva_props_list}
+                            service_product_price_map[pid] = round_price(props.get("hs_price_eur"))
+            except Exception as e:
+                logger.warning(f"[services] Error fetching product properties: {e}")
+
+        containers_iter = container_line_items if container_line_items else [{"name": "", "numero_container": ""}]
+        target_specs = {}  # (product_id, numero_container) -> {service, container, props_target}
+
+        for service in data.services:
+            pid = str(service.product_id)
+            iva_props = service_product_iva_props.get(pid, {})
+            tipo_iva_rep_input = service.tipo_iva or resolve_product_iva(iva_props, residennum, "repercutido")
+            tipo_iva_sop = service.tipo_iva_soportado or resolve_product_iva(iva_props, residennum, "soportado") or ""
+            tipo_iva_rep = _tipo_iva_repercutido_for_hubspot(tipo_iva_rep_input)
+            service_tipo = service_product_tipo_map.get(pid, "servicio")
+            service_hs_type = _hs_product_type_for_hubspot(service_product_hs_type_map.get(pid) or "Servicio")
+            precio_round = round_price(service.price)
+            if precio_round is None:
+                logger.warning(
+                    f"[services] servicio product_id={pid} sin price — "
+                    f"precio_unitario y precio_de_coste quedarán vacíos"
+                )
+                continue
+
+            for c in containers_iter:
+                numero_container = (c.get("numero_container") or "").strip()
+                key = (pid, numero_container)
+                container_name = c.get("name") or ""
+                nombre_servicio = f"{container_name} - {service.product_name}" if container_name else service.product_name
+
+                props_target = {
+                    "name": nombre_servicio,
+                    "price": str(precio_round),
+                    "cardcode": service.provider_cardcode or "",
+                    "numero_container": numero_container,
+                    "tipo_iva_repercutido": tipo_iva_rep,
+                    "tipo_iva_soportado": tipo_iva_sop,
+                    "tipo_articulo": service_tipo,
+                    "hs_product_type": service_hs_type,
+                }
+                if deal_almacen:
+                    props_target["almacen"] = str(deal_almacen)
+
+                target_specs[key] = {
+                    "service": service,
+                    "container": c,
+                    "props_target": props_target,
                 }
 
+        target_keys = set(target_specs.keys())
+
+        to_update = []
+        to_create = []
+        to_delete_ids = []
+
+        for key, spec in target_specs.items():
+            existing = servicios_existentes.get(key)
+            if existing:
+                cur = existing["properties"]
+                update_props = {}
+                for prop, target_val in spec["props_target"].items():
+                    cur_val = cur.get(prop)
+                    if prop == "price":
+                        if _safe_float(cur_val) != _safe_float(target_val):
+                            update_props[prop] = target_val
+                    else:
+                        if (cur_val or "") != (target_val or ""):
+                            update_props[prop] = target_val
+                if update_props:
+                    to_update.append({"id": existing["id"], "properties": update_props, "_target_key": key})
+            else:
+                pid = key[0]
+                create_props = {
+                    "hs_product_id": pid,
+                    "hs_sku": pid,
+                    "quantity": "1",
+                    "hs_currency": "EUR",
+                    **spec["props_target"],
+                }
+                to_create.append({
+                    "properties": create_props,
+                    "associations": [{
+                        "to": {"id": deal_id},
+                        "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}],
+                    }],
+                    "_target_key": key,
+                })
+
+        for key, existing in servicios_existentes.items():
+            if key not in target_keys:
+                to_delete_ids.append(existing["id"])
+
+        persisted_by_key = {key: existing["id"] for key, existing in servicios_existentes.items() if key in target_keys}
+
+        if to_update:
+            upd_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/update"
+            for i in range(0, len(to_update), batch_size):
+                chunk = to_update[i:i + batch_size]
+                for x in chunk:
+                    enforce_line_item_price_rounding(x["properties"])
+                payload = {"inputs": [{"id": x["id"], "properties": x["properties"]} for x in chunk]}
                 try:
-                    batch_response = requests.post(batch_url, headers=headers, json=batch_payload, timeout=30)
-                    if batch_response.ok:
-                        all_line_items.extend(batch_response.json().get("results", []))
+                    resp = requests.post(upd_url, headers=headers, json=payload, timeout=60)
+                    if not resp.ok:
+                        logger.error(f"[services] batch update failed: {resp.status_code} - {resp.text}")
                 except Exception as e:
-                    logger.error(f"[services] Error in batch read line items: {e}")
+                    logger.error(f"[services] error batch updating: {e}")
 
-            logger.warning(f"[services] Batch fetched {len(all_line_items)} line items")
+        created_ids_by_key = {}
+        if to_create:
+            cr_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/create"
+            for i in range(0, len(to_create), batch_size):
+                chunk = to_create[i:i + batch_size]
+                for x in chunk:
+                    enforce_line_item_price_rounding(x["properties"])
+                payload = {"inputs": [{"properties": x["properties"], "associations": x["associations"]} for x in chunk]}
+                try:
+                    resp = requests.post(cr_url, headers=headers, json=payload, timeout=60)
+                    if resp.ok:
+                        for x, created in zip(chunk, resp.json().get("results", [])):
+                            new_id = created.get("id")
+                            if new_id:
+                                created_ids_by_key[x["_target_key"]] = new_id
+                                persisted_by_key[x["_target_key"]] = new_id
+                    else:
+                        logger.error(f"[services] batch create failed: {resp.status_code} - {resp.text}")
+                except Exception as e:
+                    logger.error(f"[services] error batch creating: {e}")
 
-            # Regla unificada: borrar line items que son servicios (hs_product_type = service)
-            for line_item in all_line_items:
-                props = line_item.get("properties", {})
-                if _line_item_is_service(props):
-                    service_line_item_ids_to_delete.append(line_item.get("id"))
-                    logger.warning(f"[services] Will delete line item {line_item.get('id')} (hs_product_type=service)")
+        if to_delete_ids:
+            del_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/archive"
+            for i in range(0, len(to_delete_ids), batch_size):
+                chunk = to_delete_ids[i:i + batch_size]
+                try:
+                    resp = requests.post(del_url, headers=headers, json={"inputs": [{"id": str(x)} for x in chunk]}, timeout=30)
+                    if not resp.ok:
+                        logger.error(f"[services] batch archive failed: {resp.status_code} - {resp.text}")
+                except Exception as e:
+                    logger.error(f"[services] error batch archiving: {e}")
 
-            logger.warning(f"[services] Found {len(service_line_item_ids_to_delete)} service line items to delete")
-
-            # BATCH DELETE service line items
-            if service_line_item_ids_to_delete:
-                batch_delete_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/archive"
-
-                for i in range(0, len(service_line_item_ids_to_delete), batch_size):
-                    batch_ids = service_line_item_ids_to_delete[i:i + batch_size]
-                    batch_payload = {
-                        "inputs": [{"id": str(lid)} for lid in batch_ids]
-                    }
-
-                    try:
-                        batch_response = requests.post(batch_delete_url, headers=headers, json=batch_payload, timeout=30)
-                        if batch_response.ok:
-                            logger.warning(f"[services] Batch deleted {len(batch_ids)} line items")
-                        else:
-                            logger.error(f"[services] Batch delete failed: {batch_response.status_code}")
-                    except Exception as e:
-                        logger.error(f"[services] Error in batch delete: {e}")
-
-        # Step 2: BATCH READ providers and remove service provider associations
+        desired_provider_ids = {str(s.provider_id) for s in data.services if s.provider_id}
         existing_provider_ids = _get_associated_ids(deal_id, "2-43108800")
-        logger.warning(f"[services] Found {len(existing_provider_ids)} total provider associations")
-
-        service_provider_ids_to_remove = []
+        actual_service_provider_ids = set()
 
         if existing_provider_ids:
-            # BATCH READ all providers
-            batch_url = "https://api.hubapi.com/crm/v3/objects/2-43108800/batch/read"
-
+            prov_batch_url = "https://api.hubapi.com/crm/v3/objects/2-43108800/batch/read"
             for i in range(0, len(existing_provider_ids), batch_size):
                 batch_ids = existing_provider_ids[i:i + batch_size]
-                batch_payload = {
+                payload = {
                     "properties": ["tipo_proveedor"],
-                    "inputs": [{"id": str(pid)} for pid in batch_ids]
+                    "inputs": [{"id": str(pid)} for pid in batch_ids],
                 }
-
                 try:
-                    batch_response = requests.post(batch_url, headers=headers, json=batch_payload, timeout=30)
-                    if batch_response.ok:
-                        for provider in batch_response.json().get("results", []):
-                            provider_id = provider.get("id")
+                    resp = requests.post(prov_batch_url, headers=headers, json=payload, timeout=30)
+                    if resp.ok:
+                        for provider in resp.json().get("results", []):
                             tipo_proveedor = (provider.get("properties", {}).get("tipo_proveedor") or "").strip().lower()
-
-                            # Quitar asociaciones de proveedores que no son fabricante/transitario/comisiones/seguro (son proveedores de servicio)
                             if tipo_proveedor not in ("fabricante", "transitario", "comisiones", "seguro"):
-                                service_provider_ids_to_remove.append(provider_id)
-                                logger.warning(f"[services] Will remove provider {provider_id} (tipo_proveedor: {tipo_proveedor})")
+                                actual_service_provider_ids.add(str(provider.get("id")))
                 except Exception as e:
-                    logger.error(f"[services] Error in batch read providers: {e}")
+                    logger.error(f"[services] error reading providers: {e}")
 
-            logger.warning(f"[services] Found {len(service_provider_ids_to_remove)} service provider associations to remove")
+        to_associate = desired_provider_ids - actual_service_provider_ids
+        to_disassociate = actual_service_provider_ids - desired_provider_ids
 
-            # Remove service provider associations (individual DELETE requests - no batch API available)
-            for provider_id in service_provider_ids_to_remove:
-                try:
-                    delete_url = f"https://api.hubapi.com/crm/v4/objects/2-43108800/{provider_id}/associations/deals/{deal_id}"
-                    delete_response = requests.delete(delete_url, headers=headers, timeout=10)
-
-                    if delete_response.ok:
-                        logger.warning(f"[services] Removed provider {provider_id} association")
-                    else:
-                        logger.error(f"[services] Failed to remove provider {provider_id}: {delete_response.status_code}")
-                except Exception as e:
-                    logger.error(f"[services] Error removing provider {provider_id} association: {e}")
-
-        # Step 3: GET CONTAINERS and determine IVA type
-        container_line_items = []
-        tipo_iva_repercutido = "R21"  # Default
-
-        if data.services:
-            # Fetch all line items to get containers
-            if not existing_line_item_ids:
-                existing_line_item_ids = _get_associated_ids(deal_id, "line_items")
-
-            if existing_line_item_ids:
-                # BATCH READ all line items to find containers
-                batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
-                batch_size = 100
-
-                for i in range(0, len(existing_line_item_ids), batch_size):
-                    batch_ids = existing_line_item_ids[i:i + batch_size]
-                    batch_payload = {
-                        "properties": ["name", "hs_product_type", "numero_container"],
-                        "inputs": [{"id": str(lid)} for lid in batch_ids]
-                    }
-
-                    try:
-                        batch_response = requests.post(batch_url, headers=headers, json=batch_payload, timeout=30)
-                        if batch_response.ok:
-                            for line_item in batch_response.json().get("results", []):
-                                props = line_item.get("properties", {})
-                                product_type = (props.get("hs_product_type") or "").strip().lower()
-
-                                if _is_container_product_type(product_type):
-                                    container_line_items.append({
-                                        "id": line_item.get("id"),
-                                        "name": props.get("name", ""),
-                                        "numero_container": props.get("numero_container", "")
-                                    })
-                    except Exception as e:
-                        logger.error(f"[services] Error fetching containers: {e}")
-
-                logger.warning(f"[services] Found {len(container_line_items)} containers")
-
-            # Get company residence to determine IVA type
+        for provider_id in to_associate:
             try:
-                company_ids = get_associated_companies(deal_id)
-                if company_ids:
-                    company_id = company_ids[0]
-                    company_url = f"https://api.hubapi.com/crm/v3/objects/companies/{company_id}"
-                    company_response = requests.get(
-                        company_url,
-                        headers=headers,
-                        params={"properties": "residennum"},
-                        timeout=10
-                    )
-
-                    if company_response.ok:
-                        residennum = (company_response.json()
-                                     .get("properties", {})
-                                     .get("residennum", ""))
-
-                        tipo_iva_repercutido = compute_tipo_iva_repercutido(residennum)
-                        logger.warning(f"[services] Company residence: {residennum or 'NACIONAL'}, IVA type: {tipo_iva_repercutido}")
+                assoc_url = f"https://api.hubapi.com/crm/v4/objects/2-43108800/{provider_id}/associations/deals/{deal_id}"
+                assoc_payload = [{"associationCategory": "USER_DEFINED", "associationTypeId": 448}]
+                resp = requests.put(assoc_url, headers=headers, json=assoc_payload, timeout=10)
+                if not resp.ok:
+                    logger.error(f"[services] associate provider {provider_id} failed: {resp.status_code} - {resp.text}")
             except Exception as e:
-                logger.error(f"[services] Error fetching company residence: {e}")
+                logger.error(f"[services] error associating provider {provider_id}: {e}")
 
-        # Step 4: BATCH CREATE new service line items (one per service per container)
-        line_items_created = []
-        provider_ids_to_associate = set()
+        for provider_id in to_disassociate:
+            try:
+                del_url = f"https://api.hubapi.com/crm/v4/objects/2-43108800/{provider_id}/associations/deals/{deal_id}"
+                resp = requests.delete(del_url, headers=headers, timeout=10)
+                if not resp.ok:
+                    logger.error(f"[services] disassociate provider {provider_id} failed: {resp.status_code} - {resp.text}")
+            except Exception as e:
+                logger.error(f"[services] error disassociating provider {provider_id}: {e}")
 
-        if data.services:
-            # Get tipo_articulo and hs_product_type from products so we set them on each service line item (do not override with hardcoded values)
-            service_product_ids = list({str(s.product_id) for s in data.services})
-            service_product_tipo_map = {}  # product_id -> tipo_articulo (lowercase)
-            service_product_hs_type_map = {}  # product_id -> hs_product_type (as in HubSpot: Servicio, Flete, etc.)
-            if service_product_ids:
-                try:
-                    prod_batch_url = "https://api.hubapi.com/crm/v3/objects/products/batch/read"
-                    for i in range(0, len(service_product_ids), batch_size):
-                        batch_ids = service_product_ids[i:i + batch_size]
-                        batch_payload = {"properties": ["tipo_articulo", "hs_product_type"], "inputs": [{"id": pid} for pid in batch_ids]}
-                        batch_response = requests.post(prod_batch_url, headers=headers, json=batch_payload, timeout=30)
-                        if batch_response.ok:
-                            for product in batch_response.json().get("results", []):
-                                pid = product.get("id")
-                                if not pid:
-                                    continue
-                                pid = str(pid)
-                                props = product.get("properties", {})
-                                t = (props.get("tipo_articulo") or "").strip().lower()
-                                service_product_tipo_map[pid] = t or "servicio"
-                                # Use product's hs_product_type as-is (e.g. Servicio, Flete) so we don't overwrite with wrong value
-                                hs_type = (props.get("hs_product_type") or "").strip()
-                                service_product_hs_type_map[pid] = hs_type if hs_type else "Servicio"
-                except Exception as e:
-                    logger.warning(f"[services] Error fetching product tipo_articulo/hs_product_type: {e}")
+        try:
+            elementos = get_elementos_by_deal(
+                client, deal_id,
+                properties=[
+                    "nombre", "tipo_articulo", "cantidad", "precio_unitario",
+                    "precio_de_coste", "precio_total", "cardcode",
+                    "tipo_iva_repercutido", "tipo_iva_soportado", "line_item_id",
+                    "nombre_contenedor",
+                ],
+            )
+        except Exception as e:
+            logger.warning(f"[services] could not load ELEMENTOS for deal {deal_id}: {e}")
+            elementos = []
 
-            # Prepare all line items for batch creation
-            line_items_to_create = []
+        non_service_tipos = {
+            "flete", "fabricante", "transitario", "comisiones", "comision",
+            "container", "contenedor", "articulo", "inventory",
+        }
+        elementos_svc_by_lid = {}
+        elementos_svc_by_nombre = {}
+        for el in elementos:
+            props = el.get("properties", {}) or {}
+            tipo = (props.get("tipo_articulo") or "").strip().lower()
+            if tipo in non_service_tipos:
+                continue
+            lid = (props.get("line_item_id") or "").strip()
+            nombre = (props.get("nombre") or "").strip()
+            entry = {"id": el.get("id"), "properties": props}
+            if lid:
+                elementos_svc_by_lid[lid] = entry
+            if nombre:
+                elementos_svc_by_nombre[nombre] = entry
 
-            if not container_line_items:
-                logger.warning(f"[services] No containers found - creating services without container association")
-                # Fallback: create services without container association
-                for service in data.services:
-                    service_tipo_iva = (service.tipo_iva if service.tipo_iva else tipo_iva_repercutido)
-                    service_tipo_iva_normalized = _tipo_iva_repercutido_for_hubspot(service_tipo_iva)  # EX, R21, etc. en mayúsculas
-                    service_tipo = service_product_tipo_map.get(str(service.product_id), "servicio")
-                    service_hs_type = _hs_product_type_for_hubspot(
-                        service_product_hs_type_map.get(str(service.product_id)) or "Servicio"
-                    )  # Valor exacto: service, Flete, etc.
-                    service_properties = {
-                        "hs_product_id": service.product_id,
-                        "name": service.product_name,
-                        "price": str(service.price),
-                        "precio_de_coste": str(service.price),
-                        "quantity": "1",
-                        "cardcode": service.provider_cardcode or "",
-                        "tipo_iva_repercutido": service_tipo_iva_normalized,
-                        "tipo_articulo": service_tipo,
-                        "hs_product_type": service_hs_type
-                    }
+        contenedores_co_by_numero = _resolve_contenedor_co_by_numero(client, deal_id)
+        contact_id = (get_associated_contacts(deal_id) or [None])[0]
+        company_id = (get_associated_companies(deal_id) or [None])[0]
+        affected_contenedor_co_ids = set()
 
-                    # Add almacen if available
-                    if deal_almacen:
-                        service_properties["almacen"] = str(deal_almacen)
+        def _co_for_spec(spec):
+            container_name = spec["container"].get("name") or ""
+            numero = (spec["container"].get("numero_container") or "").strip()
+            container_lid = str(spec["container"].get("id") or "")
+            return (
+                contenedores_co_by_numero.get(numero)
+                or contenedores_co_by_numero.get(container_name)
+                or contenedores_co_by_numero.get(f"lid:{container_lid}")
+            )
 
-                    line_item_data = {
-                        "properties": service_properties,
-                        "associations": [{
-                            "to": {"id": deal_id},
-                            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
-                        }]
-                    }
-                    line_items_to_create.append(line_item_data)
-                    provider_ids_to_associate.add(service.provider_id)
-            else:
-                # Create one line item per service per container
-                for service in data.services:
-                    service_tipo_iva = (service.tipo_iva if service.tipo_iva else tipo_iva_repercutido)
-                    service_tipo_iva_normalized = _tipo_iva_repercutido_for_hubspot(service_tipo_iva)
-                    service_tipo = service_product_tipo_map.get(str(service.product_id), "servicio")
-                    service_hs_type = _hs_product_type_for_hubspot(
-                        service_product_hs_type_map.get(str(service.product_id)) or "Servicio"
+        def _co_id_for_key(key):
+            if not key:
+                return None
+            numero = (key[1] or "").strip() if len(key) > 1 else ""
+            co = contenedores_co_by_numero.get(numero) if numero else None
+            return co.get("id") if co else None
+
+        def _create_servicio_elemento(spec, lid_for_elem):
+            co = _co_for_spec(spec)
+            if not co:
+                logger.warning(
+                    f"[services] no CONTENEDOR CO matched for spec; available keys={list(contenedores_co_by_numero.keys())}"
+                )
+                return False
+            precio = _safe_float(spec["props_target"]["price"])
+            if precio is None:
+                precio = service_product_price_map.get(str(spec["service"].product_id))
+            if precio is None:
+                logger.warning(
+                    f"[services] create elemento sin price para line_item_id={lid_for_elem}"
+                )
+                return False
+            container_name = spec["container"].get("name") or ""
+            elem_data = [{
+                "nombre": spec["props_target"]["name"],
+                "nombre_contenedor": container_name,
+                "tipo_articulo": _normalize_tipo_articulo_for_elemento(spec["props_target"]["tipo_articulo"]),
+                "cantidad": 1,
+                "precio_unitario": precio,
+                "precio_de_coste": precio,
+                "precio_total": precio,
+                "cardcode": spec["service"].provider_cardcode or "",
+                "line_item_id": str(lid_for_elem),
+            }]
+            if spec["props_target"]["tipo_iva_repercutido"]:
+                elem_data[0]["tipo_iva_repercutido"] = spec["props_target"]["tipo_iva_repercutido"]
+            if spec["props_target"]["tipo_iva_soportado"]:
+                elem_data[0]["tipo_iva_soportado"] = spec["props_target"]["tipo_iva_soportado"]
+            try:
+                created = batch_create_elementos_with_associations(
+                    client=client,
+                    elementos_data=elem_data,
+                    deal_id=deal_id,
+                    contenedor_id=co.get("id"),
+                    contact_id=contact_id,
+                    company_id=company_id,
+                )
+                if created:
+                    affected_contenedor_co_ids.add(co.get("id"))
+                    return True
+                return False
+            except Exception as e:
+                logger.warning(f"[services] failed creating elemento for {lid_for_elem}: {e}")
+                return False
+
+        elementos_updated = 0
+        elementos_created = 0
+        new_lids_set = {str(x) for x in created_ids_by_key.values()}
+        for key, lid in persisted_by_key.items():
+            target_lid = str(lid).strip()
+            if target_lid in new_lids_set:
+                continue
+            spec = target_specs.get(key)
+            if not spec:
+                continue
+
+            elem = elementos_svc_by_lid.get(target_lid)
+            if not elem:
+                target_name = spec["props_target"]["name"]
+                if target_name and target_name in elementos_svc_by_nombre:
+                    elem = elementos_svc_by_nombre[target_name]
+            if not elem:
+                existing = servicios_existentes.get(key)
+                nombre_existing = (existing["properties"].get("name") or "").strip() if existing else ""
+                if nombre_existing and nombre_existing in elementos_svc_by_nombre:
+                    elem = elementos_svc_by_nombre[nombre_existing]
+            if not elem:
+                if _create_servicio_elemento(spec, target_lid):
+                    elementos_created += 1
+                else:
+                    logger.warning(
+                        f"[services] could not create missing ELEMENTO for line_item_id={target_lid} key={key!r}"
                     )
+                continue
 
-                    for container in container_line_items:
-                        service_with_container_properties = {
-                            "hs_product_id": service.product_id,
-                            "name": f"{container['name']} - {service.product_name}",
-                            "price": str(service.price),
-                            "precio_de_coste": str(service.price),
-                            "quantity": "1",
-                            "cardcode": service.provider_cardcode or "",
-                            "numero_container": container["numero_container"],
-                            "tipo_iva_repercutido": service_tipo_iva_normalized,
-                            "tipo_articulo": service_tipo,
-                            "hs_product_type": service_hs_type
-                        }
+            cur_props = elem["properties"]
+            target_name = spec["props_target"]["name"]
+            target_cardcode = spec["service"].provider_cardcode or ""
+            target_iva_rep = spec["props_target"]["tipo_iva_repercutido"]
+            target_iva_sop = spec["props_target"]["tipo_iva_soportado"]
+            precio_de_coste_target = _safe_float(spec["props_target"]["price"])
+            if precio_de_coste_target is None:
+                precio_de_coste_target = service_product_price_map.get(key[0])
+            if precio_de_coste_target is None:
+                logger.warning(
+                    f"[services] update elemento sin price ni hs_price_eur del producto {key[0]} "
+                    f"para line_item_id={target_lid}"
+                )
+                continue
 
-                        # Add almacen if available
-                        if deal_almacen:
-                            service_with_container_properties["almacen"] = str(deal_almacen)
+            elem_update_props = {}
+            if (cur_props.get("nombre") or "").strip() != target_name:
+                elem_update_props["nombre"] = target_name
+            if _safe_float(cur_props.get("precio_unitario")) != precio_de_coste_target:
+                elem_update_props["precio_unitario"] = precio_de_coste_target
+            if _safe_float(cur_props.get("precio_total")) != precio_de_coste_target:
+                elem_update_props["precio_total"] = precio_de_coste_target
+            if _safe_float(cur_props.get("precio_de_coste")) != precio_de_coste_target:
+                elem_update_props["precio_de_coste"] = precio_de_coste_target
+            if (cur_props.get("cardcode") or "") != target_cardcode:
+                elem_update_props["cardcode"] = target_cardcode
+            if target_iva_rep and cur_props.get("tipo_iva_repercutido") != target_iva_rep:
+                elem_update_props["tipo_iva_repercutido"] = target_iva_rep
+            if (cur_props.get("tipo_iva_soportado") or "") != (target_iva_sop or ""):
+                elem_update_props["tipo_iva_soportado"] = target_iva_sop
+            if str(cur_props.get("line_item_id") or "") != target_lid:
+                elem_update_props["line_item_id"] = target_lid
 
-                        line_item_data = {
-                            "properties": service_with_container_properties,
-                            "associations": [{
-                                "to": {"id": deal_id},
-                                "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
-                            }]
-                        }
-                        line_items_to_create.append(line_item_data)
+            if not elem_update_props:
+                continue
+            if update_elemento(client, elem["id"], elem_update_props):
+                elementos_updated += 1
+                co_id_upd = _co_id_for_key(key)
+                if co_id_upd:
+                    affected_contenedor_co_ids.add(co_id_upd)
 
-                    provider_ids_to_associate.add(service.provider_id)
+        if to_create and created_ids_by_key:
+            for x in to_create:
+                key = x["_target_key"]
+                new_lid = created_ids_by_key.get(key)
+                if not new_lid:
+                    continue
+                spec = target_specs[key]
+                container_name = spec["container"].get("name") or ""
+                numero = (spec["container"].get("numero_container") or "").strip()
+                container_lid = str(spec["container"].get("id") or "")
+                co = (
+                    contenedores_co_by_numero.get(numero)
+                    or contenedores_co_by_numero.get(container_name)
+                    or contenedores_co_by_numero.get(f"lid:{container_lid}")
+                )
+                if not co:
+                    continue
+                precio_de_coste_serv = _safe_float(spec["props_target"]["price"])
+                if precio_de_coste_serv is None:
+                    precio_de_coste_serv = service_product_price_map.get(key[0])
+                if precio_de_coste_serv is None:
+                    logger.warning(
+                        f"[services] create elemento sin price ni hs_price_eur del producto {key[0]} "
+                        f"para line_item_id={new_lid}"
+                    )
+                    continue
+                elementos_data = [{
+                    "nombre": spec["props_target"]["name"],
+                    "nombre_contenedor": container_name,
+                    "tipo_articulo": _normalize_tipo_articulo_for_elemento(spec["props_target"]["tipo_articulo"]),
+                    "cantidad": 1,
+                    "precio_unitario": precio_de_coste_serv,
+                    "precio_de_coste": precio_de_coste_serv,
+                    "precio_total": precio_de_coste_serv,
+                    "cardcode": spec["service"].provider_cardcode or "",
+                    "line_item_id": str(new_lid),
+                }]
+                if spec["props_target"]["tipo_iva_repercutido"]:
+                    elementos_data[0]["tipo_iva_repercutido"] = spec["props_target"]["tipo_iva_repercutido"]
+                if spec["props_target"]["tipo_iva_soportado"]:
+                    elementos_data[0]["tipo_iva_soportado"] = spec["props_target"]["tipo_iva_soportado"]
+                created = batch_create_elementos_with_associations(
+                    client=client,
+                    elementos_data=elementos_data,
+                    deal_id=deal_id,
+                    contenedor_id=co.get("id"),
+                    contact_id=contact_id,
+                    company_id=company_id,
+                )
+                if created:
+                    elementos_created += len(created)
+                    affected_contenedor_co_ids.add(co.get("id"))
 
-            logger.warning(f"[services] Prepared {len(line_items_to_create)} line items for batch creation")
+        elementos_deleted = 0
+        for lid in to_delete_ids:
+            elem_lid = str(lid).strip()
+            elem = elementos_svc_by_lid.get(elem_lid)
+            if not elem:
+                deleted_existing = next(
+                    (e for e in servicios_existentes.values() if str(e["id"]) == elem_lid),
+                    None,
+                )
+                if deleted_existing:
+                    nombre_deleted = (deleted_existing["properties"].get("name") or "").strip()
+                    if nombre_deleted:
+                        elem = elementos_svc_by_nombre.get(nombre_deleted)
+            if elem and delete_elemento(client, elem.get("id")):
+                elementos_deleted += 1
+                nc_del = ((elem.get("properties") or {}).get("nombre_contenedor") or "").strip()
+                co_del = contenedores_co_by_numero.get(nc_del) if nc_del else None
+                if co_del:
+                    affected_contenedor_co_ids.add(co_del.get("id"))
 
-            # BATCH CREATE line items
-            batch_create_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/create"
+        if to_update or to_create or to_delete_ids or elementos_updated or elementos_created or elementos_deleted or to_associate or to_disassociate:
+            logger.info(
+                f"[services] sync done: line_items updated={len(to_update)} "
+                f"created={len(to_create)} deleted={len(to_delete_ids)} | "
+                f"providers associate={len(to_associate)} disassociate={len(to_disassociate)} | "
+                f"ELEMENTOS updated={elementos_updated} created={elementos_created} deleted={elementos_deleted}"
+            )
 
-            for i in range(0, len(line_items_to_create), batch_size):
-                batch_items = line_items_to_create[i:i + batch_size]
-                batch_payload = {"inputs": batch_items}
-
-                try:
-                    batch_response = requests.post(batch_create_url, headers=headers, json=batch_payload, timeout=60)
-                    if batch_response.ok:
-                        created_items = batch_response.json().get("results", [])
-                        for item in created_items:
-                            line_items_created.append(item.get("id"))
-                        logger.warning(f"[services] Batch created {len(created_items)} line items")
-                    else:
-                        logger.error(f"[services] Batch create failed: {batch_response.status_code} - {batch_response.text}")
-                except Exception as e:
-                    logger.error(f"[services] Error in batch create line items: {e}")
-
-            logger.warning(f"[services] Created {len(line_items_created)} service line items")
-
-        # Step 6: Create new service provider associations (using provider_id directly)
-        if provider_ids_to_associate:
-            logger.warning(f"[services] Associating {len(provider_ids_to_associate)} providers with deal")
-
-            for provider_id in provider_ids_to_associate:
-                try:
-                    # Verify provider exists
-                    verify_url = f"https://api.hubapi.com/crm/v3/objects/2-43108800/{provider_id}"
-                    verify_response = requests.get(verify_url, headers=headers, timeout=10)
-
-                    if not verify_response.ok:
-                        logger.error(f"[services] Provider {provider_id} does not exist")
-                        continue
-
-                    # Create association (associationTypeId: 448 = "Servicios")
-                    assoc_url = f"https://api.hubapi.com/crm/v4/objects/2-43108800/{provider_id}/associations/deals/{deal_id}"
-                    assoc_payload = [{"associationCategory": "USER_DEFINED", "associationTypeId": 448}]
-
-                    response = requests.put(assoc_url, headers=headers, json=assoc_payload, timeout=10)
-
-                    if response.ok:
-                        logger.warning(f"[services] Associated provider {provider_id} (associationTypeId: 448 - Servicios)")
-                    else:
-                        logger.error(f"[services] Failed to associate provider {provider_id}: {response.status_code}")
-
-                except Exception as e:
-                    logger.error(f"[services] Error associating provider {provider_id}: {e}")
+        if affected_contenedor_co_ids:
+            try:
+                await hubdb_client.preload_iva_table()
+                recalcular_contenedores(
+                    client,
+                    deal_id,
+                    list(affected_contenedor_co_ids),
+                    {"equ": equ, "residennum": residennum},
+                )
+            except Exception as e:
+                logger.warning(f"[services] recalcular_contenedores falló: {e}")
+            touch_pagos_for_contenedores(client, list(affected_contenedor_co_ids))
 
         return BaseResponse(success=True, error=None)
 
@@ -2996,7 +3112,6 @@ async def update_deal_services(
         logger.error(f"Error in update_deal_services: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/{deal_id}/containers", response_model=DealContainersResponse)
 async def get_deal_containers(
     deal_id: str = Path(
@@ -3005,38 +3120,16 @@ async def get_deal_containers(
         example="46298478914"
     )
 ):
-    """Get container line items for a deal from ContenedoresTab.
-
-    This endpoint retrieves all container line items associated with a deal:
-    1. Fetches all line items associated with the deal
-    2. Filters for container line items (hs_product_type = container, tipo_articulo = transitario)
-    3. Groups containers by type and configuration (same config = same group)
-    4. For each group, aggregates quantity and returns single ContainerItem
-    5. Calculates totals: total_containers, total_units, total_colis, total_peso_neto
-
-    Note: Individual containers are stored as separate line items (quantity=1 each),
-    but are returned grouped by configuration for UI display.
-
-    Args:
-        deal_id: HubSpot deal ID.
-
-    Returns:
-        DealContainersResponse with grouped containers and calculated totals.
-
-    Raises:
-        HTTPException: If deal not found or API error occurs.
-    """
+    """Devuelve los contenedores del deal para ContenedoresTab, agrupados por configuración (los line items individuales tienen quantity=1 y se devuelven agregados para la UI)."""
     try:
         import json
         client = hubspot_client.get_client()
 
         logger.warning(f"[containers] READ deal_id={deal_id} fetching container line items")
 
-        # Step 1: Get all line items associated with the deal
         existing_line_item_ids = _get_associated_ids(deal_id, "line_items")
         logger.warning(f"[containers] READ line_item_ids count={len(existing_line_item_ids)} ids={existing_line_item_ids[:20]}{'...' if len(existing_line_item_ids) > 20 else ''}")
 
-        # Step 2: Filter for container line items and parse their data
         # We'll collect all individual container line items first, then group them
         individual_containers = []
         article_line_items = []
@@ -3075,7 +3168,8 @@ async def get_deal_containers(
                         "price",
                         "precio_de_coste",
                         "margen_unitario",
-                        "tipo_iva_repercutido"
+                        "tipo_iva_repercutido",
+                        "tipo_iva_soportado"
                     ],
                     "inputs": [{"id": str(lid)} for lid in batch_ids]
                 }
@@ -3226,7 +3320,6 @@ async def get_deal_containers(
                 except Exception as e:
                     logger.error(f"Error processing line item {line_item.get('id')}: {e}")
 
-        # Step 3: Group containers by type and configuration
         # Key: (container_type, container_config_json)
         # Value: list of individual container dicts
         grouped_containers = {}
@@ -3243,7 +3336,6 @@ async def get_deal_containers(
 
             grouped_containers[group_key].append(container_data)
 
-        # Step 4: Create aggregated ContainerItems
         containers = []
         total_units = 0
         total_colis = 0
@@ -3287,7 +3379,6 @@ async def get_deal_containers(
         # Sort containers by container_number
         containers.sort(key=lambda c: c.container_number)
 
-        # Step 5: Build article data map from batch results
         # We already have article line items from the batch request above
         article_data_map = {}
         for line_item in article_line_items:
@@ -3301,10 +3392,13 @@ async def get_deal_containers(
                     article_data_map[unique_name] = {
                         "line_item_id": line_item_id,
                         "hs_sku": props.get("hs_sku", ""),
+                        "hs_product_id": props.get("hs_product_id"),
+                        "tipo_articulo": (props.get("tipo_articulo") or "").strip().lower(),
                         "price": float(props.get("price", 0)) if props.get("price") else None,
                         "precio_de_coste": float(props.get("precio_de_coste", 0)) if props.get("precio_de_coste") else None,
                         "margen_unitario": float(props.get("margen_unitario", 0)) if props.get("margen_unitario") else None,
-                        "tipo_iva_repercutido": props.get("tipo_iva_repercutido", None)
+                        "tipo_iva_repercutido": props.get("tipo_iva_repercutido", None),
+                        "tipo_iva_soportado": props.get("tipo_iva_soportado", None)
                     }
                     logger.warning(f"Mapped article line item {line_item_id}: name='{unique_name}'")
             except Exception as e:
@@ -3312,7 +3406,85 @@ async def get_deal_containers(
 
         logger.warning(f"Mapped data for {len(article_data_map)} article line items (by unique name)")
 
-        # Step 6: Create unique_containers array (ungrouped)
+        # When HubSpot publishes a quote and syncs line items back to the deal, it may
+        # create new deal line items from standard properties only, losing custom props
+        # like precio_de_coste and margen_unitario. Detect and restore from product catalog.
+        articles_needing_repair = [
+            (name, data)
+            for name, data in article_data_map.items()
+            if data.get("tipo_articulo") == "fabricante"
+            and data.get("precio_de_coste") is None
+            and data.get("hs_product_id") is not None
+        ]
+
+        if articles_needing_repair:
+            logger.warning(
+                f"[containers] HubSpot sync degradation detected: "
+                f"{len(articles_needing_repair)} fabricante articles missing precio_de_coste. "
+                f"Restoring from product catalog (current hs_price_eur, not historical cost)."
+            )
+            try:
+                product_ids_to_fetch = list({data["hs_product_id"] for _, data in articles_needing_repair})
+                product_price_map = {}  # hs_product_id -> hs_price_eur
+
+                products_batch_url = "https://api.hubapi.com/crm/v3/objects/products/batch/read"
+                for i in range(0, len(product_ids_to_fetch), 100):
+                    batch_ids = product_ids_to_fetch[i:i + 100]
+                    batch_payload = {
+                        "properties": ["hs_price_eur"],
+                        "inputs": [{"id": str(pid)} for pid in batch_ids]
+                    }
+                    try:
+                        prod_resp = requests.post(products_batch_url, headers=headers, json=batch_payload, timeout=15)
+                        if prod_resp.ok:
+                            for prod in prod_resp.json().get("results", []):
+                                pid = prod.get("id")
+                                hs_price_eur = prod.get("properties", {}).get("hs_price_eur")
+                                if pid and hs_price_eur:
+                                    product_price_map[pid] = float(hs_price_eur)
+                        else:
+                            logger.error(f"[containers] Auto-repair: product batch read failed {prod_resp.status_code}")
+                    except Exception as e:
+                        logger.error(f"[containers] Auto-repair: error fetching products: {e}")
+
+                # El precio_de_coste vive en el producto, no en el line item.
+                # Solo rehidratamos article_data_map y, si el margen quedó perdido,
+                # lo reescribimos en el line item porque ahí es donde lo guardamos.
+                line_item_updates = []
+                for name, data in articles_needing_repair:
+                    prod_id = data["hs_product_id"]
+                    hs_price_eur = round_price(product_price_map.get(prod_id))
+                    if hs_price_eur is None:
+                        logger.warning(f"[containers] Auto-repair: no hs_price_eur for product {prod_id}, skipping")
+                        continue
+
+                    article_data_map[name]["precio_de_coste"] = hs_price_eur
+
+                    price_exw = data.get("price")
+                    if price_exw is not None and hs_price_eur > 0:
+                        margen = round_margin((price_exw - hs_price_eur) / hs_price_eur)
+                        if margen is not None:
+                            article_data_map[name]["margen_unitario"] = margen
+                            line_item_updates.append({
+                                "id": data["line_item_id"],
+                                "properties": {"margen_unitario": str(margen)}
+                            })
+
+                if line_item_updates:
+                    update_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/update"
+                    try:
+                        upd_resp = requests.post(update_url, headers=headers, json={"inputs": line_item_updates}, timeout=15)
+                        if upd_resp.ok:
+                            logger.warning(f"[containers] Auto-repair: restored margen_unitario for {len(line_item_updates)} line items")
+                        else:
+                            logger.error(f"[containers] Auto-repair: batch update failed {upd_resp.status_code}: {upd_resp.text}")
+                    except Exception as e:
+                        logger.error(f"[containers] Auto-repair: error updating line items: {e}")
+
+            except Exception as e:
+                logger.error(f"[containers] Auto-repair failed: {e}", exc_info=True)
+                # Non-fatal: continue with potentially null precio_de_coste
+
         unique_containers = []
         for container_data in individual_containers:
             container_name = container_data["container_name"]
@@ -3354,7 +3526,8 @@ async def get_deal_containers(
                     price=article_extra_data.get("price"),
                     precio_de_coste=article_extra_data.get("precio_de_coste"),
                     margen_unitario=article_extra_data.get("margen_unitario"),
-                    tipo_iva_repercutido=article_extra_data.get("tipo_iva_repercutido")
+                    tipo_iva_repercutido=article_extra_data.get("tipo_iva_repercutido"),
+                    tipo_iva_soportado=article_extra_data.get("tipo_iva_soportado")
                 )
                 unique_articles.append(unique_article)
 
@@ -3398,6 +3571,1060 @@ async def get_deal_containers(
         logger.error(f"Error in get_deal_containers: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+def _fetch_deal_container_context(deal_id: str, client) -> dict:
+    """Load shared context needed to edit container line items.
+
+    Caches deal almacen, company residennum/equ and fabricante cardcode so
+    callers that need to edit several containers in one request reuse the
+    same lookups.
+    """
+    ctx = {"deal_almacen": None, "residennum": None, "equ": None, "fabricante_cardcode": None}
+
+    try:
+        deal_basic = client.crm.deals.basic_api.get_by_id(deal_id=deal_id, properties=["almacen"])
+        ctx["deal_almacen"] = deal_basic.properties.get("almacen") or None
+    except Exception as e:
+        logger.warning(f"[edit_container] could not fetch deal almacen: {e}")
+
+    try:
+        company_ids = get_associated_companies(deal_id)
+        if company_ids:
+            company = client.crm.companies.basic_api.get_by_id(
+                company_ids[0], properties=["residennum", "equ"]
+            )
+            ctx["residennum"] = company.properties.get("residennum") or ""
+            ctx["equ"] = company.properties.get("equ") or ""
+    except Exception as e:
+        logger.warning(f"[edit_container] could not fetch company residennum/equ: {e}")
+
+    try:
+        access_token = client.access_token
+        provider_ids = _get_associated_ids(deal_id, "2-43108800")
+        if provider_ids:
+            batch_url = "https://api.hubapi.com/crm/v3/objects/2-43108800/batch/read"
+            batch_payload = {
+                "properties": ["tipo_proveedor", "cardcode"],
+                "inputs": [{"id": str(pid)} for pid in provider_ids]
+            }
+            headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+            resp = requests.post(batch_url, headers=headers, json=batch_payload, timeout=30)
+            if resp.ok:
+                for prov in resp.json().get("results", []):
+                    props = prov.get("properties", {})
+                    if (props.get("tipo_proveedor") or "").strip().lower() == "fabricante":
+                        ctx["fabricante_cardcode"] = props.get("cardcode") or None
+                        break
+    except Exception as e:
+        logger.warning(f"[edit_container] could not fetch fabricante cardcode: {e}")
+
+    return ctx
+
+_VALID_TIPO_ARTICULO_ELEM = {"fabricante", "servicio", "flete", "intermediario", "seguro"}
+
+def _normalize_tipo_articulo_for_elemento(tipo_raw: str) -> str:
+    """Map a line-item `tipo_articulo` to the elemento CO enum.
+    HubSpot products may carry custom values (e.g. 'inspeccion', 'comisiones')
+    that are invalid for the elemento custom object. Mirrors the mapping used
+    in process_deal_custom_objects_from_line_items."""
+    t = (tipo_raw or "").strip().lower()
+    if t in _VALID_TIPO_ARTICULO_ELEM:
+        return t
+    if t == "comisiones":
+        return "intermediario"
+    if t == "transitario":
+        return "flete"
+    return "servicio"
+
+def _find_intermediario_product(client) -> Optional[dict]:
+    """Search the unique product with tipo_articulo='comisiones'. Returns its
+    id + iva-related properties, or None if not found."""
+    try:
+        search = client.crm.products.search_api.do_search(
+            public_object_search_request={
+                "filterGroups": [{"filters": [{"propertyName": "tipo_articulo", "operator": "EQ", "value": "comisiones"}]}],
+                "properties": [
+                    "name", "hs_sku",
+                    "tipo_iva_soportado", "tipo_iva_repercutido",
+                    "tipo_iva_soportado_eu", "tipo_iva_repercutido_eu",
+                    "tipo_iva_soportado_ex", "tipo_iva_repercutido_ex",
+                ],
+                "limit": 1,
+            }
+        )
+        if not search.results:
+            return None
+        product = search.results[0]
+        return {
+            "id": str(product.id),
+            "name": product.properties.get("name", "INTERMEDIARIO"),
+            "sku": product.properties.get("hs_sku", "INTERMEDIARIO"),
+            "properties": product.properties,
+        }
+    except Exception as e:
+        logger.warning(f"[intermediario] product search failed: {e}")
+        return None
+
+def _resolve_contenedor_co_by_numero(client, deal_id: str) -> dict:
+    """Map every natural CO key (nombre, numero_container raw + padded + prefixed,
+    line_item_id) → CONTENEDOR custom object ({id, properties}). The CO stores
+    numero_container as an int ('1', '2'...) while line items use the full name
+    ('{deal_id}-001'); indexing both forms lets callers lookup either way."""
+    try:
+        contenedores = get_contenedores_by_deal(
+            client, deal_id, properties=["nombre", "numero_container", "line_item_id"]
+        )
+    except Exception as e:
+        logger.warning(f"[contenedor-co] could not list custom objects for deal {deal_id}: {e}")
+        return {}
+
+    out = {}
+    for co in contenedores:
+        props = co.get("properties", {}) or {}
+        entry = {"id": co.get("id"), "properties": props}
+        numero_raw = (props.get("numero_container") or "").strip()
+        nombre = (props.get("nombre") or "").strip()
+        lid = (props.get("line_item_id") or "").strip()
+        if numero_raw:
+            out[numero_raw] = entry
+            try:
+                padded = f"{int(numero_raw):03d}"
+                out[padded] = entry
+                out[f"{deal_id}-{padded}"] = entry
+            except (ValueError, TypeError):
+                pass
+        if nombre:
+            out[nombre] = entry
+        if lid:
+            out[f"lid:{lid}"] = entry
+    return out
+
+def _fetch_intermediario_context(deal_id: str, client, residennum: Optional[str]) -> Optional[dict]:
+    """Resolve intermediario product + commission settings for a deal.
+
+    Returns None when intermediario is not active (repercutir_a_cliente != 'si'
+    or importe_comision <= 0). Otherwise returns the data needed to recompute
+    `importe_por_cajas` commissions in place.
+    """
+    try:
+        deal = client.crm.deals.basic_api.get_by_id(
+            deal_id,
+            properties=[
+                "repercutir_a_cliente", "tipo_comision", "importe_comision",
+                "codigo_intermediario", "tipo_iva_comision", "tipo_iva_comision_soportado"
+            ]
+        )
+        repercutir = (deal.properties.get("repercutir_a_cliente") or "").strip().lower()
+        tipo_comision = (deal.properties.get("tipo_comision") or "").strip().lower()
+        importe = float(deal.properties.get("importe_comision") or 0)
+
+        if repercutir != "si" or importe <= 0:
+            return None
+
+        product = _find_intermediario_product(client)
+        if not product:
+            return None
+
+        deal_iva_rep = (deal.properties.get("tipo_iva_comision") or "").strip() or None
+        deal_iva_sop = (deal.properties.get("tipo_iva_comision_soportado") or "").strip() or None
+
+        return {
+            "tipo_comision": tipo_comision,
+            "importe_comision": importe,
+            "codigo_intermediario": (deal.properties.get("codigo_intermediario") or "").strip(),
+            "product_id": product["id"],
+            "product_name": product["name"],
+            "product_sku": product["sku"],
+            "iva_repercutido": resolve_product_iva(product["properties"], residennum, "repercutido", deal_iva_rep),
+            "iva_soportado": resolve_product_iva(product["properties"], residennum, "soportado", deal_iva_sop),
+        }
+    except Exception as e:
+        logger.warning(f"[edit_container] could not fetch intermediario context: {e}")
+        return None
+
+def _edit_container_in_place(
+    deal_id: str,
+    container_line_item_id: str,
+    new_config: ContainerConfigEdit,
+    *,
+    client=None,
+    headers: Optional[dict] = None,
+    ctx: Optional[dict] = None,
+    intermediario_ctx: Optional[dict] = None,
+) -> dict:
+    """Apply edit-in-place modifications to a single container.
+
+    Diffs the new article list against the current line items (matched by
+    `numero_container`), then updates / creates / deletes line items keeping
+    HubSpot IDs stable. Mirrors the same diff onto the ELEMENTO custom objects
+    when they already exist (cotización publicada). Returns the updated
+    container in the same shape used by `unique_containers`.
+    """
+    if client is None:
+        client = hubspot_client.get_client()
+    if headers is None:
+        access_token = client.access_token
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+    if ctx is None:
+        ctx = _fetch_deal_container_context(deal_id, client)
+
+    deal_almacen = ctx.get("deal_almacen")
+    residennum = ctx.get("residennum")
+    fabricante_cardcode = ctx.get("fabricante_cardcode")
+
+    container_li = requests.get(
+        f"https://api.hubapi.com/crm/v3/objects/line_items/{container_line_item_id}",
+        headers=headers,
+        params={"properties": "name,numero_container,hs_product_id,hs_product_type,quantity"},
+        timeout=30
+    )
+    if not container_li.ok:
+        raise HTTPException(status_code=404, detail=f"Container line item {container_line_item_id} not found")
+
+    container_props = container_li.json().get("properties", {})
+    container_name = container_props.get("name") or container_props.get("numero_container")
+    if not container_name:
+        raise HTTPException(status_code=400, detail="Container line item missing name/numero_container")
+    if not _is_container_product_type(container_props.get("hs_product_type") or ""):
+        raise HTTPException(status_code=400, detail=f"Line item {container_line_item_id} is not a container")
+
+    container_product_id = container_props.get("hs_product_id")
+    container_type = "UNKNOWN"
+    if container_product_id:
+        try:
+            prod_resp = requests.get(
+                f"https://api.hubapi.com/crm/v3/objects/products/{container_product_id}",
+                headers=headers,
+                params={"properties": "hs_sku"},
+                timeout=15
+            )
+            if prod_resp.ok:
+                sku = (prod_resp.json().get("properties", {}).get("hs_sku") or "").strip()
+                for tipo, cand in CONTAINER_SKU_MAP.items():
+                    if cand == sku:
+                        container_type = tipo
+                        break
+        except Exception as e:
+            logger.warning(f"[edit_container] could not resolve container_type: {e}")
+
+    try:
+        container_number = int(str(container_name).split("-")[-1])
+    except (ValueError, IndexError):
+        container_number = 0
+
+    existing_line_item_ids = _get_associated_ids(deal_id, "line_items")
+    current_articles = []
+    current_intermediario = None
+
+    if existing_line_item_ids:
+        batch_size = 100
+        batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
+        for i in range(0, len(existing_line_item_ids), batch_size):
+            chunk = existing_line_item_ids[i:i + batch_size]
+            batch_payload = {
+                "properties": [
+                    "hs_product_type", "tipo_articulo", "numero_container",
+                    "hs_product_id", "hs_sku", "name", "quantity",
+                    "price", "precio_de_coste", "hs_price_eur", "margen_unitario",
+                    "tipo_iva_repercutido", "tipo_iva_soportado",
+                    "peso_neto", "peso_bruto", "cardcode",
+                    "almacen", "name_en", "name_fr", "description", "formato", "marca_certificado"
+                ],
+                "inputs": [{"id": str(lid)} for lid in chunk]
+            }
+            resp = requests.post(batch_url, headers=headers, json=batch_payload, timeout=30)
+            if not resp.ok:
+                logger.error(f"[edit_container] batch read failed: {resp.status_code} {resp.text}")
+                continue
+            for li in resp.json().get("results", []):
+                props = li.get("properties", {})
+                if (props.get("numero_container") or "").strip() != str(container_name).strip():
+                    continue
+                tipo_art = (props.get("tipo_articulo") or "").strip().lower()
+                if tipo_art == "fabricante" and _line_item_is_article(props):
+                    current_articles.append({"id": li.get("id"), "properties": props})
+                elif tipo_art == "comisiones":
+                    current_intermediario = {"id": li.get("id"), "properties": props}
+
+    current_by_id = {a["id"]: a for a in current_articles}
+    payload_articles = list(new_config.articulos or [])
+
+    payload_with_id = [a for a in payload_articles if a.line_item_id and a.line_item_id in current_by_id]
+    payload_new = [a for a in payload_articles if not a.line_item_id or a.line_item_id not in current_by_id]
+    keep_ids = {a.line_item_id for a in payload_with_id}
+    to_delete_ids = [aid for aid in current_by_id if aid not in keep_ids]
+
+    new_product_ids = list({str(a.articuloId) for a in payload_new if a.articuloId})
+    new_product_map = {}
+    if new_product_ids:
+        try:
+            batch_read = client.crm.products.batch_api.read(
+                batch_read_input_simple_public_object_id={
+                    "properties": [
+                        "name", "price", "hs_price_eur", "cardcode",
+                        "peso_neto", "peso_bruto",
+                        "name_en", "name_fr", "description", "formato", "marca_certificado",
+                        "tipo_iva_soportado", "tipo_iva_repercutido",
+                        "tipo_iva_soportado_eu", "tipo_iva_repercutido_eu",
+                        "tipo_iva_soportado_ex", "tipo_iva_repercutido_ex"
+                    ],
+                    "inputs": [{"id": pid} for pid in new_product_ids]
+                }
+            )
+            for product in (batch_read.results or []):
+                new_product_map[str(product.id)] = product.properties or {}
+        except Exception as e:
+            logger.error(f"[edit_container] error reading new article products: {e}")
+
+    repair_product_ids = []
+    for art in payload_with_id:
+        cur = current_by_id[art.line_item_id]["properties"]
+        if _safe_float(cur.get("precio_de_coste")) is None and cur.get("hs_product_id"):
+            repair_product_ids.append(str(cur.get("hs_product_id")))
+    repair_product_ids = list({pid for pid in repair_product_ids if pid})
+
+    repair_price_map = {}
+    if repair_product_ids:
+        try:
+            repair_batch = client.crm.products.batch_api.read(
+                batch_read_input_simple_public_object_id={
+                    "properties": ["hs_price_eur"],
+                    "inputs": [{"id": pid} for pid in repair_product_ids],
+                }
+            )
+            for product in (repair_batch.results or []):
+                hs_price = _safe_float(product.properties.get("hs_price_eur"))
+                if hs_price is not None:
+                    repair_price_map[str(product.id)] = hs_price
+        except Exception as e:
+            logger.warning(f"[edit_container] repair batch read failed: {e}")
+
+    update_inputs = []
+    for art in payload_with_id:
+        cur = current_by_id[art.line_item_id]["properties"]
+        props = {"quantity": str(art.numCajas)}
+
+        if _safe_float(cur.get("precio_de_coste")) is None:
+            repaired = round_price(repair_price_map.get(str(cur.get("hs_product_id"))))
+            if repaired is not None:
+                cur["precio_de_coste"] = str(repaired)
+                cur_price_existing = _safe_float(cur.get("price"))
+                if cur_price_existing is not None and repaired > 0 and _safe_float(cur.get("margen_unitario")) is None:
+                    margen = round_margin((cur_price_existing - repaired) / repaired)
+                    if margen is not None:
+                        cur["margen_unitario"] = str(margen)
+                        props["margen_unitario"] = str(margen)
+
+        if art.precio_de_coste is not None:
+            props["price"] = str(round_price(art.precio_de_coste))
+        elif art.price is not None:
+            props["price"] = str(round_price(art.price))
+        if art.margen_unitario is not None:
+            margen_round = round_margin(art.margen_unitario)
+            if margen_round is not None:
+                props["margen_unitario"] = str(margen_round)
+        if art.tipo_iva_repercutido:
+            props["tipo_iva_repercutido"] = art.tipo_iva_repercutido
+        if art.tipo_iva_soportado:
+            props["tipo_iva_soportado"] = art.tipo_iva_soportado
+        update_inputs.append({"id": art.line_item_id, "properties": props})
+
+    if update_inputs:
+        upd_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/update"
+        for i in range(0, len(update_inputs), 100):
+            chunk = update_inputs[i:i + 100]
+            for x in chunk:
+                enforce_line_item_price_rounding(x.get("properties", {}))
+            resp = requests.post(upd_url, headers=headers, json={"inputs": chunk}, timeout=60)
+            if not resp.ok:
+                logger.error(f"[edit_container] batch update failed: {resp.status_code} {resp.text}")
+                raise HTTPException(status_code=500, detail=f"Failed to update articles: {resp.text}")
+
+    create_inputs = []
+    new_articles_resolved = []
+    for art in payload_new:
+        sku = str(art.articuloId)
+        product_props = new_product_map.get(sku, {})
+        article_name = product_props.get("name") or art.articuloName or art.nombre or sku
+        unique_name = f"{container_name} - {article_name}"
+
+        iva_rep = art.tipo_iva_repercutido or resolve_product_iva(product_props, residennum, "repercutido")
+        iva_sop = art.tipo_iva_soportado or resolve_product_iva(product_props, residennum, "soportado")
+        cardcode = fabricante_cardcode or product_props.get("cardcode") or ""
+        hs_price_eur = round_price(product_props.get("hs_price_eur"))
+        precio_coste = round_price(
+            art.precio_de_coste if art.precio_de_coste is not None else hs_price_eur
+        )
+        if precio_coste is None:
+            logger.warning(
+                f"[edit_container] producto sku={sku} sin hs_price_eur — "
+                f"precio_de_coste quedará vacío en line item y elemento"
+            )
+
+        properties = {
+            "hs_product_id": sku,
+            "hs_sku": sku,
+            "name": unique_name,
+            "price": "" if art.price is None else str(round_price(art.price)),
+            "quantity": str(art.numCajas),
+            "cardcode": cardcode,
+            "tipo_articulo": "fabricante",
+            "hs_product_type": "Articulo",
+            "numero_container": container_name,
+            "tipo_iva_repercutido": iva_rep,
+            "tipo_iva_soportado": iva_sop,
+            "hs_currency": "EUR",
+        }
+        if art.margen_unitario is not None:
+            margen_round = round_margin(art.margen_unitario)
+            if margen_round is not None:
+                properties["margen_unitario"] = str(margen_round)
+        for src, dst in [("peso_neto", "peso_neto"), ("peso_bruto", "peso_bruto"),
+                         ("name_en", "name_en"), ("name_fr", "name_fr"),
+                         ("description", "description"),
+                         ("formato", "formato"), ("marca_certificado", "marca_certificado")]:
+            val = product_props.get(src)
+            if val is not None and str(val).strip() != "":
+                properties[dst] = str(val)
+        if deal_almacen:
+            properties["almacen"] = str(deal_almacen)
+
+        create_inputs.append({
+            "properties": properties,
+            "associations": [{
+                "to": {"id": deal_id},
+                "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
+            }]
+        })
+        new_articles_resolved.append({
+            "edit": art,
+            "product_props": product_props,
+            "article_name": article_name,
+            "unique_name": unique_name,
+            "iva_rep": iva_rep,
+            "iva_sop": iva_sop,
+            "precio_coste": precio_coste,
+            "cardcode": cardcode,
+        })
+
+    created_ids = []
+    if create_inputs:
+        cr_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/create"
+        for i in range(0, len(create_inputs), 100):
+            chunk = create_inputs[i:i + 100]
+            for x in chunk:
+                enforce_line_item_price_rounding(x.get("properties", {}))
+            resp = requests.post(cr_url, headers=headers, json={"inputs": chunk}, timeout=60)
+            if not resp.ok:
+                logger.error(f"[edit_container] batch create failed: {resp.status_code} {resp.text}")
+                raise HTTPException(status_code=500, detail=f"Failed to create articles: {resp.text}")
+            for created in resp.json().get("results", []):
+                created_ids.append(created.get("id"))
+
+    for resolved, new_id in zip(new_articles_resolved, created_ids):
+        resolved["new_line_item_id"] = new_id
+
+    if to_delete_ids:
+        del_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/archive"
+        for i in range(0, len(to_delete_ids), 100):
+            chunk = to_delete_ids[i:i + 100]
+            payload = {"inputs": [{"id": str(x)} for x in chunk]}
+            resp = requests.post(del_url, headers=headers, json=payload, timeout=30)
+            if not resp.ok:
+                logger.error(f"[edit_container] batch delete failed: {resp.status_code} {resp.text}")
+
+    final_articles = []
+    for art in payload_with_id:
+        cur_props = current_by_id[art.line_item_id]["properties"]
+        nombre = art.nombre or art.articuloName or cur_props.get("name", "").split(" - ", 1)[-1]
+        cur_price = _safe_float(cur_props.get("price"))
+        cur_coste = _safe_float(cur_props.get("precio_de_coste"))
+        cur_margen = _safe_float(cur_props.get("margen_unitario"))
+        final_articles.append({
+            "line_item_id": art.line_item_id,
+            "articuloId": art.articuloId,
+            "nombre": nombre,
+            "numCajas": art.numCajas,
+            "price": art.price if art.price is not None else cur_price,
+            "precio_de_coste": (
+                art.precio_de_coste if art.precio_de_coste is not None else cur_coste
+            ),
+            "margen_unitario": (
+                art.margen_unitario if art.margen_unitario is not None else cur_margen
+            ),
+            "tipo_iva_repercutido": art.tipo_iva_repercutido or cur_props.get("tipo_iva_repercutido"),
+            "tipo_iva_soportado": art.tipo_iva_soportado or cur_props.get("tipo_iva_soportado"),
+        })
+    for resolved in new_articles_resolved:
+        art = resolved["edit"]
+        final_articles.append({
+            "line_item_id": resolved.get("new_line_item_id"),
+            "articuloId": art.articuloId,
+            "nombre": resolved["article_name"],
+            "numCajas": art.numCajas,
+            "price": art.price,
+            "precio_de_coste": resolved["precio_coste"],
+            "margen_unitario": art.margen_unitario,
+            "tipo_iva_repercutido": resolved["iva_rep"],
+            "tipo_iva_soportado": resolved["iva_sop"],
+        })
+
+    container_config_serializable = {
+        "articulos": [
+            {"articuloId": a["articuloId"], "nombre": a["nombre"], "numCajas": a["numCajas"]}
+            for a in final_articles
+        ],
+        "ocupacion": new_config.ocupacion,
+        "pesoNeto": new_config.pesoNeto,
+    }
+
+    container_update_props = {
+        "container_config": json.dumps(container_config_serializable),
+        "ocupacion": str(new_config.ocupacion),
+    }
+    if deal_almacen:
+        container_update_props["almacen"] = str(deal_almacen)
+    try:
+        client.crm.line_items.basic_api.update(
+            line_item_id=container_line_item_id,
+            simple_public_object_input={"properties": container_update_props}
+        )
+    except Exception as e:
+        logger.error(f"[edit_container] failed updating container line item: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update container line item: {e}")
+
+    total_cajas_new = sum(a["numCajas"] for a in final_articles)
+    if intermediario_ctx is None:
+        intermediario_ctx = _fetch_intermediario_context(deal_id, client, residennum)
+
+    elementos_synced = False
+    contenedor_co_id = None
+    numero_container = (container_props.get("numero_container") or "").strip() or container_name
+    cont_map = _resolve_contenedor_co_by_numero(client, deal_id)
+    co = (
+        cont_map.get(numero_container)
+        or cont_map.get(container_name)
+        or cont_map.get(f"lid:{container_line_item_id}")
+    )
+    if co:
+        contenedor_co_id = co.get("id")
+
+    had_intermediario = current_intermediario is not None
+    deal_wants_intermediario = None
+    try:
+        deal_int = client.crm.deals.basic_api.get_by_id(
+            deal_id, properties=["repercutir_a_cliente", "importe_comision"]
+        )
+        deal_wants_intermediario = (
+            (deal_int.properties.get("repercutir_a_cliente") or "").strip().lower() == "si"
+            and float(deal_int.properties.get("importe_comision") or 0) > 0
+        )
+    except Exception as e:
+        logger.warning(f"[edit_container] could not read deal commission state: {e}")
+
+    wants_intermediario = (
+        deal_wants_intermediario if deal_wants_intermediario is not None
+        else intermediario_ctx is not None
+    )
+    intermediario_state_change = None
+    new_intermediario_lid = None
+    intermediario_recalculated = False
+    intermediario_price_for_create = None
+
+    if wants_intermediario and intermediario_ctx:
+        tipo_com = intermediario_ctx.get("tipo_comision") or ""
+        importe_com = float(intermediario_ctx.get("importe_comision") or 0)
+        if tipo_com == "importe_por_negocio":
+            num_total = max(len(cont_map) or 0, 1)
+            intermediario_price_for_create = round_price(importe_com / num_total)
+        elif tipo_com == "importe_por_cajas":
+            intermediario_price_for_create = round_price(importe_com * total_cajas_new)
+        else:
+            intermediario_price_for_create = round_price(importe_com)
+
+    if wants_intermediario and had_intermediario and intermediario_ctx:
+        if intermediario_ctx.get("tipo_comision") == "importe_por_cajas":
+            nuevo_importe = round_price(float(intermediario_ctx["importe_comision"]) * total_cajas_new)
+            try:
+                client.crm.line_items.basic_api.update(
+                    line_item_id=current_intermediario["id"],
+                    simple_public_object_input={"properties": {"price": str(nuevo_importe)}}
+                )
+                intermediario_recalculated = True
+            except Exception as e:
+                logger.error(f"[edit_container] failed updating intermediario line item: {e}")
+    elif wants_intermediario and not had_intermediario and intermediario_ctx:
+        intermediario_props = {
+            "hs_product_id": intermediario_ctx["product_id"],
+            "hs_sku": intermediario_ctx["product_id"],
+            "name": f"{container_name} - {intermediario_ctx['product_name']}",
+            "price": str(intermediario_price_for_create or 0),
+            "quantity": "1",
+            "cardcode": intermediario_ctx.get("codigo_intermediario") or "",
+            "numero_container": container_name,
+            "tipo_articulo": "comisiones",
+            "hs_product_type": "Servicio",
+            "hs_currency": "EUR",
+        }
+        if intermediario_ctx.get("iva_repercutido"):
+            intermediario_props["tipo_iva_repercutido"] = intermediario_ctx["iva_repercutido"]
+        if intermediario_ctx.get("iva_soportado"):
+            intermediario_props["tipo_iva_soportado"] = intermediario_ctx["iva_soportado"]
+        if deal_almacen:
+            intermediario_props["almacen"] = str(deal_almacen)
+        enforce_line_item_price_rounding(intermediario_props)
+        create_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/create"
+        payload = {"inputs": [{
+            "properties": intermediario_props,
+            "associations": [{
+                "to": {"id": deal_id},
+                "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}],
+            }],
+        }]}
+        try:
+            resp = requests.post(create_url, headers=headers, json=payload, timeout=30)
+            if resp.ok:
+                created = (resp.json().get("results") or [{}])[0]
+                new_intermediario_lid = created.get("id")
+                if new_intermediario_lid:
+                    intermediario_state_change = "created"
+                    logger.info(f"[edit_container] created intermediario line item {new_intermediario_lid} for {container_name}")
+            else:
+                logger.error(f"[edit_container] create intermediario failed: {resp.status_code} - {resp.text}")
+        except Exception as e:
+            logger.error(f"[edit_container] error creating intermediario line item: {e}")
+    elif had_intermediario and not wants_intermediario:
+        try:
+            client.crm.line_items.basic_api.archive(line_item_id=current_intermediario["id"])
+            intermediario_state_change = "deleted"
+            logger.info(f"[edit_container] archived intermediario line item {current_intermediario['id']} for {container_name}")
+        except Exception as e:
+            logger.error(f"[edit_container] failed archiving intermediario line item: {e}")
+
+    if contenedor_co_id:
+        elementos_synced = _sync_elementos_for_container(
+            client=client,
+            deal_id=deal_id,
+            contenedor_co_id=contenedor_co_id,
+            container_name=container_name,
+            payload_with_id=payload_with_id,
+            new_articles_resolved=new_articles_resolved,
+            to_delete_line_item_ids=to_delete_ids,
+            current_by_id=current_by_id,
+            intermediario_ctx=intermediario_ctx,
+            current_intermediario=current_intermediario,
+            intermediario_recalculated=intermediario_recalculated,
+            intermediario_state_change=intermediario_state_change,
+            new_intermediario_lid=new_intermediario_lid,
+            intermediario_price_for_create=intermediario_price_for_create,
+            total_cajas_new=total_cajas_new,
+        )
+
+        try:
+            update_contenedor(client, contenedor_co_id, {
+                "ocupacion": new_config.ocupacion,
+                "total_cajas": total_cajas_new,
+                "container_config": json.dumps(container_config_serializable),
+            })
+        except Exception as e:
+            logger.warning(f"[edit_container] could not update CONTENEDOR custom object: {e}")
+
+        try:
+            recalcular_contenedor(
+                client,
+                deal_id,
+                contenedor_co_id,
+                {"equ": ctx.get("equ") or "", "residennum": ctx.get("residennum") or ""},
+            )
+        except Exception as e:
+            logger.warning(f"[edit_container] could not recompute contenedor price: {e}")
+
+        touch_pagos_for_contenedores(client, [contenedor_co_id])
+
+    return {
+        "line_item_id": container_line_item_id,
+        "container_name": container_name,
+        "container_type": container_type,
+        "container_number": container_number,
+        "cantidad": int(container_props.get("quantity") or 1),
+        "container_config": {
+            "articulos": [
+                {
+                    "articuloId": a["articuloId"],
+                    "nombre": a["nombre"],
+                    "articuloName": f"{container_name} - {a['nombre']}",
+                    "numCajas": a["numCajas"],
+                    "line_item_id": a["line_item_id"],
+                    "price": a["price"],
+                    "precio_de_coste": a["precio_de_coste"],
+                    "margen_unitario": a["margen_unitario"],
+                    "tipo_iva_repercutido": a["tipo_iva_repercutido"],
+                    "tipo_iva_soportado": a["tipo_iva_soportado"],
+                }
+                for a in final_articles
+            ],
+            "ocupacion": new_config.ocupacion,
+            "pesoNeto": new_config.pesoNeto,
+        },
+        "elementos_synced": elementos_synced,
+        "intermediario_recalculated": intermediario_recalculated,
+    }
+
+def _sync_elementos_for_container(
+    *,
+    client,
+    deal_id: str,
+    contenedor_co_id: str,
+    container_name: str,
+    payload_with_id: list,
+    new_articles_resolved: list,
+    to_delete_line_item_ids: list,
+    current_by_id: dict,
+    intermediario_ctx: Optional[dict],
+    current_intermediario: Optional[dict],
+    intermediario_recalculated: bool,
+    total_cajas_new: int,
+    intermediario_state_change: Optional[str] = None,
+    new_intermediario_lid: Optional[str] = None,
+    intermediario_price_for_create: Optional[float] = None,
+) -> bool:
+    """Sync ELEMENTO custom objects with the just-applied line item changes."""
+    try:
+        elementos = get_elementos_by_contenedor(
+            client, contenedor_co_id,
+            properties=["nombre", "tipo_articulo", "cantidad", "precio_unitario",
+                        "precio_de_coste", "precio_total", "margen_unitario",
+                        "peso_neto_unitario", "peso_bruto_unitario",
+                        "tipo_iva_repercutido", "tipo_iva_soportado", "line_item_id"]
+        )
+    except Exception as e:
+        logger.error(f"[sync_elementos] failed loading ELEMENTOS for {contenedor_co_id}: {e}")
+        return False
+
+    elementos_by_lid = {}
+    elementos_by_nombre = {}
+    intermediario_elemento = None
+    for el in elementos:
+        props = el.get("properties", {}) or {}
+        lid = props.get("line_item_id")
+        nombre = props.get("nombre")
+        tipo_art = (props.get("tipo_articulo") or "").lower()
+        entry = {"id": el.get("id"), "properties": props}
+        if lid:
+            elementos_by_lid[str(lid).strip()] = entry
+        if nombre:
+            elementos_by_nombre[nombre.strip()] = entry
+        if tipo_art in ("comisiones", "intermediario"):
+            if current_intermediario and str(lid) == str(current_intermediario.get("id")):
+                intermediario_elemento = entry
+            elif intermediario_elemento is None:
+                intermediario_elemento = entry
+
+    contact_id = None
+    company_id = None
+    try:
+        cids = get_associated_contacts(deal_id)
+        if cids:
+            contact_id = cids[0]
+    except Exception:
+        pass
+    try:
+        coids = get_associated_companies(deal_id)
+        if coids:
+            company_id = coids[0]
+    except Exception:
+        pass
+
+    matched = 0
+    orphan_created = 0
+    for art in payload_with_id:
+        target_lid = str(art.line_item_id).strip()
+        elem = elementos_by_lid.get(target_lid)
+        if not elem:
+            cur_props = current_by_id.get(art.line_item_id, {}).get("properties", {}) or {}
+            li_name = (cur_props.get("name") or "").strip()
+            if li_name:
+                elem = elementos_by_nombre.get(li_name)
+            if not elem and art.articuloName:
+                elem = elementos_by_nombre.get(str(art.articuloName).strip())
+        if not elem:
+            cur_props = current_by_id.get(art.line_item_id, {}).get("properties", {}) or {}
+            li_name = (cur_props.get("name") or "").strip() or (
+                str(art.articuloName).strip() if art.articuloName else ""
+            )
+            precio_unit_orphan = round_price(art.price) if art.price is not None else _safe_float(cur_props.get("price"))
+            precio_coste_orphan = round_price(art.precio_de_coste) if art.precio_de_coste is not None else round_price(
+                cur_props.get("hs_price_eur") or cur_props.get("precio_de_coste")
+            )
+            cantidad_orphan = float(art.numCajas or 0) or _safe_float(cur_props.get("quantity")) or 1
+            precio_total_orphan = round((precio_unit_orphan or 0) * cantidad_orphan, 3)
+            orphan_data = [{
+                "nombre": li_name,
+                "nombre_contenedor": container_name,
+                "tipo_articulo": "fabricante",
+                "cantidad": cantidad_orphan,
+                "product_sku": cur_props.get("hs_sku") or "",
+                "precio_unitario": precio_unit_orphan,
+                "precio_de_coste": precio_coste_orphan,
+                "precio_total": precio_total_orphan,
+                "margen_unitario": round_margin(art.margen_unitario) if art.margen_unitario is not None else _safe_float(cur_props.get("margen_unitario")),
+                "peso_neto_unitario": _safe_float(cur_props.get("peso_neto")),
+                "peso_bruto_unitario": _safe_float(cur_props.get("peso_bruto")),
+                "cardcode": cur_props.get("cardcode") or "",
+                "tipo_iva_repercutido": art.tipo_iva_repercutido or cur_props.get("tipo_iva_repercutido"),
+                "tipo_iva_soportado": art.tipo_iva_soportado or cur_props.get("tipo_iva_soportado"),
+                "line_item_id": target_lid,
+                "nombre_en": cur_props.get("name_en"),
+                "nombre_fr": cur_props.get("name_fr"),
+                "formato": cur_props.get("formato"),
+                "marca": cur_props.get("marca_certificado"),
+            }]
+            try:
+                created = batch_create_elementos_with_associations(
+                    client=client,
+                    elementos_data=orphan_data,
+                    deal_id=deal_id,
+                    contenedor_id=contenedor_co_id,
+                    contact_id=contact_id,
+                    company_id=company_id,
+                )
+                if created:
+                    orphan_created += 1
+                else:
+                    logger.warning(
+                        f"[sync_elementos] orphan fabricante create returned empty for line_item_id={target_lid}"
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"[sync_elementos] orphan fabricante create failed for line_item_id={target_lid}: {e}"
+                )
+            continue
+
+        if elem["properties"].get("line_item_id") != str(art.line_item_id):
+            try:
+                update_elemento(
+                    client, elem["id"], {"line_item_id": str(art.line_item_id)}
+                )
+            except Exception as e:
+                logger.warning(
+                    f"[sync_elementos] failed to reconcile ELEMENTO {elem['id']} line_item_id: {e}"
+                )
+
+        precio_unit = art.price if art.price is not None else (
+            _safe_float(elem["properties"].get("precio_unitario"))
+        )
+        precio_unit_round = round_price(precio_unit)
+        precio_total = round((precio_unit_round or 0) * (art.numCajas or 0), 3)
+        update_props = {
+            "cantidad": art.numCajas,
+            "precio_total": precio_total,
+        }
+        if precio_unit_round is not None:
+            update_props["precio_unitario"] = precio_unit_round
+
+        precio_coste_target = None
+        if art.precio_de_coste is not None:
+            precio_coste_target = round_price(art.precio_de_coste)
+        else:
+            cur_li_props = current_by_id.get(art.line_item_id, {}).get("properties", {}) or {}
+            precio_coste_target = round_price(
+                cur_li_props.get("hs_price_eur") or cur_li_props.get("precio_de_coste")
+            )
+            if precio_coste_target is None:
+                logger.warning(
+                    f"[sync_elementos] line_item_id={art.line_item_id} sin hs_price_eur — "
+                    f"precio_de_coste del elemento no se reconcilia"
+                )
+        if precio_coste_target is not None:
+            update_props["precio_de_coste"] = precio_coste_target
+
+        if art.margen_unitario is not None:
+            margen_round = round_margin(art.margen_unitario)
+            if margen_round is not None:
+                update_props["margen_unitario"] = margen_round
+        if art.tipo_iva_repercutido:
+            update_props["tipo_iva_repercutido"] = art.tipo_iva_repercutido
+        if art.tipo_iva_soportado:
+            update_props["tipo_iva_soportado"] = art.tipo_iva_soportado
+
+        if update_elemento(client, elem["id"], update_props):
+            matched += 1
+
+    logger.info(
+        f"[sync_elementos] updated={matched}/{len(payload_with_id)} "
+        f"orphan_created={orphan_created} "
+        f"new={len(new_articles_resolved)} deleted={len(to_delete_line_item_ids)}"
+    )
+
+    new_elementos_data = []
+    for resolved in new_articles_resolved:
+        art = resolved["edit"]
+        product_props = resolved["product_props"]
+        precio_unit = round_price(art.price) if art.price is not None else None
+        precio_total = (precio_unit or 0) * (art.numCajas or 0) if precio_unit is not None else None
+        peso_neto_unit = _safe_float(product_props.get("peso_neto"))
+        peso_bruto_unit = _safe_float(product_props.get("peso_bruto"))
+        new_elementos_data.append({
+            "nombre": resolved["unique_name"],
+            "nombre_contenedor": container_name,
+            "tipo_articulo": "fabricante",
+            "cantidad": art.numCajas,
+            "product_sku": str(art.articuloId),
+            "precio_unitario": precio_unit,
+            "precio_de_coste": round_price(resolved["precio_coste"]),
+            "precio_total": precio_total,
+            "margen_unitario": art.margen_unitario,
+            "peso_neto_unitario": peso_neto_unit,
+            "peso_bruto_unitario": peso_bruto_unit,
+            "cardcode": resolved["cardcode"],
+            "tipo_iva_repercutido": resolved["iva_rep"],
+            "tipo_iva_soportado": resolved["iva_sop"],
+            "line_item_id": resolved.get("new_line_item_id"),
+            "nombre_en": product_props.get("name_en"),
+            "nombre_fr": product_props.get("name_fr"),
+            "formato": product_props.get("formato"),
+            "marca": product_props.get("marca_certificado"),
+        })
+    if new_elementos_data:
+        batch_create_elementos_with_associations(
+            client=client,
+            elementos_data=new_elementos_data,
+            deal_id=deal_id,
+            contenedor_id=contenedor_co_id,
+            contact_id=contact_id,
+            company_id=company_id,
+        )
+
+    for lid in to_delete_line_item_ids:
+        elem = elementos_by_lid.get(str(lid).strip())
+        if elem:
+            delete_elemento(client, elem["id"])
+
+    if intermediario_recalculated and intermediario_elemento and intermediario_ctx:
+        nuevo_importe = round_price(float(intermediario_ctx["importe_comision"]) * total_cajas_new)
+        update_elemento(client, intermediario_elemento["id"], {
+            "cantidad": 1,
+            "precio_unitario": nuevo_importe,
+            "precio_de_coste": nuevo_importe,
+            "precio_total": nuevo_importe,
+        })
+
+    if intermediario_state_change == "created" and new_intermediario_lid and intermediario_ctx:
+        precio_int = round_price(intermediario_price_for_create or 0)
+        elem_data = [{
+            "nombre": f"{container_name} - {intermediario_ctx['product_name']}",
+            "nombre_contenedor": container_name,
+            "tipo_articulo": "intermediario",
+            "cantidad": 1,
+            "precio_unitario": precio_int,
+            "precio_de_coste": precio_int,
+            "precio_total": precio_int,
+            "cardcode": intermediario_ctx.get("codigo_intermediario") or "",
+            "line_item_id": str(new_intermediario_lid),
+        }]
+        if intermediario_ctx.get("iva_repercutido"):
+            elem_data[0]["tipo_iva_repercutido"] = intermediario_ctx["iva_repercutido"]
+        if intermediario_ctx.get("iva_soportado"):
+            elem_data[0]["tipo_iva_soportado"] = intermediario_ctx["iva_soportado"]
+        try:
+            batch_create_elementos_with_associations(
+                client=client,
+                elementos_data=elem_data,
+                deal_id=deal_id,
+                contenedor_id=contenedor_co_id,
+                contact_id=contact_id,
+                company_id=company_id,
+            )
+        except Exception as e:
+            logger.warning(f"[sync_elementos] failed creating intermediario elemento: {e}")
+    elif intermediario_state_change == "deleted" and intermediario_elemento:
+        try:
+            delete_elemento(client, intermediario_elemento["id"])
+        except Exception as e:
+            logger.warning(f"[sync_elementos] failed deleting intermediario elemento: {e}")
+
+    return True
+
+def _safe_float(value: Any) -> Optional[float]:
+    """Convert HubSpot string property to float when possible."""
+    if value is None or value == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+@router.patch("/{deal_id}/containers/{container_line_item_id}", response_model=UpdateSingleContainerResponse)
+async def edit_single_container(
+    data: UpdateSingleContainerRequest,
+    deal_id: str = Path(..., description="HubSpot deal ID"),
+    container_line_item_id: str = Path(..., description="Container line item ID to edit"),
+):
+    """Edit one container in place: articles + box counts + ELEMENTO custom objects.
+
+    Replaces the clear+replace flow when a container already exists, so SAP-bound
+    line item and ELEMENTO IDs stay stable. Recomputes the matching commission
+    line item when `tipo_comision == importe_por_cajas`.
+    """
+    try:
+        client = hubspot_client.get_client()
+        if isinstance(data, dict):
+            data = UpdateSingleContainerRequest(**data)
+
+        logger.info(
+            f"[edit_single_container] PATCH deal_id={deal_id} "
+            f"container_line_item_id={container_line_item_id} "
+            f"articulos_count={len(data.container_config.articulos)}"
+        )
+
+        result = _edit_container_in_place(
+            deal_id=deal_id,
+            container_line_item_id=container_line_item_id,
+            new_config=data.container_config,
+            client=client,
+        )
+
+        unique_articles = [
+            UniqueContainerArticle(
+                articuloId=a["articuloId"],
+                nombre=a["nombre"],
+                articuloName=a["articuloName"],
+                numCajas=a["numCajas"],
+                line_item_id=a.get("line_item_id"),
+                price=a.get("price"),
+                precio_de_coste=a.get("precio_de_coste"),
+                margen_unitario=a.get("margen_unitario"),
+                tipo_iva_repercutido=a.get("tipo_iva_repercutido"),
+                tipo_iva_soportado=a.get("tipo_iva_soportado"),
+            )
+            for a in result["container_config"]["articulos"]
+        ]
+        unique_config = UniqueContainerConfig(
+            articulos=unique_articles,
+            ocupacion=result["container_config"]["ocupacion"],
+            pesoNeto=result["container_config"]["pesoNeto"],
+        )
+        unique_container = UniqueContainerItem(
+            line_item_id=result["line_item_id"],
+            container_type=result["container_type"],
+            container_number=result["container_number"],
+            container_name=result["container_name"],
+            cantidad=result["cantidad"],
+            container_config=unique_config,
+        )
+
+        return UpdateSingleContainerResponse(
+            success=True,
+            error=None,
+            container=unique_container,
+            elementos_synced=result["elementos_synced"],
+            intermediario_recalculated=result["intermediario_recalculated"],
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[edit_single_container] error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/{deal_id}/containers", response_model=BaseResponse)
 async def update_deal_containers(
@@ -3408,33 +4635,7 @@ async def update_deal_containers(
         example="46298478914"
     )
 ):
-    """Update container line items for a deal from ContenedoresTab.
-
-    This endpoint implements a clear-and-replace pattern:
-    1. Receives container configurations from the frontend
-    2. Gets the company's residence type (residennum) to determine IVA type for articles:
-       - EXTRANJERO -> tipo_iva_repercutido = "EX" (Exportaciones Bebidas)
-       - EUROPA -> tipo_iva_repercutido = "EI21"
-       - NACIONAL (or empty) -> tipo_iva_repercutido = "R21" (default)
-    3. Removes all existing container and fabricante article line items
-    4. For each container config, maps the tipo to the HubSpot container product SKU
-    5. Creates new container line items with custom properties:
-       - hs_product_type: "container"
-       - numero_container: Sequential container number (1, 2, 3...)
-       - container_config: JSON with articulos, ocupacion, pesoNeto
-       - quantity: Number of containers of this configuration
-    6. Creates article line items with the determined tipo_iva_repercutido
-
-    Args:
-        deal_id: HubSpot deal ID.
-        data: UpdateContainersRequest with containers array.
-
-    Returns:
-        BaseResponse indicating success or failure.
-
-    Raises:
-        HTTPException: If deal not found, container products not found, or API error occurs.
-    """
+    """Sustituye contenedores y artículos de fabricante del deal con los recibidos desde ContenedoresTab (clear-and-replace). El IVA repercutido se deriva de residennum (NACIONAL→R21, EUROPA→EI21, EXTRANJERO→EX)."""
     try:
         client = hubspot_client.get_client()
 
@@ -3444,7 +4645,6 @@ async def update_deal_containers(
 
         logger.warning(f"Processing {len(data.containers)} container configurations for deal {deal_id}")
 
-        # Step 0.5: Get deal almacen
         deal_almacen = None
         try:
             deal_basic = client.crm.deals.basic_api.get_by_id(
@@ -3457,7 +4657,15 @@ async def update_deal_containers(
         except Exception as e:
             logger.warning(f"[containers] Could not fetch deal almacen: {e}")
 
-        # Step 1: Map container tipos to HubSpot Product IDs via SKU
+        # Ensure deal has EUR as currency so all line items inherit it
+        try:
+            client.crm.deals.basic_api.update(
+                deal_id=deal_id,
+                simple_public_object_input={"properties": {"deal_currency_code": "EUR"}}
+            )
+        except Exception as e:
+            logger.warning(f"[containers] Could not set deal_currency_code: {e}")
+
         tipo_to_product_id = {}
         unique_tipos = list(set([container.tipo for container in data.containers]))
 
@@ -3492,11 +4700,12 @@ async def update_deal_containers(
 
                 if search_response.results and len(search_response.results) > 0:
                     product_id = search_response.results[0].id
+                    raw_container_price = search_response.results[0].properties.get("price", "0")
                     tipo_to_product_id[tipo] = {
                         "id": str(product_id),
                         "sku": sku,
                         "name": search_response.results[0].properties.get("name", f"Contenedor {tipo}"),
-                        "price": search_response.results[0].properties.get("price", "0")
+                        "price": str(round_price(raw_container_price) or 0)
                     }
                     logger.warning(f"Found container product {product_id} for SKU {sku}")
                 else:
@@ -3512,8 +4721,7 @@ async def update_deal_containers(
                 logger.error(f"Error searching for container product with SKU {sku}: {e}")
                 raise HTTPException(status_code=500, detail=f"Error finding container product: {str(e)}")
 
-        # Step 1.5: Get company residence type to determine IVA type for articles
-        tipo_iva_repercutido = "R21"  # Default: NACIONAL
+        residennum = None
         try:
             company_ids = get_associated_companies(deal_id)
             if company_ids:
@@ -3523,14 +4731,12 @@ async def update_deal_containers(
                     properties=['residennum']
                 )
                 residennum = company.properties.get('residennum', '')
-                tipo_iva_repercutido = compute_tipo_iva_repercutido(residennum)
-                logger.warning(f"Company residence is {residennum or 'NACIONAL'} -> IVA type: {tipo_iva_repercutido}")
+                logger.warning(f"Company residence is {residennum or 'NACIONAL'}")
             else:
-                logger.warning("No company associated with deal, using default IVA type: R21")
+                logger.warning("No company associated with deal, using default IVA")
         except Exception as e:
-            logger.warning(f"Error getting company residence type, using default IVA type R21: {e}")
+            logger.warning(f"Error getting company residence type, using default IVA: {e}")
 
-        # Step 1.6: Get fabricante provider associated with the deal to use as cardcode for articles
         fabricante_cardcode = None
         try:
             CUSTOM_OBJECT_PROVEEDORES = "2-43108800"
@@ -3567,7 +4773,6 @@ async def update_deal_containers(
         except Exception as e:
             logger.warning(f"[fabricante] Error getting fabricante provider, will use product cardcode as fallback: {e}")
 
-        # Step 2: Get all existing line items associated with the deal
         existing_line_item_ids = _get_associated_ids(deal_id, "line_items")
         logger.warning(f"Found {len(existing_line_item_ids)} existing line items")
 
@@ -3578,7 +4783,6 @@ async def update_deal_containers(
             "Content-Type": "application/json"
         }
 
-        # Step 3: BATCH READ line items to identify which ones to delete
         containers_to_delete = []
         articles_to_delete = []
         intermediarios_to_delete = []
@@ -3630,7 +4834,6 @@ async def update_deal_containers(
 
             logger.warning(f"Identified {len(containers_to_delete)} containers, {len(articles_to_delete)} articles, and {len(intermediarios_to_delete)} intermediarios to delete")
 
-            # Step 4: BATCH DELETE line items
             all_to_delete = containers_to_delete + articles_to_delete + intermediarios_to_delete
 
             if all_to_delete:
@@ -3654,7 +4857,6 @@ async def update_deal_containers(
 
             logger.warning(f"Deleted {len(containers_to_delete)} container line items, {len(articles_to_delete)} article line items, and {len(intermediarios_to_delete)} intermediario line items")
 
-        # Step 5: Collect all unique article SKUs needed for batch search
         unique_article_skus = set()
         for container_input in data.containers:
             for articulo in container_input.container_config.articulos:
@@ -3664,89 +4866,54 @@ async def update_deal_containers(
 
         logger.warning(f"Identified {len(unique_article_skus)} unique article SKUs to search")
 
-        # Step 6: BATCH SEARCH all article products by SKU
+        # articuloId contiene el hs_object_id del producto (hs_sku está vacío en productos nuevos)
         article_sku_to_product = {}
 
         if unique_article_skus:
-            # Build batch search request (search by multiple SKUs using OR filters)
-            filter_groups = []
             sku_list = list(unique_article_skus)
+            try:
+                batch_read_response = client.crm.products.batch_api.read(
+                    batch_read_input_simple_public_object_id={
+                        "properties": [
+                            "name", "price", "hs_price_eur", "cardcode", "peso_neto", "peso_bruto",
+                            "name_en", "name_fr", "description", "formato", "marca_certificado",
+                            "tipo_iva_soportado", "tipo_iva_repercutido",
+                            "tipo_iva_soportado_eu", "tipo_iva_repercutido_eu",
+                            "tipo_iva_soportado_ex", "tipo_iva_repercutido_ex"
+                        ],
+                        "inputs": [{"id": pid} for pid in sku_list]
+                    }
+                )
 
-            # HubSpot search API doesn't support OR within a filter group directly for batch SKUs
-            # We need to use multiple searches or a different approach
-            # Best approach: Use batch read by SKU mapping through search
+                for product in (batch_read_response.results or []):
+                    pid = str(product.id)
+                    article_sku_to_product[pid] = {
+                        "id": pid,
+                        "name": product.properties.get("name", f"Article {pid}"),
+                        "price": product.properties.get("price", "0"),
+                        "hs_price_eur": product.properties.get("hs_price_eur"),
+                        "cardcode": product.properties.get("cardcode", ""),
+                        "peso_neto": product.properties.get("peso_neto"),
+                        "peso_bruto": product.properties.get("peso_bruto"),
+                        "name_en": product.properties.get("name_en"),
+                        "name_fr": product.properties.get("name_fr"),
+                        "description": product.properties.get("description"),
+                        "formato": product.properties.get("formato"),
+                        "marca": product.properties.get("marca_certificado"),
+                        "_product_properties": product.properties,  # Keep full props for IVA resolution
+                    }
 
-            # Alternative: Make individual searches but batch them smartly
-            # For now, let's use a single search with multiple filter groups (each SKU is a filter group)
-            # This creates an OR condition between filter groups
-
-            for article_sku in sku_list[:100]:  # Limit to 100 SKUs per search
-                filter_groups.append({
-                    "filters": [{
-                        "propertyName": "hs_sku",
-                        "operator": "EQ",
-                        "value": article_sku
-                    }]
-                })
-
-            if filter_groups:
-                try:
-                    search_response = client.crm.products.search_api.do_search(
-                        public_object_search_request={
-                            "filterGroups": filter_groups,
-                            "properties": ["hs_sku", "name", "price", "cardcode"],
-                            "limit": 100
-                        }
+                logger.warning(f"Batch read found {len(article_sku_to_product)} article products")
+                for _pid, _info in article_sku_to_product.items():
+                    logger.warning(
+                        f"[containers] product={_pid} "
+                        f"peso_neto={_info.get('peso_neto')!r} peso_bruto={_info.get('peso_bruto')!r} "
+                        f"name_en={_info.get('name_en')!r} name_fr={_info.get('name_fr')!r}"
                     )
 
-                    for product in search_response.results:
-                        sku = product.properties.get("hs_sku")
-                        if sku:
-                            article_sku_to_product[sku] = {
-                                "id": str(product.id),
-                                "name": product.properties.get("name", f"Article {sku}"),
-                                "price": product.properties.get("price", "0"),
-                                "cardcode": product.properties.get("cardcode", "")
-                            }
+            except Exception as e:
+                logger.error(f"Error in batch read for articles: {e}")
 
-                    logger.warning(f"Batch search found {len(article_sku_to_product)} article products")
-
-                except Exception as e:
-                    logger.error(f"Error in batch search for articles: {e}")
-
-            # If we have more than 100 SKUs, handle remaining ones
-            if len(sku_list) > 100:
-                remaining_skus = sku_list[100:]
-                logger.warning(f"Searching remaining {len(remaining_skus)} article SKUs...")
-
-                for article_sku in remaining_skus:
-                    try:
-                        search_response = client.crm.products.search_api.do_search(
-                            public_object_search_request={
-                                "filterGroups": [{
-                                    "filters": [{
-                                        "propertyName": "hs_sku",
-                                        "operator": "EQ",
-                                        "value": article_sku
-                                    }]
-                                }],
-                                "properties": ["hs_sku", "name", "price", "cardcode"],
-                                "limit": 1
-                            }
-                        )
-
-                        if search_response.results:
-                            product = search_response.results[0]
-                            article_sku_to_product[article_sku] = {
-                                "id": str(product.id),
-                                "name": product.properties.get("name", f"Article {article_sku}"),
-                                "price": product.properties.get("price", "0"),
-                                "cardcode": product.properties.get("cardcode", "")
-                            }
-                    except Exception as e:
-                        logger.error(f"Error searching for article SKU {article_sku}: {e}")
-
-        # Step 7: Build line items in memory (to be created in batch)
         container_line_items_to_create = []
         article_line_items_to_create = []
         container_number = 1  # Sequential container numbering
@@ -3770,8 +4937,10 @@ async def update_deal_containers(
                         "price": product_info["price"],
                         "quantity": "1",
                         "hs_product_type": "container",
+                        "hs_currency": "EUR",
                         "numero_container": container_name,
-                        "container_config": json.dumps(container_config_dict)
+                        "container_config": json.dumps(container_config_dict),
+                        "ocupacion": str(container_input.container_config.ocupacion),
                     }
 
                     # Add almacen if available
@@ -3813,20 +4982,46 @@ async def update_deal_containers(
                             article_cardcode = fabricante_cardcode or article_product_info.get("cardcode", "")
                             cardcode_source = "fabricante del deal" if fabricante_cardcode else "proveedor habitual del producto"
 
-                            # Store original price as precio_de_coste, leave price empty (will be set in negotiation)
+                            product_props = article_product_info.get("_product_properties", {})
+                            iva_rep = resolve_product_iva(product_props, residennum, "repercutido")
+                            iva_sop = resolve_product_iva(product_props, residennum, "soportado")
+
+                            hs_price_eur = round_price(article_product_info.get("hs_price_eur"))
+                            if hs_price_eur is None:
+                                logger.warning(
+                                    f"[cotizacion] producto sku={article_sku} sin hs_price_eur — "
+                                    f"precio_de_coste y hs_price_eur quedarán vacíos en line item"
+                                )
+
                             article_line_item_properties = {
                                 "hs_product_id": article_product_info["id"],
                                 "hs_sku": article_sku,
                                 "name": unique_article_name,
-                                "precio_de_coste": article_product_info["price"],
-                                "price": "",
+                                "price": str(hs_price_eur) if hs_price_eur is not None else "",
                                 "quantity": str(num_cajas),
                                 "cardcode": article_cardcode,
                                 "tipo_articulo": "fabricante",
                                 "hs_product_type": "Articulo",
                                 "numero_container": container_name,
-                                "tipo_iva_repercutido": tipo_iva_repercutido
+                                "tipo_iva_repercutido": iva_rep,
+                                "tipo_iva_soportado": iva_sop,
+                                "hs_currency": "EUR"
                             }
+
+                            if article_product_info.get("peso_neto") is not None:
+                                article_line_item_properties["peso_neto"] = str(article_product_info["peso_neto"])
+                            if article_product_info.get("peso_bruto") is not None:
+                                article_line_item_properties["peso_bruto"] = str(article_product_info["peso_bruto"])
+                            if article_product_info.get("name_en") is not None:
+                                article_line_item_properties["name_en"] = str(article_product_info["name_en"])
+                            if article_product_info.get("name_fr") is not None:
+                                article_line_item_properties["name_fr"] = str(article_product_info["name_fr"])
+                            if article_product_info.get("description") is not None:
+                                article_line_item_properties["description"] = str(article_product_info["description"])
+                            if article_product_info.get("formato") is not None:
+                                article_line_item_properties["formato"] = str(article_product_info["formato"])
+                            if article_product_info.get("marca") is not None:
+                                article_line_item_properties["marca_certificado"] = str(article_product_info["marca"])
 
                             # Add almacen if available
                             if deal_almacen:
@@ -3841,7 +5036,7 @@ async def update_deal_containers(
                             }
 
                             article_line_items_to_create.append(article_line_item_data)
-                            logger.warning(f"Prepared article line item for {article_name} (x{num_cajas}) in container #{container_number} with IVA type: {tipo_iva_repercutido}, cardcode: {article_cardcode} (from {cardcode_source})")
+                            logger.warning(f"Prepared article line item for {article_name} (x{num_cajas}) in container #{container_number} with IVA rep={iva_rep}, sop={iva_sop}, cardcode: {article_cardcode} (from {cardcode_source})")
                         else:
                             logger.warning(f"Article product with SKU '{article_sku}' not found in batch search, skipping")
 
@@ -3854,14 +5049,13 @@ async def update_deal_containers(
                     detail=f"Error preparing line items: {str(e)}"
                 )
 
-        # Step 7.5: Create INTERMEDIARIO line items if applicable
         intermediario_line_items_to_create = []
 
         try:
-            # Fetch deal properties for intermediario
+            # Fetch deal properties for intermediario (including user-selected IVA)
             deal = client.crm.deals.basic_api.get_by_id(
                 deal_id,
-                properties=["repercutir_a_cliente", "tipo_comision", "importe_comision", "codigo_intermediario"]
+                properties=["repercutir_a_cliente", "tipo_comision", "importe_comision", "codigo_intermediario", "tipo_iva_comision", "tipo_iva_comision_soportado"]
             )
 
             repercutir_a_cliente = (deal.properties.get("repercutir_a_cliente") or "").strip().lower()
@@ -3875,39 +5069,27 @@ async def update_deal_containers(
             if repercutir_a_cliente == "si" and importe_comision > 0:
                 logger.info(f"[intermediario] Creating intermediario line items")
 
-                # Search for INTERMEDIARIO product (tipo_articulo = "comisiones")
                 try:
-                    search_response = client.crm.products.search_api.do_search(
-                        public_object_search_request={
-                            "filterGroups": [{
-                                "filters": [{
-                                    "propertyName": "tipo_articulo",
-                                    "operator": "EQ",
-                                    "value": "comisiones"
-                                }]
-                            }],
-                            "properties": ["name", "hs_sku", "price"],
-                            "limit": 1
-                        }
-                    )
+                    intermediario_product = _find_intermediario_product(client)
 
-                    if search_response.results and len(search_response.results) > 0:
-                        intermediario_product = search_response.results[0]
-                        intermediario_product_id = str(intermediario_product.id)
-                        intermediario_sku = intermediario_product.properties.get("hs_sku", "INTERMEDIARIO")
-                        intermediario_name = intermediario_product.properties.get("name", "INTERMEDIARIO")
+                    if intermediario_product:
+                        intermediario_product_id = intermediario_product["id"]
+                        intermediario_sku = intermediario_product["sku"]
+                        intermediario_name = intermediario_product["name"]
 
-                        logger.info(f"[intermediario] Found product: ID={intermediario_product_id}, name={intermediario_name}")
+                        deal_iva_comision = (deal.properties.get("tipo_iva_comision") or "").strip() or None
+                        deal_iva_comision_sop = (deal.properties.get("tipo_iva_comision_soportado") or "").strip() or None
+                        intermediario_iva_rep = resolve_product_iva(intermediario_product["properties"], residennum, "repercutido", deal_iva_comision)
+                        intermediario_iva_sop = resolve_product_iva(intermediario_product["properties"], residennum, "soportado", deal_iva_comision_sop)
+                        logger.info(f"[intermediario] Found product: ID={intermediario_product_id}, name={intermediario_name}, IVA rep={intermediario_iva_rep}, IVA sop={intermediario_iva_sop}")
 
                         num_contenedores = len(container_line_items_to_create)
 
                         # Calculate commission per container based on tipo_comision
                         if tipo_comision == "importe_por_negocio":
-                            # Divide total commission by number of containers
-                            comision_por_contenedor = importe_comision / num_contenedores
+                            comision_por_contenedor = round_price(importe_comision / num_contenedores)
                             logger.info(f"[intermediario] Importe por negocio: {importe_comision} / {num_contenedores} = {comision_por_contenedor}€/container")
 
-                            # Create line items uniformly
                             container_idx = 0
                             for container_input in data.containers:
                                 for _ in range(container_input.cantidad):
@@ -3915,14 +5097,14 @@ async def update_deal_containers(
 
                                     intermediario_properties = {
                                         "hs_product_id": intermediario_product_id,
-                                        "hs_sku": intermediario_sku,
+                                        "hs_sku": intermediario_product_id,
                                         "name": f"{container_name} - {intermediario_name}",
                                         "price": str(comision_por_contenedor),
-                                        "precio_de_coste": str(comision_por_contenedor),
                                         "quantity": "1",
                                         "cardcode": codigo_intermediario or "",
                                         "numero_container": container_name,
-                                        "tipo_iva_repercutido": tipo_iva_repercutido,
+                                        "tipo_iva_repercutido": intermediario_iva_rep,
+                                        "tipo_iva_soportado": intermediario_iva_sop,
                                         "tipo_articulo": "comisiones",
                                         "hs_product_type": "Servicio"
                                     }
@@ -3943,8 +5125,7 @@ async def update_deal_containers(
                                     container_idx += 1
 
                         elif tipo_comision == "importe_por_contenedor":
-                            # Direct amount per container
-                            comision_por_contenedor = importe_comision
+                            comision_por_contenedor = round_price(importe_comision)
                             logger.info(f"[intermediario] Importe por contenedor: {comision_por_contenedor}€/container")
 
                             container_idx = 0
@@ -3954,14 +5135,14 @@ async def update_deal_containers(
 
                                     intermediario_properties = {
                                         "hs_product_id": intermediario_product_id,
-                                        "hs_sku": intermediario_sku,
+                                        "hs_sku": intermediario_product_id,
                                         "name": f"{container_name} - {intermediario_name}",
                                         "price": str(comision_por_contenedor),
-                                        "precio_de_coste": str(comision_por_contenedor),
                                         "quantity": "1",
                                         "cardcode": codigo_intermediario or "",
                                         "numero_container": container_name,
-                                        "tipo_iva_repercutido": tipo_iva_repercutido,
+                                        "tipo_iva_repercutido": intermediario_iva_rep,
+                                        "tipo_iva_soportado": intermediario_iva_sop,
                                         "tipo_articulo": "comisiones",
                                         "hs_product_type": "Servicio"
                                     }
@@ -3994,19 +5175,19 @@ async def update_deal_containers(
                                         for articulo in container_input.container_config.articulos
                                     )
 
-                                    comision_por_contenedor = importe_comision * total_cajas
+                                    comision_por_contenedor = round_price(importe_comision * total_cajas)
                                     container_name = f"{deal_id}-{container_idx + 1:03d}"
 
                                     intermediario_properties = {
                                         "hs_product_id": intermediario_product_id,
-                                        "hs_sku": intermediario_sku,
+                                        "hs_sku": intermediario_product_id,
                                         "name": f"{container_name} - {intermediario_name}",
                                         "price": str(comision_por_contenedor),
-                                        "precio_de_coste": str(comision_por_contenedor),
                                         "quantity": "1",
                                         "cardcode": codigo_intermediario or "",
                                         "numero_container": container_name,
-                                        "tipo_iva_repercutido": tipo_iva_repercutido,
+                                        "tipo_iva_repercutido": intermediario_iva_rep,
+                                        "tipo_iva_soportado": intermediario_iva_sop,
                                         "tipo_articulo": "comisiones",
                                         "hs_product_type": "Servicio"
                                     }
@@ -4045,7 +5226,6 @@ async def update_deal_containers(
         except Exception as e:
             logger.error(f"[intermediario] Error creating intermediario line items: {e}")
 
-        # Step 8: BATCH CREATE all line items (containers + articles + intermediario)
         all_line_items_to_create = container_line_items_to_create + article_line_items_to_create + intermediario_line_items_to_create
         logger.warning(f"Prepared {len(container_line_items_to_create)} container line items, {len(article_line_items_to_create)} article line items, and {len(intermediario_line_items_to_create)} intermediario line items")
 
@@ -4058,6 +5238,9 @@ async def update_deal_containers(
 
             for i in range(0, len(all_line_items_to_create), batch_size):
                 batch_items = all_line_items_to_create[i:i + batch_size]
+
+                for li in batch_items:
+                    enforce_line_item_price_rounding(li.get("properties", {}))
 
                 batch_payload = {
                     "inputs": batch_items
@@ -4101,7 +5284,6 @@ async def update_deal_containers(
         logger.error(f"Error in update_deal_containers: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/{deal_id}/transit-options", response_model=DealTransitResponse)
 async def get_deal_transit_options(
     deal_id: str = Path(
@@ -4110,39 +5292,17 @@ async def get_deal_transit_options(
         example="46298478914"
     )
 ):
-    """Get transit/route options for a deal.
-
-    This endpoint retrieves:
-    - lugar_carga: Loading location from deal (readonly, set in ArticulosTab)
-      Initial value: deal.lugar_carga, fallback to company.lugar_de_la_carga_envio
-    - lugar_carga_label: Human-readable label for lugar_carga
-    - puerto_salida: Departure port with options
-      Initial value: deal.puerto_salida, fallback to company.puerto_salida
-    - puerto_destino: Destination port with options
-      Initial value: deal.puerto_destino, fallback to company.puerto_destino
-    - localidad_destino: Destination locality/city
-      Initial value: deal.lugar_carga_envio, fallback to company.lugar_carga_envio_entrega
-
-    Args:
-        deal_id: HubSpot deal ID.
-
-    Returns:
-        DealTransitResponse with transit/route information.
-
-    Raises:
-        HTTPException: If deal not found or API error occurs.
-    """
+    """Devuelve las opciones de tránsito del deal (lugar_carga readonly, puerto_salida, puerto_destino, localidad_destino) con fallback a la company asociada cuando los campos del deal están vacíos."""
     try:
         client = hubspot_client.get_client()
 
         logger.warning(f"Fetching transit data for deal {deal_id}")
 
-        # Step 1: Get deal properties
         deal_properties = [
             'lugar_carga',
             'puerto_salida',
             'puerto_destino',
-            'lugar_carga_envio'  # For localidad_destino
+            'localidad_destino'
         ]
 
         deal = client.crm.deals.basic_api.get_by_id(
@@ -4154,15 +5314,13 @@ async def get_deal_transit_options(
         deal_lugar_carga = deal.properties.get('lugar_carga')
         deal_puerto_salida = deal.properties.get('puerto_salida')
         deal_puerto_destino = deal.properties.get('puerto_destino')
-        deal_localidad_destino = deal.properties.get('lugar_carga_envio')
+        deal_localidad_destino = deal.properties.get('localidad_destino')
 
-        logger.info(f"Deal values - lugar_carga: {deal_lugar_carga}, puerto_salida: {deal_puerto_salida}, puerto_destino: {deal_puerto_destino}, lugar_carga_envio: {deal_localidad_destino}")
+        logger.info(f"Deal values - lugar_carga: {deal_lugar_carga}, puerto_salida: {deal_puerto_salida}, puerto_destino: {deal_puerto_destino}, localidad_destino: {deal_localidad_destino}")
 
-        # Step 2: Get associated company for fallback values
         company_lugar_carga = None
         company_puerto_salida = None
         company_puerto_destino = None
-        company_localidad_destino = None
 
         try:
             company_ids = get_associated_companies(deal_id)
@@ -4174,18 +5332,15 @@ async def get_deal_transit_options(
                         'lugar_de_la_carga_envio',
                         'puerto_salida',
                         'puerto_destino',
-                        'lugar_carga_envio_entrega'
                     ]
                 )
                 company_lugar_carga = company.properties.get('lugar_de_la_carga_envio')
                 company_puerto_salida = company.properties.get('puerto_salida')
                 company_puerto_destino = company.properties.get('puerto_destino')
-                company_localidad_destino = company.properties.get('lugar_carga_envio_entrega')
-                logger.info(f"Company values - lugar_de_la_carga_envio: {company_lugar_carga}, puerto_salida: {company_puerto_salida}, puerto_destino: {company_puerto_destino}, lugar_carga_envio_entrega: {company_localidad_destino}")
+                logger.info(f"Company values - lugar_de_la_carga_envio: {company_lugar_carga}, puerto_salida: {company_puerto_salida}, puerto_destino: {company_puerto_destino}")
         except Exception as e:
             logger.warning(f"Error fetching company data: {e}")
 
-        # Step 3: Determine final values with fallbacks
         # lugar_carga: deal.lugar_carga, fallback to company.lugar_de_la_carga_envio
         final_lugar_carga = deal_lugar_carga or company_lugar_carga
 
@@ -4195,12 +5350,11 @@ async def get_deal_transit_options(
         # puerto_destino: deal.puerto_destino, fallback to company.puerto_destino
         final_puerto_destino = deal_puerto_destino or company_puerto_destino
 
-        # localidad_destino: deal.lugar_carga_envio, fallback to company.lugar_carga_envio_entrega
-        final_localidad_destino = deal_localidad_destino or company_localidad_destino
+        # localidad_destino: deal.localidad_destino
+        final_localidad_destino = deal_localidad_destino
 
         logger.info(f"Final values - lugar_carga: {final_lugar_carga}, puerto_salida: {final_puerto_salida}, puerto_destino: {final_puerto_destino}, localidad_destino: {final_localidad_destino}")
 
-        # Step 4: Get lugar_carga options to map value to label
         # Use the same approach as /articles endpoint: fetch from custom object property
         lugar_carga_label = None
         lugar_carga_options = {}
@@ -4221,43 +5375,28 @@ async def get_deal_transit_options(
         except Exception as e:
             logger.warning(f"[transit] Error fetching lugar_carga options: {e}")
 
-        # Map lugar_carga value to label
         if final_lugar_carga:
-            # Special case for almacen_proex (dynamically added option)
-            if final_lugar_carga == "almacen_proex":
-                lugar_carga_label = "Almacen PROEX"
-                logger.info(f"[transit] Special case: lugar_carga is almacen_proex")
+            lugar_carga_label = lugar_carga_options.get(final_lugar_carga, final_lugar_carga)
+            if lugar_carga_label != final_lugar_carga:
+                logger.info(f"[transit] Mapped lugar_carga '{final_lugar_carga}' -> '{lugar_carga_label}'")
             else:
-                # Look up in options dictionary
-                lugar_carga_label = lugar_carga_options.get(final_lugar_carga, final_lugar_carga)
-                if lugar_carga_label != final_lugar_carga:
-                    logger.info(f"[transit] Mapped lugar_carga '{final_lugar_carga}' -> '{lugar_carga_label}'")
-                else:
-                    logger.warning(f"[transit] No label found for lugar_carga value: '{final_lugar_carga}', using value as label")
+                logger.warning(f"[transit] No label found for lugar_carga value: '{final_lugar_carga}', using value as label")
 
         logger.info(f"[transit] Final lugar_carga_label: {lugar_carga_label}")
 
-        # Step 5: Get puerto options
         puerto_salida_options = get_property_options('puerto_salida', 'deals')
         puerto_destino_options = get_property_options('puerto_destino', 'deals')
 
-        # Step 6: Get localidad_destino options (same as lugar_carga from custom object)
-        # Convert lugar_carga_options dict to list of PropertyOption objects
-        localidad_destino_options_list = []
-        for value, label in lugar_carga_options.items():
-            localidad_destino_options_list.append(PropertyOption(label=label, value=value))
-
-        # Add special almacen_proex option if not already in list
-        if not any(opt.value == "almacen_proex" for opt in localidad_destino_options_list):
-            localidad_destino_options_list.insert(0, PropertyOption(label="Almacen PROEX", value="almacen_proex"))
+        localidad_destino_options_list = [
+            PropertyOption(label=label, value=value)
+            for value, label in lugar_carga_options.items()
+        ]
 
         logger.info(f"[transit] Built {len(localidad_destino_options_list)} localidad_destino options")
 
-        # Step 7: Get almacen options from deal property definition
         almacen_options = get_property_options('almacen', 'deals')
         logger.info(f"[transit] Loaded {len(almacen_options)} almacen options")
 
-        # Step 8: Build response
         return DealTransitResponse(
             success=True,
             error=None,
@@ -4285,32 +5424,17 @@ async def get_deal_transit_options(
         logger.error(f"Error in get_deal_transit_data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/commission-providers/search", response_model=dict)
 async def search_commission_providers(
     q: str = ""
 ):
-    """Search for commission providers (tipo_proveedor = COMISIONES).
-
-    This endpoint searches the custom object Proveedores (ID: 2-43108800)
-    for providers with tipo_proveedor = "COMISIONES".
-
-    Args:
-        q: Search query string (searches in provider name)
-
-    Returns:
-        List of commission providers with their properties
-
-    Raises:
-        HTTPException: If API error occurs.
-    """
+    """Busca proveedores con tipo_proveedor=comisiones (custom object Proveedores `2-43108800`)."""
     try:
         client = hubspot_client.get_client()
 
         # Custom object ID for Proveedores
         CUSTOM_OBJECT_PROVEEDORES = "2-43108800"
 
-        # Step 1: Build search request
         # We need to filter by tipo_proveedor = "comisiones" and optionally by name
         filters = []
 
@@ -4345,13 +5469,11 @@ async def search_commission_providers(
             sorts=[{"propertyName": "name", "direction": "ASCENDING"}]
         )
 
-        # Step 2: Execute search
         search_results = client.crm.objects.search_api.do_search(
             object_type=CUSTOM_OBJECT_PROVEEDORES,
             public_object_search_request=search_request
         )
 
-        # Step 3: Build response
         providers = []
         for result in search_results.results:
             props = result.properties
@@ -4375,7 +5497,6 @@ async def search_commission_providers(
         logger.error(f"Error searching commission providers: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/{deal_id}/transit", response_model=DealTransitDataResponse)
 async def get_deal_transit(
     deal_id: str = Path(
@@ -4384,28 +5505,7 @@ async def get_deal_transit(
         example="46298478914"
     )
 ):
-    """Get transit data for a deal.
-
-    This endpoint retrieves the following deal properties:
-    - puerto_salida: Departure port
-    - puerto_destino: Destination port
-    - lugar_carga_envio: Destination locality/city (maps to localidad_destino)
-    - naviera: Shipping line/carrier
-    - dias_libres: Free days at destination port
-    - transitario: Freight forwarder name
-    - precio_ruta_hasta_puerto_de_salida: Price for route to departure port (EUR)
-    - precio_ruta_hasta_puerto_destino: Price for route to destination port (EUR)
-    - fecha_caducidad: Quote expiration date (timestamp milliseconds)
-
-    Args:
-        deal_id: HubSpot deal ID.
-
-    Returns:
-        DealTransitDataResponse with transit data.
-
-    Raises:
-        HTTPException: If deal not found or retrieval fails.
-    """
+    """Devuelve los datos de tránsito del deal (puertos, naviera, dias_libres, transitario, precios y caducidades de rutas, IVA fletes)."""
     try:
         client = hubspot_client.get_client()
 
@@ -4413,15 +5513,18 @@ async def get_deal_transit(
         properties = [
             "puerto_salida",
             "puerto_destino",
-            "lugar_carga_envio",
+            "localidad_destino",
             "naviera",
             "dias_libres",
             "transitario",
             "precio_ruta_hasta_puerto_de_salida",
             "precio_ruta_hasta_puerto_destino",
-            "fecha_caducidad",
+            "fecha_caducidad_flete_salida",
+            "fecha_caducidad_flete_destino",
             "cotizacion_rapida",
-            "almacen"
+            "almacen",
+            "tipo_iva_fletes",
+            "tipo_iva_fletes_soportado"
         ]
 
         deal = client.crm.deals.basic_api.get_by_id(
@@ -4431,25 +5534,6 @@ async def get_deal_transit(
 
         # Parse properties
         props = deal.properties
-
-        # Helper to parse fecha_caducidad (can be timestamp or date string)
-        def parse_fecha_caducidad(value):
-            if not value:
-                return None
-            try:
-                # Try to parse as int (timestamp)
-                return int(value)
-            except (ValueError, TypeError):
-                # Try to parse as date string (YYYY-MM-DD)
-                try:
-                    from datetime import datetime, timezone
-                    dt = datetime.strptime(str(value), "%Y-%m-%d")
-                    # Convert to UTC midnight timestamp in milliseconds
-                    dt_utc = dt.replace(tzinfo=timezone.utc)
-                    return int(dt_utc.timestamp() * 1000)
-                except Exception as e:
-                    logger.warning(f"Could not parse fecha_caducidad value '{value}': {e}")
-                    return None
 
         # Get transitario cardcode from deal
         transitario_cardcode = props.get("transitario") or None
@@ -4486,20 +5570,58 @@ async def get_deal_transit(
             except Exception as e:
                 logger.warning(f"Error searching for transitario {transitario_cardcode}: {e}")
 
+        # Resolve IVA defaults from fletes product (Fase 4E)
+        iva_fletes_defaults = None
+        try:
+            # Get company residennum
+            residennum = None
+            company_ids = get_associated_companies(deal_id)
+            if company_ids:
+                company = client.crm.companies.basic_api.get_by_id(
+                    company_ids[0], properties=["residennum"]
+                )
+                residennum = company.properties.get("residennum")
+
+            # Search for fletes product by cardcode
+            fletes_search = client.crm.products.search_api.do_search(
+                public_object_search_request={
+                    "filterGroups": [{"filters": [{"propertyName": "cardcode", "operator": "EQ", "value": "VARIAB-TRANSP-00001"}]}],
+                    "properties": [
+                        "name", "tipo_iva_soportado", "tipo_iva_repercutido",
+                        "tipo_iva_soportado_eu", "tipo_iva_repercutido_eu",
+                        "tipo_iva_soportado_ex", "tipo_iva_repercutido_ex"
+                    ],
+                    "limit": 1
+                }
+            )
+            if fletes_search.results:
+                fletes_props = fletes_search.results[0].properties
+                iva_fletes_defaults = {
+                    "repercutido": resolve_product_iva(fletes_props, residennum, "repercutido"),
+                    "soportado": resolve_product_iva(fletes_props, residennum, "soportado")
+                }
+                logger.info(f"[transit] iva_fletes_defaults resolved: {iva_fletes_defaults}")
+        except Exception as e:
+            logger.warning(f"[transit] Error resolving iva_fletes_defaults: {e}")
+
         # Build response data
         data = DealTransitUpdateRequest(
             puerto_salida=props.get("puerto_salida") or None,
             puerto_destino=props.get("puerto_destino") or None,
-            localidad_destino=props.get("lugar_carga_envio") or None,
+            localidad_destino=props.get("localidad_destino") or None,
             naviera=props.get("naviera") or None,
             dias_libres=int(props.get("dias_libres")) if props.get("dias_libres") else None,
             transitario=transitario_cardcode,
             transitario_name=transitario_name,
             precio_ruta_hasta_puerto_de_salida=float(props.get("precio_ruta_hasta_puerto_de_salida")) if props.get("precio_ruta_hasta_puerto_de_salida") else None,
             precio_ruta_hasta_puerto_destino=float(props.get("precio_ruta_hasta_puerto_destino")) if props.get("precio_ruta_hasta_puerto_destino") else None,
-            fecha_caducidad=parse_fecha_caducidad(props.get("fecha_caducidad")),
+            fecha_caducidad_flete_salida=parse_fecha_caducidad(props.get("fecha_caducidad_flete_salida")),
+            fecha_caducidad_flete_destino=parse_fecha_caducidad(props.get("fecha_caducidad_flete_destino")),
             cotizacion_rapida=props.get("cotizacion_rapida") or None,
-            almacen=props.get("almacen") or None
+            almacen=props.get("almacen") or None,
+            tipo_iva_fletes=props.get("tipo_iva_fletes") or None,
+            tipo_iva_fletes_soportado=props.get("tipo_iva_fletes_soportado") or None,
+            iva_fletes_defaults=iva_fletes_defaults
         )
 
         # Add transitario details to response
@@ -4515,6 +5637,123 @@ async def get_deal_transit(
         logger.error(f"Error retrieving transit data for deal {deal_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+def _find_ruta(
+    client,
+    tipo_ruta: str,
+    transitario: str,
+    lugar_carga: str = None,
+    puerto_salida: str = None,
+    puerto_destino: str = None,
+    naviera: str = None,
+    tipo_contenedor: str = None
+) -> Optional[str]:
+    """Busca una ruta terrestre o marítima en HubSpot y devuelve su ID si existe.
+
+    Args:
+        client: HubSpot client instance
+        tipo_ruta: "terrestre" o "maritima"
+        transitario: Cardcode del transitario
+        lugar_carga: Lugar de carga (solo terrestre)
+        puerto_salida: Puerto de salida
+        puerto_destino: Puerto de destino (solo marítima)
+        naviera: Naviera (opcional, solo marítima)
+        tipo_contenedor: Tipo de contenedor
+
+    Returns:
+        ID de la ruta (str) si existe, None si no existe
+    """
+    try:
+        CUSTOM_OBJECT_RUTAS = "2-53295516"
+        access_token = client.access_token
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+
+        naviera_normalizada = None
+        if naviera and naviera.strip().upper() != "SIN ESPECIFICAR":
+            naviera_normalizada = naviera
+
+        filters = [
+            {"propertyName": "transitario", "operator": "EQ", "value": transitario or ""}
+        ]
+
+        if tipo_contenedor:
+            filters.append({"propertyName": "tipo_contenedor", "operator": "EQ", "value": tipo_contenedor})
+
+        if tipo_ruta == "terrestre":
+            if lugar_carga:
+                filters.append({"propertyName": "lugar_carga", "operator": "EQ", "value": lugar_carga})
+            if puerto_salida:
+                filters.append({"propertyName": "puerto_salida", "operator": "EQ", "value": puerto_salida})
+        else:
+            if puerto_salida:
+                filters.append({"propertyName": "puerto_salida", "operator": "EQ", "value": puerto_salida})
+            if puerto_destino:
+                filters.append({"propertyName": "puerto_destino", "operator": "EQ", "value": puerto_destino})
+            if naviera_normalizada:
+                filters.append({"propertyName": "naviera", "operator": "EQ", "value": naviera_normalizada})
+
+        search_url = f"https://api.hubapi.com/crm/v3/objects/{CUSTOM_OBJECT_RUTAS}/search"
+        search_payload = {
+            "filterGroups": [{"filters": filters}],
+            "properties": ["fecha_caducidad"],
+            "limit": 1
+        }
+
+        response = requests.post(search_url, headers=headers, json=search_payload, timeout=10)
+
+        if response.ok:
+            results = response.json().get("results", [])
+            if results:
+                ruta_id = results[0].get("id")
+                logger.info(f"[rutas] Ruta {tipo_ruta} encontrada: {ruta_id}")
+                return ruta_id
+            else:
+                logger.info(f"[rutas] Ruta {tipo_ruta} NO existe")
+                return None
+        else:
+            logger.error(f"[rutas] Error searching for ruta: {response.status_code}")
+            return None
+
+    except Exception as e:
+        logger.error(f"[rutas] Error buscando ruta {tipo_ruta}: {e}")
+        return None
+
+def _update_ruta(client, ruta_id: str, importe: float, fecha_caducidad: int) -> bool:
+    """Actualiza el importe y fecha_caducidad de una ruta existente en HubSpot.
+
+    Args:
+        client: HubSpot client instance
+        ruta_id: ID del objeto ruta en HubSpot
+        importe: Nuevo precio de la ruta (EUR)
+        fecha_caducidad: Nueva fecha de caducidad (timestamp milliseconds)
+
+    Returns:
+        True si la actualización fue exitosa, False en caso contrario
+    """
+    try:
+        CUSTOM_OBJECT_RUTAS = "2-53295516"
+        access_token = client.access_token
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+
+        update_url = f"https://api.hubapi.com/crm/v3/objects/{CUSTOM_OBJECT_RUTAS}/{ruta_id}"
+        update_payload = {
+            "properties": {
+                "importe": str(importe),
+                "fecha_caducidad": str(fecha_caducidad)
+            }
+        }
+
+        response = requests.patch(update_url, headers=headers, json=update_payload, timeout=10)
+
+        if response.ok:
+            logger.info(f"[rutas] Ruta {ruta_id} actualizada: importe={importe}, fecha_caducidad={fecha_caducidad}")
+            return True
+        else:
+            logger.error(f"[rutas] Error actualizando ruta {ruta_id}: {response.status_code} - {response.text}")
+            return False
+
+    except Exception as e:
+        logger.error(f"[rutas] Error actualizando ruta {ruta_id}: {e}")
+        return False
 
 def _verificar_ruta_existe(
     client,
@@ -4616,7 +5855,6 @@ def _verificar_ruta_existe(
         logger.error(f"[rutas] Error verificando ruta {tipo_ruta}: {e}")
         return False
 
-
 def _crear_ruta(
     client,
     tipo_ruta: str,
@@ -4714,7 +5952,6 @@ def _crear_ruta(
         logger.error(f"[rutas] Error creando ruta {tipo_ruta}: {e}")
         return None
 
-
 @router.post("/{deal_id}/transit", response_model=BaseResponse)
 async def update_deal_transit(
     deal_id: str = Path(
@@ -4724,55 +5961,34 @@ async def update_deal_transit(
     ),
     transit_data: DealTransitUpdateRequest = None
 ):
-    """Update transit data for a deal and manage FLETES line items per container.
+    """Actualiza los datos de tránsito del deal (puertos, naviera, transitario, precios y caducidades de rutas).
 
-    This endpoint updates the following deal properties:
-    - puerto_salida: Departure port
-    - puerto_destino: Destination port
-    - localidad_destino: Destination locality/city
-    - naviera: Shipping line/carrier
-    - dias_libres: Free days at destination port
-    - transitario: Freight forwarder (HubSpot ID)
-    - precio_ruta_hasta_puerto_de_salida: Price for route to departure port (EUR)
-    - precio_ruta_hasta_puerto_destino: Price for route to destination port (EUR)
-    - fecha_caducidad: Quote expiration date (timestamp milliseconds)
-
-    Additionally, if prices are provided, this endpoint:
-    1. Fetches all containers associated with the deal
-    2. Searches for existing FLETES line items and deletes them
-    3. Searches for the FLETES product (name="FLETES", tipo_articulo="transitario")
-    4. Determines IVA type (tipo_iva_repercutido) based on company residence
-    5. Creates FLETES line items (one per container) with:
-       - name: "{container_name} - FLETES"
-       - price: (precioOrigen + precioDestino) / num_containers
-       - numero_container: links to container
-       - tipo_iva_repercutido: IVA type
-
-    Args:
-        deal_id: HubSpot deal ID.
-        transit_data: Transit data to update.
-
-    Returns:
-        BaseResponse with success status.
-
-    Raises:
-        HTTPException: If deal not found or update fails.
+    Si los precios están informados, además recrea los line items FLETES (uno por contenedor) con `precio = (precioOrigen + precioDestino) / num_containers` y el `tipo_iva_repercutido` derivado de la residencia de la empresa.
     """
     try:
         client = hubspot_client.get_client()
 
         logger.info(f"Updating transit data for deal {deal_id} with data: {transit_data}")
 
-        # Step 0: Get deal properties needed for route creation
         deal = client.crm.deals.basic_api.get_by_id(
             deal_id,
-            properties=["tipo_contenedor", "lugar_carga", "almacen"]
+            properties=["tipo_contenedor", "lugar_carga", "almacen", "transitario"]
         )
         tipo_contenedor = deal.properties.get("tipo_contenedor", "")
         lugar_carga = deal.properties.get("lugar_carga", "")
         deal_almacen = deal.properties.get("almacen")
+        deal_transitario_actual = deal.properties.get("transitario") or ""
 
         logger.info(f"[rutas] Deal tipo_contenedor: {tipo_contenedor}, lugar_carga: {lugar_carga}")
+
+        # Ensure deal has EUR as currency so all line items inherit it
+        try:
+            client.crm.deals.basic_api.update(
+                deal_id=deal_id,
+                simple_public_object_input={"properties": {"deal_currency_code": "EUR"}}
+            )
+        except Exception as e:
+            logger.warning(f"[transit] Could not set deal_currency_code: {e}")
 
         # Build properties dict with only non-None values
         properties = {}
@@ -4784,7 +6000,7 @@ async def update_deal_transit(
             properties["puerto_destino"] = transit_data.puerto_destino
 
         if transit_data.localidad_destino is not None:
-            properties["lugar_carga_envio"] = transit_data.localidad_destino
+            properties["localidad_destino"] = transit_data.localidad_destino
 
         if transit_data.naviera is not None:
             properties["naviera"] = transit_data.naviera
@@ -4801,21 +6017,35 @@ async def update_deal_transit(
         if transit_data.precio_ruta_hasta_puerto_destino is not None:
             properties["precio_ruta_hasta_puerto_destino"] = str(transit_data.precio_ruta_hasta_puerto_destino)
 
-        if transit_data.fecha_caducidad is not None:
-            # HubSpot requires date properties to be at midnight UTC
-            # Convert timestamp to midnight UTC
+        if transit_data.fecha_caducidad_flete_salida is not None:
             from datetime import datetime, timezone
-            dt = datetime.fromtimestamp(transit_data.fecha_caducidad / 1000, tz=timezone.utc)
-            # Set to midnight UTC
+            dt = datetime.fromtimestamp(transit_data.fecha_caducidad_flete_salida / 1000, tz=timezone.utc)
             dt_midnight = dt.replace(hour=0, minute=0, second=0, microsecond=0)
-            # Convert back to milliseconds timestamp
-            properties["fecha_caducidad"] = str(int(dt_midnight.timestamp() * 1000))
+            properties["fecha_caducidad_flete_salida"] = str(int(dt_midnight.timestamp() * 1000))
+
+        if transit_data.fecha_caducidad_flete_destino is not None:
+            from datetime import datetime, timezone
+            dt = datetime.fromtimestamp(transit_data.fecha_caducidad_flete_destino / 1000, tz=timezone.utc)
+            dt_midnight = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+            properties["fecha_caducidad_flete_destino"] = str(int(dt_midnight.timestamp() * 1000))
 
         if transit_data.cotizacion_rapida is not None:
             properties["cotizacion_rapida"] = transit_data.cotizacion_rapida
 
         if transit_data.almacen is not None:
             properties["almacen"] = transit_data.almacen
+
+        effective_almacen = (
+            transit_data.almacen
+            if transit_data.almacen is not None
+            else deal_almacen
+        )
+
+        if transit_data.tipo_iva_fletes is not None:
+            properties["tipo_iva_fletes"] = transit_data.tipo_iva_fletes
+
+        if transit_data.tipo_iva_fletes_soportado is not None:
+            properties["tipo_iva_fletes_soportado"] = transit_data.tipo_iva_fletes_soportado
 
         logger.info(f"Updating deal {deal_id} with properties: {properties}")
 
@@ -4933,245 +6163,446 @@ async def update_deal_transit(
             except Exception as e:
                 logger.error(f"[transit] Error managing transitario provider association: {e}")
 
-        # Manage FLETES line items (one per container) if prices are provided
         if (transit_data.precio_ruta_hasta_puerto_de_salida is not None or
             transit_data.precio_ruta_hasta_puerto_destino is not None):
 
-            logger.info(f"Managing FLETES line items for deal {deal_id}")
-
-            # Calculate total price (precioOrigen + precioDestino)
             precio_origen = transit_data.precio_ruta_hasta_puerto_de_salida or 0
             precio_destino = transit_data.precio_ruta_hasta_puerto_destino or 0
-            precio_total_fletes = precio_origen + precio_destino
+            precio_total_fletes = round_price(precio_origen + precio_destino)
 
-            logger.info(f"FLETES total price: {precio_origen} + {precio_destino} = {precio_total_fletes}")
+            target_cardcode = (
+                transit_data.transitario
+                if transit_data.transitario is not None
+                else deal_transitario_actual
+            ) or ""
 
-            # Step 1: Find existing FLETES line items and containers
             existing_line_item_ids = _get_associated_ids(deal_id, "line_items")
-            logger.info(f"Found {len(existing_line_item_ids)} existing line items")
+            access_token = client.access_token
+            headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+            batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
+            batch_size = 100
 
-            fletes_line_item_ids_to_delete = []
+            fletes_existentes_by_numero = {}
             container_line_items = []
-            tipo_iva_repercutido = "R21"  # Default
 
             if existing_line_item_ids:
-                # BATCH READ all line items to find FLETES items and containers
-                access_token = client.access_token
-                headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-                batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
-                batch_size = 100
-
                 for i in range(0, len(existing_line_item_ids), batch_size):
                     batch_ids = existing_line_item_ids[i:i + batch_size]
                     batch_payload = {
-                        "properties": ["name", "hs_product_type", "numero_container"],
-                        "inputs": [{"id": str(lid)} for lid in batch_ids]
+                        "properties": [
+                            "name", "hs_product_type", "numero_container", "tipo_articulo",
+                            "price", "precio_de_coste", "cardcode", "almacen",
+                            "tipo_iva_repercutido", "tipo_iva_soportado",
+                        ],
+                        "inputs": [{"id": str(lid)} for lid in batch_ids],
                     }
-
                     try:
                         batch_response = requests.post(batch_url, headers=headers, json=batch_payload, timeout=30)
                         if batch_response.ok:
-                            batch_data = batch_response.json()
-                            for item in batch_data.get("results", []):
-                                props = item.get("properties", {})
+                            for item in batch_response.json().get("results", []):
+                                props = item.get("properties", {}) or {}
                                 line_item_name = (props.get("name") or "").strip()
                                 product_type = (props.get("hs_product_type") or "").strip().lower()
-
-                                # Collect FLETES items for deletion
                                 if line_item_name.endswith("- FLETES") or line_item_name == "FLETES":
-                                    fletes_line_item_ids_to_delete.append(item.get("id"))
-
-                                # Collect containers
+                                    key = (props.get("numero_container") or "").strip()
+                                    fletes_existentes_by_numero[key] = {
+                                        "id": item.get("id"),
+                                        "properties": props,
+                                    }
                                 if _is_container_product_type(product_type):
                                     container_line_items.append({
                                         "id": item.get("id"),
                                         "name": props.get("name", ""),
-                                        "numero_container": props.get("numero_container", "")
+                                        "numero_container": props.get("numero_container", ""),
                                     })
-
-                            logger.info(f"Batch read {len(batch_data.get('results', []))} line items")
                         else:
-                            logger.error(f"Batch read failed: {batch_response.status_code} - {batch_response.text}")
+                            logger.error(f"[transit] batch read failed: {batch_response.status_code} - {batch_response.text}")
                     except Exception as e:
-                        logger.error(f"Error in batch read line items: {e}")
+                        logger.error(f"[transit] error in batch read line items: {e}")
 
-                logger.info(f"Found {len(fletes_line_item_ids_to_delete)} FLETES line items to delete")
-                logger.info(f"Found {len(container_line_items)} containers")
-
-                # BATCH DELETE FLETES line items
-                if fletes_line_item_ids_to_delete:
-                    batch_delete_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/archive"
-                    for i in range(0, len(fletes_line_item_ids_to_delete), batch_size):
-                        batch_ids = fletes_line_item_ids_to_delete[i:i + batch_size]
-                        batch_payload = {
-                            "inputs": [{"id": str(lid)} for lid in batch_ids]
-                        }
-
-                        try:
-                            batch_response = requests.post(batch_delete_url, headers=headers, json=batch_payload, timeout=30)
-                            if batch_response.ok:
-                                logger.info(f"Batch deleted {len(batch_ids)} FLETES line items")
-                            else:
-                                logger.error(f"Batch delete failed: {batch_response.status_code} - {batch_response.text}")
-                        except Exception as e:
-                            logger.error(f"Error in batch delete line items: {e}")
-
-            # Determine IVA type: use from frontend if provided, otherwise calculate from company residence
-            if transit_data.tipo_iva_fletes:
-                tipo_iva_repercutido = transit_data.tipo_iva_fletes
-                logger.info(f"[transit] Using IVA type from frontend: {tipo_iva_repercutido}")
-            else:
-                # Get company residence to determine IVA type
-                try:
-                    company_ids = get_associated_companies(deal_id)
-                    if company_ids:
-                        company_id = company_ids[0]
-                        company_url = f"https://api.hubapi.com/crm/v3/objects/companies/{company_id}"
-                        company_response = requests.get(
-                            company_url,
-                            headers=headers,
-                            params={"properties": "residennum"},
-                            timeout=10
-                        )
-
-                        if company_response.ok:
-                            residennum = (company_response.json()
-                                         .get("properties", {})
-                                         .get("residennum", ""))
-
-                            tipo_iva_repercutido = compute_tipo_iva_repercutido(residennum)
-                            logger.info(f"[transit] Company residence: {residennum or 'NACIONAL'}, IVA type: {tipo_iva_repercutido}")
-                except Exception as e:
-                    logger.error(f"[transit] Error fetching company residence: {e}")
-
-            # Step 2: Search for FLETES product (tipo_articulo = "transitario", name = "FLETES")
+            residennum = None
+            equ = ""
             try:
-                logger.info("Searching for FLETES product")
+                company_ids = get_associated_companies(deal_id)
+                if company_ids:
+                    company_id = company_ids[0]
+                    company_url = f"https://api.hubapi.com/crm/v3/objects/companies/{company_id}"
+                    company_response = requests.get(
+                        company_url, headers=headers,
+                        params={"properties": "residennum,equ"}, timeout=10,
+                    )
+                    if company_response.ok:
+                        company_props_iva = company_response.json().get("properties", {}) or {}
+                        residennum = company_props_iva.get("residennum") or ""
+                        equ = company_props_iva.get("equ") or ""
+            except Exception as e:
+                logger.error(f"[transit] error fetching company residence: {e}")
+
+            tipo_iva_repercutido = transit_data.tipo_iva_fletes or None
+            tipo_iva_soportado = transit_data.tipo_iva_fletes_soportado or None
+
+            fletes_product_id = None
+            try:
                 search_response = client.crm.products.search_api.do_search(
                     public_object_search_request={
-                        "filterGroups": [
-                            {
-                                "filters": [
-                                    {
-                                        "propertyName": "name",
-                                        "operator": "EQ",
-                                        "value": "FLETES"
-                                    },
-                                    {
-                                        "propertyName": "tipo_articulo",
-                                        "operator": "EQ",
-                                        "value": "transitario"
-                                    }
-                                ]
-                            }
+                        "filterGroups": [{"filters": [{"propertyName": "cardcode", "operator": "EQ", "value": "VARIAB-TRANSP-00001"}]}],
+                        "properties": [
+                            "name", "hs_sku", "price",
+                            "tipo_iva_soportado", "tipo_iva_repercutido",
+                            "tipo_iva_soportado_eu", "tipo_iva_repercutido_eu",
+                            "tipo_iva_soportado_ex", "tipo_iva_repercutido_ex",
                         ],
-                        "properties": ["name", "hs_sku", "price"],
-                        "limit": 1
+                        "limit": 1,
                     }
                 )
-
                 if search_response.results and len(search_response.results) > 0:
                     fletes_product = search_response.results[0]
                     fletes_product_id = str(fletes_product.id)
-                    fletes_sku = fletes_product.properties.get("hs_sku", "FLETES")
-
-                    logger.info(f"Found FLETES product: ID={fletes_product_id}, SKU={fletes_sku}")
-
-                    # Step 3: Create FLETES line items (one per container)
-                    if not container_line_items:
-                        logger.warning("No containers found - creating single FLETES line item")
-                        # Fallback: create single FLETES line item
-                        fletes_line_item_id = create_line_item_with_association(
-                            client=client,
-                            deal_id=deal_id,
-                            product_id=fletes_product_id,
-                            sku=fletes_sku,
-                            product_name="FLETES",
-                            product_price=str(precio_total_fletes),
-                            quantity="1",
-                            cardcode=transit_data.transitario,
-                            almacen=deal_almacen,
-                            tipo_iva_repercutido=tipo_iva_repercutido,
-                            tipo_articulo="transitario",
-                            hs_product_type="Flete"
-                        )
-
-                        if fletes_line_item_id:
-                            logger.info(f"Successfully created FLETES line item {fletes_line_item_id} with price {precio_total_fletes}")
-                    else:
-                        # Use total price per container (precio_origen + precio_destino)
-                        num_containers = len(container_line_items)
-                        precio_por_contenedor = precio_total_fletes
-
-                        logger.info(f"Creating {num_containers} FLETES line items at {precio_por_contenedor}€ each (total per container)")
-
-                        # Prepare line items for batch creation
-                        fletes_line_items_to_create = []
-
-                        for container in container_line_items:
-                            fletes_properties = {
-                                "hs_product_id": fletes_product_id,
-                                "hs_sku": fletes_sku,
-                                "name": f"{container['name']} - FLETES",
-                                "price": str(precio_por_contenedor),
-                                "precio_de_coste": str(precio_por_contenedor),
-                                "quantity": "1",
-                                "cardcode": transit_data.transitario or "",
-                                "numero_container": container["numero_container"],
-                                "tipo_iva_repercutido": tipo_iva_repercutido,
-                                "tipo_articulo": "transitario",
-                                "hs_product_type": "Flete"
-                            }
-
-                            # Add almacen if available
-                            if deal_almacen:
-                                fletes_properties["almacen"] = str(deal_almacen)
-
-                            line_item_data = {
-                                "properties": fletes_properties,
-                                "associations": [{
-                                    "to": {"id": deal_id},
-                                    "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
-                                }]
-                            }
-                            fletes_line_items_to_create.append(line_item_data)
-
-                        # BATCH CREATE FLETES line items
-                        batch_create_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/create"
-
-                        for i in range(0, len(fletes_line_items_to_create), batch_size):
-                            batch_items = fletes_line_items_to_create[i:i + batch_size]
-                            batch_payload = {"inputs": batch_items}
-
-                            try:
-                                batch_response = requests.post(batch_create_url, headers=headers, json=batch_payload, timeout=60)
-                                if batch_response.ok:
-                                    created_items = batch_response.json().get("results", [])
-                                    logger.info(f"Batch created {len(created_items)} FLETES line items")
-                                else:
-                                    logger.error(f"Batch create failed: {batch_response.status_code} - {batch_response.text}")
-                            except Exception as e:
-                                logger.error(f"Error in batch create FLETES line items: {e}")
-
+                    tipo_iva_repercutido = resolve_product_iva(
+                        fletes_product.properties, residennum, "repercutido", tipo_iva_repercutido,
+                    )
+                    tipo_iva_soportado = resolve_product_iva(
+                        fletes_product.properties, residennum, "soportado", tipo_iva_soportado,
+                    )
                 else:
-                    logger.warning("FLETES product not found in HubSpot. Please create a product with name='FLETES' and tipo_articulo='transitario'")
-
+                    logger.warning("[transit] FLETES product not found in HubSpot (cardcode VARIAB-TRANSP-00001)")
             except Exception as e:
-                logger.error(f"Error managing FLETES product: {e}", exc_info=True)
+                logger.error(f"[transit] error searching FLETES product: {e}", exc_info=True)
 
-        # Step 4: Verify and create routes if they don't exist
+            container_by_key = {c["numero_container"]: c for c in container_line_items}
+            target_keys = set(container_by_key.keys()) if container_line_items else {""}
+
+            to_update = []
+            to_create = []
+            to_delete_ids = []
+            persisted_by_key = {}
+
+            for key in target_keys:
+                existing = fletes_existentes_by_numero.get(key)
+                if existing:
+                    cur = existing["properties"]
+                    update_props = {}
+                    if _safe_float(cur.get("price")) != precio_total_fletes:
+                        update_props["price"] = str(precio_total_fletes)
+                    if (cur.get("cardcode") or "") != target_cardcode:
+                        update_props["cardcode"] = target_cardcode
+                    if tipo_iva_repercutido and cur.get("tipo_iva_repercutido") != tipo_iva_repercutido:
+                        update_props["tipo_iva_repercutido"] = tipo_iva_repercutido
+                    if tipo_iva_soportado and cur.get("tipo_iva_soportado") != tipo_iva_soportado:
+                        update_props["tipo_iva_soportado"] = tipo_iva_soportado
+                    if effective_almacen and (cur.get("almacen") or "") != str(effective_almacen):
+                        update_props["almacen"] = str(effective_almacen)
+                    if update_props:
+                        to_update.append({"id": existing["id"], "properties": update_props})
+                    persisted_by_key[key] = existing["id"]
+                else:
+                    if not fletes_product_id:
+                        logger.warning(
+                            f"[transit] cannot create flete for key={key!r}: fletes_product_id missing"
+                        )
+                        continue
+                    container_name = container_by_key.get(key, {}).get("name") or ""
+                    nombre_flete = f"{container_name} - FLETES" if container_name else "FLETES"
+                    new_props = {
+                        "hs_product_id": fletes_product_id,
+                        "hs_sku": fletes_product_id,
+                        "name": nombre_flete,
+                        "price": str(precio_total_fletes),
+                        "quantity": "1",
+                        "cardcode": target_cardcode,
+                        "numero_container": key,
+                        "tipo_articulo": "transitario",
+                        "hs_product_type": "Flete",
+                        "hs_currency": "EUR",
+                    }
+                    if tipo_iva_repercutido:
+                        new_props["tipo_iva_repercutido"] = tipo_iva_repercutido
+                    if tipo_iva_soportado:
+                        new_props["tipo_iva_soportado"] = tipo_iva_soportado
+                    if effective_almacen:
+                        new_props["almacen"] = str(effective_almacen)
+                    to_create.append({
+                        "properties": new_props,
+                        "associations": [{
+                            "to": {"id": deal_id},
+                            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}],
+                        }],
+                        "_target_key": key,
+                    })
+
+            for key, existing in fletes_existentes_by_numero.items():
+                if key not in target_keys:
+                    to_delete_ids.append(existing["id"])
+
+            if to_update:
+                upd_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/update"
+                for i in range(0, len(to_update), batch_size):
+                    chunk = to_update[i:i + batch_size]
+                    for x in chunk:
+                        enforce_line_item_price_rounding(x.get("properties", {}))
+                    try:
+                        resp = requests.post(upd_url, headers=headers, json={"inputs": chunk}, timeout=60)
+                        if not resp.ok:
+                            logger.error(f"[transit] batch update FLETES failed: {resp.status_code} - {resp.text}")
+                    except Exception as e:
+                        logger.error(f"[transit] error batch updating FLETES: {e}")
+
+            created_ids_by_key = {}
+            if to_create:
+                cr_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/create"
+                for i in range(0, len(to_create), batch_size):
+                    chunk = to_create[i:i + batch_size]
+                    for x in chunk:
+                        enforce_line_item_price_rounding(x.get("properties", {}))
+                    payload = {"inputs": [{"properties": x["properties"], "associations": x["associations"]} for x in chunk]}
+                    try:
+                        resp = requests.post(cr_url, headers=headers, json=payload, timeout=60)
+                        if resp.ok:
+                            for x, created in zip(chunk, resp.json().get("results", [])):
+                                new_id = created.get("id")
+                                if new_id:
+                                    created_ids_by_key[x["_target_key"]] = new_id
+                                    persisted_by_key[x["_target_key"]] = new_id
+                        else:
+                            logger.error(f"[transit] batch create FLETES failed: {resp.status_code} - {resp.text}")
+                    except Exception as e:
+                        logger.error(f"[transit] error batch creating FLETES: {e}")
+
+            if to_delete_ids:
+                del_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/archive"
+                for i in range(0, len(to_delete_ids), batch_size):
+                    chunk = to_delete_ids[i:i + batch_size]
+                    try:
+                        resp = requests.post(del_url, headers=headers, json={"inputs": [{"id": str(x)} for x in chunk]}, timeout=30)
+                        if not resp.ok:
+                            logger.error(f"[transit] batch delete FLETES failed: {resp.status_code} - {resp.text}")
+                    except Exception as e:
+                        logger.error(f"[transit] error batch deleting FLETES: {e}")
+
+            try:
+                elementos = get_elementos_by_deal(
+                    client, deal_id,
+                    properties=[
+                        "nombre", "tipo_articulo", "cantidad", "precio_unitario",
+                        "precio_de_coste", "precio_total", "cardcode",
+                        "tipo_iva_repercutido", "tipo_iva_soportado", "line_item_id",
+                        "nombre_contenedor",
+                    ],
+                )
+            except Exception as e:
+                logger.warning(f"[transit] could not load ELEMENTOS for deal {deal_id}: {e}")
+                elementos = []
+
+            elementos_flete_by_lid = {}
+            elementos_flete_by_nombre = {}
+            for el in elementos:
+                props = el.get("properties", {}) or {}
+                if (props.get("tipo_articulo") or "").lower() != "flete":
+                    continue
+                lid = props.get("line_item_id")
+                nombre = (props.get("nombre") or "").strip()
+                entry = {"id": el.get("id"), "properties": props}
+                if lid:
+                    elementos_flete_by_lid[str(lid).strip()] = entry
+                if nombre:
+                    elementos_flete_by_nombre[nombre] = entry
+
+            affected_contenedor_co_ids = set()
+            elementos_updated = 0
+            elementos_orphan_created = 0
+            new_lids_set = set(created_ids_by_key.values())
+            cont_map_for_orphan = None
+            for key, lid in persisted_by_key.items():
+                target_lid = str(lid).strip()
+                if target_lid in {str(x) for x in new_lids_set}:
+                    continue
+
+                elem = elementos_flete_by_lid.get(target_lid)
+                match_via = "line_item_id" if elem else None
+                if not elem:
+                    existing = fletes_existentes_by_numero.get(key)
+                    nombre_flete = (existing["properties"].get("name") or "").strip() if existing else ""
+                    if nombre_flete:
+                        elem = elementos_flete_by_nombre.get(nombre_flete)
+                        if elem:
+                            match_via = "nombre"
+                if not elem:
+                    if cont_map_for_orphan is None:
+                        cont_map_for_orphan = _resolve_contenedor_co_by_numero(client, deal_id)
+                    container_info = container_by_key.get(key, {})
+                    container_name = container_info.get("name") or ""
+                    container_lid = str(container_info.get("id") or "")
+                    co = (
+                        cont_map_for_orphan.get(key)
+                        or cont_map_for_orphan.get(container_name)
+                        or cont_map_for_orphan.get(f"lid:{container_lid}")
+                    )
+                    if not co:
+                        logger.warning(
+                            f"[transit] orphan flete: no CONTENEDOR CO for line_item_id={target_lid} key={key!r}"
+                        )
+                        continue
+                    existing = fletes_existentes_by_numero.get(key)
+                    nombre_flete = (
+                        (existing["properties"].get("name") or "").strip() if existing else ""
+                    ) or (f"{container_name} - FLETES" if container_name else "FLETES")
+                    orphan_data = [{
+                        "nombre": nombre_flete,
+                        "nombre_contenedor": container_name,
+                        "tipo_articulo": "flete",
+                        "cantidad": 1,
+                        "precio_unitario": precio_total_fletes,
+                        "precio_de_coste": precio_total_fletes,
+                        "precio_total": precio_total_fletes,
+                        "cardcode": target_cardcode,
+                        "line_item_id": target_lid,
+                    }]
+                    if tipo_iva_repercutido:
+                        orphan_data[0]["tipo_iva_repercutido"] = tipo_iva_repercutido
+                    if tipo_iva_soportado:
+                        orphan_data[0]["tipo_iva_soportado"] = tipo_iva_soportado
+                    if effective_almacen:
+                        orphan_data[0]["almacen"] = str(effective_almacen)
+                    try:
+                        contact_id_o = (get_associated_contacts(deal_id) or [None])[0]
+                        company_id_o = (get_associated_companies(deal_id) or [None])[0]
+                        created = batch_create_elementos_with_associations(
+                            client=client,
+                            elementos_data=orphan_data,
+                            deal_id=deal_id,
+                            contenedor_id=co.get("id"),
+                            contact_id=contact_id_o,
+                            company_id=company_id_o,
+                        )
+                        if created:
+                            elementos_orphan_created += 1
+                            affected_contenedor_co_ids.add(co.get("id"))
+                    except Exception as e:
+                        logger.warning(
+                            f"[transit] orphan flete create failed for line_item_id={target_lid}: {e}"
+                        )
+                    continue
+
+                cur_props = elem["properties"]
+                elem_update_props = {}
+                if _safe_float(cur_props.get("precio_unitario")) != precio_total_fletes:
+                    elem_update_props["precio_unitario"] = precio_total_fletes
+                if _safe_float(cur_props.get("precio_total")) != precio_total_fletes:
+                    elem_update_props["precio_total"] = precio_total_fletes
+                if (cur_props.get("cardcode") or "") != target_cardcode:
+                    elem_update_props["cardcode"] = target_cardcode
+                if tipo_iva_repercutido and cur_props.get("tipo_iva_repercutido") != tipo_iva_repercutido:
+                    elem_update_props["tipo_iva_repercutido"] = tipo_iva_repercutido
+                if tipo_iva_soportado and cur_props.get("tipo_iva_soportado") != tipo_iva_soportado:
+                    elem_update_props["tipo_iva_soportado"] = tipo_iva_soportado
+                if str(cur_props.get("line_item_id") or "") != target_lid:
+                    elem_update_props["line_item_id"] = target_lid
+                if effective_almacen and (cur_props.get("almacen") or "") != str(effective_almacen):
+                    elem_update_props["almacen"] = str(effective_almacen)
+
+                if not elem_update_props:
+                    continue
+
+                if update_elemento(client, elem["id"], elem_update_props):
+                    elementos_updated += 1
+                    if cont_map_for_orphan is None:
+                        cont_map_for_orphan = _resolve_contenedor_co_by_numero(client, deal_id)
+                    co_upd = (
+                        cont_map_for_orphan.get(key)
+                        or cont_map_for_orphan.get(container_by_key.get(key, {}).get("name") or "")
+                    )
+                    if co_upd:
+                        affected_contenedor_co_ids.add(co_upd.get("id"))
+
+            elementos_created = 0
+            if to_create and created_ids_by_key:
+                contenedores_co_by_numero = _resolve_contenedor_co_by_numero(client, deal_id)
+                contact_id = (get_associated_contacts(deal_id) or [None])[0]
+                company_id = (get_associated_companies(deal_id) or [None])[0]
+
+                for x in to_create:
+                    key = x["_target_key"]
+                    new_lid = created_ids_by_key.get(key)
+                    if not new_lid:
+                        continue
+                    container_info = container_by_key.get(key, {})
+                    container_name = container_info.get("name") or ""
+                    container_lid = str(container_info.get("id") or "")
+                    co = (
+                        contenedores_co_by_numero.get(key)
+                        or contenedores_co_by_numero.get(container_name)
+                        or contenedores_co_by_numero.get(f"lid:{container_lid}")
+                    )
+                    if not co:
+                        logger.warning(
+                            f"[transit] no CONTENEDOR CO matched for key={key!r} "
+                            f"name={container_name!r}; available keys={list(contenedores_co_by_numero.keys())}"
+                        )
+                        continue
+                    nombre_flete = x["properties"]["name"]
+                    elementos_data = [{
+                        "nombre": nombre_flete,
+                        "nombre_contenedor": container_name,
+                        "tipo_articulo": "flete",
+                        "cantidad": 1,
+                        "precio_unitario": precio_total_fletes,
+                        "precio_de_coste": precio_total_fletes,
+                        "precio_total": precio_total_fletes,
+                        "cardcode": target_cardcode,
+                        "line_item_id": str(new_lid),
+                    }]
+                    if tipo_iva_repercutido:
+                        elementos_data[0]["tipo_iva_repercutido"] = tipo_iva_repercutido
+                    if tipo_iva_soportado:
+                        elementos_data[0]["tipo_iva_soportado"] = tipo_iva_soportado
+                    if effective_almacen:
+                        elementos_data[0]["almacen"] = str(effective_almacen)
+                    created = batch_create_elementos_with_associations(
+                        client=client,
+                        elementos_data=elementos_data,
+                        deal_id=deal_id,
+                        contenedor_id=co.get("id"),
+                        contact_id=contact_id,
+                        company_id=company_id,
+                    )
+                    if created:
+                        elementos_created += len(created)
+                        affected_contenedor_co_ids.add(co.get("id"))
+
+            elementos_deleted = 0
+            for lid in to_delete_ids:
+                elem = elementos_flete_by_lid.get(str(lid).strip())
+                if elem and delete_elemento(client, elem["id"]):
+                    elementos_deleted += 1
+                    nc_del = ((elem.get("properties") or {}).get("nombre_contenedor") or "").strip()
+                    if nc_del:
+                        if cont_map_for_orphan is None:
+                            cont_map_for_orphan = _resolve_contenedor_co_by_numero(client, deal_id)
+                        co_del = cont_map_for_orphan.get(nc_del)
+                        if co_del:
+                            affected_contenedor_co_ids.add(co_del.get("id"))
+
+            if to_update or to_create or to_delete_ids or elementos_updated or elementos_created or elementos_deleted or elementos_orphan_created:
+                logger.info(
+                    f"[transit] FLETES sync done: line_items updated={len(to_update)} "
+                    f"created={len(to_create)} deleted={len(to_delete_ids)} | "
+                    f"ELEMENTOS updated={elementos_updated} created={elementos_created} "
+                    f"orphan_created={elementos_orphan_created} deleted={elementos_deleted}"
+                )
+
         ruta_terrestre_creada = False
         ruta_maritima_creada = False
 
         try:
             # Only process routes if we have the necessary data
-            if transit_data.transitario and transit_data.fecha_caducidad:
+            if transit_data.transitario:
 
                 # RUTA TERRESTRE: lugar_carga + puerto_salida
-                if lugar_carga and transit_data.puerto_salida and transit_data.precio_ruta_hasta_puerto_de_salida:
-                    logger.info(f"[rutas] Verificando ruta terrestre: {lugar_carga} -> {transit_data.puerto_salida}")
+                if lugar_carga and transit_data.puerto_salida and transit_data.precio_ruta_hasta_puerto_de_salida \
+                        and transit_data.fecha_caducidad_flete_salida:
+                    logger.info(f"[rutas] Procesando ruta terrestre: {lugar_carga} -> {transit_data.puerto_salida}")
 
-                    ruta_terrestre_existe = _verificar_ruta_existe(
+                    ruta_id_terrestre = _find_ruta(
                         client=client,
                         tipo_ruta="terrestre",
                         transitario=transit_data.transitario,
@@ -5180,7 +6611,15 @@ async def update_deal_transit(
                         tipo_contenedor=tipo_contenedor
                     )
 
-                    if not ruta_terrestre_existe:
+                    if ruta_id_terrestre:
+                        logger.info(f"[rutas] Ruta terrestre existe, actualizando...")
+                        _update_ruta(
+                            client=client,
+                            ruta_id=ruta_id_terrestre,
+                            importe=transit_data.precio_ruta_hasta_puerto_de_salida,
+                            fecha_caducidad=transit_data.fecha_caducidad_flete_salida
+                        )
+                    else:
                         logger.info(f"[rutas] Ruta terrestre NO existe, creando...")
                         ruta_id = _crear_ruta(
                             client=client,
@@ -5188,7 +6627,7 @@ async def update_deal_transit(
                             transitario=transit_data.transitario,
                             tipo_contenedor=tipo_contenedor,
                             importe=transit_data.precio_ruta_hasta_puerto_de_salida,
-                            fecha_caducidad=transit_data.fecha_caducidad,
+                            fecha_caducidad=transit_data.fecha_caducidad_flete_salida,
                             lugar_carga=lugar_carga,
                             puerto_salida=transit_data.puerto_salida,
                             localidad_destino=transit_data.localidad_destino
@@ -5196,14 +6635,14 @@ async def update_deal_transit(
                         if ruta_id:
                             ruta_terrestre_creada = True
                             logger.info(f"[rutas] Ruta terrestre creada: {ruta_id}")
-                    else:
-                        logger.info(f"[rutas] Ruta terrestre ya existe")
 
                 # RUTA MARÍTIMA: puerto_salida + puerto_destino
-                if transit_data.puerto_salida and transit_data.puerto_destino and transit_data.precio_ruta_hasta_puerto_destino:
-                    logger.info(f"[rutas] Verificando ruta marítima: {transit_data.puerto_salida} -> {transit_data.puerto_destino}")
+                if transit_data.puerto_salida and transit_data.puerto_destino \
+                        and transit_data.precio_ruta_hasta_puerto_destino \
+                        and transit_data.fecha_caducidad_flete_destino:
+                    logger.info(f"[rutas] Procesando ruta marítima: {transit_data.puerto_salida} -> {transit_data.puerto_destino}")
 
-                    ruta_maritima_existe = _verificar_ruta_existe(
+                    ruta_id_maritima = _find_ruta(
                         client=client,
                         tipo_ruta="maritima",
                         transitario=transit_data.transitario,
@@ -5213,7 +6652,15 @@ async def update_deal_transit(
                         tipo_contenedor=tipo_contenedor
                     )
 
-                    if not ruta_maritima_existe:
+                    if ruta_id_maritima:
+                        logger.info(f"[rutas] Ruta marítima existe, actualizando...")
+                        _update_ruta(
+                            client=client,
+                            ruta_id=ruta_id_maritima,
+                            importe=transit_data.precio_ruta_hasta_puerto_destino,
+                            fecha_caducidad=transit_data.fecha_caducidad_flete_destino
+                        )
+                    else:
                         logger.info(f"[rutas] Ruta marítima NO existe, creando...")
                         ruta_id = _crear_ruta(
                             client=client,
@@ -5221,7 +6668,7 @@ async def update_deal_transit(
                             transitario=transit_data.transitario,
                             tipo_contenedor=tipo_contenedor,
                             importe=transit_data.precio_ruta_hasta_puerto_destino,
-                            fecha_caducidad=transit_data.fecha_caducidad,
+                            fecha_caducidad=transit_data.fecha_caducidad_flete_destino,
                             puerto_salida=transit_data.puerto_salida,
                             puerto_destino=transit_data.puerto_destino,
                             naviera=transit_data.naviera,
@@ -5230,12 +6677,26 @@ async def update_deal_transit(
                         if ruta_id:
                             ruta_maritima_creada = True
                             logger.info(f"[rutas] Ruta marítima creada: {ruta_id}")
-                    else:
-                        logger.info(f"[rutas] Ruta marítima ya existe")
 
         except Exception as e:
             logger.error(f"[rutas] Error processing routes: {e}", exc_info=True)
             # Don't fail the entire request if route creation fails
+
+        try:
+            if affected_contenedor_co_ids:
+                try:
+                    await hubdb_client.preload_iva_table()
+                    recalcular_contenedores(
+                        client,
+                        deal_id,
+                        list(affected_contenedor_co_ids),
+                        {"equ": equ, "residennum": residennum or ""},
+                    )
+                except Exception as e:
+                    logger.warning(f"[transit] recalcular_contenedores falló: {e}")
+                touch_pagos_for_contenedores(client, list(affected_contenedor_co_ids))
+        except NameError:
+            pass
 
         return {
             "success": True,
@@ -5250,25 +6711,11 @@ async def update_deal_transit(
         logger.error(f"Error updating transit data for deal {deal_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/transitarios/search", response_model=dict)
 async def search_transitarios(
     q: str = ""
 ):
-    """Search for transitarios (tipo_proveedor = transitario).
-
-    This endpoint searches the custom object Proveedores (ID: 2-43108800)
-    for providers with tipo_proveedor = "transitario".
-
-    Args:
-        q: Search query string (searches in provider name)
-
-    Returns:
-        List of transitarios with their properties
-
-    Raises:
-        HTTPException: If API error occurs.
-    """
+    """Busca transitarios (custom object Proveedores `2-43108800` con tipo_proveedor=transitario)."""
     try:
         client = hubspot_client.get_client()
 
@@ -5333,7 +6780,6 @@ async def search_transitarios(
         logger.error(f"Error searching transitarios: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/{deal_id}/rutas", response_model=DealRutasResponse)
 async def get_deal_rutas(
     deal_id: str = Path(
@@ -5343,29 +6789,12 @@ async def get_deal_rutas(
     ),
     include_expired: bool = False,
     puerto_salida: Optional[str] = None,
-    puerto_destino: Optional[str] = None
+    puerto_destino: Optional[str] = None,
+    localidad_destino: Optional[str] = None
 ):
-    """Get available routes for a deal from HubSpot custom object 'rutas'.
+    """Devuelve las rutas válidas (custom object `2-53295516`) para el deal, separadas en terrestres y marítimas.
 
-    This endpoint retrieves routes that match the deal's configuration:
-    - Filters by tipo_contenedor (from deal)
-    - Filters by lugar_carga, puerto_salida, puerto_destino (from deal or query params)
-    - Filters by naviera if selected (from deal)
-    - Filters by fecha_caducidad > today (only active routes)
-    - If include_expired=true, also includes routes expired less than 60 days ago
-    - Separates routes into terrestrial (lugar_carga → puerto_salida) and maritime (puerto_salida → puerto_destino)
-
-    Args:
-        deal_id: HubSpot deal ID.
-        include_expired: If True, include routes expired less than 60 days ago (for quick quotes).
-        puerto_salida: Optional. Override puerto_salida from deal (used when frontend select changes haven't been saved yet).
-        puerto_destino: Optional. Override puerto_destino from deal (used when frontend select changes haven't been saved yet).
-
-    Returns:
-        DealRutasResponse with terrestrial and maritime routes lists.
-
-    Raises:
-        HTTPException: If deal not found or API error occurs.
+    Filtros: tipo_contenedor, lugar_carga, puerto_salida, puerto_destino, naviera (todos del deal salvo overrides en query) y `fecha_caducidad > hoy`. Con `include_expired=true` se aceptan caducadas hace menos de 60 días. Si llega `localidad_destino` (DAP TERRESTRE) se buscan rutas directas (lugar_carga → localidad_destino) y se omite la búsqueda marítima.
     """
     try:
         from datetime import datetime, timedelta
@@ -5378,7 +6807,6 @@ async def get_deal_rutas(
 
         logger.warning(f"Fetching rutas for deal {deal_id}")
 
-        # Step 1: Get deal properties needed for filtering
         deal_properties = [
             'tipo_contenedor',
             'lugar_carga',
@@ -5404,15 +6832,109 @@ async def get_deal_rutas(
 
         logger.info(f"Deal filters - tipo_contenedor: {deal_tipo_contenedor}, lugar_carga: {deal_lugar_carga}, puerto_salida: {effective_puerto_salida} (from: {'query' if puerto_salida else 'deal'}), puerto_destino: {effective_puerto_destino} (from: {'query' if puerto_destino else 'deal'}), naviera: {deal_naviera}")
 
-        # Step 2: Build filters for rutas search
         # We'll need to do 2 separate searches: one for terrestrial routes, one for maritime routes
 
         rutas_terrestres = []
         rutas_maritimas = []
 
-        # Step 3: Search for terrestrial routes (lugar_carga → puerto_salida)
+        # No port filtering, no maritime search
+        if localidad_destino:
+            if deal_tipo_contenedor and deal_lugar_carga:
+                try:
+                    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+                    search_url = f"https://api.hubapi.com/crm/v3/objects/{CUSTOM_OBJECT_RUTAS}/search"
+
+                    filters_directo = [
+                        {"propertyName": "tipo_contenedor", "operator": "EQ", "value": deal_tipo_contenedor},
+                        {"propertyName": "lugar_carga", "operator": "EQ", "value": deal_lugar_carga},
+                        {"propertyName": "localidad_destino", "operator": "EQ", "value": localidad_destino},
+                    ]
+
+                    search_payload = {
+                        "filterGroups": [{"filters": filters_directo}],
+                        "properties": [
+                            "referencia",
+                            "tipo_contenedor",
+                            "transitario",
+                            "transitario_name",
+                            "naviera",
+                            "lugar_carga",
+                            "puerto_salida",
+                            "puerto_destino",
+                            "localidad_destino",
+                            "importe",
+                            "fecha_caducidad",
+                            "notas"
+                        ],
+                        "limit": 100,
+                        "sorts": [{"propertyName": "importe", "direction": "ASCENDING"}]
+                    }
+
+                    logger.info(f"Searching DAP TERRESTRE direct routes with filters: {filters_directo}")
+
+                    search_response = requests.post(search_url, headers=headers, json=search_payload, timeout=10)
+
+                    if not search_response.ok:
+                        logger.error(f"Direct routes search failed: {search_response.status_code} - {search_response.text}")
+                        raise Exception(f"Search failed: {search_response.text}")
+
+                    search_data = search_response.json()
+                    search_results_directo = search_data.get("results", [])
+
+                    logger.info(f"Found {len(search_results_directo)} direct routes (before date filtering)")
+
+                    today = datetime.now().date()
+                    threshold_date = today - timedelta(days=60) if include_expired else today
+
+                    for result in search_results_directo:
+                        props = result.get("properties", {})
+
+                        fecha_cad_str = props.get("fecha_caducidad", "")
+                        if fecha_cad_str:
+                            try:
+                                fecha_cad = datetime.strptime(fecha_cad_str, "%Y-%m-%d").date()
+                                if fecha_cad < threshold_date:
+                                    logger.info(f"Skipping expired route: {props.get('referencia')} (expired: {fecha_cad})")
+                                    continue
+                            except ValueError:
+                                try:
+                                    fecha_cad_timestamp = int(fecha_cad_str)
+                                    fecha_cad = datetime.fromtimestamp(fecha_cad_timestamp / 1000).date()
+                                    if fecha_cad < threshold_date:
+                                        logger.info(f"Skipping expired route: {props.get('referencia')} (expired: {fecha_cad})")
+                                        continue
+                                except (ValueError, TypeError):
+                                    logger.warning(f"Could not parse fecha_caducidad: {fecha_cad_str}")
+
+                        transitario_cardcode = props.get("transitario", "")
+                        transitario_name = props.get("transitario_name")
+
+                        ruta_item = RutaItem(
+                            id=str(result.get("id", "")),
+                            referencia=props.get("referencia", ""),
+                            tipo_contenedor=props.get("tipo_contenedor", ""),
+                            transitario=transitario_name,
+                            transitario_id=None,
+                            transitario_cardcode=transitario_cardcode,
+                            naviera=props.get("naviera"),
+                            lugar_carga=props.get("lugar_carga"),
+                            puerto_salida=props.get("puerto_salida"),
+                            puerto_destino=props.get("puerto_destino"),
+                            localidad_destino=props.get("localidad_destino"),
+                            importe=safe_convert(props.get("importe"), float) or 0.0,
+                            fecha_caducidad=props.get("fecha_caducidad", ""),
+                            notas=props.get("notas"),
+                            tipo_tramo="terrestre"
+                        )
+                        rutas_terrestres.append(ruta_item)
+
+                    logger.info(f"Found {len(rutas_terrestres)} valid DAP TERRESTRE direct routes after date filtering")
+
+                except Exception as e:
+                    logger.error(f"Error searching DAP TERRESTRE direct routes: {e}", exc_info=True)
+
         # Using direct REST API for better compatibility with custom objects
-        if deal_tipo_contenedor and deal_lugar_carga and effective_puerto_salida:
+        elif deal_tipo_contenedor and deal_lugar_carga and effective_puerto_salida:
             try:
                 headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
                 search_url = f"https://api.hubapi.com/crm/v3/objects/{CUSTOM_OBJECT_RUTAS}/search"
@@ -5517,9 +7039,9 @@ async def get_deal_rutas(
             except Exception as e:
                 logger.error(f"Error searching terrestrial routes: {e}", exc_info=True)
 
-        # Step 4: Search for maritime routes (puerto_salida → puerto_destino)
+        # Skip when localidad_destino is provided (DAP TERRESTRE — direct route, no ports)
         # Using direct REST API for better compatibility with custom objects
-        if deal_tipo_contenedor and effective_puerto_salida and effective_puerto_destino:
+        if not localidad_destino and deal_tipo_contenedor and effective_puerto_salida and effective_puerto_destino:
             try:
                 headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
                 search_url = f"https://api.hubapi.com/crm/v3/objects/{CUSTOM_OBJECT_RUTAS}/search"
@@ -5631,7 +7153,6 @@ async def get_deal_rutas(
             except Exception as e:
                 logger.error(f"Error searching maritime routes: {e}", exc_info=True)
 
-        # Step 5: Build response
         return DealRutasResponse(
             success=True,
             error=None,
@@ -5645,315 +7166,6 @@ async def get_deal_rutas(
         logger.error(f"Error in get_deal_rutas: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
-async def _create_seguro_line_items(client, deal_id: str, articulos_updated: list):
-    """Helper function to create SEGURO (2%) line items per container.
-
-    This function:
-    1. Checks if tipo_de_venta is "CIF" or "DAP MARÍTIMO"
-    2. Calculates total value per container (articles + services + intermediario + flete)
-    3. Creates SEGURO line items (2% of container value)
-    4. Associates seguro provider with deal
-
-    Args:
-        client: HubSpot client instance
-        deal_id: Deal ID
-        articulos_updated: List of updated articles with their margins
-    """
-    try:
-        # Fetch deal properties to check tipo_de_venta
-        deal = client.crm.deals.basic_api.get_by_id(
-            deal_id,
-            properties=["tipo_de_venta"]
-        )
-
-        tipo_de_venta = (deal.properties.get("tipo_de_venta") or "").strip().upper()
-        logger.info(f"[seguro] Deal tipo_de_venta: {tipo_de_venta}")
-
-        # Only create seguro if tipo_de_venta is "CIF" or "DAP MARÍTIMO"
-        if tipo_de_venta not in ["CIF", "DAP MARÍTIMO", "DAP MARITIMO"]:
-            logger.info(f"[seguro] tipo_de_venta '{tipo_de_venta}' does not require insurance, skipping")
-            return
-
-        logger.info(f"[seguro] tipo_de_venta requires insurance, proceeding to create SEGURO line items")
-
-        access_token = client.access_token
-        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-
-        # Get all line items to calculate insurance per container
-        existing_line_item_ids = _get_associated_ids(deal_id, "line_items")
-        logger.info(f"[seguro] Found {len(existing_line_item_ids)} existing line items")
-
-        if not existing_line_item_ids:
-            logger.warning(f"[seguro] No line items found, skipping insurance creation")
-            return
-
-        # BATCH READ all line items
-        batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
-        batch_size = 100
-        all_line_items = []
-
-        for i in range(0, len(existing_line_item_ids), batch_size):
-            batch_ids = existing_line_item_ids[i:i + batch_size]
-            batch_payload = {
-                "properties": ["name", "hs_product_type", "numero_container", "price", "precio_de_coste", "quantity", "margen_unitario", "tipo_articulo"],
-                "inputs": [{"id": str(lid)} for lid in batch_ids]
-            }
-
-            try:
-                batch_response = requests.post(batch_url, headers=headers, json=batch_payload, timeout=30)
-                if batch_response.ok:
-                    all_line_items.extend(batch_response.json().get("results", []))
-            except Exception as e:
-                logger.error(f"[seguro] Error in batch read line items: {e}")
-
-        logger.info(f"[seguro] Batch fetched {len(all_line_items)} line items")
-
-        # Group line items by container and calculate total value per container
-        container_values = {}  # numero_container -> {name, total_value}
-        seguro_items_to_delete = []
-
-        for line_item in all_line_items:
-            props = line_item.get("properties", {})
-            product_type = (props.get("hs_product_type") or "").strip().lower()
-            tipo_articulo = (props.get("tipo_articulo") or "").strip().lower()
-            numero_container = props.get("numero_container")
-            name = props.get("name", "")
-
-            # Collect existing seguro items for deletion
-            if tipo_articulo == "seguro":
-                seguro_items_to_delete.append(line_item.get("id"))
-                continue
-
-            # Skip if no container number
-            if not numero_container:
-                continue
-
-            # Initialize container if not exists
-            if numero_container not in container_values:
-                container_values[numero_container] = {
-                    "name": "",
-                    "total_value": 0
-                }
-
-            # Get container name from container line items
-            if _is_container_product_type(product_type):
-                container_values[numero_container]["name"] = name
-                continue
-
-            # Calculate value based on line item type
-            price = float(props.get("price") or 0)
-            precio_de_coste = float(props.get("precio_de_coste") or 0)
-            quantity = float(props.get("quantity") or 0)
-
-            if tipo_articulo == "fabricante":
-                # Articles: Use price (negotiated price) if available, otherwise use precio_de_coste (base cost)
-                if price > 0:
-                    article_value = price * quantity
-                    logger.info(f"[seguro] Container {numero_container} - Article: price={price} × quantity={quantity} = {article_value}")
-                elif precio_de_coste > 0:
-                    # Fallback for articles not yet negotiated
-                    article_value = precio_de_coste * quantity
-                    logger.info(f"[seguro] Container {numero_container} - Article (fallback): precio_de_coste={precio_de_coste} × quantity={quantity} = {article_value}")
-                else:
-                    article_value = 0
-                    logger.warning(f"[seguro] Container {numero_container} - Article has no price or precio_de_coste")
-
-                container_values[numero_container]["total_value"] += article_value
-
-            elif tipo_articulo in ["comisiones", "transitario"]:
-                # Intermediario, Flete: use price
-                container_values[numero_container]["total_value"] += price
-                logger.info(f"[seguro] Container {numero_container} - {tipo_articulo}: {price}")
-
-            elif tipo_articulo not in ["seguro"]:
-                # Services and other items: use price
-                container_values[numero_container]["total_value"] += price
-                logger.info(f"[seguro] Container {numero_container} - {tipo_articulo or 'other'}: {price}")
-
-        logger.info(f"[seguro] Calculated values for {len(container_values)} containers")
-
-        # Delete existing seguro line items
-        if seguro_items_to_delete:
-            batch_delete_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/archive"
-            for i in range(0, len(seguro_items_to_delete), batch_size):
-                batch_ids = seguro_items_to_delete[i:i + batch_size]
-                batch_payload = {"inputs": [{"id": str(lid)} for lid in batch_ids]}
-
-                try:
-                    batch_response = requests.post(batch_delete_url, headers=headers, json=batch_payload, timeout=30)
-                    if batch_response.ok:
-                        logger.info(f"[seguro] Deleted {len(batch_ids)} existing seguro line items")
-                except Exception as e:
-                    logger.error(f"[seguro] Error deleting seguro line items: {e}")
-
-        # Search for SEGURO product
-        search_response = client.crm.products.search_api.do_search(
-            public_object_search_request={
-                "filterGroups": [{
-                    "filters": [{
-                        "propertyName": "tipo_articulo",
-                        "operator": "EQ",
-                        "value": "seguro"
-                    }]
-                }],
-                "properties": ["name", "hs_sku", "price"],
-                "limit": 1
-            }
-        )
-
-        if not search_response.results or len(search_response.results) == 0:
-            logger.warning("[seguro] No product found with tipo_articulo='seguro'. Please create one in HubSpot.")
-            return
-
-        seguro_product = search_response.results[0]
-        seguro_product_id = str(seguro_product.id)
-        seguro_sku = seguro_product.properties.get("hs_sku", "SEGURO")
-        seguro_name = seguro_product.properties.get("name", "SEGURO")
-
-        logger.info(f"[seguro] Found SEGURO product: ID={seguro_product_id}, name={seguro_name}")
-
-        # Get company residence to determine IVA type
-        tipo_iva_repercutido = "R21"  # Default
-        try:
-            company_ids = get_associated_companies(deal_id)
-            if company_ids:
-                company_id = company_ids[0]
-                company_url = f"https://api.hubapi.com/crm/v3/objects/companies/{company_id}"
-                company_response = requests.get(
-                    company_url,
-                    headers=headers,
-                    params={"properties": "residennum"},
-                    timeout=10
-                )
-
-                if company_response.ok:
-                    residennum = (company_response.json()
-                                 .get("properties", {})
-                                 .get("residennum", ""))
-
-                    tipo_iva_repercutido = compute_tipo_iva_repercutido(residennum)
-                    logger.info(f"[seguro] Company residence: {residennum or 'NACIONAL'}, IVA type: {tipo_iva_repercutido}")
-        except Exception as e:
-            logger.error(f"[seguro] Error fetching company residence: {e}")
-
-        # Search for seguro provider
-        seguro_provider_id = None
-        seguro_provider_cardcode = None
-        try:
-            CUSTOM_OBJECT_PROVEEDORES = "2-43108800"
-            search_url = f"https://api.hubapi.com/crm/v3/objects/{CUSTOM_OBJECT_PROVEEDORES}/search"
-            search_payload = {
-                "filterGroups": [{
-                    "filters": [{
-                        "propertyName": "tipo_proveedor",
-                        "operator": "EQ",
-                        "value": "seguro"
-                    }]
-                }],
-                "properties": ["name", "cardcode"],
-                "limit": 1
-            }
-
-            search_response = requests.post(search_url, headers=headers, json=search_payload, timeout=10)
-            if search_response.ok:
-                search_data = search_response.json()
-                if search_data.get("results"):
-                    provider = search_data["results"][0]
-                    seguro_provider_id = provider["id"]
-                    seguro_provider_cardcode = provider.get("properties", {}).get("cardcode", "")
-                    logger.info(f"[seguro] Found seguro provider: id={seguro_provider_id}, cardcode={seguro_provider_cardcode}")
-        except Exception as e:
-            logger.error(f"[seguro] Error searching for seguro provider: {e}")
-
-        # Create seguro line items (one per container)
-        seguro_line_items_to_create = []
-
-        for numero_container, container_data in container_values.items():
-            container_name = container_data["name"]
-            total_value = container_data["total_value"]
-            seguro_value = total_value * 0.02
-
-            logger.info(f"[seguro] Container {container_name}: total={total_value}, seguro (2%)={seguro_value}")
-
-            line_item_data = {
-                "properties": {
-                    "hs_product_id": seguro_product_id,
-                    "hs_sku": seguro_sku,
-                    "name": f"{container_name} - {seguro_name}",
-                    "price": str(seguro_value),
-                    "precio_de_coste": str(seguro_value),
-                    "quantity": "1",
-                    "cardcode": seguro_provider_cardcode or "",
-                    "numero_container": container_name,
-                    "tipo_iva_repercutido": tipo_iva_repercutido
-                },
-                "associations": [{
-                    "to": {"id": deal_id},
-                    "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
-                }]
-            }
-
-            seguro_line_items_to_create.append(line_item_data)
-
-        # BATCH CREATE seguro line items
-        if seguro_line_items_to_create:
-            batch_create_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/create"
-
-            for i in range(0, len(seguro_line_items_to_create), batch_size):
-                batch_items = seguro_line_items_to_create[i:i + batch_size]
-                batch_payload = {"inputs": batch_items}
-
-                try:
-                    batch_response = requests.post(batch_create_url, headers=headers, json=batch_payload, timeout=60)
-                    if batch_response.ok:
-                        created_items = batch_response.json().get("results", [])
-                        logger.info(f"[seguro] Batch created {len(created_items)} seguro line items")
-                    else:
-                        logger.error(f"[seguro] Batch create failed: {batch_response.status_code} - {batch_response.text}")
-                except Exception as e:
-                    logger.error(f"[seguro] Error in batch create seguro line items: {e}")
-
-        # Associate seguro provider with deal if found
-        if seguro_provider_id:
-            try:
-                # Remove existing seguro provider associations
-                existing_provider_ids = _get_associated_ids(deal_id, CUSTOM_OBJECT_PROVEEDORES)
-
-                if existing_provider_ids:
-                    batch_url = f"https://api.hubapi.com/crm/v3/objects/{CUSTOM_OBJECT_PROVEEDORES}/batch/read"
-                    batch_payload = {
-                        "properties": ["tipo_proveedor"],
-                        "inputs": [{"id": str(pid)} for pid in existing_provider_ids]
-                    }
-
-                    batch_response = requests.post(batch_url, headers=headers, json=batch_payload, timeout=30)
-                    if batch_response.ok:
-                        for prov in batch_response.json().get("results", []):
-                            if prov.get("properties", {}).get("tipo_proveedor") == "seguro":
-                                prov_id = prov.get("id")
-                                delete_url = f"https://api.hubapi.com/crm/v4/objects/{CUSTOM_OBJECT_PROVEEDORES}/{prov_id}/associations/deals/{deal_id}"
-                                requests.delete(delete_url, headers=headers, timeout=10)
-                                logger.info(f"[seguro] Removed existing seguro provider association: {prov_id}")
-
-                # Create new association (associationTypeId: 450 = "Seguro")
-                assoc_url = f"https://api.hubapi.com/crm/v4/objects/{CUSTOM_OBJECT_PROVEEDORES}/{seguro_provider_id}/associations/deals/{deal_id}"
-                assoc_payload = [{"associationCategory": "USER_DEFINED", "associationTypeId": 450}]
-
-                assoc_response = requests.put(assoc_url, headers=headers, json=assoc_payload, timeout=10)
-
-                if assoc_response.ok:
-                    logger.info(f"[seguro] Successfully associated seguro provider {seguro_provider_id} with deal {deal_id} (associationTypeId: 450 - Seguro)")
-                else:
-                    logger.error(f"[seguro] Failed to associate provider: {assoc_response.status_code} - {assoc_response.text}")
-
-            except Exception as e:
-                logger.error(f"[seguro] Error managing seguro provider association: {e}")
-
-    except Exception as e:
-        logger.error(f"[seguro] Error in _create_seguro_line_items: {e}", exc_info=True)
-
-
 @router.post("/{deal_id}/negociacion", response_model=BaseResponse)
 async def update_deal_negociacion(
     data: UpdateNegociacionRequest,
@@ -5963,26 +7175,7 @@ async def update_deal_negociacion(
         example="46298478914"
     )
 ):
-    """Update negotiation data (margins and VAT types) for deal unique line items.
-
-    This endpoint:
-    1. Receives a list of unique line items with their negotiated margins and VAT types
-    2. Using line item ID, updates the associated line item directly
-    3. Updates the margen_unitario and tipo_iva_repercutido fields on each unique line item
-
-    Args:
-        deal_id: HubSpot deal ID.
-        data: UpdateNegociacionRequest with articulos array containing:
-            - line_item_id: Line Item ID (unique identifier for article in container)
-            - margen_unitario: Effective margin (0-1 range, where 1 = 100%)
-            - tipo_iva_repercutido: VAT type code
-
-    Returns:
-        BaseResponse indicating success or failure.
-
-    Raises:
-        HTTPException: If deal not found, line items not found, or API error occurs.
-    """
+    """Actualiza margen y tipos de IVA negociados sobre los line items del deal (batch). `margen_unitario` se interpreta como fracción 0-1."""
     try:
         client = hubspot_client.get_client()
 
@@ -5992,9 +7185,21 @@ async def update_deal_negociacion(
         if isinstance(data, dict):
             data = UpdateNegociacionRequest(**data)
 
-        # STEP 1: Fetch all line items to get tipo_articulo for filtering
         access_token = client.access_token
         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+
+        residennum = ""
+        equ = ""
+        try:
+            company_ids = get_associated_companies(deal_id)
+            if company_ids:
+                company = client.crm.companies.basic_api.get_by_id(
+                    company_ids[0], properties=["residennum", "equ"],
+                )
+                residennum = company.properties.get("residennum") or ""
+                equ = company.properties.get("equ") or ""
+        except Exception as e:
+            logger.warning(f"[negociacion] no pude leer residennum/equ: {e}")
 
         line_item_ids = [articulo.line_item_id for articulo in data.articulos]
         logger.warning(f"[negociacion] Fetching {len(line_item_ids)} line items to get tipo_articulo")
@@ -6007,7 +7212,7 @@ async def update_deal_negociacion(
         for i in range(0, len(line_item_ids), batch_size):
             batch_ids = line_item_ids[i:i + batch_size]
             batch_payload = {
-                "properties": ["tipo_articulo"],
+                "properties": ["tipo_articulo", "quantity", "name", "numero_container"],
                 "inputs": [{"id": str(lid)} for lid in batch_ids]
             }
 
@@ -6018,7 +7223,10 @@ async def update_deal_negociacion(
                         item_id = item.get("id")
                         props = item.get("properties", {})
                         line_items_data[item_id] = {
-                            "tipo_articulo": (props.get("tipo_articulo") or "").strip().lower()
+                            "tipo_articulo": (props.get("tipo_articulo") or "").strip().lower(),
+                            "quantity": props.get("quantity"),
+                            "name": props.get("name") or "",
+                            "numero_container": props.get("numero_container") or "",
                         }
                 else:
                     logger.error(f"[negociacion] Batch read failed: {batch_response.status_code}")
@@ -6027,32 +7235,35 @@ async def update_deal_negociacion(
 
         logger.warning(f"[negociacion] Fetched data for {len(line_items_data)} line items")
 
-        # STEP 2: Prepare batch update for all line items
         # This avoids rate limiting by updating all line items in a single request
         batch_updates = []
 
         for articulo in data.articulos:
             line_item_id = articulo.line_item_id
             price = articulo.price
-            margen_unitario = articulo.margen_unitario
+            margen_unitario = round_margin(articulo.margen_unitario)
             tipo_iva_repercutido = articulo.tipo_iva_repercutido
+            tipo_iva_soportado = articulo.tipo_iva_soportado
 
-            # Get line item data
             item_data = line_items_data.get(line_item_id, {})
             tipo_articulo = item_data.get("tipo_articulo", "")
 
-            logger.warning(f"[negociacion] Preparing update for line item {line_item_id} with price={price}, margin={margen_unitario}, VAT={tipo_iva_repercutido}")
+            logger.warning(f"[negociacion] Preparing update for line item {line_item_id} with price={price}, margin={margen_unitario}, VAT rep={tipo_iva_repercutido}, VAT sop={tipo_iva_soportado}")
 
-            # Build properties to update
             properties_to_update = {
-                "margen_unitario": str(margen_unitario),
+                "margen_unitario": str(margen_unitario) if margen_unitario is not None else "",
                 "tipo_iva_repercutido": tipo_iva_repercutido
             }
 
+            # Add tipo_iva_soportado if provided
+            if tipo_iva_soportado is not None:
+                properties_to_update["tipo_iva_soportado"] = tipo_iva_soportado
+
             # Add price only for fabricante articles (received from frontend)
             if tipo_articulo == "fabricante":
-                properties_to_update["price"] = str(price)
-                logger.warning(f"[negociacion] Line item {line_item_id}: Setting price={price} (negotiated price from frontend)")
+                price_rounded = round_price(price)
+                properties_to_update["price"] = str(price_rounded) if price_rounded is not None else "0"
+                logger.warning(f"[negociacion] Line item {line_item_id}: Setting price={price_rounded} (negotiated price from frontend)")
 
             # Add line item to batch update
             batch_updates.append({
@@ -6065,6 +7276,9 @@ async def update_deal_negociacion(
         if batch_updates:
             try:
                 logger.warning(f"[negociacion] Executing batch update for {len(batch_updates)} line items")
+
+                for upd in batch_updates:
+                    enforce_line_item_price_rounding(upd.get("properties", {}))
 
                 batch_update_input = {
                     "inputs": batch_updates
@@ -6084,8 +7298,96 @@ async def update_deal_negociacion(
         else:
             logger.warning(f"[negociacion] No line items to update")
 
-        # STEP 2: Create SEGURO (2%) line items if tipo_de_venta requires it
-        await _create_seguro_line_items(client, deal_id, data.articulos)
+        try:
+            elementos = get_elementos_by_deal(
+                client, deal_id,
+                properties=[
+                    "nombre", "tipo_articulo", "cantidad", "precio_unitario",
+                    "precio_de_coste", "precio_total", "margen_unitario",
+                    "tipo_iva_repercutido", "tipo_iva_soportado", "line_item_id",
+                ],
+            )
+        except Exception as e:
+            logger.warning(f"[negociacion] could not load ELEMENTOS for deal {deal_id}: {e}")
+            elementos = []
+
+        elementos_by_lid = {}
+        elementos_by_nombre = {}
+        for el in elementos:
+            props = el.get("properties", {}) or {}
+            lid = props.get("line_item_id")
+            nombre = props.get("nombre")
+            entry = {"id": el.get("id"), "properties": props}
+            if lid:
+                elementos_by_lid[str(lid).strip()] = entry
+            if nombre:
+                elementos_by_nombre[nombre.strip()] = entry
+
+        cont_map_neg = _resolve_contenedor_co_by_numero(client, deal_id)
+        affected_contenedor_co_ids = set()
+        elementos_synced = 0
+        for articulo in data.articulos:
+            target_lid = str(articulo.line_item_id).strip()
+            cur_li = line_items_data.get(articulo.line_item_id, {})
+            li_name = (cur_li.get("name") or "").strip()
+            cantidad = _safe_float(cur_li.get("quantity")) or 0
+
+            elem = elementos_by_lid.get(target_lid)
+            if not elem and li_name:
+                elem = elementos_by_nombre.get(li_name)
+            if not elem:
+                continue
+
+            precio_unitario_round = round_price(articulo.price)
+            precio_total = round((precio_unitario_round or 0) * cantidad, 3)
+            margen_round = round_margin(articulo.margen_unitario)
+
+            target_props = {
+                "precio_unitario": precio_unitario_round,
+                "precio_total": precio_total,
+                "margen_unitario": margen_round,
+                "tipo_iva_repercutido": articulo.tipo_iva_repercutido,
+            }
+            if articulo.tipo_iva_soportado is not None:
+                target_props["tipo_iva_soportado"] = articulo.tipo_iva_soportado
+
+            cur_elem_props = elem["properties"]
+            update_props = {}
+            for field, target_val in target_props.items():
+                if target_val is None:
+                    continue
+                if _normalize_for_diff(cur_elem_props.get(field)) != _normalize_for_diff(target_val):
+                    update_props[field] = target_val
+
+            if str(cur_elem_props.get("line_item_id") or "") != str(articulo.line_item_id):
+                update_props["line_item_id"] = str(articulo.line_item_id)
+
+            if not update_props:
+                continue
+            if update_elemento(client, elem["id"], update_props):
+                elementos_synced += 1
+                numero_cont = (cur_li.get("numero_container") or "").strip()
+                co = cont_map_neg.get(numero_cont) if numero_cont else None
+                if co:
+                    affected_contenedor_co_ids.add(co.get("id"))
+
+        if elementos:
+            logger.info(
+                f"[negociacion] ELEMENTOS synced: {elementos_synced}/{len(data.articulos)}"
+            )
+
+        if affected_contenedor_co_ids:
+            try:
+                await hubdb_client.preload_iva_table()
+                recalcular_contenedores(
+                    client,
+                    deal_id,
+                    list(affected_contenedor_co_ids),
+                    {"equ": equ, "residennum": residennum},
+                )
+            except Exception as e:
+                logger.warning(f"[negociacion] recalcular_contenedores falló: {e}")
+            touch_pagos_for_contenedores(client, list(affected_contenedor_co_ids))
 
         return BaseResponse(
             success=True,
@@ -6096,10 +7398,7 @@ async def update_deal_negociacion(
         logger.error(f"[negociacion] Error updating negotiation data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ============================================================================
 # HUBDB TEXTOS COTIZACION ENDPOINT
-# ============================================================================
 
 def _fetch_hubdb_textos_cotizaciones(
     idioma: str,
@@ -6109,31 +7408,12 @@ def _fetch_hubdb_textos_cotizaciones(
     access_token: Optional[str] = None
 ) -> dict[str, TextoCotizacionItem]:
     """
-    Fetch text templates from HubDB textos_cotizaciones table.
-
-    This function queries the HubDB v3 API to retrieve text templates based on:
-    - Language (idioma)
-    - Template keys (claves)
-    - Optional group and subgroup filters
-
-    Args:
-        idioma: Language code (es, en, fr).
-        claves: List of template keys to retrieve.
-        grupo: Optional group filter.
-        subgrupo: Optional subgroup filter.
-        access_token: HubSpot Private App Token.
-
-    Returns:
-        Dictionary mapping template keys to TextoCotizacionItem objects.
-
-    Raises:
-        HTTPException: If HubDB API call fails.
+    Lee plantillas de texto de la tabla HubDB `textos_cotizaciones` filtradas por idioma y claves (opcionalmente grupo/subgrupo). Devuelve `{clave: TextoCotizacionItem}`.
     """
 
     # HubDB table name (logical name)
     table_name = "textos_cotizaciones"
 
-    # Step 1: Get table ID by name
     # First, we need to get the table ID from the table name
     # HubDB API endpoint to list tables: GET /cms/v3/hubdb/tables
     list_tables_url = "https://api.hubapi.com/cms/v3/hubdb/tables"
@@ -6173,7 +7453,6 @@ def _fetch_hubdb_textos_cotizaciones(
             detail=f"Error connecting to HubDB API: {str(e)}"
         )
 
-    # Step 2: Fetch rows from the table
     # HubDB API endpoint to get published rows: GET /cms/v3/hubdb/tables/{tableId}/rows
     rows_url = f"https://api.hubapi.com/cms/v3/hubdb/tables/{table_id}/rows"
 
@@ -6199,7 +7478,6 @@ def _fetch_hubdb_textos_cotizaciones(
             detail=f"Error fetching data from HubDB: {str(e)}"
         )
 
-    # Step 3: Filter rows by criteria and build result dictionary
     result = {}
 
     for row in all_rows:
@@ -6250,61 +7528,9 @@ def _fetch_hubdb_textos_cotizaciones(
 
     return result
 
-
 @router.post("/documentacion/textos-cotizacion", response_model=TextosCotizacionResponse)
 async def get_textos_cotizacion(data: TextosCotizacionRequest):
-    """
-    Get text templates from HubDB textos_cotizaciones table.
-
-    This endpoint queries the HubDB table to retrieve text templates for:
-    - Offer texts (oferta_base)
-    - Payment method texts (pago_100, pago_30_70, pago_50_50)
-    - Bank texts (banco_la_caixa, banco_sabadell)
-    - Quick quote texts (cotizacion_rapida)
-
-    The texts are filtered by:
-    - Language (idioma): es, en, fr
-    - Template keys (claves): List of specific template identifiers
-    - Optional group/subgroup filters
-
-    Args:
-        data: Request with idioma, claves, and optional filters.
-
-    Returns:
-        TextosCotizacionResponse with matching text templates.
-
-    Raises:
-        HTTPException: If validation fails or HubDB API error occurs.
-
-    Example:
-        Request:
-        ```json
-        {
-            "idioma": "es",
-            "claves": ["oferta_base", "pago_30_70", "banco_la_caixa"],
-            "grupo": null,
-            "subgrupo": null
-        }
-        ```
-
-        Response:
-        ```json
-        {
-            "success": true,
-            "error": null,
-            "data": {
-                "oferta_base": {
-                    "grupo": "oferta",
-                    "subgrupo": "condiciones",
-                    "idioma": "es",
-                    "clave": "oferta_base",
-                    "texto": "Estimado cliente, ..."
-                },
-                ...
-            }
-        }
-        ```
-    """
+    """Devuelve plantillas de texto de la tabla HubDB `textos_cotizaciones` filtradas por idioma + claves (con grupo/subgrupo opcionales). Idiomas válidos: es, en, fr."""
     try:
         # Validate idioma
         valid_idiomas = ["es", "en", "fr"]
@@ -6352,121 +7578,40 @@ async def get_textos_cotizacion(data: TextosCotizacionRequest):
         logger.error(f"[textos-cotizacion] Unexpected error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-
-def _fetch_hubdb_tipo_iva(
-    filtros: List[TipoIVAFilter],
-    access_token: Optional[str] = None
-) -> List[TipoIVAItem]:
-    """
-    Fetch IVA/recargo rows from HubDB table 'tipo_de_iva_soportado'
-    filtered by categoria + tipo_residencia.
-
-    Each filter is an AND:
-    - categoria == filter.categoria
-    - tipo_residencia == filter.tipo_residencia
-
-    Returns rows that match ANY of the provided filters (OR between filters).
-    """
-
-    # Get access token
-    if not access_token:
-        client = hubspot_client.get_client()
-        access_token = client.access_token
-
-    table_name = "tipo_de_iva_soportado"
-    list_tables_url = "https://api.hubapi.com/cms/v3/hubdb/tables"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-
-    # 1. Fetch HubDB table ID
-    try:
-        logger.info(f"[hubdb] Fetching table ID for: {table_name}")
-        tables_response = requests.get(list_tables_url, headers=headers, timeout=10)
-        tables_response.raise_for_status()
-        tables = tables_response.json().get("results", [])
-
-        table_id = next((t["id"] for t in tables if t["name"] == table_name), None)
-
-        if not table_id:
-            raise HTTPException(404, f"HubDB table '{table_name}' not found")
-
-    except requests.exceptions.RequestException as e:
-        logger.error(f"[hubdb] Error fetching table list: {e}")
-        raise HTTPException(502, "Error connecting to HubDB API")
-
-    # 2. Fetch ALL rows from table
-    try:
-        rows_url = f"https://api.hubapi.com/cms/v3/hubdb/tables/{table_id}/rows"
-        logger.info(f"[hubdb] Fetching rows for table {table_name} (ID {table_id})")
-
-        rows_response = requests.get(rows_url, headers=headers, timeout=10)
-        rows_response.raise_for_status()
-        all_rows = rows_response.json().get("results", [])
-
-    except requests.exceptions.RequestException as e:
-        logger.error(f"[hubdb] Error fetching rows: {e}")
-        raise HTTPException(502, "Error fetching rows from HubDB")
-
-    # 3. FILTER rows
+def _fetch_hubdb_tipo_iva(filtros: List[TipoIVAFilter]) -> List[TipoIVAItem]:
+    """Devuelve las filas del cache que matchean cualquiera de los filtros
+    (categoria + tipo_residencia). Requiere que el cache esté precargado."""
+    seen = set()
     result: List[TipoIVAItem] = []
-
-    for row in all_rows:
-        values = row.get("values", {})
-
-        row_categoria = values.get("categoria", {}).get("name", "")
-        row_tipo_res = values.get("tipo_residencia", {}).get("name", "")
-
-        # Apply OR logic across filter entries
-        match = any(
-            f.categoria == row_categoria and f.tipo_residencia == row_tipo_res
-            for f in filtros
-        )
-
-        if not match:
-            continue
-
-        # Build response item
-        item = TipoIVAItem(
-            code=values.get("code", ""),
-            name=values.get("name", ""),
-            porcentaje_iva=float(values.get("porcentaje_iva", 0)),
-            porcentaje_recargo=float(values.get("porcentaje_recargo", 0)),
-            categoria=row_categoria,
-            tipo_residencia=row_tipo_res
-        )
-
-        result.append(item)
-
+    for f in filtros:
+        entries = hubdb_client.list_entries(f.categoria, f.tipo_residencia)
+        for e in entries:
+            dedup_key = (e.code, e.categoria, e.tipo_residencia)
+            if dedup_key in seen:
+                continue
+            seen.add(dedup_key)
+            result.append(TipoIVAItem(
+                code=e.code,
+                name=e.name,
+                porcentaje_iva=e.porcentaje_iva,
+                porcentaje_recargo=e.porcentaje_recargo,
+                categoria=e.categoria,
+                tipo_residencia=e.tipo_residencia,
+            ))
     logger.info(f"[hubdb] Found {len(result)} IVA rows matching filters")
     return result
 
 @router.post("/tipo-iva", response_model=TipoIVAResponse)
 async def get_tipo_iva(data: TipoIVARequest):
-    """
-    Query HubDB table 'tipo_de_iva_soportado' and return IVA rows matching
-    any of the filter entries (categoria + tipo_residencia).
-
-    Example request:
-    {
-      "filtros": [
-        { "categoria": "soportado", "tipo_residencia": "NACIONAL" },
-        { "categoria": "repercutido", "tipo_residencia": "EUROPA" }
-      ]
-    }
-    """
+    """Devuelve filas de `tipo_de_iva_soportado` matcheando cualquiera de los
+    filtros (categoria + tipo_residencia). Consume el cache en memoria
+    (`hubdb_client`); si está vacío, lo precarga on-demand."""
     try:
         if not data.filtros:
             raise HTTPException(400, "Debe incluir al menos un filtro")
 
-        client = hubspot_client.get_client()
-        access_token = client.access_token
-
-        iva_rows = _fetch_hubdb_tipo_iva(
-            filtros=data.filtros,
-            access_token=access_token
-        )
+        await hubdb_client.preload_iva_table()
+        iva_rows = _fetch_hubdb_tipo_iva(filtros=data.filtros)
 
         return TipoIVAResponse(
             success=True,
@@ -6488,48 +7633,23 @@ async def publish_quote(
     deal_id: str = Path(..., description="HubSpot Deal ID"),
     data: PublishQuoteRequest = None
 ):
-    """
-    Publish a quote in draft mode.
+    """Publica la cotización en modo DRAFT de forma síncrona. Con batch tarda ~5s — cabe en el timeout de HubSpot UI Extensions (15s)."""
+    if not data:
+        raise HTTPException(400, "Payload de cotización requerido")
+    if not data.lineItems:
+        raise HTTPException(400, "No hay line items en la cotización")
 
-    This endpoint:
-    1. Stores the complete quote payload in the Deal property 'quote_data_payload'
-    2. Creates a NEW Quote object in HubSpot with status DRAFT (always creates new)
-    3. Associates the Quote with:
-       - The Deal
-       - The custom quote template (QUOTE_TEMPLATE_ID)
-    4. Returns success confirmation with quote ID
-
-    The complete payload structure includes:
-    - header: Quote header information
-    - empresa: Company details
-    - cliente: Client information
-    - ruta: Route and logistics
-    - lineItems: All line items (servicios, contenedores, articulos, fletes)
-    - precios: Pricing breakdown by Incoterm
-    - estadisticas: Quote statistics
-    - textos: Legal and commercial texts
-    - intermediario: Broker information (optional)
-    - documentacion: Documentation settings
-
-    The Quote template can access all data from DEAL.quote_data_payload.
-
-    Note: Line items are expected to be already updated in HubSpot before calling this endpoint.
-    """
     try:
         client = hubspot_client.get_client()
         access_token = client.access_token
 
-        if not data:
-            raise HTTPException(400, "Payload de cotización requerido")
-
-        if not data.lineItems:
-            raise HTTPException(400, "No hay line items en la cotización")
+        try:
+            client.crm.deals.basic_api.get_by_id(deal_id=deal_id, properties=["dealname"])
+        except Exception as e:
+            logger.error(f"[publish] Deal {deal_id} not found: {e}")
+            raise HTTPException(404, f"Deal {deal_id} no encontrado")
 
         logger.info(f"[publish] Starting quote publication for deal {deal_id}")
-
-        # =====================================================================
-        # STEP 0: Get deal owner ID and owner details
-        # =====================================================================
 
         deal_owner_id = None
         owner_info = {}
@@ -6542,7 +7662,6 @@ async def publish_quote(
             deal_owner_id = deal_response.properties.get("hubspot_owner_id")
             logger.info(f"[publish] Deal owner ID: {deal_owner_id}")
 
-            # Get owner details
             if deal_owner_id:
                 try:
                     owner_response = client.crm.owners.owners_api.get_by_id(
@@ -6560,9 +7679,27 @@ async def publish_quote(
         except Exception as e:
             logger.warning(f"[publish] Could not fetch deal owner: {e}")
 
-        # =====================================================================
-        # STEP 1: Store all quote data in Deal properties
-        # =====================================================================
+        existing_quote_count = 0
+        try:
+            existing_quote_ids = _get_associated_ids(deal_id, "quotes")
+            existing_quote_count = len(existing_quote_ids)
+            logger.info(f"[publish] Existing quotes for deal {deal_id}: {existing_quote_count}")
+        except Exception as e:
+            logger.warning(f"[publish] Could not count existing quotes: {e}")
+
+        company_aseguradora = False
+        try:
+            company_ids = get_associated_companies(deal_id)
+            if company_ids:
+                company_resp = client.crm.companies.basic_api.get_by_id(
+                    company_id=company_ids[0],
+                    properties=["aseguradora"]
+                )
+                raw_aseguradora = company_resp.properties.get("aseguradora")
+                company_aseguradora = bool(raw_aseguradora and str(raw_aseguradora).strip())
+                logger.info(f"[publish] Company aseguradora={raw_aseguradora!r}")
+        except Exception as e:
+            logger.warning(f"[publish] Could not fetch company aseguradora: {e}")
 
         deal_update_properties = {
             "quote_data_payload": json.dumps(
@@ -6581,29 +7718,40 @@ async def publish_quote(
         except Exception as e:
             logger.warning(f"[publish] Could not update deal with quote payload: {e}")
 
-        # =====================================================================
-        # STEP 2: Build quote properties (solo propiedades estándar)
-        # =====================================================================
+        LANGUAGE_TOKENS = {
+            "es": "es", "ES": "es", "ESPAÑOL": "es", "ESPANOL": "es", "SPANISH": "es",
+            "en": "en", "EN": "en", "INGLÉS": "en", "INGLES": "en", "ENGLISH": "en",
+            "fr": "fr", "FR": "fr", "FRANCÉS": "fr", "FRANCES": "fr", "FRENCH": "fr",
+        }
+        LOCALE_BY_LANGUAGE = {"es": "es_ES", "en": "en_US", "fr": "fr_FR"}
 
-        # Idioma: usamos el del cliente si viene, si no por defecto 'en'
-        language_map = {"ES": "es", "EN": "en", "FR": "fr"}
-        raw_lang = (data.cliente.idioma or "ES").upper()
-        hs_language = language_map.get(raw_lang, "en")
+        raw_lang = (data.cliente.idioma or "es").strip()
+        hs_language = LANGUAGE_TOKENS.get(raw_lang) or LANGUAGE_TOKENS.get(raw_lang.upper(), "es")
+        hs_locale = LOCALE_BY_LANGUAGE[hs_language]
 
         hs_expiration_date = (
-            data.ruta.fechaValidez
-            if getattr(data, "ruta", None) and getattr(data.ruta, "fechaValidez", None)
+            data.cliente.fechaCaducidadCotizacion
+            if getattr(data, "cliente", None) and getattr(data.cliente, "fechaCaducidadCotizacion", None)
             else None
         )
 
+        quote_number = existing_quote_count + 1
+        version_suffix = "" if quote_number == 1 else f"-v{quote_number}"
+        tipo_cliente_raw = (getattr(data.cliente, "tipoCliente", None) or "").lower()
+        nac_exp = "NAC" if tipo_cliente_raw == "nacional" else "EXP"
+        asegurada_segment = "ASG_" if company_aseguradora else ""
+        lang = hs_language.upper()
+        date_suffix = datetime.today().strftime("%d/%m/%y")
+        hs_title = f"{deal_id}{version_suffix} {nac_exp}_{asegurada_segment}{lang} {date_suffix}"
+
         quote_properties = {
-            "hs_title": f"Cotización #{data.header.offerNumber}",
+            "hs_title": hs_title,
             "hs_expiration_date": normalize_hs_date(hs_expiration_date),
             "hs_status": "DRAFT",
             "hs_language": hs_language,
+            "hs_locale": hs_locale,
         }
 
-        # Agregar owner y sender properties si existe
         if deal_owner_id:
             quote_properties["hs_quote_owner_id"] = deal_owner_id
 
@@ -6615,39 +7763,19 @@ async def publish_quote(
             if owner_info.get("email"):
                 quote_properties["hs_sender_email"] = owner_info["email"]
 
-            # Company name from data.empresa if available
             if data.empresa and data.empresa.nombre:
                 quote_properties["hs_sender_company_name"] = data.empresa.nombre
 
-        # Elimina valores None
         quote_properties = {k: v for k, v in quote_properties.items() if v is not None}
 
-        # =====================================================================
-        # STEP 3: Build associations (igual estilo que create_quote)
-        # =====================================================================
-
-        associations = []
-
-        # Asociación a Deal
-        associations.append(
-            build_association(deal_id, AssociationType.QUOTE_TO_DEAL)
-        )
-
-        # Asociación a plantilla fija
-        associations.append(
-            build_association(QUOTE_TEMPLATE_ID, AssociationType.QUOTE_TO_TEMPLATE)
-        )
+        associations = [
+            build_association(deal_id, AssociationType.QUOTE_TO_DEAL),
+            build_association(QUOTE_TEMPLATE_ID, AssociationType.QUOTE_TO_TEMPLATE),
+        ]
 
         logger.info(
             f"[publish] Creating DRAFT quote for deal {deal_id} with template {QUOTE_TEMPLATE_ID}"
         )
-        logger.info(
-            f"[publish] Associations: {associations}"
-        )
-
-        # =====================================================================
-        # STEP 4: Create quote via generic helper (create_quote_via_api)
-        # =====================================================================
 
         quote_id, error = create_quote_via_api(
             access_token=access_token,
@@ -6657,162 +7785,87 @@ async def publish_quote(
 
         if not quote_id:
             logger.error(f"[publish] Failed to create quote via API: {error}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error gestionando cotización: {error}",
-            )
+            raise HTTPException(500, f"Error gestionando cotización: {error}")
 
         logger.info(
             f"[publish] Created new quote {quote_id} "
             f"associated with deal {deal_id} and template {QUOTE_TEMPLATE_ID}"
         )
 
-        # =====================================================================
-        # STEP 4.5: Create and associate Line Items
-        # =====================================================================
-
-        def safe_parse_float(value, fallback=None):
-            """Parse float from value, handling empty strings and None."""
-            if value is None or value == "":
-                return fallback
-            try:
-                return float(value)
-            except (ValueError, TypeError):
-                return fallback
-
-        def calculate_price(li):
-            """
-            Calculate price with priority:
-            1. Use price from payload if exists and not empty
-            2. If price empty but total and qty exist -> total / qty
-            3. Otherwise -> None (don't set property)
-            """
-            price = safe_parse_float(li.price)
-            if price is not None:
-                return price
-
-            total = safe_parse_float(li.total)
-            qty = safe_parse_float(li.qty, fallback=1.0)
-
-            if total is not None and qty > 0:
-                return total / qty
-
-            return None
-
-        # Sort line items: articulos first, then others
-        articulos = [li for li in data.lineItems if li.type == "articulo"]
-        otros = [li for li in data.lineItems if li.type != "articulo"]
-        lineItems_sorted = articulos + otros
-
-        # Tracking counters
-        created_count = 0
-        associated_count = 0
-        errors_list = []
-
-        logger.info(f"[publish] Creating {len(lineItems_sorted)} line items for quote {quote_id}")
-
-        # Mapping de tipos: lowercase del payload -> HubSpot (primera letra mayúscula)
-        type_mapping = {
-            "articulo": "Articulo",
-            "servicio": "Servicio",
-            "contenedor": "Contenedor",
-            "flete": "Flete"
-        }
-
-        for idx, li in enumerate(lineItems_sorted):
-            try:
-                # Build line item properties
-                properties = {}
-
-                # hs_product_type and tipo_articulo: use product-origin values when provided so quote matches product
-                if li.hs_product_type and str(li.hs_product_type).strip():
-                    _raw = str(li.hs_product_type).strip()
-                    properties["hs_product_type"] = (_raw[0].upper() + _raw[1:].lower()) if _raw else type_mapping.get(li.type, li.type)
+        deal_line_items_raw = []
+        try:
+            li_ids = _get_associated_ids(deal_id, "line_items")
+            if li_ids:
+                _batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
+                _headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+                _batch_payload = {
+                    "properties": [
+                        "name", "hs_sku", "hs_product_id", "hs_product_type",
+                        "tipo_articulo", "quantity", "price", "amount",
+                        "container_config", "numero_container", "ocupacion",
+                        "peso_neto", "peso_bruto", "colis",
+                        "name_en", "name_fr",
+                        "cardcode", "almacen", "precio_de_coste",
+                        "margen_unitario", "tipo_iva_repercutido", "tipo_iva_soportado",
+                    ],
+                    "inputs": [{"id": str(lid)} for lid in li_ids]
+                }
+                _resp = requests.post(_batch_url, headers=_headers, json=_batch_payload, timeout=15)
+                if _resp.ok:
+                    deal_line_items_raw = _resp.json().get("results", [])
+                    logger.info(f"[publish] Fetched {len(deal_line_items_raw)} deal line items for quote copy")
                 else:
-                    properties["hs_product_type"] = type_mapping.get(li.type, li.type)
-                if li.tipo_articulo and str(li.tipo_articulo).strip():
-                    properties["tipo_articulo"] = str(li.tipo_articulo).strip().lower()
-                properties["name"] = li.item
+                    logger.warning(f"[publish] batch read deal line items failed: {_resp.status_code}")
+        except Exception as _e:
+            logger.warning(f"[publish] Could not fetch deal line items: {_e}")
 
-                # Optional string fields
-                if li.code and li.code.strip():
-                    properties["hs_sku"] = li.code
+        _copy_fields = [
+            "name", "hs_sku", "hs_product_id", "hs_product_type",
+            "tipo_articulo", "quantity", "price",
+            "container_config", "numero_container", "ocupacion",
+            "peso_neto", "peso_bruto", "colis",
+            "name_en", "name_fr",
+            "cardcode", "almacen", "precio_de_coste",
+            "margen_unitario", "tipo_iva_repercutido", "tipo_iva_soportado",
+        ]
 
-                # Optional numeric fields with robust parsing
-                colis_val = safe_parse_float(li.colis)
-                if colis_val is not None:
-                    properties["colis"] = colis_val
+        items_payload: List[dict] = []
+        for li_data in deal_line_items_raw:
+            props_src = li_data.get("properties", {})
+            properties = {"hs_currency": "EUR"}
+            for field in _copy_fields:
+                val = props_src.get(field)
+                if val is not None and val != "":
+                    if field == "price":
+                        rounded = round_price(val)
+                        if rounded is not None:
+                            properties[field] = str(rounded)
+                    else:
+                        properties[field] = val
+            items_payload.append(properties)
 
-                weight_val = safe_parse_float(li.weight)
-                if weight_val is not None:
-                    properties["peso_bruto"] = weight_val
+        logger.info(f"[publish] Creating {len(items_payload)} line items for quote {quote_id} via batch")
 
-                # quantity: default to 1.0 if not provided
-                qty_val = safe_parse_float(li.qty, fallback=1.0)
-                properties["quantity"] = qty_val
-
-                # price: calculate with priority logic
-                price_val = calculate_price(li)
-                if price_val is not None:
-                    properties["price"] = price_val
-
-                # margen_unitario
-                margen_val = safe_parse_float(li.margen_unitario)
-                if margen_val is not None:
-                    properties["margen_unitario"] = margen_val
-
-                # tipo_iva_repercutido (string)
-                if li.tipo_iva_repercutido and li.tipo_iva_repercutido.strip():
-                    properties["tipo_iva_repercutido"] = li.tipo_iva_repercutido
-
-                # numero_container (string) - container identifier
-                if li.numero_container and li.numero_container.strip():
-                    properties["numero_container"] = li.numero_container.strip()
-
-                # Create line item via API
-                line_item_id, create_error = create_line_item_via_api(
-                    access_token=access_token,
-                    properties=properties
-                )
-
-                if not line_item_id:
-                    error_msg = f"Item {idx} ({li.type}): Error creating line item - {create_error}"
-                    logger.error(f"[publish] {error_msg}")
-                    errors_list.append(error_msg)
-                    continue
-
-                # Line item created successfully
-                created_count += 1
-                logger.info(f"[publish] Created line item {idx} ({li.type}): {line_item_id}")
-
-                # Associate line item to quote
-                assoc_success, assoc_error = associate_line_item_to_quote_v4(
-                    access_token=access_token,
-                    quote_id=quote_id,
-                    line_item_id=line_item_id
-                )
-
-                if assoc_success:
-                    associated_count += 1
-                    logger.info(f"[publish] Associated line item {idx} to quote {quote_id}")
-                else:
-                    error_msg = f"Item {idx} ({li.type}): Created but association failed - {assoc_error}"
-                    logger.warning(f"[publish] {error_msg}")
-                    errors_list.append(error_msg)
-
-            except Exception as e:
-                error_msg = f"Item {idx} ({li.type}): Unexpected error - {str(e)}"
-                logger.error(f"[publish] {error_msg}", exc_info=True)
-                errors_list.append(error_msg)
-
-        logger.info(
-            f"[publish] Line items summary: {created_count} created, "
-            f"{associated_count} associated, {len(errors_list)} errors"
+        created_ids, create_errors = batch_create_line_items_via_api(
+            access_token=access_token,
+            items=items_payload,
         )
 
-        # =====================================================================
-        # STEP 5: Return success response
-        # =====================================================================
+        if created_ids:
+            associated_count, assoc_errors = batch_associate_line_items_to_quote_v4(
+                access_token=access_token,
+                quote_id=quote_id,
+                line_item_ids=created_ids,
+            )
+        else:
+            associated_count, assoc_errors = 0, []
+
+        errors_list = create_errors + assoc_errors
+
+        logger.info(
+            f"[publish] Line items summary: {len(created_ids)} created, "
+            f"{associated_count} associated, {len(errors_list)} errors"
+        )
 
         return PublishQuoteResponse(
             success=True,
@@ -6821,22 +7874,21 @@ async def publish_quote(
                 "deal_id": deal_id,
                 "quote_id": quote_id,
                 "quote_status": "DRAFT",
-                "total_line_items": len(data.lineItems),
-                "created_line_items": created_count,
+                "total_line_items": len(deal_line_items_raw),
+                "created_line_items": len(created_ids),
                 "associated_line_items": associated_count,
-                "line_items_errors": errors_list if errors_list else [],
-                "total_euros": data.estadisticas.totalEuros,
-                "num_containers": data.estadisticas.numContainers,
-                "total_colis": data.estadisticas.totalColis,
+                "line_items_errors": errors_list,
+                "total_euros": getattr(data.estadisticas, "totalEuros", None),
+                "num_containers": getattr(data.estadisticas, "numContainers", None),
+                "total_colis": getattr(data.estadisticas, "totalColis", None),
             },
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"[publish] Unexpected error publishing quote: {e}", exc_info=True)
+        logger.error(f"[publish] Unexpected error: {e}", exc_info=True)
         raise HTTPException(500, f"Error al publicar la cotización: {str(e)}")
-
 
 @router.post("/{deal_id}/publish-custom-objects", response_model=BaseResponse)
 async def publish_custom_objects(
@@ -6846,27 +7898,8 @@ async def publish_custom_objects(
         example="46298478914"
     )
 ):
-    """
-    Publica los objetos personalizados (Contenedor y Elemento) basándose en los line items del deal.
-
-    Este endpoint procesa de forma ASÍNCRONA:
-    1. Lee todos los line items del deal
-    2. Elimina objetos personalizados existentes
-    3. Crea objetos Contenedor para cada line item de tipo contenedor
-    4. Crea objetos Elemento para cada line item de artículo/servicio/flete/etc.
-    5. Establece las asociaciones correctas entre objetos
-
-    **Nota**: Este proceso se ejecuta en background usando threading y puede tardar 20-30 segundos.
-    El endpoint devuelve respuesta inmediata y el procesamiento continúa en segundo plano.
-
-    Args:
-        deal_id: HubSpot deal ID
-
-    Returns:
-        BaseResponse con success=True si se inició el proceso correctamente
-    """
+    """Recrea los Contenedor/Elemento custom objects del deal a partir de sus line items. Se ejecuta en background (~20-30 s) y la respuesta es inmediata."""
     try:
-        # Validar que el deal existe
         client = hubspot_client.get_client()
 
         try:
@@ -6878,37 +7911,26 @@ async def publish_custom_objects(
             logger.error(f"Deal {deal_id} not found: {e}")
             raise HTTPException(status_code=404, detail=f"Deal {deal_id} no encontrado")
 
-        # Lanzar tarea en background usando threading (para Lambda)
-        logger.info(f"📦 Starting background thread to publish custom objects for deal {deal_id}")
+        job_id = f"{CUSTOM_OBJECTS_JOB_TYPE}_{deal_id}_{int(time.time() * 1000)}"
+        payload = {"deal_id": deal_id}
+        create_job(deal_id=deal_id, job_type=CUSTOM_OBJECTS_JOB_TYPE, job_id=job_id, payload=payload)
 
-        # Initialize job status as pending
-        _background_jobs_status[deal_id] = {
-            "status": "pending",
-            "started_at": None,
-            "completed_at": None,
-            "error": None
-        }
+        try:
+            enqueue_job(job_id=job_id, job_type=CUSTOM_OBJECTS_JOB_TYPE, payload=payload)
+        except Exception as enq_err:
+            err = f"enqueue_failed: {enq_err}"
+            logger.error(f"[publish_custom_objects] {err}", exc_info=True)
+            update_job(job_id, status="failed", error=err, completed_at=int(time.time()))
+            raise HTTPException(status_code=503, detail="No se pudo encolar el job de publicación")
 
-        thread = threading.Thread(
-            target=_background_job_wrapper,
-            args=(deal_id,),
-            daemon=True
-        )
-        thread.start()
-
-        logger.info(f"✅ Background thread started for deal {deal_id}")
-
-        return BaseResponse(
-            success=True,
-            error=None
-        )
+        logger.info(f"[publish_custom_objects] enqueued job_id={job_id} deal={deal_id}")
+        return BaseResponse(success=True, error=None)
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error starting publish custom objects task for deal {deal_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/{deal_id}/custom-objects/status")
 async def get_custom_objects_status(
@@ -6918,44 +7940,21 @@ async def get_custom_objects_status(
         example="46298478914"
     )
 ):
-    """
-    Verifica el estado de los objetos personalizados (Contenedor y Elemento) para un deal.
-
-    Este endpoint consulta cuántos contenedores y elementos existen actualmente
-    asociados al deal para determinar si la tarea de publicación ha terminado.
-
-    Args:
-        deal_id: HubSpot deal ID
-
-    Returns:
-        {
-            "status": "pending" | "completed" | "error",
-            "contenedores": 0,
-            "elementos": 0,
-            "message": "..."
-        }
-    """
+    """Estado del job de publicación de custom objects: status (pending/processing/completed/error/not_started), número de contenedores y elementos asociados al deal y mensaje legible."""
     try:
         from app.services.custom_objects import get_contenedores_by_deal, get_elementos_by_deal
 
-        client = hubspot_client.get_client()
+        job = get_latest_job_by_deal(deal_id, CUSTOM_OBJECTS_JOB_TYPE)
 
-        # Verificar que el deal existe
-        try:
-            client.crm.deals.basic_api.get_by_id(
-                deal_id=deal_id,
-                properties=["dealname"]
-            )
-        except Exception as e:
-            logger.error(f"Deal {deal_id} not found: {e}")
-            raise HTTPException(status_code=404, detail=f"Deal {deal_id} no encontrado")
+        if not job:
+            client = hubspot_client.get_client()
+            try:
+                client.crm.deals.basic_api.get_by_id(deal_id=deal_id, properties=["dealname"])
+            except Exception as e:
+                logger.error(f"Deal {deal_id} not found: {e}")
+                raise HTTPException(status_code=404, detail=f"Deal {deal_id} no encontrado")
 
-        # Check job status from tracking dictionary
-        job_status = _background_jobs_status.get(deal_id)
-
-        if not job_status:
-            # No job found for this deal
-            logger.info(f"📊 No background job found for deal {deal_id}")
+            logger.info(f"[get_custom_objects_status] no job for deal {deal_id}")
             return {
                 "success": True,
                 "error": None,
@@ -6963,39 +7962,42 @@ async def get_custom_objects_status(
                     "status": "not_started",
                     "contenedores": 0,
                     "elementos": 0,
-                    "message": "No se ha iniciado la creación de objetos personalizados"
+                    "message": "No se ha iniciado la creación de objetos personalizados",
+                    "job_id": None,
+                    "progress_step": None,
+                    "started_at": None,
+                    "completed_at": None,
+                    "created_at": None,
                 }
             }
 
-        # Get current status from tracking
-        current_status = job_status["status"]
-
-        # Obtener contenedores asociados al deal
+        client = hubspot_client.get_client()
         contenedores = get_contenedores_by_deal(client, deal_id, properties=["nombre"])
         num_contenedores = len(contenedores) if contenedores else 0
-
-        # Obtener elementos asociados al deal
         elementos = get_elementos_by_deal(client, deal_id, properties=["descripcion"])
         num_elementos = len(elementos) if elementos else 0
 
-        # Determinar mensaje según el estado
-        if current_status == "pending":
+        db_status = job.get("status") or "pending"
+        if db_status == "pending":
             status = "pending"
             message = "Preparando creación de objetos personalizados..."
-        elif current_status == "processing":
+        elif db_status == "processing":
             status = "processing"
             message = "Procesando objetos personalizados..."
-        elif current_status == "completed":
+        elif db_status == "completed":
             status = "completed"
-            message = f"Objetos personalizados creados exitosamente"
-        elif current_status == "error":
+            message = "Objetos personalizados creados exitosamente"
+        elif db_status == "failed":
             status = "error"
-            message = f"Error al crear objetos personalizados: {job_status.get('error', 'Error desconocido')}"
+            message = f"Error al crear objetos personalizados: {job.get('error') or 'Error desconocido'}"
         else:
             status = "pending"
             message = "Estado desconocido"
 
-        logger.info(f"📊 Custom objects status for deal {deal_id}: {current_status} - {num_contenedores} contenedores, {num_elementos} elementos")
+        logger.info(
+            f"[get_custom_objects_status] deal={deal_id} db_status={db_status} "
+            f"step={job.get('progress_step')} contenedores={num_contenedores} elementos={num_elementos}"
+        )
 
         return {
             "success": True,
@@ -7004,7 +8006,12 @@ async def get_custom_objects_status(
                 "status": status,
                 "contenedores": num_contenedores,
                 "elementos": num_elementos,
-                "message": message
+                "message": message,
+                "job_id": job.get("job_id"),
+                "progress_step": job.get("progress_step"),
+                "started_at": job.get("started_at"),
+                "completed_at": job.get("completed_at"),
+                "created_at": job.get("created_at"),
             }
         }
 

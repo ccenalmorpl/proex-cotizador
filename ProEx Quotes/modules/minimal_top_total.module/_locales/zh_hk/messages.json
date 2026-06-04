@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "到期應付",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "如在結帳後有應付款項，此標籤將取代「報價總計文字」。",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "到期應付總計文字",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "報價總計",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "總計",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "總計報價金額的文字",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "報價總計文字",
+    "description" : "",
+    "placeholders" : null
+  }
+}

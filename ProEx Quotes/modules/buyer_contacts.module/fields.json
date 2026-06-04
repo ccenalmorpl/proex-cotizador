@@ -1,0 +1,41 @@
+[ {
+  "id" : "show_contact_name",
+  "name" : "show_contact_name",
+  "label" : "Buyer contact name",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "show_contact_job_title",
+  "name" : "show_contact_job_title",
+  "label" : "Buyer contact job title",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : false
+}, {
+  "id" : "show_contact_email",
+  "name" : "show_contact_email",
+  "label" : "Buyer contact email",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "show_contact_phone",
+  "name" : "show_contact_phone",
+  "label" : "Buyer contact phone",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+} ]

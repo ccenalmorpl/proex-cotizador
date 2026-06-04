@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Kontakti kupca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "E-pošta za kontakt kupca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Naziv radnog mjesta kontakta kupca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Ime osobe za kontakt kupca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Broj telefona za kontakt kupca",
+    "description" : "",
+    "placeholders" : null
+  }
+}

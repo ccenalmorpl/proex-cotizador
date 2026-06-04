@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Đã tạo báo giá",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Ngày tạo báo giá:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Văn bản ngày tạo báo giá",
+    "description" : "",
+    "placeholders" : null
+  }
+}

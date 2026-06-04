@@ -33,14 +33,12 @@ logger = logging.getLogger(__name__)
 # Cargar variables de entorno
 load_dotenv()
 
-
 def get_hubspot_client() -> HubSpot:
     """Obtener cliente de HubSpot autenticado."""
     access_token = os.getenv("HUBSPOT_ACCESS_TOKEN")
     if not access_token:
         raise ValueError("HUBSPOT_ACCESS_TOKEN no encontrado en variables de entorno")
     return HubSpot(access_token=access_token)
-
 
 def list_custom_objects(client: HubSpot):
     """Listar todos los objetos personalizados."""
@@ -80,7 +78,6 @@ def list_custom_objects(client: HubSpot):
     except Exception as e:
         logger.error(f"❌ Error listando objetos: {e}")
         raise
-
 
 def check_specific_objects(client: HubSpot):
     """Verificar si los objetos contenedor y elemento ya existen."""
@@ -124,7 +121,6 @@ def check_specific_objects(client: HubSpot):
         logger.error(f"❌ Error verificando objetos: {e}")
         raise
 
-
 def main():
     """Función principal."""
     try:
@@ -139,7 +135,6 @@ def main():
     except Exception as e:
         logger.error(f"❌ Error: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

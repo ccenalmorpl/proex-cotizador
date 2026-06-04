@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Tilbud oprettet",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Tilbud oprettet:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Tekst for oprettet tilbud",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Buyer company",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Buyer company main address",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Buyer company city, state, and zip",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Buyer company country",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Buyer company name",
+    "description" : "",
+    "placeholders" : null
+  }
+}

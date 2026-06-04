@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "Tema Sebut Harga CMS",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "Warna global",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "Warna utama",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "Warna sekunder",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "Fon global",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "Fon utama",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "Fon sekunder",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "Tetapan butang",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "Warna latar belakang butang",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "Warna fon butang",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "Tetapan sepanduk",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "Warna fon sepanduk",
+    "description": "",
+    "placeholders": null
+  }
+}

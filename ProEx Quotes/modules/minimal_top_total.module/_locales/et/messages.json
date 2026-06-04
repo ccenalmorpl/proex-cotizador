@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Tähtaeg käes",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "See silt asendab „Pakkumuse kogusumma teksti“, kui pärast tellimuse sooritamist on tasumist ootavaid makseid.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Kokku tasutava summa tekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Pakkumuse kogusumma",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Kokku",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Tekst pakkumuse kogusumma kohta",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Pakkumuse kogusumma tekst",
+    "description" : "",
+    "placeholders" : null
+  }
+}

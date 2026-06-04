@@ -1,7 +1,3 @@
-/**
- * Common constants used across the application
- */
-
 // API and timing constants
 export const API_TIMEOUT_MS = 30000;
 export const DEBOUNCE_DELAY_MS = 500;

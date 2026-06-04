@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "תמונה של סמל החברה",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "לא חל בעת עקיפת הלוגו המהווה ברירת מחדל",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "גובה מרבי של הלוגו",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "כברירית מחדל, בצעות המחיר שלך יוצג סמל החברה מתוך ברירת המחדל של החשבון רו דפי אינטרנט, אם הגדרת אותם. באפרותך לעקוף אותם בעזרת הפקדים למטה.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "סמל",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "עקוף סמל ברירת מחדל של התבנית",
+    "description" : "",
+    "placeholders" : null
+  }
+}

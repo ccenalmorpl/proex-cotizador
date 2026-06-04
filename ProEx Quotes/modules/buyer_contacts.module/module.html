@@ -1,0 +1,35 @@
+{# associated contact data: first name, last name, email, phone #}
+{% from '../../imports/mock_data.html' import SAMPLE_TEMPLATE_DATA as mock_data %}
+{% set QUOTE = template_data.quote or mock_data.quote %}
+{% set BUYER_CONTACTS = QUOTE.associated_objects.contacts %}
+
+{% for recipient in BUYER_CONTACTS %}
+  {% if module.show_contact_name  %}
+    <span>
+      <b>{{ format_name(recipient.firstname, recipient.lastname, true)|sanitize_html }}</b>
+    </span>
+    <br>
+  {% endif %}
+
+  {% if module.show_contact_job_title and recipient.jobtitle %}
+    <span>
+      {{ recipient.jobtitle|sanitize_html }}
+    </span>
+    <br>
+  {% endif %}
+
+  {% if module.show_contact_email and recipient.email %}
+    <span>
+      {{ recipient.email|sanitize_html }}
+    </span>
+    <br>
+  {% endif %}
+
+  {% if module.show_contact_phone and recipient.phone %}
+    <span>
+      {{ recipient.phone|sanitize_html }}
+    </span>
+    <br>
+  {% endif %}
+  <br>
+{% endfor %}

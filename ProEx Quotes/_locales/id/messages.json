@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "Tema Penawaran Harga CMS",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "Warna global",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "Warna utama",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "Warna sekunder",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "Huruf global",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "Huruf utama",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "Huruf sekunder",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "Pengaturan tombol",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "Warna latar belakang tombol",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "Warna huruf tombol",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "Pengaturan Spanduk",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "Warna huruf Spanduk",
+    "description": "",
+    "placeholders": null
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "কোম্পানির লোগো ইমেজ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "ডিফল্ট লোগো ওভাররাইড করার সময় এটি প্রযোজ্য নয়",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "লোগোর সর্বোচ্চ উচ্চতা",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : " যদি আপনার এই সেটআপ থাকে তবে ডিফল্টরূপে, আপনার উদ্ধৃতিগুলি অ্যাকাউন্টের ডিফল্ট বা ওয়েবসাইট পেজগুলি থেকে কোম্পানির লোগো দেখাবে। আপনি নিচের টগল ব্যবহার করে এগুলি ওভাররাইডের জন্য বেছে নিতে পারেন।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "লোগো",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "এই টেমপ্লেটে ডিফল্ট লোগো ওভাররাইড করুন",
+    "description" : "",
+    "placeholders" : null
+  }
+}

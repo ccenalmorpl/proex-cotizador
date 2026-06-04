@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Contatti acquirente",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "E-mail di contatto acquirente",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Posizione lavorativa contatto acquirente",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Nome di contatto acquirente",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Telefono di contatto acquirente",
+    "description" : "",
+    "placeholders" : null
+  }
+}

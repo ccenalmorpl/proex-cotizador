@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "खरीदने वाले का संपर्क",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "खरीदने वाले का ईमेल पता",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "खरीदार कॉन्टेक्ट का जॉब टाइटल",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "खरीदने वाले का नाम",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "खरीदने वाले को फ़ोन नंबर",
+    "description" : "",
+    "placeholders" : null
+  }
+}

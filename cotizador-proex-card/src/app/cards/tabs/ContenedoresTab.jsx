@@ -43,6 +43,7 @@ const ContenedoresTab = ({
   setContenedoresUnicos,
   tipoContenedorOptions,
   tipoContenedorSeleccionado,
+  cargaPorPalets,
 }) => {
   // Usar artículos seleccionados del tab previo
   // Helper to extract numeric value from field (handles both direct values and {value, options} objects)
@@ -244,16 +245,7 @@ const ContenedoresTab = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contenedoresDefinidos, cantidadesContenedores]);
 
-  // Función helper para obtener capacidad máxima según tipo de contenedor
-  /**
-   * Get maximum capacity for an article in a specific container type
-   *
-   * @param {Object} articulo - Article object with container capacity fields
-   * @param {string} tipoContenedor - Container type (e.g., "D20DR", "D40DR")
-   * @returns {number} Maximum capacity or 0 if not found
-   */
   const getCapacidadMaxima = (articulo, tipoContenedor) => {
-    // Mapeo de tipos de contenedor a sus campos de unidades correspondientes
     const containerFieldMap = {
       CAMION16P: "unidades_cam16",
       D20DR: "unidades_d20dr",
@@ -266,6 +258,7 @@ const ContenedoresTab = ({
       R20RF: "unidades_r20rf",
       R40RF: "unidades_r40rf",
       TRAILER80: "unidades_tra80",
+      "TRAILER 80": "unidades_tra80"
     };
 
     const field = containerFieldMap[tipoContenedor];
@@ -273,15 +266,9 @@ const ContenedoresTab = ({
       return articulo[field];
     }
 
-    // Fallback: return 0 if no match found
     return 0;
   };
 
-  /**
-   * Calculate totals across all defined containers
-   *
-   * @returns {Object} Object with totalColis, totalPesoNeto, totalContenedores, mediaOcupacion
-   */
   const calcularTotales = () => {
     let totalColis = 0;
     let totalPesoNeto = 0;
@@ -300,7 +287,6 @@ const ContenedoresTab = ({
       totalColis += colisContenedor * cantidad;
       totalPesoNeto += contenedor.pesoNeto * cantidad;
 
-      // Sumar la ocupación de cada contenedor (multiplicado por su cantidad)
       sumaOcupacion += contenedor.ocupacion * cantidad;
       contadorOcupacion += cantidad;
     });
@@ -343,13 +329,19 @@ const ContenedoresTab = ({
 
     setOcupacionActual(ocupacionTotal);
     setPesoNetoActual(pesoTotal);
-    // Permitir un rango de ±3% (97% - 103%)
-    setErrorOcupacion(ocupacionTotal < 97 || ocupacionTotal > 103);
+    // Si es carga por palets, no validar ocupación mínima
+    if (cargaPorPalets) {
+      setErrorOcupacion(false);
+    } else {
+      // Rango permitido (90% - 103%)
+      setErrorOcupacion(ocupacionTotal < 90 || ocupacionTotal > 103);
+    }
   }, [
     tipoContenedor,
     articulosSeleccionadosContenedor,
     cajasConfig,
     ARTICULOS_DISPONIBLES,
+    cargaPorPalets,
   ]);
 
   // Handlers
@@ -467,7 +459,7 @@ const ContenedoresTab = ({
                   margen_unitario: articuloCompleto?.margen_unitario,
                 };
               }),
-              ocupacion: contenedor.ocupacion,
+              ocupacion: cargaPorPalets ? 100 : contenedor.ocupacion,
               pesoNeto: contenedor.pesoNeto,
             },
           });
@@ -594,14 +586,13 @@ const ContenedoresTab = ({
                 label="Tipo de Contenedor"
                 name="tipo-contenedor"
                 description="Seleccione el tamaño del contenedor"
-                placeholder="Seleccione un tipo de contenedor..."
+                placeholder="Seleccionar..."
                 value={tipoContenedor}
                 onChange={handleTipoContenedorChange}
                 options={tipoContenedorOptions}
                 tooltip="La capacidad máxima varía según el tipo"
               />
 
-              {/* Selección de artículos */}
               <Box>
                 <Text format={{ fontWeight: "bold" }}>
                   Artículos a Incluir:
@@ -634,7 +625,6 @@ const ContenedoresTab = ({
                 </Flex>
               </Box>
 
-              {/* Configuración de cajas por artículo */}
               {articulosSeleccionadosContenedor.length > 0 && (
                 <>
                   <Divider size="small" />
@@ -661,7 +651,7 @@ const ContenedoresTab = ({
                           handleCajasChange(articuloId, value)
                         }
                         min={0}
-                        placeholder="0"
+                        placeholder=""
                         tooltip={`Peso por caja: ${articulo.pesoCaja} kg`}
                       />
                     );
@@ -669,14 +659,13 @@ const ContenedoresTab = ({
                 </>
               )}
 
-              {/* Estadísticas del contenedor actual */}
               {articulosSeleccionadosContenedor.length > 0 && (
                 <>
                   <Divider size="small" />
                   <Statistics>
                     <StatisticsItem
                       label="Ocupación del Contenedor"
-                      number={`${ocupacionActual.toFixed(2)}%`}
+                      number={cargaPorPalets ? "100.00%" : `${ocupacionActual.toFixed(2)}%`}
                     />
                     <StatisticsItem
                       label="Peso Neto Total"
@@ -684,9 +673,15 @@ const ContenedoresTab = ({
                     />
                   </Statistics>
 
-                  {errorOcupacion && (
+                  {errorOcupacion && !cargaPorPalets && (
                     <Alert title="Capacidad fuera de rango" variant="error">
-                      El contenedor está fuera del rango permitido de ocupación (97%-103%). Reduzca o aumente el número de cajas.
+                      El contenedor está fuera del rango permitido de ocupación (90%-103%). Reduzca o aumente el número de cajas.
+                    </Alert>
+                  )}
+
+                  {cargaPorPalets && (
+                    <Alert title="Carga por Palets activa" variant="info">
+                      La validación de ocupación mínima está desactivada para carga por palets.
                     </Alert>
                   )}
 
@@ -741,7 +736,7 @@ const ContenedoresTab = ({
                           ))}
                         </TableCell>
                         <TableCell align="right">
-                          {contenedor.ocupacion.toFixed(2)}%
+                          {cargaPorPalets ? "100.00" : contenedor.ocupacion.toFixed(2)}%
                         </TableCell>
                         <TableCell align="right">
                           {contenedor.pesoNeto.toFixed(2)} kg
@@ -777,9 +772,7 @@ const ContenedoresTab = ({
                       key={contenedor.id}
                       label={`Contenedor ${index + 1} (${contenedor.tipo})`}
                       name={`cantidad-${contenedor.id}`}
-                      description={`Ocupación: ${contenedor.ocupacion.toFixed(
-                        2
-                      )}% | Peso: ${contenedor.pesoNeto.toFixed(2)} kg`}
+                      description={`Ocupación: ${cargaPorPalets ? "100.00" : contenedor.ocupacion.toFixed(2)}% | Peso: ${contenedor.pesoNeto.toFixed(2)} kg`}
                       value={cantidadesContenedores[contenedor.id] || 0}
                       onChange={(value) =>
                         setCantidadesContenedores({
@@ -788,7 +781,7 @@ const ContenedoresTab = ({
                         })
                       }
                       min={0}
-                      placeholder="0"
+                      placeholder=""
                     />
                   ))}
                 </>
@@ -821,15 +814,12 @@ const ContenedoresTab = ({
                     />
                     <StatisticsItem
                       label="Ocupación media"
-                      number={`${totales.mediaOcupacion.toFixed(2)}%`}
+                      number={cargaPorPalets ? "100.00%" : `${totales.mediaOcupacion.toFixed(2)}%`}
                     />
                   </Statistics>
                 </>
               )}
 
-              <Divider size="medium" />
-
-              {/* Botones de navegación */}
               <ButtonRow>
                 <Button
                   variant="secondary"

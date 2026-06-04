@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote created",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Creación del presupuesto:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Texto de la creación del presupuesto",
+    "description" : "",
+    "placeholders" : null
+  }
+}

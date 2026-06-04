@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote expires",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Pasiūlymo galiojimo laiko pabaiga:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Pasiūlymo galiojimo laiko pabaigos tekstas",
+    "description" : "",
+    "placeholders" : null
+  }
+}

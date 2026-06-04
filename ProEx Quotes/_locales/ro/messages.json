@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "Temă oferte CMS",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "Culori globale",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "Culoare principală",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "Culoare secundară",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "Fonturi globale",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "Font principal",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "Font secundar",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "Setări pentru butoane",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "Culoare fundal buton",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "Culoare font buton",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "Setări banner",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "Culoare font banner",
+    "description": "",
+    "placeholders": null
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "अभी देय है",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "अगर चेकआउट के बाद भी भुगतान देय है, तो यह लेबल \"टोटल टेक्स्ट क्वोट करें\" को बदल देता है।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "जो अभी देय है उसका टोटल टेक्स्ट",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "टोटल कोट",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "टोटल",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "टोटल क्वोट अमाउंट का टेक्स्ट",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "टोटल क्वोट का टेक्स्ट",
+    "description" : "",
+    "placeholders" : null
+  }
+}

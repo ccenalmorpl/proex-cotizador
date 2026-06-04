@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "कोटेशन प्रिंट करें",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "बटन टेक्स्ट",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "प्रिंट करें",
+    "description" : "",
+    "placeholders" : null
+  }
+}

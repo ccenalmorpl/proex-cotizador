@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Zapade zdaj",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Ta oznaka nadomešča besedilo »Ponudite celotno besedilo«, ko so po zaključku plačila zapadla plačila.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Zapade zdaj celotno besedilo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Znesek ponudbe",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Skupaj",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Besedilo za celoten znesek ponudbe",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Besedilo skupnega zneska ponudbe",
+    "description" : "",
+    "placeholders" : null
+  }
+}

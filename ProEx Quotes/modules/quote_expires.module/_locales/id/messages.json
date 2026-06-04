@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Penawaran berakhir",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Penawaran kedaluwarsa:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Teks penawaran kedaluwarsa",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "مستحقة الآن",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "تحل هذه التسمية محل \"النص الإجمالي لعرض الأسعار\" عندما تكون هناك مدفوعات مستحقة بعد السداد مع الخروج.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "النص الإجمالي للمدفوعات المستحقة الآن",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "إجمالي عرض الأسعار",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "الإجمالي",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "نص المبلغ الإجمالي لعرض الأسعار",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "النص الإجمالي لعرض الأسعار",
+    "description" : "",
+    "placeholders" : null
+  }
+}

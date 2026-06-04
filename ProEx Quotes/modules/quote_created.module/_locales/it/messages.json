@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Creazione preventivo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Preventivo creato:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Testo preventivo creato",
+    "description" : "",
+    "placeholders" : null
+  }
+}

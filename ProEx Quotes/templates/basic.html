@@ -1,0 +1,398 @@
+<!--
+  templateType: quote
+  isAvailableForNewContent: true
+  label: PROEX Commercial Quote
+  screenshotPath: ../images/basic.png
+-->
+
+{% extends './layouts/base.html' %}
+
+{% block stylesheet %}
+  {{ require_css(get_asset_url("../css/basic.css")) }}
+{% endblock stylesheet %}
+
+{% if html_lang_dir == 'dir="rtl"' %}
+  {{ require_css(get_asset_url("../css/rtl-print.css")) }}
+{% endif %}
+
+{% block body %}
+
+{# ============================================ #}
+{# MACRO: Formatear fechas ISO 8601 a DD/MM/YY #}
+{# ============================================ #}
+{% macro format_date(iso_date) %}
+  {% if iso_date %}
+    {% set date_only = iso_date|split('T')|first %}
+    {% set date_parts = date_only|split('-') %}
+    {% if date_parts|length == 3 %}
+      {{ date_parts[2] }}/{{ date_parts[1] }}/{{ date_parts[0]|slice(-2, 2) }}
+    {% else %}
+      {{ iso_date }}
+    {% endif %}
+  {% else %}
+    N/A
+  {% endif %}
+{% endmacro %}
+
+{# ============================================ #}
+{# EXTRACCIÓN DE DATOS DINÁMICOS #}
+{# ============================================ #}
+
+{% set quote = template_data.quote %}
+{% set deal = quote.associated_objects.deal if quote.associated_objects.deal else none %}
+{% set company = quote.associated_objects.company if quote.associated_objects.company else none %}
+{% set contact = quote.associated_objects.contacts[0] if quote.associated_objects.contacts else none %}
+
+{# Estrategia: Usar quote_data_payload del Deal (contiene todo el JSON del cotizador) #}
+{% if deal and deal.quote_data_payload %}
+
+  {# Parsear el JSON del cotizador #}
+  {% set payload = fromjson(deal.quote_data_payload) %}
+
+  {# Sobrescribir algunos campos con datos nativos de HubSpot #}
+  {% do payload.header.update({
+    "offerNumber": quote.hs_quote_number,
+    "currency": quote.hs_currency|default("EUR")
+  }) %}
+
+  {# Si el Incoterm está en la quote, usarlo #}
+  {% if quote.hs_terms %}
+    {% do payload.header.update({"terms": quote.hs_terms}) %}
+  {% endif %}
+
+{% else %}
+
+  {# FALLBACK: Si no existe payload, construir estructura mínima #}
+  {% set payload = {
+    "header": {
+      "offerNumber": quote.hs_quote_number,
+      "date": quote.hs_createdate,
+      "destinationPort": "N/A",
+      "vessel": "N/A",
+      "terms": quote.hs_terms|default("EXW"),
+      "currency": quote.hs_currency|default("EUR"),
+      "container": "N/A",
+      "sealNumber": none,
+      "etd": none,
+      "eta": none
+    },
+    "empresa": {
+      "nombre": "PROEX DRINKS GROUP S.A.",
+      "direccion": "Calle Tomás de Ibarra, 15 - 41001 Sevilla, España",
+      "iniciales": "PROEX"
+    },
+    "cliente": {
+      "nombreCliente": (contact.firstname ~ " " ~ contact.lastname)|trim if contact else "N/A",
+      "nombreEmpresa": company.name if company else "N/A",
+      "pais": company.country if company else "N/A"
+    },
+    "ruta": {},
+    "lineItems": [],
+    "precios": {
+      "totalEXW": quote.hs_subtotal|default(0),
+      "fobExpenses": 0,
+      "totalFOB": 0,
+      "seafreightRate": 0,
+      "totalCFR": 0,
+      "insurance": 0,
+      "totalCIF": quote.hs_total_quote_amount|default(0)
+    },
+    "estadisticas": {
+      "totalColis": 0,
+      "netWeightKg": 0,
+      "grossWeightKg": 0,
+      "containerType": "N/A",
+      "filledUpTo": 0,
+      "numContainers": 0,
+      "totalEuros": quote.hs_total_quote_amount|default(0)
+    },
+    "textos": {
+      "textoBaseOferta": "El exportador de los productos incluidos en el presente documento (autorización aduanera nº ES/410042/15), declara que, salvo indicación en sentido contrario, estos productos gozan de un origen preferencial español"
+    },
+    "documentacion": {
+      "consignee": none,
+      "shipper": none
+    }
+  } %}
+
+{% endif %}
+
+{# DEBUG: Descomentar para ver el payload completo en preview #}
+{#
+<div style="background: #fff3cd; border: 2px solid #ffc107; padding: 20px; margin: 20px;">
+  <h3>🐛 DEBUG INFO</h3>
+  <p><strong>Quote ID:</strong> {{ quote.hs_object_id }}</p>
+  <p><strong>Deal ID:</strong> {{ deal.hs_object_id if deal else "NO DEAL" }}</p>
+  <p><strong>Payload exists:</strong> {{ "YES" if deal.quote_data_payload else "NO" }}</p>
+  <p><strong>Line items count:</strong> {{ payload.lineItems|length }}</p>
+  <hr>
+  <pre style="max-height: 300px; overflow: auto; font-size: 10px;">{{ payload|pprint }}</pre>
+</div>
+#}
+
+<body class="hs-quotes hs-quotes--commercial">
+
+  {# ============================================ #}
+  {# HEADER SECTION #}
+  {# ============================================ #}
+  <div class="commercial-header">
+    <div class="header-title">
+      <h1>Commercial Invoice Number: {{ payload.header.offerNumber|default('N/A') }}</h1>
+    </div>
+    <div class="header-logo">
+      {% module "logo" path="../modules/quote_logo" %}
+    </div>
+  </div>
+
+  {# ============================================ #}
+  {# REFERENCE INFORMATION (3 COLUMNS) #}
+  {# ============================================ #}
+  <section class="ref-section">
+
+    {# REF Title - Full width #}
+    <h3 class="ref-label">REF:</h3>
+
+    <div class="ref-grid">
+
+      {# Column 1: Number & Port Information #}
+      <div class="ref-column">
+        <table class="ref-table">
+          <tr>
+            <td class="label">Number:</td>
+            <td class="value">{{ payload.header.offerNumber|default('N/A') }}</td>
+          </tr>
+          <tr>
+            <td class="label">Destination Port:</td>
+            <td class="value">{{ payload.header.destinationPort|default('N/A') }}</td>
+          </tr>
+          <tr>
+            <td class="label">Terms:</td>
+            <td class="value">{{ payload.header.terms|default('EXW') }}</td>
+          </tr>
+          <tr>
+            <td class="label">Container:</td>
+            <td class="value">{{ payload.header.container|default('N/A') }}</td>
+          </tr>
+          <tr>
+            <td class="label">ETD:</td>
+            <td class="value">{{ format_date(payload.header.etd) }}</td>
+          </tr>
+          {% if payload.header.sealNumber %}
+          <tr>
+            <td class="label">BOOKING:</td>
+            <td class="value">{{ payload.header.sealNumber }}</td>
+          </tr>
+          {% endif %}
+        </table>
+      </div>
+
+      {# Column 2: Date & Vessel Information #}
+      <div class="ref-column">
+        <table class="ref-table">
+          <tr>
+            <td class="label">Date:</td>
+            <td class="value">{{ format_date(payload.header.date) }}</td>
+          </tr>
+          <tr>
+            <td class="label">Vessel:</td>
+            <td class="value">{{ payload.header.vessel|default('N/A') }}</td>
+          </tr>
+          <tr>
+            <td class="label">Currency:</td>
+            <td class="value">{{ payload.header.currency|default('€') }}</td>
+          </tr>
+          {% if payload.header.sealNumber %}
+          <tr>
+            <td class="label">Seal N°:</td>
+            <td class="value">{{ payload.header.sealNumber }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <td class="label">ETA:</td>
+            <td class="value">{{ format_date(payload.header.eta) }}</td>
+          </tr>
+        </table>
+      </div>
+
+      {# Column 3: Customer Information #}
+      <div class="ref-column customer-info">
+        <strong>{{ payload.cliente.nombreEmpresa|default('Cliente') }}</strong><br>
+        {% if payload.documentacion and payload.documentacion.consignee %}
+          {{ payload.documentacion.consignee.address1|default('') }}<br>
+          {% if payload.documentacion.consignee.address2 %}
+            {{ payload.documentacion.consignee.address2 }}<br>
+          {% endif %}
+          {{ payload.documentacion.consignee.city|default('') }}<br>
+          {{ payload.documentacion.consignee.country|default('') }}<br>
+          {% if payload.documentacion.consignee.reference %}
+            {{ payload.documentacion.consignee.reference }}
+          {% endif %}
+        {% elif payload.cliente %}
+          {{ payload.cliente.pais|default('') }}
+        {% endif %}
+      </div>
+    </div>
+
+  </section>
+
+  {# ============================================ #}
+  {# PRODUCTS & SERVICES TABLE #}
+  {# ============================================ #}
+  <section class="products-section">
+    <h2>Products & Services</h2>
+
+    <table class="products-table">
+      <thead>
+        <tr>
+          <th class="col-code">CODE</th>
+          <th class="col-item">ITEM</th>
+          <th class="col-colis">COLIS</th>
+          <th class="col-qty">QTY</th>
+          <th class="col-unit">UNIT</th>
+          <th class="col-price">PRICE</th>
+          <th class="col-total">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in payload.lineItems %}
+          {% if item.type == 'articulo' %}
+          <tr>
+            <td class="code">{{ item.code|default('') }}</td>
+            <td class="item">{{ item.item|default(item.itemName|default('')) }}</td>
+            <td class="colis">{{ item.colis|round(2) if item.colis else '' }}</td>
+            <td class="qty">{{ item.qty|default(item.quantity|default(0))|round(2) }}</td>
+            <td class="unit">{{ item.unit|default('CASE') }}</td>
+            <td class="price">{{ payload.header.currency|default('€') }} {{ item.price|default(item.unitPrice|default(0))|round(2) }}</td>
+            <td class="total">{{ item.total|round(2) }}</td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {# Legal text if exists #}
+    {% if payload.textos and payload.textos.textoBaseOferta %}
+    <div class="legal-text">
+      {{ payload.textos.textoBaseOferta }}
+    </div>
+    {% endif %}
+
+  </section>
+
+  {# ============================================ #}
+  {# TOTALS SECTION #}
+  {# ============================================ #}
+  <section class="totals-section">
+
+    <div class="totals-grid">
+
+      {# Left column: Price breakdown #}
+      <div class="totals-breakdown">
+        <table class="breakdown-table">
+          <tr class="subtotal-row">
+            <td class="label">PRECIO EX WORK</td>
+            <td class="value">{{ payload.precios.totalEXW|round(2) }}</td>
+          </tr>
+          <tr>
+            <td class="label">FOB EXPENSES</td>
+            <td class="value">{{ payload.precios.fobExpenses|round(2) }}</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td class="label"><strong>TOTAL FOB</strong></td>
+            <td class="value"><strong>{{ payload.precios.totalFOB|round(2) }}</strong></td>
+          </tr>
+          <tr>
+            <td class="label">SEAFREIGHT RATE</td>
+            <td class="value">{{ payload.precios.seafreightRate|round(2) }}</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td class="label"><strong>TOTAL CFR</strong></td>
+            <td class="value"><strong>{{ payload.precios.totalCFR|round(2) }}</strong></td>
+          </tr>
+          <tr>
+            <td class="label">INSURANCE</td>
+            <td class="value">{{ payload.precios.insurance|round(2) }}</td>
+          </tr>
+          <tr class="final-total-row">
+            <td class="label"><strong>TOTAL CIF</strong></td>
+            <td class="value"><strong>{{ payload.precios.totalCIF|round(2) }}</strong></td>
+          </tr>
+        </table>
+      </div>
+
+      {# Right column: Statistics #}
+      <div class="totals-stats">
+        <table class="stats-table">
+          <tr>
+            <td class="label">TOTAL COLIS</td>
+            <td class="value">{{ payload.estadisticas.totalColis|round(2) }}</td>
+          </tr>
+          <tr>
+            <td class="label">NET WEIGHT KG.</td>
+            <td class="value">{{ payload.estadisticas.netWeightKg|round(2) }}</td>
+          </tr>
+          <tr>
+            <td class="label">GROSS WEIGHT KG.</td>
+            <td class="value">{{ payload.estadisticas.grossWeightKg|round(2) }}</td>
+          </tr>
+          <tr>
+            <td class="label">VGM KG.</td>
+            <td class="value">{{ (payload.estadisticas.grossWeightKg * 1.05)|round(2) }}</td>
+          </tr>
+        </table>
+
+        <table class="stats-table mt-2">
+          <tr>
+            <td class="label">CONTAINER TYPE</td>
+            <td class="value">{{ payload.estadisticas.containerType|default('N/A') }}</td>
+          </tr>
+          <tr>
+            <td class="label">FILLED UP TO (%)</td>
+            <td class="value">{{ payload.estadisticas.filledUpTo|round(2) }}%</td>
+          </tr>
+          <tr>
+            <td class="label">Nº OF CONTAINERS</td>
+            <td class="value">{{ payload.estadisticas.numContainers|round(0) }}</td>
+          </tr>
+        </table>
+
+        {# Grand Total #}
+        <div class="grand-total">
+          <div class="grand-total-label">TOTAL {{ payload.header.currency|default('€') }} EUROS</div>
+          <div class="grand-total-value">{{ payload.estadisticas.totalEuros|round(2) }}</div>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  {# ============================================ #}
+  {# FOOTER - COMPANY INFO #}
+  {# ============================================ #}
+  <footer class="company-footer">
+    <p>
+      <strong>PROEX DRINKS GROUP S.A.</strong>, Calle Tomás de Ibarra, 15 - 41001 Sevilla, España. C.I.F. A41992975. I.R.M. de Sevilla. Tomo 2808 Sección 8ª Hoja SE-33385 Folio 125.<br>
+      Commercial Office.- Proex Building. P.I. Área Logística 03-PEI. PEYSI Guadarranque - 11369 San Roque (Cádiz) Spain/Espagne/España (UE)<br>
+      Tel.- +34 856 223 943 / +34 956 635 795 - Fax.- +34 956 668 137 - Email.- customerservice@proexdg.com - www.proexdg.com<br>
+      <strong>SGS ISO 9001:2015 CERTIFICATE ES16/20592</strong>
+    </p>
+  </footer>
+
+  {# ============================================ #}
+  {# PAYMENT & DOWNLOAD BUTTONS (Hidden by default) #}
+  {# ============================================ #}
+  <section class="actions-section" style="display: none;">
+    {% if QUOTE.hs_payment_enabled %}
+      <div class="line-items__payment">
+        {% module "payment" path="@hubspot/quote_payment" %}
+      </div>
+    {% endif %}
+
+    <div class="download-section">
+      {% module "download" path="@hubspot/quote_download" %}
+    </div>
+  </section>
+
+</body>
+{% endblock body %}

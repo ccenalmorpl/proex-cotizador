@@ -1,20 +1,16 @@
-"""
-Helper functions for HubSpot quote creation, associations, and configuration.
-"""
-
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 from app.core.constants import AssociationType
+from app.utils.property_helpers import enforce_line_item_price_rounding
 
 logger = logging.getLogger(__name__)
 
+LINE_ITEMS_BATCH_LIMIT = 100
 
-# ============================================================
 # 1. Build association object for v3 quote create
-# ============================================================
 
 def build_association(object_id: str, association_type: AssociationType) -> Dict[str, Any]:
     """
@@ -37,10 +33,7 @@ def build_association(object_id: str, association_type: AssociationType) -> Dict
         ]
     }
 
-
-# ============================================================
 # 2. Create Quote via HubSpot API v3 with associations
-# ============================================================
 
 def create_quote_via_api(
     access_token: str,
@@ -85,10 +78,7 @@ def create_quote_via_api(
         logger.error(f"[create_quote_via_api] Could not parse quote ID: {e}")
         return None, f"Could not parse quote ID: {e}"
 
-
-# ============================================================
 # 3. Generic association helper (API v4)
-# ============================================================
 
 def associate_object(
     access_token: str,
@@ -125,10 +115,7 @@ def associate_object(
 
     return True
 
-
-# ============================================================
 # 4. Helper: Get deal associations (contacts, companies, etc.)
-# ============================================================
 
 def get_deal_associations(
     access_token: str,
@@ -164,10 +151,7 @@ def get_deal_associations(
     except Exception:
         return []
 
-
-# ============================================================
 # 5. Configure signers (electronic signature)
-# ============================================================
 
 def configure_quote_signers(
     access_token: str,
@@ -214,10 +198,7 @@ def configure_quote_signers(
 
     return success
 
-
-# ============================================================
 # 6. Quote property builder (used in create_quote)
-# ============================================================
 
 def build_quote_properties(
     quote_title: str,
@@ -260,7 +241,6 @@ def build_quote_properties(
 
     return props
 
-
 def normalize_hs_date(date_str: Optional[str]) -> Optional[str]:
     if not date_str:
         return None
@@ -272,10 +252,7 @@ def normalize_hs_date(date_str: Optional[str]) -> Optional[str]:
     except Exception:
         return date_str.split("T")[0]
 
-
-# ============================================================
 # 7. Create Line Item via HubSpot API v3
-# ============================================================
 
 def create_line_item_via_api(
     access_token: str,
@@ -294,6 +271,8 @@ def create_line_item_via_api(
         error_message = string if there was an error, otherwise None
     """
     url = "https://api.hubapi.com/crm/v3/objects/line_items"
+
+    enforce_line_item_price_rounding(properties)
 
     payload = {
         "properties": properties
@@ -321,10 +300,7 @@ def create_line_item_via_api(
         logger.error(f"[create_line_item_via_api] {error_msg}", exc_info=True)
         return None, error_msg
 
-
-# ============================================================
 # 8. Associate Line Item to Quote via HubSpot API v4
-# ============================================================
 
 def associate_line_item_to_quote_v4(
     access_token: str,
@@ -376,3 +352,144 @@ def associate_line_item_to_quote_v4(
             exc_info=True
         )
         return False, error_msg
+
+
+def batch_create_line_items_via_api(
+    access_token: str,
+    items: List[Dict[str, Any]],
+    chunk_size: int = LINE_ITEMS_BATCH_LIMIT,
+    on_chunk_done: Optional[callable] = None,
+) -> Tuple[List[str], List[str]]:
+    """Crea N line items en chunks de hasta 100 vía batch API.
+
+    Devuelve (created_ids, errors). Los IDs se devuelven en el mismo orden que `items`.
+    Si un chunk falla globalmente, se registra el error y se continúa con el siguiente.
+    `on_chunk_done(created_so_far)` se invoca tras cada chunk OK para reportar progreso.
+    """
+    url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/create"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    created_ids: List[str] = []
+    errors: List[str] = []
+
+    for chunk_start in range(0, len(items), chunk_size):
+        chunk = items[chunk_start:chunk_start + chunk_size]
+        for props in chunk:
+            enforce_line_item_price_rounding(props)
+
+        payload = {"inputs": [{"properties": props} for props in chunk]}
+
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+        except Exception as e:
+            error_msg = f"Chunk [{chunk_start}:{chunk_start + len(chunk)}] exception: {e}"
+            logger.error(f"[batch_create_line_items_via_api] {error_msg}", exc_info=True)
+            errors.append(error_msg)
+            continue
+
+        if response.status_code >= 300:
+            error_msg = f"Chunk [{chunk_start}:{chunk_start + len(chunk)}] HTTP {response.status_code}: {response.text}"
+            logger.error(f"[batch_create_line_items_via_api] {error_msg}")
+            errors.append(error_msg)
+            continue
+
+        try:
+            results = response.json().get("results", [])
+        except Exception as e:
+            error_msg = f"Chunk [{chunk_start}:{chunk_start + len(chunk)}] could not parse response: {e}"
+            logger.error(f"[batch_create_line_items_via_api] {error_msg}")
+            errors.append(error_msg)
+            continue
+
+        chunk_ids = [str(r["id"]) for r in results if r.get("id")]
+        created_ids.extend(chunk_ids)
+        logger.info(
+            f"[batch_create_line_items_via_api] Chunk [{chunk_start}:{chunk_start + len(chunk)}] "
+            f"created {len(chunk_ids)} line items"
+        )
+
+        if on_chunk_done:
+            try:
+                on_chunk_done(len(created_ids))
+            except Exception as cb_err:
+                logger.warning(f"[batch_create_line_items_via_api] on_chunk_done failed: {cb_err}")
+
+    return created_ids, errors
+
+
+def batch_associate_line_items_to_quote_v4(
+    access_token: str,
+    quote_id: str,
+    line_item_ids: List[str],
+    chunk_size: int = LINE_ITEMS_BATCH_LIMIT,
+    on_chunk_done: Optional[callable] = None,
+) -> Tuple[int, List[str]]:
+    """Asocia N line items a un quote vía v4 batch.
+
+    Devuelve (successful_count, errors). Una asociación fallida no aborta el resto.
+    """
+    url = "https://api.hubapi.com/crm/v4/associations/quotes/line_items/batch/create"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+    association_type_id = AssociationType.QUOTE_TO_LINE_ITEM.value
+
+    successful = 0
+    errors: List[str] = []
+
+    for chunk_start in range(0, len(line_item_ids), chunk_size):
+        chunk = line_item_ids[chunk_start:chunk_start + chunk_size]
+        payload = {
+            "inputs": [
+                {
+                    "from": {"id": str(quote_id)},
+                    "to": {"id": str(li_id)},
+                    "types": [
+                        {
+                            "associationCategory": "HUBSPOT_DEFINED",
+                            "associationTypeId": association_type_id,
+                        }
+                    ],
+                }
+                for li_id in chunk
+            ]
+        }
+
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+        except Exception as e:
+            error_msg = f"Chunk [{chunk_start}:{chunk_start + len(chunk)}] exception: {e}"
+            logger.error(f"[batch_associate_line_items_to_quote_v4] {error_msg}", exc_info=True)
+            errors.append(error_msg)
+            continue
+
+        if response.status_code >= 300:
+            error_msg = f"Chunk [{chunk_start}:{chunk_start + len(chunk)}] HTTP {response.status_code}: {response.text}"
+            logger.error(f"[batch_associate_line_items_to_quote_v4] {error_msg}")
+            errors.append(error_msg)
+            continue
+
+        try:
+            results = response.json().get("results", [])
+            successful += len(results)
+            logger.info(
+                f"[batch_associate_line_items_to_quote_v4] Chunk [{chunk_start}:{chunk_start + len(chunk)}] "
+                f"associated {len(results)} line items to quote {quote_id}"
+            )
+        except Exception as e:
+            error_msg = f"Chunk [{chunk_start}:{chunk_start + len(chunk)}] could not parse response: {e}"
+            logger.error(f"[batch_associate_line_items_to_quote_v4] {error_msg}")
+            errors.append(error_msg)
+            continue
+
+        if on_chunk_done:
+            try:
+                on_chunk_done(successful)
+            except Exception as cb_err:
+                logger.warning(f"[batch_associate_line_items_to_quote_v4] on_chunk_done failed: {cb_err}")
+
+    return successful, errors

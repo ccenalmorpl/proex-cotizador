@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Dátum konca platnosti cenovej ponuky",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Dátum konca platnosti cenovej ponuky:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Text vypršania cenovej ponuky",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "見積もりを印刷",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "ボタンテキスト",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "印刷",
+    "description" : "",
+    "placeholders" : null
+  }
+}

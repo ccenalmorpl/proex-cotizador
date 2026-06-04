@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote expires",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "ใบเสนอราคานี้หมดอายุวันที่",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "ข้อความวันหมดอายุของใบเสนอราคา",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -29,49 +29,25 @@ import {
 } from "../constants/common.constants";
 import { fetchFromAPI } from "../utils/api.utils";
 import { API_CONFIG } from "../config";
+import {
+  calcularPrecioPorCajaPorIncoterm,
+  calcularTotalesPorTipoVenta,
+} from "../utils/pricing.utils";
+import { getIVAEfectivo } from "../utils/iva.utils";
 
-// Constantes para cálculos
-const SEGURO_PORCENTAJE = 2;
-
-/**
- * Función para obtener el porcentaje de IVA de un artículo usando datos dinámicos de HubDB
- * @param {string} tipoIVA - Tipo de IVA del artículo
- * @param {object} ivaDataMap - Mapa de datos de IVA
- * @returns {number} - Porcentaje de IVA
- */
-const getIVAPorcentaje = (tipoIVA, ivaDataMap) => {
-  // Si no hay tipo de IVA o es vacío, devolver 21%
-  if (!tipoIVA || tipoIVA === "") {
-    return 21;
-  }
-  // Si el tipo existe en los datos dinámicos, devolver el porcentaje total
-  if (ivaDataMap && tipoIVA in ivaDataMap) {
-    return ivaDataMap[tipoIVA].porcentaje_total;
-  }
-  // Si no se encuentra el tipo, por defecto 21%
-  return 21;
-};
-
-/**
- * Función helper para obtener el label legible de un campo select
- * @param {any} field - Campo que puede ser string o {value, options}
- * @returns {string} - Label legible o valor original
- */
+// Resuelve el label legible de un campo: acepta string o {value, options}
 const getSelectLabel = (field) => {
   if (!field) return "";
 
-  // Si es un objeto con {value, options}
   if (typeof field === "object" && field.value !== undefined && field.options) {
     const option = field.options.find((opt) => opt.value === field.value);
     return option?.label || field.value || "";
   }
 
-  // Si es un string directo, devolverlo
   if (typeof field === "string") {
     return field;
   }
 
-  // Si es un objeto sin estructura conocida, intentar obtener value o label
   if (typeof field === "object") {
     return field.label || field.value || field.name || "";
   }
@@ -79,12 +55,6 @@ const getSelectLabel = (field) => {
   return String(field);
 };
 
-/**
- * Componente para mostrar un campo y su valor en la revisión.
- * Muestra una alerta si el campo es requerido y no tiene valor.
- *
- * @param {{label: string, value: any, required?: boolean}} props
- */
 const RevisionField = ({ label, value, required = false }) => {
   const displayValue = value || "No especificado";
   const hasError = required && !value;
@@ -103,27 +73,125 @@ const RevisionField = ({ label, value, required = false }) => {
   );
 };
 
-/**
- * @typedef {import('../types/common.types').ContenedorUnicoDefinido} ContenedorUnicoDefinido
- */
+const PublishingStatusPanel = ({
+  publishStatus,
+  publishData,
+  customObjectsStatus,
+  customObjectsData,
+  publicacionError,
+  stalled,
+}) => {
+  let overall = "idle";
+  if (publishStatus === "error") overall = "error_publish";
+  else if (customObjectsStatus === "error") overall = "error_custom";
+  else if (publishStatus === "completed" && customObjectsStatus === "completed") overall = "done";
+  else if (
+    publishStatus === "completed" &&
+    (customObjectsStatus === "pending" || customObjectsStatus === "processing")
+  ) overall = "customizing";
+  else if (publishStatus === "completed" && !customObjectsStatus) overall = "publish_done_waiting_co";
+  else if (publishStatus === "pending" || publishStatus === "processing") overall = "publishing";
 
-/**
- * @param {{
- *   context: any,
- *   onNavigate: (tab: string) => void,
- *   clienteData: any,
- *   articulosSeleccionados: any[],
- *   contenedoresData: any,
- *   transitarioData: any,
- *   serviciosData: any,
- *   documentacionData: any,
- *   contenedoresUnicos?: ContenedorUnicoDefinido[],
- *   tipoIVAOptions?: any[],
- *   ivaData?: any,
- *   preciosEXW?: Record<string, number>,
- *   tiposIVA?: Record<string, string>
- * }} props
- */
+  if (overall === "idle") return null;
+
+  const headers = {
+    publishing: { title: "Publicando cotización...", variant: "info" },
+    publish_done_waiting_co: { title: "Preparando objetos...", variant: "info" },
+    customizing: { title: "Sincronizando objetos...", variant: "info" },
+    done: { title: "¡Cotización publicada!", variant: "success" },
+    error_publish: { title: "Error al publicar la cotización", variant: "danger" },
+    error_custom: { title: "Falló la sincronización", variant: "warning" },
+  };
+  const { title, variant } = headers[overall];
+
+  const publishStepState =
+    publishStatus === "completed" ? "completed"
+    : publishStatus === "error" ? "error"
+    : publishStatus === "processing" || (publishStatus === "pending" && publishData.created > 0) ? "processing"
+    : "pending";
+
+  const customStepState =
+    customObjectsStatus === "completed" ? "completed"
+    : customObjectsStatus === "error" ? "error"
+    : customObjectsStatus === "pending" || customObjectsStatus === "processing" ? "processing"
+    : "pending";
+
+  const stepIndex =
+    customStepState === "completed" ? 2
+    : publishStepState === "completed" ? 1
+    : 0;
+
+  const renderStep = (label, state, processingText, completedText, errorText) => {
+    const icons = {
+      pending: <Text>⚪</Text>,
+      processing: <LoadingSpinner size="xs" />,
+      completed: <Text>✅</Text>,
+      error: <Text>❌</Text>,
+    };
+    const texts = {
+      pending: `${label}: en espera`,
+      processing: `${label}: ${processingText}`,
+      completed: `${label}: ${completedText}`,
+      error: `${label}: ${errorText}`,
+    };
+    return (
+      <Flex direction="row" gap="small" align="center">
+        {icons[state]}
+        <Text>{texts[state]}</Text>
+      </Flex>
+    );
+  };
+
+  const publishProcessingText = publishData.total > 0
+    ? `creando ${publishData.created} de ${publishData.total} líneas`
+    : "preparando líneas de cotización";
+  const publishCompletedText = publishData.total > 0
+    ? `${publishData.associated} de ${publishData.total} líneas asociadas a la cotización`
+    : "cotización creada en HubSpot";
+  const publishErrorText = publicacionError || "fallo desconocido al publicar";
+
+  const customProcessingText = customObjectsData.contenedores > 0 || customObjectsData.elementos > 0
+    ? `${customObjectsData.contenedores} contenedores · ${customObjectsData.elementos} líneas sincronizados`
+    : "creando contenedores y líneas en HubSpot";
+  const customCompletedText = `${customObjectsData.contenedores} contenedores · ${customObjectsData.elementos} líneas`;
+  const customErrorText = "no se pudo sincronizar — la cotización ya está creada en HubSpot, puedes reintentar";
+
+  const showStalled = stalled && overall !== "done" && overall !== "error_publish" && overall !== "error_custom";
+
+  return (
+    <Alert title={title} variant={variant}>
+      <Flex direction="column" gap="medium">
+        <Flex direction="row">
+          <Box flex={"auto"}>
+            <StepIndicator
+              currentStep={stepIndex}
+              stepNames={["Cotización", "Contenedores y líneas"]}
+            />
+          </Box>
+        </Flex>
+        <Flex direction="row">
+          <Box>
+            <Flex direction="column" gap="extra-small">
+              {renderStep("Cotización", publishStepState, publishProcessingText, publishCompletedText, publishErrorText)}
+              {renderStep("Contenedores y líneas", customStepState, customProcessingText, customCompletedText, customErrorText)}
+            </Flex>
+          </Box>
+        </Flex>
+        {showStalled && (
+          <Flex direction="row">
+            <Box>
+              <Text format={{ fontStyle: "italic", color: "medium" }} variant="microcopy">
+                El proceso está tardando más de lo habitual. Seguiremos comprobando cada 3 segundos hasta el límite de seguridad.
+              </Text>
+            </Box>
+          </Flex>
+        )}
+      </Flex>
+    </Alert>
+  );
+};
+
+/** @typedef {import('../types/common.types').ContenedorUnicoDefinido} ContenedorUnicoDefinido */
 const RevisionTab = ({
   context,
   onNavigate,
@@ -138,6 +206,8 @@ const RevisionTab = ({
   ivaData = {},
   preciosEXW = {},
   tiposIVA = {},
+  tipoIVASoportadoOptions = [],
+  tiposIVASoportado = {},
 }) => {
   // Extraer dealId del contexto al inicio
   const dealId = context?.crm?.objectId;
@@ -147,90 +217,165 @@ const RevisionTab = ({
 
   // Estados para el proceso de publicación
   const [publicando, setPublicando] = useState(false);
-  const [publicacionExitosa, setPublicacionExitosa] = useState(false);
   const [publicacionError, setPublicacionError] = useState(null);
 
+  // Statuses canónicos en ambos endpoints: not_started | pending | processing | completed | error
+  const POLLING_MAX_ATTEMPTS = 20;
+  // El estado del job se persiste en DynamoDB tras el POST, así que `not_started` solo aparece
+  // de forma transitoria por la consistencia eventual del GSI deal_id-job_type-index (~1-2s).
+  const POLLING_MAX_NOT_STARTED = 2;
+
   // Estados para el polling de objetos personalizados
-  const [customObjectsStatus, setCustomObjectsStatus] = useState(null); // "pending" | "completed" | "error"
+  const [customObjectsStatus, setCustomObjectsStatus] = useState(null);
   const [customObjectsData, setCustomObjectsData] = useState({ contenedores: 0, elementos: 0 });
-  const pollingIntervalRef = useRef(null);
+  const pollingTimeoutRef = useRef(null);
   const pollingAttemptsRef = useRef(0);
+  const customObjectsNotStartedAttemptsRef = useRef(0);
+  // Cada `startPolling()` incrementa este contador. Cada tick/fetch en vuelo guarda el id y
+  // sólo continúa si sigue siendo el activo — cualquier cadena huérfana (remonte de componente,
+  // doble invocación) se autoinvalida en el siguiente tick.
+  const pollingSessionIdRef = useRef(0);
 
-  // Función para verificar el estado de los objetos personalizados
-  const checkCustomObjectsStatus = async () => {
-    try {
-      const response = await fetchFromAPI(`/api/v1/deals/${dealId}/custom-objects/status`, {
-        method: "GET",
-      });
+  // Estado de la publicación del Quote (proceso síncrono — no requiere polling)
+  const [publishStatus, setPublishStatus] = useState(null);
+  const [publishData, setPublishData] = useState({ created: 0, associated: 0, total: 0 });
 
-      if (response.success && response.data) {
-        const { status, contenedores, elementos, message } = response.data;
+  // Detección de estancamiento del proceso conjunto (publish + custom-objects)
+  const STALLED_TICKS_THRESHOLD = 8;
+  const [stalled, setStalled] = useState(false);
+  const lastProgressSignatureRef = useRef(null);
+  const stalledTicksRef = useRef(0);
 
-        if (status === "completed") {
-          setCustomObjectsStatus("completed");
-          setCustomObjectsData({
-            contenedores: contenedores || 0,
-            elementos: elementos || 0,
-          });
-          stopPolling();
-          console.log(`✅ ${message}`, response.data);
-        } else if (status === "error") {
-          setCustomObjectsStatus("error");
-          stopPolling();
-          console.error("❌ Error creando objetos personalizados:", message);
-        } else if (status === "pending" || status === "processing") {
-          // Status es "pending" o "processing", continuar polling
-          console.log("⏳", message);
-          pollingAttemptsRef.current += 1;
-
-          // Timeout después de 20 intentos (60 segundos si polling cada 3 segundos)
-          if (pollingAttemptsRef.current >= 20) {
-            setCustomObjectsStatus("error");
-            stopPolling();
-            console.warn("⚠️ Timeout: Los objetos personalizados están tardando demasiado en crearse");
-          }
-        } else {
-          // Status desconocido, continuar polling pero contar el intento
-          console.log("⏳ Estado desconocido:", message);
-          pollingAttemptsRef.current += 1;
-
-          if (pollingAttemptsRef.current >= 20) {
-            setCustomObjectsStatus("error");
-            stopPolling();
-          }
-        }
-      } else {
-        // Error en la respuesta
-        setCustomObjectsStatus("error");
-        stopPolling();
-        console.error("❌ Respuesta inválida del servidor:", response);
-      }
-    } catch (error) {
-      console.error("❌ Error verificando estado de objetos personalizados:", error);
-      setCustomObjectsStatus("error");
-      stopPolling();
+  // Invalida cualquier sesión de polling en vuelo. Incrementa el contador para que cadenas
+  // huérfanas (remonte del card, doble invocación) se autoinvaliden en su próximo tick.
+  const stopPolling = () => {
+    pollingSessionIdRef.current += 1;
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+      pollingTimeoutRef.current = null;
     }
   };
 
-  // Función para iniciar el polling
-  const startPolling = () => {
-    setCustomObjectsStatus("pending");
-    pollingAttemptsRef.current = 0;
+  const isCurrentSession = (sessionId) => pollingSessionIdRef.current === sessionId;
 
-    // Verificar inmediatamente
-    checkCustomObjectsStatus();
+  const checkCustomObjectsStatus = async (sessionId) => {
+    if (!isCurrentSession(sessionId)) return;
 
-    // Luego verificar cada 3 segundos
-    pollingIntervalRef.current = setInterval(() => {
-      checkCustomObjectsStatus();
+    let response;
+    try {
+      response = await fetchFromAPI(`/api/v1/deals/${dealId}/custom-objects/status`, {
+        method: "GET",
+      });
+    } catch (error) {
+      if (!isCurrentSession(sessionId)) return;
+      console.error("❌ Error verificando estado de objetos personalizados:", error);
+      setCustomObjectsStatus("error");
+      stopPolling();
+      return;
+    }
+
+    if (!isCurrentSession(sessionId)) return;
+
+    if (!response.success || !response.data) {
+      setCustomObjectsStatus("error");
+      stopPolling();
+      console.error("❌ Respuesta inválida del servidor:", response);
+      return;
+    }
+
+    const { status, contenedores, elementos, message } = response.data;
+
+    if (status === "completed") {
+      setCustomObjectsStatus("completed");
+      setCustomObjectsData({
+        contenedores: contenedores || 0,
+        elementos: elementos || 0,
+      });
+      stopPolling();
+      return;
+    }
+
+    if (status === "error") {
+      setCustomObjectsStatus("error");
+      stopPolling();
+      console.error("❌ Error creando objetos personalizados:", message);
+      return;
+    }
+
+    // `not_started` solo es válido como ventana corta tras el POST (consistencia eventual del GSI).
+    // Reintentamos un par de veces; si persiste, asumimos que el job nunca llegó a crearse.
+    if (status === "not_started") {
+      customObjectsNotStartedAttemptsRef.current += 1;
+      if (customObjectsNotStartedAttemptsRef.current >= POLLING_MAX_NOT_STARTED) {
+        setCustomObjectsStatus("error");
+        stopPolling();
+        console.warn("⚠️ El job de objetos personalizados no se inició tras varios intentos");
+        return;
+      }
+      schedulePollingTick(sessionId);
+      return;
+    }
+
+    customObjectsNotStartedAttemptsRef.current = 0;
+
+    if (status === "pending" || status === "processing") {
+      setCustomObjectsStatus(status);
+      setCustomObjectsData({
+        contenedores: contenedores || 0,
+        elementos: elementos || 0,
+      });
+      pollingAttemptsRef.current += 1;
+      if (pollingAttemptsRef.current >= POLLING_MAX_ATTEMPTS) {
+        setCustomObjectsStatus("error");
+        stopPolling();
+        console.warn("⚠️ Timeout: Los objetos personalizados están tardando demasiado");
+        return;
+      }
+      schedulePollingTick(sessionId);
+      return;
+    }
+
+    console.warn("⚠️ Status no canónico en /custom-objects/status:", status, message);
+    setCustomObjectsStatus("error");
+    stopPolling();
+  };
+
+  const schedulePollingTick = (sessionId) => {
+    if (!isCurrentSession(sessionId)) return;
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+    }
+    pollingTimeoutRef.current = setTimeout(() => {
+      pollingTimeoutRef.current = null;
+      if (!isCurrentSession(sessionId)) return;
+      checkCustomObjectsStatus(sessionId);
     }, 3000);
   };
 
-  // Función para detener el polling
-  const stopPolling = () => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
+  const startPolling = () => {
+    stopPolling();
+    pollingSessionIdRef.current += 1;
+    const sessionId = pollingSessionIdRef.current;
+    setCustomObjectsStatus("pending");
+    pollingAttemptsRef.current = 0;
+    customObjectsNotStartedAttemptsRef.current = 0;
+    checkCustomObjectsStatus(sessionId);
+  };
+
+  const triggerCustomObjects = async () => {
+    try {
+      const customObjectsResponse = await fetchFromAPI(`/api/v1/deals/${dealId}/publish-custom-objects`, {
+        method: "POST",
+      });
+      if (customObjectsResponse.success) {
+        startPolling();
+      } else {
+        console.warn("⚠️ Error al iniciar tarea de objetos personalizados:", customObjectsResponse.error);
+        setCustomObjectsStatus("error");
+      }
+    } catch (customObjError) {
+      console.error("⚠️ Error al lanzar creación de objetos personalizados:", customObjError);
+      setCustomObjectsStatus("error");
     }
   };
 
@@ -240,6 +385,27 @@ const RevisionTab = ({
       stopPolling();
     };
   }, []);
+
+  useEffect(() => {
+    const active = customObjectsStatus === "pending" || customObjectsStatus === "processing";
+    if (!active) {
+      stalledTicksRef.current = 0;
+      lastProgressSignatureRef.current = null;
+      if (stalled) setStalled(false);
+      return;
+    }
+    const sig = `${customObjectsStatus}|${customObjectsData.contenedores}|${customObjectsData.elementos}`;
+    if (sig === lastProgressSignatureRef.current) {
+      stalledTicksRef.current += 1;
+      if (stalledTicksRef.current >= STALLED_TICKS_THRESHOLD && !stalled) {
+        setStalled(true);
+      }
+    } else {
+      lastProgressSignatureRef.current = sig;
+      stalledTicksRef.current = 0;
+      if (stalled) setStalled(false);
+    }
+  }, [customObjectsStatus, customObjectsData]);
 
   // Verificar si todos los datos necesarios están disponibles
   useEffect(() => {
@@ -324,38 +490,59 @@ const RevisionTab = ({
     return 0;
   }, [serviciosData]);
 
-  // Coste de servicios por caja
+  // Coste de servicios por caja (el servicio es por contenedor, se multiplica por nº de contenedores)
   const serviciosPorCaja = useMemo(
-    () => (totalCajas > 0 ? totalServicios / totalCajas : 0),
-    [totalCajas, totalServicios]
+    () => (totalCajas > 0 ? (totalServicios * contenedoresUnicos.length) / totalCajas : 0),
+    [totalCajas, totalServicios, contenedoresUnicos]
   );
 
-  // Gastos por tramo por caja
+  // Coste del seguro por caja (filtrado de serviciosPorCaja para CFR)
+  const seguroPorCaja = useMemo(() => {
+    if (!serviciosData?.serviciosSeleccionados || totalCajas === 0) return 0;
+    const totalSeguro = serviciosData.serviciosSeleccionados
+      .filter((s) => s.tipoArticulo === "seguro")
+      .reduce((sum, s) => sum + (Number(s.importe) || 0), 0);
+    return (totalSeguro * contenedoresUnicos.length) / totalCajas;
+  }, [serviciosData, totalCajas, contenedoresUnicos]);
+
+  // Gastos por tramo por caja (el flete es por contenedor, se multiplica por nº de contenedores)
   const gastosPorTramo = useMemo(
     () => ({
       hastaLocalidadDestino:
-        (transitarioData?.precioOrigen || 0) / totalCajas || 0,
-      hastaPuertoSalida: (transitarioData?.precioOrigen || 0) / totalCajas || 0,
+        (transitarioData?.precioOrigen || 0) * contenedoresUnicos.length / totalCajas || 0,
+      hastaPuertoSalida: (transitarioData?.precioOrigen || 0) * contenedoresUnicos.length / totalCajas || 0,
       hastaPuertoDestino:
-        (transitarioData?.precioDestino || 0) / totalCajas || 0,
+        (transitarioData?.precioDestino || 0) * contenedoresUnicos.length / totalCajas || 0,
       hastaPuertoDestinoLocalidad:
-        (transitarioData?.precioDestino || 0) / totalCajas || 0,
+        (transitarioData?.precioDestino || 0) * contenedoresUnicos.length / totalCajas || 0,
     }),
-    [transitarioData, totalCajas]
+    [transitarioData, totalCajas, contenedoresUnicos]
+  );
+
+  const comisionPorCaja = useMemo(() => {
+    if (!clienteData?.codigoIntermediario || !clienteData?.tipoComision || !clienteData?.importeComision) return 0;
+    const importe = clienteData.importeComision?.value || clienteData.importeComision;
+    const tipo = clienteData.tipoComision?.value || clienteData.tipoComision;
+    const numContenedores = contenedoresUnicos.length;
+    if (tipo === "importe_por_negocio") return totalCajas > 0 ? importe / totalCajas : 0;
+    if (tipo === "importe_por_contenedor") return totalCajas > 0 ? (importe * numContenedores) / totalCajas : 0;
+    if (tipo === "importe_por_cajas") return importe;
+    return 0;
+  }, [clienteData, totalCajas, contenedoresUnicos]);
+
+  const comisionCliente = useMemo(() => {
+    const repercutir = clienteData?.repercutirACliente?.value || clienteData?.repercutirACliente;
+    return repercutir === "si" ? comisionPorCaja : 0;
+  }, [clienteData, comisionPorCaja]);
+
+  const pricingParams = useMemo(
+    () => ({ gastosPorTramo, serviciosPorCaja, seguroPorCaja, comisionCliente }),
+    [gastosPorTramo, serviciosPorCaja, seguroPorCaja, comisionCliente]
   );
 
   // Validar campos requeridos
   const validarCamposRequeridos = () => {
     const errores = [];
-
-    // ========== 1. CLIENTE ==========
-    if (!clienteData.nombreCliente) {
-      errores.push({
-        seccion: "Cliente",
-        campo: "Nombre de Cliente",
-        mensaje: "Debe especificar el nombre del cliente",
-      });
-    }
 
     if (!clienteData.country) {
       errores.push({
@@ -407,12 +594,11 @@ const RevisionTab = ({
       });
     }
 
-    const idiomaValue = clienteData.idioma?.value || clienteData.idioma;
-    if (!idiomaValue) {
+    if (!clienteData.fechaCaducidadCotizacion) {
       errores.push({
         seccion: "Cliente",
-        campo: "Idioma",
-        mensaje: "Debe seleccionar el idioma",
+        campo: "Fecha de caducidad de la cotización",
+        mensaje: "Debe especificar la fecha de caducidad de la cotización",
       });
     }
 
@@ -450,7 +636,6 @@ const RevisionTab = ({
       }
     }
 
-    // ========== 2. ARTÍCULOS Y CONTENEDORES ==========
     if (articulosSeleccionados.length === 0) {
       errores.push({
         seccion: "Artículos",
@@ -467,7 +652,6 @@ const RevisionTab = ({
       });
     }
 
-    // ========== 3. RUTA Y TRANSPORTE ==========
     const tipoVentaValue =
       clienteData.tipoVenta?.value || clienteData.tipoVenta;
     const tipoVenta =
@@ -493,8 +677,8 @@ const RevisionTab = ({
         mensaje: "Debe especificar los días libres en puerto destino",
       });
     }
-
-    if (!transitarioData.transitarioSeleccionado) {
+    
+    if (tipoVenta.trim() !== "EXW" && !transitarioData.transitarioSeleccionado) {
       errores.push({
         seccion: "Ruta y Transporte",
         campo: "Transitario",
@@ -502,11 +686,19 @@ const RevisionTab = ({
       });
     }
 
-    if (!transitarioData.fechaValidez) {
+    if (!transitarioData.fechaCaducidadFleteSalida) {
       errores.push({
         seccion: "Ruta y Transporte",
-        campo: "Fecha de Caducidad",
-        mensaje: "Debe especificar la fecha de caducidad de la cotización",
+        campo: "Fecha caducidad flete salida",
+        mensaje: "Debe especificar la fecha de caducidad del flete hasta puerto salida",
+      });
+    }
+
+    if (!["EXW", "DAP_TERRESTRE"].includes(tipoVenta) && !transitarioData.fechaCaducidadFleteDestino) {
+      errores.push({
+        seccion: "Ruta y Transporte",
+        campo: "Fecha caducidad flete destino",
+        mensaje: "Debe especificar la fecha de caducidad del flete hasta puerto destino",
       });
     }
 
@@ -587,11 +779,9 @@ const RevisionTab = ({
       }
     }
 
-    // ========== 4. NEGOCIACIÓN ==========
     // Los campos de negociación (Tipo de residente, CIF, País de operaciones)
     // se validan en el panel de Negociación, aquí solo verificamos que existan precios
 
-    // ========== 5. DOCUMENTACIÓN ==========
     if (!documentacionData.direccionFiscal) {
       errores.push({
         seccion: "Documentación",
@@ -658,16 +848,13 @@ const RevisionTab = ({
   const handlePublicar = async () => {
     if (hayErrores) return;
 
-
     try {
       const dealId = context?.crm?.objectId;
 
       if (!dealId) {
         throw new Error("ID del negocio no disponible");
       }
-      // ============================================
       // 1. CALCULAR TOTALES Y ESTADÍSTICAS
-      // ============================================
 
       // Total de cajas
       const totalCajas = contenedoresUnicos.reduce((total, cont) => {
@@ -696,18 +883,38 @@ const RevisionTab = ({
         0
       ) || 0;
 
-      const serviciosPorCaja = totalCajas > 0 ? totalServicios / totalCajas : 0;
+      // Los servicios y fletes son por contenedor: multiplicar por nº de contenedores
+      const numContenedores = contenedoresUnicos.length;
+      const serviciosPorCaja = totalCajas > 0 ? (totalServicios * numContenedores) / totalCajas : 0;
 
       const gastosPorTramo = {
-        hastaPuertoSalida: (transitarioData?.precioOrigen || 0) / totalCajas || 0,
-        hastaPuertoDestino: (transitarioData?.precioDestino || 0) / totalCajas || 0,
-        hastaLocalidadDestino: (transitarioData?.precioOrigen || 0) / totalCajas || 0,
-        hastaPuertoDestinoLocalidad: (transitarioData?.precioDestino || 0) / totalCajas || 0,
+        hastaPuertoSalida: (transitarioData?.precioOrigen || 0) * numContenedores / totalCajas || 0,
+        hastaPuertoDestino: (transitarioData?.precioDestino || 0) * numContenedores / totalCajas || 0,
+        hastaLocalidadDestino: (transitarioData?.precioOrigen || 0) * numContenedores / totalCajas || 0,
+        hastaPuertoDestinoLocalidad: (transitarioData?.precioDestino || 0) * numContenedores / totalCajas || 0,
       };
 
-      // ============================================
+      // Comisión por caja (igual que NegociacionTab)
+      const importeComisionFn = clienteData.importeComision?.value || clienteData.importeComision || 0;
+      const tipoComisionFn = clienteData.tipoComision?.value || clienteData.tipoComision;
+      let comisionPorCajaFn = 0;
+      if (clienteData?.codigoIntermediario && tipoComisionFn && importeComisionFn) {
+        if (tipoComisionFn === "importe_por_negocio") comisionPorCajaFn = totalCajas > 0 ? importeComisionFn / totalCajas : 0;
+        else if (tipoComisionFn === "importe_por_contenedor") comisionPorCajaFn = totalCajas > 0 ? (importeComisionFn * numContenedores) / totalCajas : 0;
+        else if (tipoComisionFn === "importe_por_cajas") comisionPorCajaFn = importeComisionFn;
+      }
+      const repercutirFn = clienteData?.repercutirACliente?.value || clienteData?.repercutirACliente;
+      const comisionClienteFn = repercutirFn === "si" ? comisionPorCajaFn : 0;
+
+      // Parámetros compartidos para funciones de pricing
+      const pricingParamsFn = {
+        gastosPorTramo,
+        serviciosPorCaja,
+        seguroPorCaja,
+        comisionCliente: comisionClienteFn,
+      };
+
       // 2. CONSTRUIR LINE ITEMS (Servicios, Contenedores, Artículos, Fletes)
-      // ============================================
 
       const lineItems = [];
 
@@ -723,7 +930,7 @@ const RevisionTab = ({
             qty: 1,
             unit: "",
             price: "",
-            total: servicio.importe,
+            total: servicio.importe * numContenedores,
           });
         });
       }
@@ -763,27 +970,11 @@ const RevisionTab = ({
           const precioEXW = preciosEXW[lineItemId] ||
                             (precioCoste + (precioCoste * margenInicial / 100));
 
-          // Calcular precio según tipo de venta
+          // Calcular precio según tipo de venta (utilidad compartida con NegociacionTab)
           const tipoVentaValue = clienteData.tipoVenta?.value || clienteData.tipoVenta;
           const tipoVenta = tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") || "EXW";
-
-          let precioFinal = precioEXW;
-          if (tipoVenta === "DAP_TERRESTRE") {
-            precioFinal = precioEXW + gastosPorTramo.hastaLocalidadDestino + serviciosPorCaja;
-          } else if (tipoVenta === "FOB") {
-            precioFinal = precioEXW + gastosPorTramo.hastaPuertoSalida + serviciosPorCaja;
-          } else if (tipoVenta === "CFR") {
-            const fob = precioEXW + gastosPorTramo.hastaPuertoSalida + serviciosPorCaja;
-            precioFinal = fob + gastosPorTramo.hastaPuertoDestino;
-          } else if (tipoVenta === "DAP_MARITIMO" || tipoVenta === "DAP_MARÍTIMO") {
-            const fob = precioEXW + gastosPorTramo.hastaPuertoSalida + serviciosPorCaja;
-            const cfr = fob + gastosPorTramo.hastaPuertoDestino;
-            precioFinal = cfr + gastosPorTramo.hastaPuertoDestinoLocalidad + (cfr * SEGURO_PORCENTAJE / 100);
-          } else if (tipoVenta === "CIF") {
-            const fob = precioEXW + gastosPorTramo.hastaPuertoSalida + serviciosPorCaja;
-            const cfr = fob + gastosPorTramo.hastaPuertoDestino;
-            precioFinal = cfr + (cfr * SEGURO_PORCENTAJE / 100);
-          }
+          const precioFinalRaw = calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVenta, pricingParamsFn);
+          const precioFinal = Math.round(precioFinalRaw * 1000) / 1000;
 
           lineItems.push({
             type: "articulo",
@@ -794,10 +985,11 @@ const RevisionTab = ({
             qty: numCajas,
             unit: "",
             price: precioFinal,
-            total: precioFinal * numCajas,
+            total: Math.round(precioFinal * numCajas * 1000) / 1000,
             // Datos adicionales para el backend
             margen_unitario: (precioEXW - precioCoste) / precioCoste,
             tipo_iva_repercutido: tiposIVA[lineItemId] || art.tipo_iva_repercutido || "",
+            tipo_iva_soportado: tiposIVASoportado[lineItemId] || art.tipo_iva_soportado || "",
             numero_container: containerName,
           });
         });
@@ -808,7 +1000,7 @@ const RevisionTab = ({
       const tipoVenta = tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") || "EXW";
 
       if (["FOB", "CFR", "CIF", "DAP_MARITIMO", "DAP_MARÍTIMO"].includes(tipoVenta)) {
-        const totalFletes = (transitarioData?.precioOrigen || 0) + (transitarioData?.precioDestino || 0);
+        const totalFletes = ((transitarioData?.precioOrigen || 0) + (transitarioData?.precioDestino || 0)) * numContenedores;
         lineItems.push({
           type: "flete",
           code: "",
@@ -822,48 +1014,19 @@ const RevisionTab = ({
         });
       }
 
-      // ============================================
-      // 3. CALCULAR PRECIOS POR TIPO DE VENTA
-      // ============================================
+      // 3. CALCULAR PRECIOS POR TIPO DE VENTA (utilidad compartida con NegociacionTab)
 
-      let totalEXW = 0;
-      let totalDAP_TERRESTRE = 0;
-      let totalFOB = 0;
-      let totalCFR = 0;
-      let totalDAP_MARITIMO = 0;
-      let totalCIF = 0;
+      const totalesPorVenta = calcularTotalesPorTipoVenta(
+        contenedoresUnicos, preciosEXW, pricingParamsFn, { clienteData }
+      );
+      const totalEXW = totalesPorVenta.EXW;
+      const totalDAP_TERRESTRE = totalesPorVenta.DAP_TERRESTRE;
+      const totalFOB = totalesPorVenta.FOB;
+      const totalCFR = totalesPorVenta.CFR;
+      const totalDAP_MARITIMO = totalesPorVenta.DAP_MARITIMO;
+      const totalCIF = totalesPorVenta.CIF;
 
-      contenedoresUnicos.forEach((contenedor) => {
-        contenedor.container_config?.articulos?.forEach((art) => {
-          const lineItemId = art.line_item_id;
-          const cajas = art.numCajas || 0;
-          const costePorCaja = art.price || 0;
-          const margenInicial = art.margen_unitario !== null && art.margen_unitario !== undefined
-            ? art.margen_unitario * 100
-            : (clienteData?.margen || 12);
-
-          const precioEXW = preciosEXW[lineItemId] ||
-                            (costePorCaja + (costePorCaja * margenInicial / 100));
-
-          const exw = precioEXW * cajas;
-          const dapTerrestre = (precioEXW + gastosPorTramo.hastaLocalidadDestino + serviciosPorCaja) * cajas;
-          const fob = (precioEXW + gastosPorTramo.hastaPuertoSalida + serviciosPorCaja) * cajas;
-          const cfr = fob + (gastosPorTramo.hastaPuertoDestino * cajas);
-          const dapMaritimo = cfr + (gastosPorTramo.hastaPuertoDestinoLocalidad * cajas) + (cfr * SEGURO_PORCENTAJE / 100);
-          const cif = cfr + (cfr * SEGURO_PORCENTAJE / 100);
-
-          totalEXW += exw;
-          totalDAP_TERRESTRE += dapTerrestre;
-          totalFOB += fob;
-          totalCFR += cfr;
-          totalDAP_MARITIMO += dapMaritimo;
-          totalCIF += cif;
-        });
-      });
-
-      // ============================================
       // 4. CONSTRUIR PAYLOAD COMPLETO
-      // ============================================
 
       const quotePayload = {
         // HEADER
@@ -891,19 +1054,23 @@ const RevisionTab = ({
 
         // INFORMACIÓN DEL CLIENTE
         cliente: {
-          nombreCliente: clienteData.nombreCliente || "",
           nombreEmpresa: clienteData.nombreEmpresa || "",
           pais: clienteData.country || "",
           tipoCliente: getSelectLabel(clienteData.tipoCliente),
           tipoVenta: getSelectLabel(clienteData.tipoVenta),
           tipoContenedor: getSelectLabel(clienteData.tipoContenedor),
           proyecto: getSelectLabel(clienteData.proyecto),
-          idioma: getSelectLabel(clienteData.idioma),
+          idioma: getSelectLabel(documentacionData.idiomaCotizacion),
           margen: clienteData.margen || 0,
           // Datos fiscales
           tipoResidente: clienteData.tipoResidente || "",
           cif: clienteData.cif || "",
           paisOperaciones: clienteData.paisOperaciones || "",
+          fechaCaducidadCotizacion: clienteData.fechaCaducidadCotizacion ? new Date(Date.UTC(
+            clienteData.fechaCaducidadCotizacion.year,
+            clienteData.fechaCaducidadCotizacion.month,
+            clienteData.fechaCaducidadCotizacion.date
+          )).toISOString() : null,
         },
 
         // RUTA Y LOGÍSTICA
@@ -919,11 +1086,8 @@ const RevisionTab = ({
           diasLibres: transitarioData.diasLibres || 0,
           precioOrigen: transitarioData.precioOrigen || 0,
           precioDestino: transitarioData.precioDestino || 0,
-          fechaValidez: transitarioData.fechaValidez ? new Date(
-            transitarioData.fechaValidez.year,
-            transitarioData.fechaValidez.month,
-            transitarioData.fechaValidez.date
-          ).toISOString() : null,
+          tipoIVAFletes: transitarioData.tipoIVAFletes || "",
+          tipoIVAFletesSoportado: transitarioData.tipoIVAFletesSoportado || "",
         },
 
         // LINE ITEMS (Servicios, Contenedores, Artículos, Fletes)
@@ -935,7 +1099,11 @@ const RevisionTab = ({
           totalFOB: totalFOB,
           seafreightRate: totalCFR - totalFOB,
           totalCFR: totalCFR,
-          insurance: totalCIF - totalCFR,
+          insurance: (serviciosData?.serviciosSeleccionados
+            ? serviciosData.serviciosSeleccionados
+                .filter((s) => s.tipoArticulo === "seguro")
+                .reduce((sum, s) => sum + (Number(s.importe) || 0), 0)
+            : 0) * numContenedores,
           totalCIF: totalCIF,
           // Otros Incoterms
           totalEXW: totalEXW,
@@ -973,8 +1141,6 @@ const RevisionTab = ({
           textoFormaPago: documentacionData.textoFormaPago || "",
           // Opcionales
           textoAdicionalMetodoPago: documentacionData.textoAdicionalMetodoPago || null,
-          textoInfoExpediente: documentacionData.textoInfoExpediente || null,
-          textoFirmaAceptacion: documentacionData.textoFirmaAceptacionCliente || null,
         },
 
         // INFORMACIÓN ADICIONAL
@@ -984,6 +1150,8 @@ const RevisionTab = ({
           tipoComision: getSelectLabel(clienteData.tipoComision),
           importeComision: clienteData.importeComision,
           repercutirACliente: getSelectLabel(clienteData.repercutirACliente),
+          tipoIVAComision: clienteData.tipoIVAComision || "",
+          tipoIVAComisionSoportado: clienteData.tipoIVAComisionSoportado || "",
         } : null,
 
         documentacion: {
@@ -995,7 +1163,6 @@ const RevisionTab = ({
             return doc?.label || val;
           }) || [],
           direccionFiscal: documentacionData.direccionFiscal || "",
-          tramitarCarga: documentacionData.tramitarCarga || false,
           // Certificado de origen
           consignee: documentacionData.consignee || null,
           shipper: documentacionData.shipper || null,
@@ -1010,58 +1177,50 @@ const RevisionTab = ({
 
       setPublicando(true);
       setPublicacionError(null);
-      setPublicacionExitosa(false);
+      setPublishStatus("processing");
+      setPublishData({ created: 0, associated: 0, total: 0 });
+      setCustomObjectsStatus(null);
+      setCustomObjectsData({ contenedores: 0, elementos: 0 });
+      setStalled(false);
+      lastProgressSignatureRef.current = null;
+      stalledTicksRef.current = 0;
 
-      // Llamar al endpoint de publicación
       const response = await fetchFromAPI(`/api/v1/deals/${dealId}/publish`, {
         method: "POST",
         body: quotePayload,
       });
 
       if (response.success) {
-        console.log("✅ Cotización publicada correctamente:", response);
-        setPublicacionExitosa(true);
-
-        // Lanzar tarea asíncrona para crear objetos personalizados (Contenedor y Elemento)
-        try {
-          console.log("📦 Iniciando creación de objetos personalizados en segundo plano...");
-          const customObjectsResponse = await fetchFromAPI(`/api/v1/deals/${dealId}/publish-custom-objects`, {
-            method: "POST",
-          });
-
-          if (customObjectsResponse.success) {
-            console.log("✅ Tarea de objetos personalizados iniciada correctamente");
-            // Iniciar polling para monitorear el progreso
-            startPolling();
-          } else {
-            console.warn("⚠️ Error al iniciar tarea de objetos personalizados:", customObjectsResponse.error);
-            setCustomObjectsStatus("error");
-          }
-        } catch (customObjError) {
-          // No fallar la publicación principal si falla la creación de objetos personalizados
-          console.error("⚠️ Error al lanzar creación de objetos personalizados:", customObjError);
-          setCustomObjectsStatus("error");
-        }
+        const d = response.data || {};
+        setPublishData({
+          created: d.created_line_items || 0,
+          associated: d.associated_line_items || 0,
+          total: d.total_line_items || 0,
+        });
+        setPublishStatus("completed");
+        triggerCustomObjects();
       } else {
-        console.error("❌ Error al publicar cotización:", response.error);
+        console.error("❌ Error al publicar la cotización:", response.error);
+        setPublishStatus("error");
         setPublicacionError(response.error || "Error desconocido al publicar");
       }
     } catch (error) {
-      console.error("❌ Error al publicar cotización:", error);
+      console.error("❌ Error al publicar la cotización:", error);
+      setPublishStatus("error");
       setPublicacionError(error.message || "Error desconocido al publicar");
     } finally {
       setPublicando(false);
     }
   };
 
-  // Helper para formatear moneda
-  const formatCurrency = (value) => {
+  // Helper para formatear moneda: 3 dec por defecto (por caja), pasar decimals=2 para totales
+  const formatCurrency = (value, decimals = 3) => {
     if (value === null || value === undefined || isNaN(value)) {
-      return "€0,000";
+      return decimals === 2 ? "0,00€" : "0,000€";
     }
     return `${value.toLocaleString("es-ES", {
-      minimumFractionDigits: 3,
-      maximumFractionDigits: 3,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     })}€`;
   };
 
@@ -1107,12 +1266,33 @@ const RevisionTab = ({
           <Heading as="h3">1. Información del Cliente</Heading>
           <Tile>
             <Flex direction="column" gap="medium">
+              {/* --- Fila 0: Fecha caducidad cotización --- */}
+              <Flex direction="row" gap="large" justify="start">
+                <Box flex={1}>
+                  <RevisionField
+                    label="Fecha de caducidad de la cotización *"
+                    value={
+                      clienteData.fechaCaducidadCotizacion
+                        ? new Date(Date.UTC(
+                            clienteData.fechaCaducidadCotizacion.year,
+                            clienteData.fechaCaducidadCotizacion.month,
+                            clienteData.fechaCaducidadCotizacion.date
+                          )).toLocaleDateString("es-ES")
+                        : "No especificada"
+                    }
+                    required={true}
+                  />
+                </Box>
+                <Box flex={1} />
+                <Box flex={1} />
+              </Flex>
+
               {/* --- Fila 1: Cliente, Venta y Contenedor --- */}
               <Flex direction="row" gap="large" justify="start">
                 <Box flex={1}>
                   <RevisionField
                     label="Nombre del Cliente *"
-                    value={clienteData.nombreCliente}
+                    value={clienteData.nombreEmpresa}
                     required={true}
                   />
                 </Box>
@@ -1132,15 +1312,8 @@ const RevisionTab = ({
                 </Box>
               </Flex>
 
-              {/* --- Fila 2: Empresa, País y Tipo Cliente --- */}
+              {/* --- Fila 2: País y Tipo Cliente --- */}
               <Flex direction="row" gap="large" justify="start">
-                <Box flex={1}>
-                  <RevisionField
-                    label="Nombre de la Empresa *"
-                    value={clienteData.nombreEmpresa}
-                    required={true}
-                  />
-                </Box>
                 <Box flex={1}>
                   <RevisionField
                     label="País de Facturación *"
@@ -1157,15 +1330,8 @@ const RevisionTab = ({
                 </Box>
               </Flex>
 
-              {/* --- Fila 3: Idioma, Proyecto y Margen --- */}
+              {/* --- Fila 3: Margen y Proyecto --- */}
               <Flex direction="row" gap="large" justify="start">
-                <Box flex={1}>
-                  <RevisionField
-                    label="Idioma *"
-                    value={getSelectLabel(clienteData.idioma)}
-                    required={true}
-                  />
-                </Box>
                 <Box flex={1}>
                   <RevisionField
                     label="% Margen *"
@@ -1213,8 +1379,30 @@ const RevisionTab = ({
                       <Box flex={1}>
                         <RevisionField
                           label="Importe Comisión *"
-                          value={formatCurrency(clienteData.importeComision)}
+                          value={formatCurrency(clienteData.importeComision, 2)}
                           required={true}
+                        />
+                      </Box>
+                    </Flex>
+                    <Flex direction="row" gap="large" justify="start">
+                      <Box flex={1}>
+                        <RevisionField
+                          label="IVA Repercutido Comisión"
+                          value={(() => {
+                            const code = clienteData.tipoIVAComision;
+                            const opt = tipoIVAOptions.find(o => o.value === code);
+                            return opt?.label || code || "No especificado";
+                          })()}
+                        />
+                      </Box>
+                      <Box flex={1}>
+                        <RevisionField
+                          label="IVA Soportado Comisión"
+                          value={(() => {
+                            const code = clienteData.tipoIVAComisionSoportado;
+                            const opt = tipoIVASoportadoOptions.find(o => o.value === code);
+                            return opt?.label || code || "No especificado";
+                          })()}
                         />
                       </Box>
                     </Flex>
@@ -1238,7 +1426,6 @@ const RevisionTab = ({
           ) : (
             <Tile>
               <Flex direction="column" gap="medium">
-                {/* Selector de Contenedores */}
                 <Box>
                   <Text format={{ fontWeight: "demibold" }}>
                     Seleccione un contenedor para ver su composición:
@@ -1255,7 +1442,6 @@ const RevisionTab = ({
                   />
                 </Box>
 
-                {/* Información del Contenedor Seleccionado */}
                 {contenedorSeleccionado && (
                   <>
                     <Flex direction="row" gap="large" justify="start">
@@ -1267,117 +1453,132 @@ const RevisionTab = ({
                       </Box>
                     </Flex>
 
-                    {/* Tabla de Artículos del Contenedor */}
                     <Heading as="h4">Artículos en este contenedor</Heading>
-                    {contenedorSeleccionado.container_config?.articulos &&
-                    contenedorSeleccionado.container_config.articulos.length >
-                      0 ? (
-                      <Table bordered={true}>
-                        <TableHead>
-                          <TableRow>
-                            <TableHeader>Artículo</TableHeader>
-                            <TableHeader align="right">
-                              Cantidad (Cajas)
-                            </TableHeader>
-                            <TableHeader align="right">
-                              Peso Neto/Caja (kg)
-                            </TableHeader>
-                            <TableHeader align="right">
-                              Peso Total (kg)
-                            </TableHeader>
-                            <TableHeader align="right">
-                              Precio Coste/Caja (€)
-                            </TableHeader>
-                            <TableHeader align="right">
-                              Precio EXW/Caja (€)
-                            </TableHeader>
-                            <TableHeader align="right">
-                              Subtotal EXW (€)
-                            </TableHeader>
-                            <TableHeader align="right">Margen (%)</TableHeader>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {contenedorSeleccionado.container_config.articulos.map(
-                            (art) => {
-                              // Buscar el artículo completo en articulosSeleccionados para obtener datos completos
-                              const articuloCompleto =
-                                articulosSeleccionados.find(
-                                  (a) => a.id === art.articuloId
+                    {(() => {
+                      const tipoVentaValue =
+                        clienteData.tipoVenta?.value ||
+                        clienteData.tipoVenta ||
+                        "EXW";
+                      const tipoVentaLabel = tipoVentaValue
+                        .toUpperCase()
+                        .replace(/\s+/g, "_");
+
+                      return contenedorSeleccionado.container_config
+                        ?.articulos &&
+                        contenedorSeleccionado.container_config.articulos
+                          .length > 0 ? (
+                        <Table bordered={true}>
+                          <TableHead>
+                            <TableRow>
+                              <TableHeader>Artículo</TableHeader>
+                              <TableHeader align="right">
+                                Cantidad (Cajas)
+                              </TableHeader>
+                              <TableHeader align="right">
+                                Peso Neto/Caja (kg)
+                              </TableHeader>
+                              <TableHeader align="right">
+                                Peso Total (kg)
+                              </TableHeader>
+                              <TableHeader align="right">
+                                Precio Coste/Caja (€)
+                              </TableHeader>
+                              <TableHeader align="right">
+                                Precio {tipoVentaLabel}/Caja (€)
+                              </TableHeader>
+                              <TableHeader align="right">
+                                Subtotal {tipoVentaLabel} (€)
+                              </TableHeader>
+                              <TableHeader align="right">Margen (%)</TableHeader>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {contenedorSeleccionado.container_config.articulos.map(
+                              (art) => {
+                                // Buscar el artículo completo en articulosSeleccionados para obtener datos completos
+                                const articuloCompleto =
+                                  articulosSeleccionados.find(
+                                    (a) => a.id === art.articuloId
+                                  );
+
+                                const numCajas = art.numCajas || 0;
+                                const pesoNetoPorCaja =
+                                  articuloCompleto?.pesoNeto ||
+                                  art.pesoNeto ||
+                                  0;
+                                const pesoTotal = numCajas * pesoNetoPorCaja;
+
+                                // Precio coste (del backend)
+                                const precioCoste =
+                                  articuloCompleto?.hs_price_eur ||
+                                  art.price ||
+                                  0;
+
+                                // Usar el precio EXW editado del estado compartido o calcular el inicial
+                                const lineItemId = art.line_item_id;
+                                const margenInicial =
+                                  art.margen_unitario !== null &&
+                                  art.margen_unitario !== undefined
+                                    ? art.margen_unitario * 100
+                                    : clienteData.margen || 12;
+                                const precioEXW =
+                                  preciosEXW[lineItemId] ||
+                                  precioCoste +
+                                    (precioCoste * margenInicial) / 100;
+
+                                // Calcular margen basado en el precio EXW (margen de negociación del producto)
+                                const margenEnEuros = precioEXW - precioCoste;
+                                const margenPorcentaje =
+                                  precioCoste > 0
+                                    ? (
+                                        (margenEnEuros / precioCoste) *
+                                        100
+                                      ).toFixed(1)
+                                    : "0.0";
+
+                                const precioFinalTipoVenta = calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVentaLabel, pricingParams);
+
+                                return (
+                                  <TableRow
+                                    key={art.line_item_id || art.articuloId}
+                                  >
+                                    <TableCell>{art.nombre}</TableCell>
+                                    <TableCell align="right">
+                                      {numCajas}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                      {pesoNetoPorCaja.toFixed(2)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                      {pesoTotal.toFixed(2)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                      {formatCurrency(precioCoste)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                      {formatCurrency(precioFinalTipoVenta)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                      {formatCurrency(
+                                        numCajas * precioFinalTipoVenta,
+                                        2
+                                      )}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                      {margenPorcentaje}%
+                                    </TableCell>
+                                  </TableRow>
                                 );
-
-                              const numCajas = art.numCajas || 0;
-                              const pesoNetoPorCaja =
-                                articuloCompleto?.pesoNeto || art.pesoNeto || 0;
-                              const pesoTotal = numCajas * pesoNetoPorCaja;
-
-                              // Precio coste (del backend)
-                              const precioCoste =
-                                articuloCompleto?.hs_price_eur ||
-                                art.price ||
-                                0;
-
-                              // Usar el precio EXW editado del estado compartido o calcular el inicial
-                              const lineItemId = art.line_item_id;
-                              const margenInicial =
-                                art.margen_unitario !== null &&
-                                art.margen_unitario !== undefined
-                                  ? art.margen_unitario * 100
-                                  : clienteData.margen || 12;
-                              const precioEXW =
-                                preciosEXW[lineItemId] ||
-                                precioCoste +
-                                  (precioCoste * margenInicial) / 100;
-
-                              // Calcular margen basado en el precio EXW final
-                              const margenEnEuros = precioEXW - precioCoste;
-                              const margenPorcentaje =
-                                precioCoste > 0
-                                  ? (
-                                      (margenEnEuros / precioCoste) *
-                                      100
-                                    ).toFixed(1)
-                                  : "0.0";
-
-                              const subtotalEXW = numCajas * precioEXW;
-
-                              return (
-                                <TableRow
-                                  key={art.line_item_id || art.articuloId}
-                                >
-                                  <TableCell>{art.nombre}</TableCell>
-                                  <TableCell align="right">
-                                    {numCajas}
-                                  </TableCell>
-                                  <TableCell align="right">
-                                    {pesoNetoPorCaja.toFixed(2)}
-                                  </TableCell>
-                                  <TableCell align="right">
-                                    {pesoTotal.toFixed(2)}
-                                  </TableCell>
-                                  <TableCell align="right">
-                                    {formatCurrency(precioCoste)}
-                                  </TableCell>
-                                  <TableCell align="right">
-                                    {formatCurrency(precioEXW)}
-                                  </TableCell>
-                                  <TableCell align="right">
-                                    {formatCurrency(subtotalEXW)}
-                                  </TableCell>
-                                  <TableCell align="right">
-                                    {margenPorcentaje}%
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            }
-                          )}
-                        </TableBody>
-                      </Table>
+                              }
+                            )}
+                          </TableBody>
+                        </Table>
                     ) : (
                       <Alert title="Sin artículos" variant="info">
                         Este contenedor no tiene artículos configurados.
                       </Alert>
-                    )}
+                      );
+                    })()}
                   </>
                 )}
               </Flex>
@@ -1391,7 +1592,6 @@ const RevisionTab = ({
         <Heading as="h3">3. Ruta y Transporte</Heading>
         <Tile>
           <Flex direction="column" gap="medium">
-            {/* Información general de la ruta */}
             <Flex direction="column" gap="small">
               <Flex direction="row" justify="space-between">
                 <RevisionField
@@ -1427,7 +1627,6 @@ const RevisionTab = ({
 
             <Divider size="small" />
 
-            {/* Stepper visual de la ruta */}
             <Heading as="h4">Trayecto Logístico</Heading>
             {(() => {
               // Extraer el valor si es un objeto {value, options}
@@ -1568,39 +1767,72 @@ const RevisionTab = ({
 
             <Divider size="small" />
 
-            {/* Información de precios de transporte */}
             <Flex direction="column" gap="small">
               <Heading as="h4">Costes de Transporte</Heading>
               <Flex direction="row" justify="space-between">
                 <RevisionField
-                  label="Fecha de Caducidad de la Cotización *"
-                  value={
-                    transitarioData.fechaValidez
-                      ? new Date(
-                          transitarioData.fechaValidez.year,
-                          transitarioData.fechaValidez.month,
-                          transitarioData.fechaValidez.date
-                        ).toLocaleDateString("es-ES")
-                      : "No especificada"
-                  }
-                  required={true}
-                />
-                <RevisionField
                   label="Precio Ruta hasta Puerto Salida"
                   value={
-                    formatCurrency(transitarioData.precioOrigen) ||
+                    formatCurrency(transitarioData.precioOrigen, 2) ||
                     "No especificados"
                   }
                 />
                 <RevisionField
-                  label="Precio Ruta hasta Puerto Destino"
+                  label="Fecha caducidad flete salida *"
                   value={
-                    formatCurrency(transitarioData.precioDestino) ||
-                    "No especificados"
+                    transitarioData.fechaCaducidadFleteSalida
+                      ? new Date(Date.UTC(
+                          transitarioData.fechaCaducidadFleteSalida.year,
+                          transitarioData.fechaCaducidadFleteSalida.month,
+                          transitarioData.fechaCaducidadFleteSalida.date
+                        )).toLocaleDateString("es-ES")
+                      : "No especificada"
                   }
                 />
               </Flex>
-              <Flex direction="row" justify="space-between"></Flex>
+              {!["EXW", "DAP_TERRESTRE"].includes(
+                (clienteData.tipoVenta?.value || clienteData.tipoVenta || "").toUpperCase().replace(/\s+/g, "_")
+              ) && (
+                <Flex direction="row" justify="space-between">
+                  <RevisionField
+                    label="Precio Ruta hasta Puerto Destino"
+                    value={
+                      formatCurrency(transitarioData.precioDestino, 2) ||
+                      "No especificados"
+                    }
+                  />
+                  <RevisionField
+                    label="Fecha caducidad flete destino *"
+                    value={
+                      transitarioData.fechaCaducidadFleteDestino
+                        ? new Date(Date.UTC(
+                            transitarioData.fechaCaducidadFleteDestino.year,
+                            transitarioData.fechaCaducidadFleteDestino.month,
+                            transitarioData.fechaCaducidadFleteDestino.date
+                          )).toLocaleDateString("es-ES")
+                        : "No especificada"
+                    }
+                  />
+                </Flex>
+              )}
+              <Flex direction="row" justify="space-between">
+                <RevisionField
+                  label="IVA Repercutido Fletes"
+                  value={(() => {
+                    const code = transitarioData.tipoIVAFletes;
+                    const opt = tipoIVAOptions.find(o => o.value === code);
+                    return opt?.label || code || "No especificado";
+                  })()}
+                />
+                <RevisionField
+                  label="IVA Soportado Fletes"
+                  value={(() => {
+                    const code = transitarioData.tipoIVAFletesSoportado;
+                    const opt = tipoIVASoportadoOptions.find(o => o.value === code);
+                    return opt?.label || code || "No especificado";
+                  })()}
+                />
+              </Flex>
             </Flex>
           </Flex>
         </Tile>
@@ -1631,14 +1863,13 @@ const RevisionTab = ({
                           "No especificado"}
                       </TableCell>
                       <TableCell align="right">
-                        {formatCurrency(servicio.importe)}
+                        {formatCurrency(servicio.importe, 2)}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
 
-              {/* Total de servicios */}
               <Flex direction="row" justify="end" gap="medium">
                 <Text format={{ fontWeight: "bold" }}>Total Servicios:</Text>
                 <Text format={{ fontWeight: "bold" }}>
@@ -1646,7 +1877,8 @@ const RevisionTab = ({
                     serviciosData.serviciosSeleccionados.reduce(
                       (total, servicio) => total + (servicio.importe || 0),
                       0
-                    )
+                    ),
+                    2
                   )}
                 </Text>
               </Flex>
@@ -1660,7 +1892,6 @@ const RevisionTab = ({
 
         <Divider size="medium" />
 
-        {/* Resumen Global de Contenedores */}
         {contenedoresUnicos.length > 0 && (
           <>
             <Heading as="h4">Resumen Global</Heading>
@@ -1735,61 +1966,25 @@ const RevisionTab = ({
                       const tipoVenta =
                         tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") ||
                         "EXW";
-                      let precioFinal = precioEXW;
-
-                      if (tipoVenta === "DAP_TERRESTRE") {
-                        precioFinal =
-                          precioEXW +
-                          gastosPorTramo.hastaLocalidadDestino +
-                          serviciosPorCaja;
-                      } else if (tipoVenta === "FOB") {
-                        precioFinal =
-                          precioEXW +
-                          gastosPorTramo.hastaPuertoSalida +
-                          serviciosPorCaja;
-                      } else if (tipoVenta === "CFR") {
-                        const fob =
-                          precioEXW +
-                          gastosPorTramo.hastaPuertoSalida +
-                          serviciosPorCaja;
-                        precioFinal = fob + gastosPorTramo.hastaPuertoDestino;
-                      } else if (
-                        tipoVenta === "DAP_MARITIMO" ||
-                        tipoVenta === "DAP_MARÍTIMO"
-                      ) {
-                        const fob =
-                          precioEXW +
-                          gastosPorTramo.hastaPuertoSalida +
-                          serviciosPorCaja;
-                        const cfr = fob + gastosPorTramo.hastaPuertoDestino;
-                        precioFinal =
-                          cfr +
-                          gastosPorTramo.hastaPuertoDestinoLocalidad +
-                          (cfr * SEGURO_PORCENTAJE) / 100;
-                      } else if (tipoVenta === "CIF") {
-                        const fob =
-                          precioEXW +
-                          gastosPorTramo.hastaPuertoSalida +
-                          serviciosPorCaja;
-                        const cfr = fob + gastosPorTramo.hastaPuertoDestino;
-                        precioFinal = cfr + (cfr * SEGURO_PORCENTAJE) / 100;
-                      }
+                      const precioFinal = calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVenta, pricingParams);
 
                       // Obtener el tipo de IVA del artículo (del estado compartido o del artículo)
                       const tipoIVAArticulo =
                         tiposIVA[lineItemId] || art.tipo_iva_repercutido || "";
-                      const ivaPorcentaje = getIVAPorcentaje(
+                      const ivaPorcentaje = getIVAEfectivo(
                         tipoIVAArticulo,
-                        ivaData
+                        ivaData,
+                        (clienteData?.equ || "").toString().toLowerCase() === "si"
                       );
 
-                      totalSinIVA += precioFinal * numCajas;
+                      const precioFinalRedondeado = Math.round(precioFinal * 1000) / 1000;
+                      totalSinIVA += precioFinalRedondeado * numCajas;
                       totalConIVA +=
-                        precioFinal * numCajas * (1 + ivaPorcentaje / 100);
+                        precioFinalRedondeado * numCajas * (1 + ivaPorcentaje / 100);
                     });
                   });
 
-                  return formatCurrency(totalSinIVA);
+                  return formatCurrency(totalSinIVA, 2);
                 })()}
               >
                 <StatisticsTrend
@@ -1821,60 +2016,24 @@ const RevisionTab = ({
                         const tipoVenta =
                           tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") ||
                           "EXW";
-                        let precioFinal = precioEXW;
-
-                        if (tipoVenta === "DAP_TERRESTRE") {
-                          precioFinal =
-                            precioEXW +
-                            gastosPorTramo.hastaLocalidadDestino +
-                            serviciosPorCaja;
-                        } else if (tipoVenta === "FOB") {
-                          precioFinal =
-                            precioEXW +
-                            gastosPorTramo.hastaPuertoSalida +
-                            serviciosPorCaja;
-                        } else if (tipoVenta === "CFR") {
-                          const fob =
-                            precioEXW +
-                            gastosPorTramo.hastaPuertoSalida +
-                            serviciosPorCaja;
-                          precioFinal = fob + gastosPorTramo.hastaPuertoDestino;
-                        } else if (
-                          tipoVenta === "DAP_MARITIMO" ||
-                          tipoVenta === "DAP_MARÍTIMO"
-                        ) {
-                          const fob =
-                            precioEXW +
-                            gastosPorTramo.hastaPuertoSalida +
-                            serviciosPorCaja;
-                          const cfr = fob + gastosPorTramo.hastaPuertoDestino;
-                          precioFinal =
-                            cfr +
-                            gastosPorTramo.hastaPuertoDestinoLocalidad +
-                            (cfr * SEGURO_PORCENTAJE) / 100;
-                        } else if (tipoVenta === "CIF") {
-                          const fob =
-                            precioEXW +
-                            gastosPorTramo.hastaPuertoSalida +
-                            serviciosPorCaja;
-                          const cfr = fob + gastosPorTramo.hastaPuertoDestino;
-                          precioFinal = cfr + (cfr * SEGURO_PORCENTAJE) / 100;
-                        }
+                        const precioFinal = calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVenta, pricingParams);
 
                         const tipoIVAArticulo =
                           tiposIVA[lineItemId] ||
                           art.tipo_iva_repercutido ||
                           "";
-                        const ivaPorcentaje = getIVAPorcentaje(
+                        const ivaPorcentaje = getIVAEfectivo(
                           tipoIVAArticulo,
-                          ivaData
+                          ivaData,
+                          (clienteData?.equ || "").toString().toLowerCase() === "si"
                         );
+                        const precioFinalRedondeado = Math.round(precioFinal * 1000) / 1000;
                         totalConIVA +=
-                          precioFinal * numCajas * (1 + ivaPorcentaje / 100);
+                          precioFinalRedondeado * numCajas * (1 + ivaPorcentaje / 100);
                       });
                     });
 
-                    return formatCurrency(totalConIVA) + " c/IVA";
+                    return formatCurrency(totalConIVA, 2) + " c/IVA";
                   })()}
                 />
                 <Text variant="microcopy">
@@ -1906,58 +2065,22 @@ const RevisionTab = ({
                         const tipoVenta =
                           tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") ||
                           "EXW";
-                        let precioFinal = precioEXW;
-
-                        if (tipoVenta === "DAP_TERRESTRE") {
-                          precioFinal =
-                            precioEXW +
-                            gastosPorTramo.hastaLocalidadDestino +
-                            serviciosPorCaja;
-                        } else if (tipoVenta === "FOB") {
-                          precioFinal =
-                            precioEXW +
-                            gastosPorTramo.hastaPuertoSalida +
-                            serviciosPorCaja;
-                        } else if (tipoVenta === "CFR") {
-                          const fob =
-                            precioEXW +
-                            gastosPorTramo.hastaPuertoSalida +
-                            serviciosPorCaja;
-                          precioFinal = fob + gastosPorTramo.hastaPuertoDestino;
-                        } else if (
-                          tipoVenta === "DAP_MARITIMO" ||
-                          tipoVenta === "DAP_MARÍTIMO"
-                        ) {
-                          const fob =
-                            precioEXW +
-                            gastosPorTramo.hastaPuertoSalida +
-                            serviciosPorCaja;
-                          const cfr = fob + gastosPorTramo.hastaPuertoDestino;
-                          precioFinal =
-                            cfr +
-                            gastosPorTramo.hastaPuertoDestinoLocalidad +
-                            (cfr * SEGURO_PORCENTAJE) / 100;
-                        } else if (tipoVenta === "CIF") {
-                          const fob =
-                            precioEXW +
-                            gastosPorTramo.hastaPuertoSalida +
-                            serviciosPorCaja;
-                          const cfr = fob + gastosPorTramo.hastaPuertoDestino;
-                          precioFinal = cfr + (cfr * SEGURO_PORCENTAJE) / 100;
-                        }
+                        const precioFinal = calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVenta, pricingParams);
 
                         const tipoIVAArticulo =
                           tiposIVA[lineItemId] ||
                           art.tipo_iva_repercutido ||
                           "";
-                        const ivaPorcentaje = getIVAPorcentaje(
+                        const ivaPorcentaje = getIVAEfectivo(
                           tipoIVAArticulo,
-                          ivaData
+                          ivaData,
+                          (clienteData?.equ || "").toString().toLowerCase() === "si"
                         );
 
-                        totalSinIVA += precioFinal * numCajas;
+                        const precioFinalRedondeado = Math.round(precioFinal * 1000) / 1000;
+                        totalSinIVA += precioFinalRedondeado * numCajas;
                         totalConIVA +=
-                          precioFinal * numCajas * (1 + ivaPorcentaje / 100);
+                          precioFinalRedondeado * numCajas * (1 + ivaPorcentaje / 100);
                       });
                     });
 
@@ -2082,7 +2205,6 @@ const RevisionTab = ({
         <Heading as="h3">5. Documentación</Heading>
         <Tile>
           <Flex direction="column" gap="medium">
-            {/* Información General */}
             <Flex direction="column" gap="small">
               <Flex direction="row" justify="space-between">
                 <RevisionField
@@ -2108,24 +2230,17 @@ const RevisionTab = ({
                 />
               </Flex>
 
-              <Flex direction="row" justify="space-between">
-                <RevisionField
-                  label="Banco para Recepción de Pagos *"
-                  value={
-                    documentacionData.bancoCobro?.options?.find(
-                      (opt) => opt.value === documentacionData.bancoCobro?.value
-                    )?.label || "No especificado"
-                  }
-                  required={true}
-                />
-                <RevisionField
-                  label="Tramitar Carga"
-                  value={documentacionData.tramitarCarga ? "Sí" : "No"}
-                />
-              </Flex>
+              <RevisionField
+                label="Banco para Recepción de Pagos *"
+                value={
+                  documentacionData.bancoCobro?.options?.find(
+                    (opt) => opt.value === documentacionData.bancoCobro?.value
+                  )?.label || "No especificado"
+                }
+                required={true}
+              />
             </Flex>
 
-            {/* Dirección Fiscal */}
             <RevisionField
               label="Dirección Fiscal *"
               value={documentacionData.direccionFiscal}
@@ -2134,7 +2249,6 @@ const RevisionTab = ({
 
             <Divider size="small" />
 
-            {/* Documentos a Generar */}
             <RevisionField
               label="Documentos a Generar"
               value={
@@ -2153,7 +2267,6 @@ const RevisionTab = ({
               }
             />
 
-            {/* Campos de Texto Logístico */}
             {documentacionData.textoEnBl && (
               <>
                 <Divider size="small" />
@@ -2225,7 +2338,6 @@ const RevisionTab = ({
               </>
             )}
 
-            {/* Textos Adicionales */}
             {documentacionData.textoAdicionalMetodoPago && (
               <>
                 <Divider size="small" />
@@ -2277,88 +2389,18 @@ const RevisionTab = ({
               )}
             </Flex>
 
-            {/* Textos Complementarios (Opcional) */}
-            {(documentacionData.textoInfoExpediente ||
-              documentacionData.textoFirmaAceptacionCliente) && (
-              <>
-                <Divider size="small" />
-                <Heading as="h4">Textos Complementarios (Opcional)</Heading>
-                <Flex direction="column" gap="small">
-                  {documentacionData.textoInfoExpediente && (
-                    <RevisionField
-                      label="Información del Expediente"
-                      value={
-                        documentacionData.textoInfoExpediente.substring(
-                          0,
-                          150
-                        ) +
-                        (documentacionData.textoInfoExpediente.length > 150
-                          ? "..."
-                          : "")
-                      }
-                    />
-                  )}
-
-                  {documentacionData.textoFirmaAceptacionCliente && (
-                    <RevisionField
-                      label="Texto de Firma y Aceptación"
-                      value={
-                        documentacionData.textoFirmaAceptacionCliente.substring(
-                          0,
-                          150
-                        ) +
-                        (documentacionData.textoFirmaAceptacionCliente.length >
-                        150
-                          ? "..."
-                          : "")
-                      }
-                    />
-                  )}
-                </Flex>
-              </>
-            )}
           </Flex>
         </Tile>
 
-        <Divider size="medium" />
-
-        {/* MENSAJES DE ESTADO DE PUBLICACIÓN */}
-        {publicacionExitosa && (
-          <Alert title="¡Cotización publicada exitosamente!" variant="success">
-            La cotización se ha publicado correctamente en HubSpot.
-          </Alert>
-        )}
-
-        {publicacionError && (
-          <Alert title="Error al publicar" variant="danger">
-            {publicacionError}
-          </Alert>
-        )}
-
-        {/* ESTADO DE OBJETOS PERSONALIZADOS */}
-        {customObjectsStatus === "pending" && (
-          <Alert title="Creando objetos personalizados..." variant="info">
-            <Flex direction="row" gap="small" align="center">
-              <LoadingSpinner size="xs" />
-              <Text>
-                Los contenedores y elementos se están creando en segundo plano.
-                Esto puede tardar 20-30 segundos...
-              </Text>
-            </Flex>
-          </Alert>
-        )}
-
-        {customObjectsStatus === "completed" && (
-          <Alert title="¡Objetos personalizados creados!" variant="success">
-            Se crearon {customObjectsData.contenedores} contenedor(es) y {customObjectsData.elementos} elemento(s) correctamente.
-          </Alert>
-        )}
-
-        {customObjectsStatus === "error" && (
-          <Alert title="Error creando objetos personalizados" variant="warning">
-            Hubo un problema al crear los objetos personalizados. Por favor, contacte con soporte.
-          </Alert>
-        )}
+        {/* PANEL UNIFICADO DE ESTADO DE PUBLICACIÓN */}
+        <PublishingStatusPanel
+          publishStatus={publishStatus}
+          publishData={publishData}
+          customObjectsStatus={customObjectsStatus}
+          customObjectsData={customObjectsData}
+          publicacionError={publicacionError}
+          stalled={stalled}
+        />
 
         {/* BOTONES DE ACCIÓN */}
         <ButtonRow>
@@ -2371,13 +2413,21 @@ const RevisionTab = ({
           <Button
             variant="primary"
             onClick={handlePublicar}
-            disabled={hayErrores || publicando}
+            disabled={
+              hayErrores ||
+              publicando ||
+              publishStatus === "pending" ||
+              publishStatus === "processing" ||
+              publishStatus === "completed"
+            }
           >
-            {publicando ? "Publicando..." : "Publicar Cotización"}
+            {publicando || publishStatus === "pending" || publishStatus === "processing"
+              ? "Publicando..."
+              : "Publicar Cotización"}
           </Button>
         </ButtonRow>
 
-        {hayErrores && !publicacionExitosa && (
+        {hayErrores && publishStatus !== "completed" && (
           <Alert title="Revise los errores antes de publicar" variant="warning">
             Complete todos los campos requeridos marcados arriba para poder
             publicar la cotización.

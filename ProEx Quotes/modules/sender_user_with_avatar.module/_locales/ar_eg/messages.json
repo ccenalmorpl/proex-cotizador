@@ -1,0 +1,22 @@
+{
+  "include_hubspot_avatar.label" : {
+    "message" : "تضمين الصورة الرمزية على HubSpot للمرسِل",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "اسم المستخدم المرسِل",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.default" : {
+    "message" : "{{ ptoken_sender_full_name }} - {{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }} {{ personalization_token('template_data.quote.hs_sender_company_name', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.label" : {
+    "message" : "معلومات المرسل",
+    "description" : "",
+    "placeholders" : null
+  }
+}

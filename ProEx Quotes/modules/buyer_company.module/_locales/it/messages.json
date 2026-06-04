@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Azienda acquirente",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Indirizzo principale azienda acquirente",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Citta, stato e CAP azienda acquirente",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Paese azienda acquirente",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Nome azienda acquirente",
+    "description" : "",
+    "placeholders" : null
+  }
+}

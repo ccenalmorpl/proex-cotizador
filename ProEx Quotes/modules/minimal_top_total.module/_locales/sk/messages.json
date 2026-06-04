@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "So splatnosťou teraz",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Tento štítok nahradí \"Text súčtu cenovej ponuky\", ak sú po pokladni splatné platby.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Text celkovej sumy s aktuálnou splatnosťou",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Cenová ponuka celkom",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Celkom",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Text pre celkovú sumu cenovej ponuky",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Text celkovej sumy cenovej ponuky",
+    "description" : "",
+    "placeholders" : null
+  }
+}

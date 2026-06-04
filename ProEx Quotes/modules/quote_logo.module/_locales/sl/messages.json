@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Slika logotipa podjetja",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "To ne velja, če preglasite privzeti logotip",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Največja višina logotipa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Vaše ponudbe bodo privzeto prikazale logotip podjetja iz privzetih nastavitev računa ali strani spletnega mesta, če ste jih nastavili. Lahko jih preglasite s spodnjim preklopom.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logotip",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Preglasi privzeti logotip v tej predlogi",
+    "description" : "",
+    "placeholders" : null
+  }
+}

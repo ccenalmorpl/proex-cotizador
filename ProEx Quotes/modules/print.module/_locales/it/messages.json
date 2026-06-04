@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Stampa preventivo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Testo pulsante",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Stampa",
+    "description" : "",
+    "placeholders" : null
+  }
+}

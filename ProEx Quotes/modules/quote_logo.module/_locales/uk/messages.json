@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Зображення логотипу компанії",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Це не застосовується під час перевизначення логотипа за замовчуванням",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Максимальна висота логотипу",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "За замовчуванням у ваших цінових пропозиціях відображатиметься логотип компанії з параметрів \"Обліковий запис за замовчуванням\" або \"Сторінки вебсайту\", якщо ви їх налаштували. Ви можете змінити їх за допомогою перемикача, що розташований нижче.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Логотип",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Переназначити логотип за замовчуванням у цьому шаблоні",
+    "description" : "",
+    "placeholders" : null
+  }
+}

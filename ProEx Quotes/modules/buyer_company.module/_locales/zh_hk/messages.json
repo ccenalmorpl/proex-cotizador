@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "買家公司",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "買家公司主要地址",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "買家公司城市、州份和郵政編碼",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "買家公司國家/地區",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "買家公司名稱",
+    "description" : "",
+    "placeholders" : null
+  }
+}

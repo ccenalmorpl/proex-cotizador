@@ -1,0 +1,72 @@
+{
+  "contact_information.default" : {
+    "message" : "<div><b>{{ ptoken_sender_full_name }}</b></div><div>{{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_email', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_phone', '') }}</div>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "contact_information.label" : {
+    "message" : "Kontaktní údaje",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h1" : {
+    "message" : "N1",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h2" : {
+    "message" : "N2",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h3" : {
+    "message" : "N3",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h4" : {
+    "message" : "N4",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h5" : {
+    "message" : "N5",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h6" : {
+    "message" : "N6",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.help_text" : {
+    "message" : "Vyberte úroveň nadpisu. Nadpis N1 je největší, nadpis N2 o něco menší a tak dále.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.label" : {
+    "message" : "Úroveň nadpisu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_text.default" : {
+    "message" : "Máte nějaké otázky? Kontaktujte mne.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_text.label" : {
+    "message" : "Obsah nadpisu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "include_hubspot_avatar.label" : {
+    "message" : "Zahrňte HubSpot avatar odesílatele",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Kontakt odesílatele",
+    "description" : "",
+    "placeholders" : null
+  }
+}

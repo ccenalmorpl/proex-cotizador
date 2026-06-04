@@ -1,0 +1,222 @@
+{
+  "amount": {
+    "message": "金額",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "留言",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "留言來源",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "此報價已過期。",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "請聯絡你的銷售代表取得進一步詳細資料。",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "項目和描述",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "其他費用",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "準備人：",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "價格",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "產品與服務",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "購買條款",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "數量",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "報價建立人：",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "小計",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "總計",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "單價",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "發票",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "發票號碼",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "發票日期",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "所有費用皆以 {{ currency_code }} 列出，並須繳付銷售稅 (如適用)。",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "PO 號碼",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "發票明細項目表格",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "{{ discount_amount }} 折扣後",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "數量",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "付款",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "應付餘額",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "稅項",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "稅項",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "稅項",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "帳單地址",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "收件人",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "稅務地址",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "到期日",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "折扣",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% 折扣",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% 折扣",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "小計",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "後續款項",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "日後到期的應付款項。",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_lastname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_firstname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "概要",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "無法提供此報價。",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "請聯絡你的銷售代表取得進一步詳細資料。",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "不適用",
+    "description": "",
+    "placeholders": null
+  }
+}

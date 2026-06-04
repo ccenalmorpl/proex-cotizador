@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Buyer company",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Hoofadres van kopermaatskappy",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Stad, staat en poskode van kopermaatskappy",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Maatskappyland van koper",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Koper se maatskappynaam",
+    "description" : "",
+    "placeholders" : null
+  }
+}

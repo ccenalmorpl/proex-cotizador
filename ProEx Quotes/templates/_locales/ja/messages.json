@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "金額",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "コメント",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "コメント：",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "この見積もりは期限が切れました。",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "詳細については営業担当にお問い合わせください。",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "項目と説明",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "その他の料金",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "作成者：",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "価格",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "製品とサービス",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "購入条件／期間",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "数量",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "見積もり作成者：",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "小計",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "合計",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "単価",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "クレジットメモ",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "クレジットメモ番号",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "クレジットメモ合計",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "発注番号",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "クレジットメモ日付",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "全ての料金は{{ currency_code }}で記載されており、売上税が適用されます（適用対象の場合）。",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "クレジットメモ項目の表",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "数量",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "税",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "税",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "税",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "{{ discount_amount }}引き後",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "請求書",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "請求書番号",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "請求書の日付",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "全ての料金は{{ currency_code }}で記載されており、売上税が適用されます（適用対象の場合）。",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "発注番号",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "請求書の商品項目の表",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "{{ discount_amount }}引き後",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "数量",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "支払い",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "未払い残高",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "税",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "税",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "税",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "請求先",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "発送先",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "税務上の住所",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "期日",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "値引",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}％引き",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}％オフ",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "小計",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "今後のお支払い",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "今後期限になる支払い。",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_lastname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_firstname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "集計",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "この見積もりは使用できません。",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "詳細については営業担当にお問い合わせください。",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "該当なし",
+    "description": "",
+    "placeholders": null
+  }
+}

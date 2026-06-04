@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Firma nabywcy",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Główny adres firmy nabywcy",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Miasto, stan i adres pocztowy firmy nabywcy",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Kraj firmy nabywcy",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Nazwa firmy nabywcy",
+    "description" : "",
+    "placeholders" : null
+  }
+}

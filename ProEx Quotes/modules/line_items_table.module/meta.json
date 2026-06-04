@@ -1,0 +1,10 @@
+{
+  "global" : false,
+  "content_types" : [ "QUOTE_TEMPLATE", "QUOTE" ],
+  "master_language" : "en",
+  "host_template_types" : [ "QUOTE" ],
+  "module_id" : 188472829055,
+  "label" : "Line items table",
+  "icon" : "table",
+  "is_available_for_new_content" : true
+}

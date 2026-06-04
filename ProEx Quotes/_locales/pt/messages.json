@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "Tema de orçamentos de CMS",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "Cores globais",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "Cor principal",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "Cor secundária",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "Fontes globais",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "Fonte principal",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "Fonte secundária",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "Configurações de botão",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "Cor de fundo do botão",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "Cor da fonte do botão",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "Configurações de banner",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "Cor da fonte do banner",
+    "description": "",
+    "placeholders": null
+  }
+}

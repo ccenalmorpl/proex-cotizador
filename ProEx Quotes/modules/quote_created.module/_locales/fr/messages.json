@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote created",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Création du devis :",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Texte de création de devis",
+    "description" : "",
+    "placeholders" : null
+  }
+}

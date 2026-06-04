@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Dû maintenant",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Ce libellé remplace « Texte du total du devis » si des paiements sont dus après le paiement.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Texte du total dû maintenant",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Le texte pour le montant total du devis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Texte du total du devis",
+    "description" : "",
+    "placeholders" : null
+  }
+}

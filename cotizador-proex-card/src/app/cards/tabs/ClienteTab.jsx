@@ -14,6 +14,8 @@ import {
   SearchInput,
   Tile,
   Tag,
+  Toggle,
+  DateInput,
 } from "@hubspot/ui-extensions";
 import { hubspot } from "@hubspot/ui-extensions";
 import { fetchFromAPI } from "../utils/api.utils";
@@ -22,6 +24,7 @@ import {
   isValuePresent,
   getClienteValidationMessages,
 } from "../utils/validation.utils";
+import { resolveIVA } from "../utils/iva.utils";
 import {
   ERROR_MESSAGES,
   LOADING_MESSAGES,
@@ -36,23 +39,22 @@ const ClienteTab = ({
   tipoVentaOptions,
   tipoContenedorOptions,
   tipoClienteOptions,
-  idiomaOptions,
   proyectoOptions,
   repercutirAClienteOptions,
   tipoComisionOptions,
   tipoIVAOptions = [],
+  tipoIVASoportadoOptions = [],
+  ivaComisionDefaults = null,
   loading,
 }) => {
   // Destructure clienteData
   const {
-    nombreCliente,
     nombreEmpresa,
     country,
     tipoVenta,
     tipoContenedor,
     tipoCliente,
     margen,
-    idioma,
     proyecto,
     proveedorComision,
     codigoIntermediario,
@@ -60,14 +62,18 @@ const ClienteTab = ({
     tipoComision,
     importeComision,
     tipoIVAComision,
+    tipoIVAComisionSoportado,
+    cargaPorPalets,
+    fechaCaducidadCotizacion,
   } = clienteData;
+  console.log("[ClienteTab]: clienteData =", clienteData);
 
-  // Helper para actualizar campos select con estructura {value, options}
+  // Helper para actualizar campos select — guarda solo el string value
   const updateSelectField = useCallback(
-    (field, value, options) => {
+    (field, value, _options) => {
       setClienteData({
         ...clienteData,
-        [field]: { value, options },
+        [field]: value,
       });
     },
     [clienteData, setClienteData]
@@ -171,36 +177,44 @@ const ClienteTab = ({
   }, [clienteData, setClienteData]);
 
   /**
-   * Auto-select default IVA type based on tipoResidente
+   * Auto-select default IVA comisión from product-resolved defaults (Fase 4E).
+   * Priority: persisted value > product-resolved > residency fallback.
+   * Only runs when ivaComisionDefaults becomes available from backend.
    */
   useEffect(() => {
-    if (!tipoIVAComision && clienteData?.tipoResidente && tipoIVAOptions.length > 0) {
-      let defaultIVA = "";
-      const tipoResidente = clienteData.tipoResidente.toUpperCase();
+    if (!ivaComisionDefaults || !clienteData?.tipoResidente) return;
 
-      if (tipoResidente === "EXTRANJERO") {
-        defaultIVA = "EX";
-      } else if (tipoResidente === "EUROPA") {
-        defaultIVA = "EI21";
-      } else {
-        defaultIVA = "R21";
-      }
+    const updates = {};
 
-      // Verify the IVA option exists
-      const ivaOption = tipoIVAOptions.find(opt => opt.value === defaultIVA);
-      if (ivaOption) {
-        setClienteData({
-          ...clienteData,
-          tipoIVAComision: defaultIVA,
-        });
-      }
+    if (!tipoIVAComision && tipoIVAOptions.length > 0) {
+      const resolved = resolveIVA({
+        currentValue: tipoIVAComision,
+        productResolvedValue: ivaComisionDefaults.repercutido,
+        product: null,
+        tipoResidente: clienteData.tipoResidente,
+        categoria: "repercutido",
+        options: tipoIVAOptions,
+      });
+      if (resolved) updates.tipoIVAComision = resolved;
     }
-  }, [clienteData?.tipoResidente, tipoIVAOptions, tipoIVAComision, clienteData, setClienteData]);
 
-  /**
-   * Build the payload for updating client and deal data
-   * @returns {Object} - Payload with contact and deal fields
-   */
+    if (!tipoIVAComisionSoportado && tipoIVASoportadoOptions.length > 0) {
+      const resolved = resolveIVA({
+        currentValue: tipoIVAComisionSoportado,
+        productResolvedValue: ivaComisionDefaults.soportado,
+        product: null,
+        tipoResidente: clienteData.tipoResidente,
+        categoria: "soportado",
+        options: tipoIVASoportadoOptions,
+      });
+      if (resolved) updates.tipoIVAComisionSoportado = resolved;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      setClienteData({ ...clienteData, ...updates });
+    }
+  }, [ivaComisionDefaults, clienteData?.tipoResidente, tipoIVAOptions, tipoIVASoportadoOptions, tipoIVAComision, tipoIVAComisionSoportado, clienteData, setClienteData]);
+
   const buildUpdatePayload = useCallback(() => {
     const payload = {};
     const contact = {};
@@ -224,15 +238,11 @@ const ClienteTab = ({
       deal.tipo_contenedor = tipoContenedorValue;
     }
 
-    if (isValuePresent(margen)) {
-      // Convert percentage to HubSpot format (divide by 100)
-      // e.g., 12% is sent as 0.12
-      deal.margen_cliente = Number(margen) / PERCENTAGE_CONVERSION_FACTOR;
-    }
+    deal.carga_por_palets = cargaPorPalets || false;
 
-    const idiomaValue = idioma?.value || idioma;
-    if (isValuePresent(idiomaValue)) {
-      deal.preprints_language = idiomaValue;
+    if (isValuePresent(margen)) {
+      // HubSpot guarda el margen como fracción (0.12 == 12%)
+      deal.margen_cliente = Number(margen) / PERCENTAGE_CONVERSION_FACTOR;
     }
 
     const proyectoValue = proyecto?.value || proyecto;
@@ -264,6 +274,21 @@ const ClienteTab = ({
       deal.tipo_iva_comision = tipoIVAComisionValue;
     }
 
+    const tipoIVAComisionSopValue = tipoIVAComisionSoportado?.value || tipoIVAComisionSoportado;
+    if (isValuePresent(tipoIVAComisionSopValue)) {
+      deal.tipo_iva_comision_soportado = tipoIVAComisionSopValue;
+    }
+
+    if (fechaCaducidadCotizacion) {
+      const fecha = new Date(Date.UTC(
+        fechaCaducidadCotizacion.year,
+        fechaCaducidadCotizacion.month,
+        fechaCaducidadCotizacion.date,
+        0, 0, 0, 0
+      ));
+      deal.fecha_caducidad_cotizacion = fecha.getTime();
+    }
+
     if (Object.keys(contact).length) payload.contact = contact;
     if (Object.keys(company).length) payload.company = company;
     if (Object.keys(deal).length) payload.deal = deal;
@@ -274,13 +299,15 @@ const ClienteTab = ({
     tipoContenedor,
     tipoCliente,
     margen,
-    idioma,
     proyecto,
     codigoIntermediario,
     repercutirACliente,
     tipoComision,
     importeComision,
     tipoIVAComision,
+    tipoIVAComisionSoportado,
+    cargaPorPalets,
+    fechaCaducidadCotizacion,
   ]);
 
   /**
@@ -343,7 +370,6 @@ const ClienteTab = ({
   
   return (
     <Box>
-      {/* Error Alert */}
       {error && (
         <Box marginBottom="small">
           <Alert title="No se pudo guardar" variant="error">
@@ -364,7 +390,7 @@ const ClienteTab = ({
                 <Text format={{ fontWeight: "demibold" }}>
                   Nombre del Cliente:
                 </Text>
-                <Text>{nombreCliente}</Text>
+                <Text>{nombreEmpresa}</Text>
               </Flex>
 
               <Flex direction="row" justify="start" align="center" gap="large">
@@ -373,25 +399,26 @@ const ClienteTab = ({
                 </Text>
                 <Text>{country || "No especificado"}</Text>
               </Flex>
-
-              <Flex direction="row" justify="start" align="center" gap="large">
-                <Text format={{ fontWeight: "demibold" }}>
-                  Nombre de la Empresa:
-                </Text>
-                <Text>{nombreEmpresa}</Text>
-              </Flex>
             </Flex>
           </Tile>
         </Flex>
 
         {/* Form Inputs Section - Full width */}
         <Flex direction="column" gap="medium">
-          {/* Sale Configuration */}
+          <DateInput
+            label="Fecha de caducidad de la cotización"
+            name="fecha-caducidad-cotizacion"
+            description="Fecha límite de validez de esta oferta (por defecto un mes desde hoy)"
+            value={fechaCaducidadCotizacion}
+            onChange={(value) => updateField("fechaCaducidadCotizacion", value)}
+            format="ll"
+            required={true}
+          />
           <Select
             label="Tipo de Venta"
             name="tipo-venta"
             description="Seleccione el Incoterm aplicable a esta cotización"
-            placeholder="Seleccione un tipo de venta..."
+            placeholder="Seleccionar..."
             required={true}
             value={tipoVenta?.value || tipoVenta}
             onChange={(value) => updateSelectField("tipoVenta", value, tipoVentaOptions)}
@@ -403,7 +430,7 @@ const ClienteTab = ({
             label="Tipo de Contenedor"
             name="tipo-contenedor"
             description="Seleccione el tipo de contenedor para el envío"
-            placeholder="Seleccione un tipo de contenedor..."
+            placeholder="Seleccionar..."
             required={true}
             value={tipoContenedor?.value || tipoContenedor}
             onChange={(value) => updateSelectField("tipoContenedor", value, tipoContenedorOptions)}
@@ -411,11 +438,19 @@ const ClienteTab = ({
             tooltip="Tipo de contenedor o vehículo utilizado para el transporte"
           />
 
+          <Toggle
+            label="Carga por Palets"
+            name="carga-por-palets"
+            size="sm"
+            checked={cargaPorPalets || false}
+            onChange={(checked) => updateField("cargaPorPalets", checked)}
+          />
+
           <Select
             label="Tipo de Cliente"
             name="tipo-cliente"
             description="Clasificación del cliente (nacional o exportación)"
-            placeholder="Seleccione un tipo de cliente..."
+            placeholder="Seleccionar..."
             required={true}
             value={tipoCliente?.value || tipoCliente}
             onChange={(value) => updateSelectField("tipoCliente", value, tipoClienteOptions)}
@@ -423,12 +458,11 @@ const ClienteTab = ({
             tooltip="Determina si el cliente es nacional o de exportación"
           />
 
-          {/* Commercial Conditions */}
           <NumberInput
             label="% Margen"
             name="margen"
             description="Porcentaje de margen comercial a aplicar"
-            placeholder="0"
+            placeholder=""
             value={margen}
             onChange={(value) => updateField("margen", value)}
             min={0}
@@ -438,25 +472,11 @@ const ClienteTab = ({
             tooltip="Margen de beneficio sobre el coste total"
           />
 
-          {/* Document Language */}
-          <Select
-            label="Idioma"
-            name="idioma"
-            description="Idioma para la impresión de documentos"
-            placeholder="Seleccione un idioma..."
-            required={true}
-            value={idioma?.value || idioma}
-            onChange={(value) => updateSelectField("idioma", value, idiomaOptions)}
-            options={idiomaOptions}
-            tooltip="Idioma en el que se imprimirán los documentos de la cotización"
-          />
-
-          {/* Project Selection */}
           <Select
             label="Proyecto"
             name="proyecto"
             description="Proyecto o canal de origen"
-            placeholder="Seleccione un proyecto..."
+            placeholder="Seleccionar..."
             value={proyecto?.value || proyecto}
             onChange={(value) => updateSelectField("proyecto", value, proyectoOptions)}
             options={proyectoOptions}
@@ -465,10 +485,8 @@ const ClienteTab = ({
 
           <Divider size="small" />
 
-          {/* Intermediary and Commission Section */}
           <Heading>Intermediario y Comisiones</Heading>
 
-          {/* Show selected provider or search */}
           {proveedorComision ? (
             <Tile>
               <Flex direction="column" gap="small">
@@ -497,18 +515,16 @@ const ClienteTab = ({
             </Tile>
           ) : (
             <>
-              {/* Search for intermediary */}
               <SearchInput
                 label="Buscar Intermediario"
                 name="buscar-intermediario"
-                placeholder="Buscar intermediario por nombre..."
+                placeholder=""
                 value={searchCommissionProvider}
                 onChange={(value) => setSearchCommissionProvider(value)}
                 description="Busque un intermediario para precargar los campos de comisión"
                 tooltip="El código, tipo y valores se cargarán automáticamente al seleccionar"
               />
 
-              {/* Show search results */}
               {loadingProviders && (
                 <Flex direction="row" align="center" gap="small">
                   <LoadingSpinner size="xs" />
@@ -563,7 +579,7 @@ const ClienteTab = ({
                 label="Repercutir a Cliente"
                 name="repercutir-a-cliente"
                 description="¿Se repercute la comisión al cliente?"
-                placeholder="Seleccione una opción..."
+                placeholder="Seleccionar..."
                 value={repercutirACliente?.value || repercutirACliente}
                 onChange={(value) => updateSelectField("repercutirACliente", value, repercutirAClienteOptions)}
                 options={repercutirAClienteOptions}
@@ -574,7 +590,7 @@ const ClienteTab = ({
                 label="Tipo de Comisión"
                 name="tipo-comision"
                 description="Tipo de comisión a aplicar"
-                placeholder="Seleccione un tipo..."
+                placeholder="Seleccionar..."
                 value={tipoComision?.value || tipoComision}
                 onChange={(value) => updateSelectField("tipoComision", value, tipoComisionOptions)}
                 options={tipoComisionOptions}
@@ -585,7 +601,7 @@ const ClienteTab = ({
                 label="Importe Comisión (EUR)"
                 name="importe-comision"
                 description="Importe de la comisión en euros"
-                placeholder="0.000"
+                placeholder=""
                 value={importeComision}
                 onChange={(value) => updateField("importeComision", value)}
                 min={0}
@@ -594,21 +610,31 @@ const ClienteTab = ({
               />
 
               <Select
-                label="Tipo IVA Comisión"
+                label="Tipo IVA Comisión (Repercutido)"
                 name="tipo-iva-comision"
-                description="Tipo de IVA a aplicar a la comisión"
-                placeholder="Seleccione un tipo de IVA..."
+                description="Tipo de IVA repercutido a aplicar a la comisión"
+                placeholder="Seleccionar..."
                 value={tipoIVAComision?.value || tipoIVAComision}
                 onChange={(value) => updateSelectField("tipoIVAComision", value, tipoIVAOptions)}
                 options={tipoIVAOptions}
-                tooltip="Define el tipo de IVA que se aplicará a la comisión del intermediario"
+                tooltip="Define el tipo de IVA repercutido que se aplicará a la comisión del intermediario"
+              />
+
+              <Select
+                label="Tipo IVA Comisión (Soportado)"
+                name="tipo-iva-comision-soportado"
+                description="Tipo de IVA soportado a aplicar a la comisión"
+                placeholder="Seleccionar..."
+                value={tipoIVAComisionSoportado?.value || tipoIVAComisionSoportado}
+                onChange={(value) => updateSelectField("tipoIVAComisionSoportado", value, tipoIVASoportadoOptions)}
+                options={tipoIVASoportadoOptions}
+                tooltip="Define el tipo de IVA soportado que se aplicará a la comisión del intermediario"
               />
 
               <Divider size="small" />
             </>
           )}
 
-          {/* Validation Warning */}
           {hasValidationErrors && (
             <Alert title="Información Requerida" variant="warning">
               <Flex direction="column" gap="small">
@@ -619,7 +645,6 @@ const ClienteTab = ({
             </Alert>
           )}
 
-          {/* Navigation Button */}
           <Flex direction="row" justify="start">
             <Button
               variant="primary"

@@ -5,6 +5,7 @@ import {
   Divider,
   ButtonRow,
   Button,
+  Input,
   Select,
   TextArea,
   Text,
@@ -13,7 +14,7 @@ import {
   LoadingSpinner,
   Toggle,
 } from "@hubspot/ui-extensions";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   LOADING_MESSAGES,
   ERROR_MESSAGES,
@@ -25,12 +26,26 @@ import {
   convertTextToHTML,
 } from "../utils/api.utils";
 
+const DEFAULT_SHIPPER = `PROEX DRINKS GROUP, S.A\nAvda. Américo Vespucio 5\nEdif. Cartuja, bloque A, 2ª planta\n41092 Sevilla (Sevilla) España\nC.I.F A41992975`;
+
+const BANCO_HUBDB_KEY = {
+  "572001": "banco_sabadell",
+  "572003": "banco_la_caixa",
+};
+
+const getBancoHubDbKey = (value) => {
+  if (!value) return null;
+  if (value === "cotizacion_rapida") return "cotizacion_rapida";
+  return BANCO_HUBDB_KEY[value] || null;
+};
+
 const DocumentacionTab = ({
   context,
   onNavigate,
   documentacionData,
   setDocumentacionData,
   articulosSeleccionados = [],
+  contenedoresData,
   transitarioData,
 }) => {
   // Estado de carga y errores
@@ -91,8 +106,10 @@ const DocumentacionTab = ({
       // Si no hay idioma, no podemos cargar textos
       if (!idioma) return;
 
-      // Verificar si necesitamos cargar texto de banco
-      const necesitaTextoBanco = bancoClave && !documentacionData.textoBanco;
+      // Verificar si necesitamos cargar texto de banco (sólo si el value mapea a una clave HubDB)
+      const claveHubDbBanco = getBancoHubDbKey(bancoClave);
+      const necesitaTextoBanco =
+        !!claveHubDbBanco && !documentacionData.textoBanco;
       // Verificar si necesitamos cargar texto de forma de pago
       const necesitaTextoFormaPago =
         metodoPagoClave && !documentacionData.textoFormaPago;
@@ -118,23 +135,14 @@ const DocumentacionTab = ({
       let textoBaseOfertaPromise = Promise.resolve("");
 
       if (necesitaTextoBanco) {
-        const claveConPrefijo =
-          bancoClave.startsWith("banco_") || bancoClave === "cotizacion_rapida"
-            ? bancoClave
-            : `banco_${bancoClave}`;
-
-        // Determinar si es cotización rápida
-        let fetchOptions = {};
-        if (bancoClave === "cotizacion_rapida") {
-          fetchOptions = {
-            grupo: "bancos",
-            subgrupo: "cotizacion_rapida",
-          };
-        }
+        const fetchOptions =
+          bancoClave === "cotizacion_rapida"
+            ? { grupo: "bancos", subgrupo: "cotizacion_rapida" }
+            : {};
 
         textoBancoPromise = fetchTextosCotizacion(
           idioma,
-          claveConPrefijo,
+          claveHubDbBanco,
           fetchOptions
         );
       }
@@ -202,6 +210,13 @@ const DocumentacionTab = ({
     transitarioData?.cotizacion_rapida,
   ]);
 
+  // Inicializar shipper con valor por defecto si está vacío
+  useEffect(() => {
+    if (!isLoadingInitial && documentacionData != null && !documentacionData.shipper) {
+      setDocumentacionData((prev) => ({ ...prev, shipper: DEFAULT_SHIPPER }));
+    }
+  }, [isLoadingInitial, documentacionData?.shipper]);
+
   // Helper para actualizar el estado compartido
   const updateDocumentacionField = (field, value) => {
     setDocumentacionData({
@@ -209,6 +224,52 @@ const DocumentacionTab = ({
       [field]: value,
     });
   };
+
+  // Genera la descripción de mercancía para el certificado de origen
+  const generarDescripcionMercancia = useCallback((idioma) => {
+    const { contenedoresDefinidos = [], cantidadesContenedores = {} } = contenedoresData || {};
+    if (!contenedoresDefinidos.length || !articulosSeleccionados?.length) return "";
+
+    const cajasPorArticulo = {};
+    contenedoresDefinidos.forEach((contenedor) => {
+      const cantidad = cantidadesContenedores[contenedor.id] || 0;
+      (contenedor.articulos || []).forEach((art) => {
+        cajasPorArticulo[art.articuloId] = (cajasPorArticulo[art.articuloId] || 0) + art.numCajas * cantidad;
+      });
+    });
+
+    const idiomaLower = (idioma || "").toLowerCase();
+    const cajasText = idiomaLower === "en" ? "CASES" : idiomaLower === "fr" ? "CAISSES" : "CAJAS";
+
+    const lines = articulosSeleccionados
+      .filter((art) => cajasPorArticulo[art.id] > 0)
+      .map((art) => {
+        const nombre =
+          idiomaLower === "en" ? (art.name_en || art.nombre) :
+          idiomaLower === "fr" ? (art.name_fr || art.nombre) :
+          art.nombre;
+        return `${cajasPorArticulo[art.id]} ${cajasText} ${(nombre || "").toUpperCase()}`;
+      });
+
+    return lines.join("\n");
+  }, [contenedoresData, articulosSeleccionados]);
+
+  // Auto-generar descripción de mercancía cuando cambian los contenedores
+  const hasMountedContenedoresRef = useRef(false);
+  useEffect(() => {
+    const { contenedoresDefinidos = [] } = contenedoresData || {};
+    if (!contenedoresDefinidos.length || !articulosSeleccionados?.length) return;
+
+    if (!hasMountedContenedoresRef.current) {
+      hasMountedContenedoresRef.current = true;
+      // Primera carga real: respetar el valor ya guardado
+      if (documentacionData.certificadoOrigenMercancia) return;
+    }
+
+    const idioma = documentacionData.idiomaCotizacion?.value;
+    const text = generarDescripcionMercancia(idioma);
+    if (text) updateDocumentacionField("certificadoOrigenMercancia", text);
+  }, [contenedoresData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Al cambiar el idioma, se rellenan los textos
   const handleIdiomaChange = async (value) => {
@@ -222,7 +283,6 @@ const DocumentacionTab = ({
         },
         textoBanco: "",
         textoFormaPago: "",
-        textoInfoExpediente: "",
         textoBaseOferta: "",
       });
       return;
@@ -298,9 +358,9 @@ const DocumentacionTab = ({
       },
       textoBanco: textoBanco || documentacionData.textoBanco || "",
       textoFormaPago: textoFormaPago || documentacionData.textoFormaPago || "",
-      textoInfoExpediente: documentacionData.textoInfoExpediente || "",
       textoBaseOferta:
         textoBaseOferta || documentacionData.textoBaseOferta || "",
+      certificadoOrigenMercancia: generarDescripcionMercancia(value) || documentacionData.certificadoOrigenMercancia || "",
     });
 
     // Desactivar loading
@@ -311,47 +371,10 @@ const DocumentacionTab = ({
 
   // Handler para cambio de banco de cobro
   const handleBancoCobroChange = async (value) => {
-    // Si hay idioma seleccionado, obtener el texto del banco desde HubDB
     const idioma = documentacionData.idiomaCotizacion?.value;
+    const claveHubDb = getBancoHubDbKey(value);
 
-    if (idioma && value) {
-      // Activar loading
-      setIsLoadingTextoBanco(true);
-
-      // Agregar prefijo "banco_" a la clave antes de consultar HubDB
-      const claveConPrefijo = value.startsWith("banco_")
-        ? value
-        : `banco_${value}`;
-
-      // Determinar si es cotización rápida y preparar opciones
-      let fetchOptions = {};
-      if (value === "cotizacion_rapida") {
-        fetchOptions = {
-          grupo: "bancos",
-          subgrupo: "cotizacion_rapida",
-        };
-      }
-
-      const textoBanco = await fetchTextosCotizacion(
-        idioma,
-        claveConPrefijo,
-        fetchOptions
-      );
-
-      // Actualizar ambos campos en una sola llamada para evitar re-renders conflictivos
-      setDocumentacionData({
-        ...documentacionData,
-        bancoCobro: {
-          value: value,
-          options: documentacionData.bancoCobro?.options || [],
-        },
-        textoBanco: textoBanco || documentacionData.textoBanco || "",
-      });
-
-      // Desactivar loading
-      setIsLoadingTextoBanco(false);
-    } else if (!value) {
-      // Si se limpia el selector, vaciar el texto
+    if (!value) {
       setDocumentacionData({
         ...documentacionData,
         bancoCobro: {
@@ -360,13 +383,53 @@ const DocumentacionTab = ({
         },
         textoBanco: "",
       });
-    } else {
-      // Solo actualizar el banco si no hay idioma
+      return;
+    }
+
+    if (!claveHubDb) {
+      // Value sin plantilla en HubDB: dejar el campo vacío para edición manual
+      setDocumentacionData({
+        ...documentacionData,
+        bancoCobro: {
+          value: value,
+          options: documentacionData.bancoCobro?.options || [],
+        },
+        textoBanco: "",
+      });
+      return;
+    }
+
+    if (!idioma) {
       updateDocumentacionField("bancoCobro", {
         value: value,
         options: documentacionData.bancoCobro?.options || [],
       });
+      return;
     }
+
+    setIsLoadingTextoBanco(true);
+
+    const fetchOptions =
+      value === "cotizacion_rapida"
+        ? { grupo: "bancos", subgrupo: "cotizacion_rapida" }
+        : {};
+
+    const textoBanco = await fetchTextosCotizacion(
+      idioma,
+      claveHubDb,
+      fetchOptions
+    );
+
+    setDocumentacionData({
+      ...documentacionData,
+      bancoCobro: {
+        value: value,
+        options: documentacionData.bancoCobro?.options || [],
+      },
+      textoBanco: textoBanco || "",
+    });
+
+    setIsLoadingTextoBanco(false);
   };
 
   // Handler para cambio de método de pago plantilla
@@ -472,9 +535,12 @@ const DocumentacionTab = ({
 
           // Documentación
           direccion_fiscal: documentacionData.direccionFiscal || null,
+          direccion_de_entrega: documentacionData.direccionDeEntrega || null,
+          cif: documentacionData.cif || null,
+          referencia_cotizacion: documentacionData.referenciaCotizacion || null,
 
           // Documentación Logística
-          tramitar_carga: documentacionData.tramitarCarga || null,
+          desagregar_cotizacion: documentacionData.desagregarCotizacion || null,
           documentos_a_generar:
             documentacionData.documentosAGenerar?.value || null,
           texto_en_bl: isBLSelected
@@ -490,6 +556,7 @@ const DocumentacionTab = ({
           notify: documentacionData.notify || null,
           certificado_origen_mercancia:
             documentacionData.certificadoOrigenMercancia || null,
+          observaciones: documentacionData.observaciones || null,
 
           // Método de Pago & Textos
           metodo_pago_plantilla:
@@ -497,8 +564,6 @@ const DocumentacionTab = ({
           banco_cobro: documentacionData.bancoCobro?.value || null,
           texto_adicional_metodo_pago:
             documentacionData.textoAdicionalMetodoPago || null,
-          texto_firma_aceptacion_cliente:
-            documentacionData.textoFirmaAceptacionCliente || null,
 
           // Textos Generados - Convertir a HTML antes de guardar
           texto_banco: documentacionData.textoBanco
@@ -506,9 +571,6 @@ const DocumentacionTab = ({
             : null,
           texto_forma_pago: documentacionData.textoFormaPago
             ? convertTextToHTML(documentacionData.textoFormaPago)
-            : null,
-          texto_informacion_expediente: documentacionData.textoInfoExpediente
-            ? convertTextToHTML(documentacionData.textoInfoExpediente)
             : null,
           texto_base_oferta: documentacionData.textoBaseOferta
             ? convertTextToHTML(documentacionData.textoBaseOferta)
@@ -572,7 +634,6 @@ const DocumentacionTab = ({
     <Box>
       <Heading>Documentación y Textos</Heading>
 
-      {/* Mostrar error si existe */}
       {saveError && (
         <Alert title="Error al guardar" variant="error">
           {saveError}
@@ -580,21 +641,102 @@ const DocumentacionTab = ({
       )}
 
       <Flex direction="column" gap="medium">
-        {/* Dirección Fiscal */}
+        <Flex direction="row" gap="small">
+          <Box flex={1}>
+            <TextArea
+              label="Dirección Fiscal"
+              name="direccion_fiscal"
+              description="Dirección fiscal completa de la empresa (incluir calle, número, CP, ciudad y país)"
+              placeholder=""
+              rows={3}
+              value={documentacionData.direccionFiscal || ""}
+              onChange={(value) =>
+                updateDocumentacionField("direccionFiscal", value)
+              }
+              required={true}
+            />
+          </Box>
+          <Box flex={1}>
+            <TextArea
+              label="Dirección de Entrega"
+              name="direccion_de_entrega"
+              description="Dirección donde se entregará la mercancía (si aplica)."
+              placeholder=""
+              rows={3}
+              value={documentacionData.direccionDeEntrega || ""}
+              onChange={(value) =>
+                updateDocumentacionField("direccionDeEntrega", value)
+              }
+            />
+          </Box>
+        </Flex>
+
         <Box>
-          <TextArea
-            label="Dirección Fiscal"
-            name="direccion_fiscal"
-            description="Dirección fiscal completa de la empresa (incluir calle, número, CP, ciudad y país)"
-            placeholder="Ej: Calle Principal 123, 28001 Madrid, España"
-            rows={3}
-            value={documentacionData.direccionFiscal || ""}
-            onChange={(value) =>
-              updateDocumentacionField("direccionFiscal", value)
-            }
-            required={true}
+          <Input
+            label="NIF del Cliente"
+            name="cif"
+            description="NIF/CIF del cliente para esta cotización (no modifica el NIF de la empresa)"
+            placeholder=""
+            value={documentacionData.cif || ""}
+            onChange={(value) => updateDocumentacionField("cif", value)}
           />
         </Box>
+
+        <Box>
+          <Input
+            label="Referencia del cliente"
+            name="referencia_cotizacion"
+            description="Si el cliente facilita una referencia propia, aparecerá en la proforma y demás documentos."
+            placeholder=""
+            value={documentacionData.referenciaCotizacion || ""}
+            onChange={(value) =>
+              updateDocumentacionField("referenciaCotizacion", value)
+            }
+          />
+        </Box>
+
+        {/* Shipper | Consignee | Notify */}
+        <Flex direction="row" gap="small">
+          <Box flex={1}>
+            <TextArea
+              label="Shipper (Exportador)"
+              name="shipper"
+              description="Nombre y dirección completa del remitente/exportador"
+              placeholder=""
+              rows={4}
+              value={documentacionData.shipper || ""}
+              onChange={(value) =>
+                updateDocumentacionField("shipper", value)
+              }
+            />
+          </Box>
+          <Box flex={1}>
+            <TextArea
+              label="Consignee (Importador)"
+              name="consignee"
+              description="Nombre y dirección completa del destinatario/consignatario"
+              placeholder=""
+              rows={4}
+              value={documentacionData.consignee || ""}
+              onChange={(value) =>
+                updateDocumentacionField("consignee", value)
+              }
+            />
+          </Box>
+          <Box flex={1}>
+            <TextArea
+              label="Notify (Notificar a)"
+              name="notify"
+              description="Parte a quien notificar la llegada de la mercancía en destino"
+              placeholder=""
+              rows={4}
+              value={documentacionData.notify || ""}
+              onChange={(value) =>
+                updateDocumentacionField("notify", value)
+              }
+            />
+          </Box>
+        </Flex>
 
         <Divider />
 
@@ -608,12 +750,12 @@ const DocumentacionTab = ({
           <Flex direction="column" gap="small">
             <Box>
               <Toggle
-                label="Tramitar Carga"
-                name="tramitar_carga"
+                label="Desglosar cotización por contenedor"
+                name="desagregar_cotizacion"
                 size="sm"
-                checked={documentacionData.tramitarCarga || false}
+                checked={documentacionData.desagregarCotizacion || false}
                 onChange={(checked) =>
-                  updateDocumentacionField("tramitarCarga", checked)
+                  updateDocumentacionField("desagregarCotizacion", checked)
                 }
               />
             </Box>
@@ -667,7 +809,7 @@ const DocumentacionTab = ({
                     label="Texto para Bill of Lading (BL)"
                     name="texto_bl"
                     description="Descripción de la mercancía que aparecerá en el conocimiento de embarque"
-                    placeholder="Ej: Frutas y vegetales frescos, envasados en cajas de cartón..."
+                    placeholder=""
                     rows={2}
                     value={documentacionData.textoEnBl || ""}
                     onChange={(value) =>
@@ -685,7 +827,7 @@ const DocumentacionTab = ({
                   label="Comentarios de Logística"
                   name="comentarios_logistica"
                   description="Notas internas del departamento de logística"
-                  placeholder="Observaciones sobre el manejo, almacenaje, etc..."
+                  placeholder=""
                   rows={2}
                   value={documentacionData.comentariosLogistica || ""}
                   onChange={(value) =>
@@ -699,7 +841,7 @@ const DocumentacionTab = ({
                   label="Instrucciones para el Transitario"
                   name="comentarios_transitario"
                   description="Indicaciones específicas para el agente de transporte"
-                  placeholder="Instrucciones sobre despacho aduanero, manejo especial, etc..."
+                  placeholder=""
                   rows={2}
                   value={documentacionData.comentariosTransitario || ""}
                   onChange={(value) =>
@@ -721,70 +863,37 @@ const DocumentacionTab = ({
             de Comercio
           </Text>
           <Flex direction="column" gap="small">
-            {/* Primera fila: Importador | Exportador */}
-            <Flex direction="row" gap="small">
-              <Box flex={1}>
-                <TextArea
-                  label="Consignee (Importador)"
-                  name="consignee"
-                  description="Nombre y dirección completa del destinatario/consignatario"
-                  placeholder="Empresa XYZ S.L.&#10;Calle Comercio 45&#10;08001 Barcelona, España"
-                  rows={4}
-                  value={documentacionData.consignee || ""}
-                  onChange={(value) =>
-                    updateDocumentacionField("consignee", value)
-                  }
-                />
-              </Box>
+            <Box>
+              <TextArea
+                label="Descripción de Mercancía"
+                name="certificado_origen_mercancia"
+                description="Descripción detallada de la mercancía para el certificado de origen"
+                placeholder=""
+                rows={4}
+                value={documentacionData.certificadoOrigenMercancia || ""}
+                onChange={(value) =>
+                  updateDocumentacionField(
+                    "certificadoOrigenMercancia",
+                    value
+                  )
+                }
+              />
+            </Box>
 
-              <Box flex={1}>
-                <TextArea
-                  label="Shipper (Exportador)"
-                  name="shipper"
-                  description="Nombre y dirección completa del remitente/exportador"
-                  placeholder="Proex Foods S.A.&#10;Calle Industria 12&#10;46001 Valencia, España"
-                  rows={4}
-                  value={documentacionData.shipper || ""}
-                  onChange={(value) =>
-                    updateDocumentacionField("shipper", value)
-                  }
-                />
-              </Box>
-            </Flex>
-
-            {/* Segunda fila: Notificar a | Mercancía CO */}
-            <Flex direction="row" gap="small">
-              <Box flex={1}>
-                <TextArea
-                  label="Notify (Notificar a)"
-                  name="notify"
-                  description="Parte a quien notificar la llegada de la mercancía en destino"
-                  placeholder="Empresa de contacto&#10;Persona responsable&#10;Teléfono y email"
-                  rows={4}
-                  value={documentacionData.notify || ""}
-                  onChange={(value) =>
-                    updateDocumentacionField("notify", value)
-                  }
-                />
-              </Box>
-
-              <Box flex={1}>
-                <TextArea
-                  label="Descripción de Mercancía"
-                  name="certificado_origen_mercancia"
-                  description="Descripción detallada de la mercancía para el certificado de origen"
-                  placeholder="Ej: Frutas frescas (naranjas, mandarinas) de origen España, código arancelario 0805..."
-                  rows={4}
-                  value={documentacionData.certificadoOrigenMercancia || ""}
-                  onChange={(value) =>
-                    updateDocumentacionField(
-                      "certificadoOrigenMercancia",
-                      value
-                    )
-                  }
-                />
-              </Box>
-            </Flex>
+            {/* Tercera fila: Observaciones */}
+            <Box>
+              <TextArea
+                label="Observaciones"
+                name="observaciones"
+                description="Observaciones para el certificado de origen"
+                placeholder=""
+                rows={3}
+                value={documentacionData.observaciones || ""}
+                onChange={(value) =>
+                  updateDocumentacionField("observaciones", value)
+                }
+              />
+            </Box>
           </Flex>
         </Box>
 
@@ -798,13 +907,12 @@ const DocumentacionTab = ({
             cotización
           </Text>
           <Flex direction="column" gap="small">
-            {/* Selector Global de Idioma */}
             <Box>
               <Select
                 label="Idioma de la Cotización"
                 name="idioma_cotizacion"
                 description="Seleccione el idioma en el que se generará la documentación comercial"
-                placeholder="Seleccione el idioma..."
+                placeholder="Seleccionar..."
                 value={documentacionData.idiomaCotizacion?.value || ""}
                 onChange={handleIdiomaChange}
                 options={documentacionData.idiomaCotizacion?.options || []}
@@ -817,7 +925,7 @@ const DocumentacionTab = ({
                 label="Texto Base de la Oferta Comercial"
                 name="texto_base_oferta"
                 description="Introducción y condiciones generales de la oferta (se carga automáticamente al seleccionar idioma)"
-                placeholder="Seleccione un idioma para cargar la plantilla o escriba el texto personalizado..."
+                placeholder=""
                 value={documentacionData.textoBaseOferta || ""}
                 onChange={(value) =>
                   updateDocumentacionField("textoBaseOferta", value)
@@ -833,7 +941,7 @@ const DocumentacionTab = ({
                 label="Plantilla de Método de Pago"
                 name="metodo_pago_plantilla"
                 description="Seleccione el tipo de condición de pago (transferencia, L/C, etc.)"
-                placeholder="Seleccione una plantilla de pago..."
+                placeholder="Seleccionar..."
                 value={documentacionData.metodoPagoPlantilla?.value || ""}
                 onChange={handleMetodoPagoChange}
                 options={documentacionData.metodoPagoPlantilla?.options || []}
@@ -846,7 +954,7 @@ const DocumentacionTab = ({
                 label="Condiciones de Pago"
                 name="texto_forma_pago"
                 description="Texto con los términos y plazos de pago (se carga automáticamente al seleccionar plantilla)"
-                placeholder="Seleccione una plantilla para cargar el texto o escriba personalizado..."
+                placeholder=""
                 value={documentacionData.textoFormaPago || ""}
                 onChange={(value) =>
                   updateDocumentacionField("textoFormaPago", value)
@@ -862,7 +970,7 @@ const DocumentacionTab = ({
                 label="Información Adicional de Pago"
                 name="texto_adicional_metodo_pago"
                 description="Notas complementarias o aclaraciones sobre las condiciones de pago (opcional)"
-                placeholder="Ej: Descuentos por pronto pago, penalizaciones por mora, etc..."
+                placeholder=""
                 rows={3}
                 value={documentacionData.textoAdicionalMetodoPago || ""}
                 onChange={(value) =>
@@ -876,7 +984,7 @@ const DocumentacionTab = ({
                 label="Banco para Recepción de Pagos"
                 name="banco_cobro"
                 description="Seleccione la cuenta bancaria donde se recibirán los pagos"
-                placeholder="Seleccione el banco de cobro..."
+                placeholder="Seleccionar..."
                 value={documentacionData.bancoCobro?.value || ""}
                 onChange={handleBancoCobroChange}
                 options={documentacionData.bancoCobro?.options || []}
@@ -889,7 +997,7 @@ const DocumentacionTab = ({
                 label="Datos Bancarios"
                 name="texto_banco"
                 description="Información completa de la cuenta bancaria (se carga automáticamente al seleccionar banco)"
-                placeholder="Seleccione un banco para cargar los datos o escriba personalizado..."
+                placeholder=""
                 value={documentacionData.textoBanco || ""}
                 onChange={(value) =>
                   updateDocumentacionField("textoBanco", value)
@@ -900,47 +1008,9 @@ const DocumentacionTab = ({
               />
             </Box>
 
-            <Divider />
-
-            <Box>
-              <Heading as="h4">2.1 Textos Complementarios (Opcional)</Heading>
-              <Text format={{ fontWeight: "normal" }}>
-                Información adicional que puede incluirse en la cotización según
-                necesidad
-              </Text>
-            </Box>
-
-            <Box>
-              <TextArea
-                label="Información del Expediente"
-                name="texto_info_expediente"
-                description="Detalles específicos, condiciones particulares o notas sobre este expediente (opcional)"
-                placeholder="Ej: Envío urgente, requiere temperatura controlada, mercancía perecedera..."
-                value={documentacionData.textoInfoExpediente || ""}
-                onChange={(value) =>
-                  updateDocumentacionField("textoInfoExpediente", value)
-                }
-                rows={3}
-              />
-            </Box>
-
-            <Box>
-              <TextArea
-                label="Texto de Firma y Aceptación"
-                name="texto_firma_aceptacion_cliente"
-                description="Cláusula legal para la firma y aceptación del cliente (opcional)"
-                placeholder="Ej: El cliente acepta todas las condiciones establecidas en esta oferta..."
-                rows={3}
-                value={documentacionData.textoFirmaAceptacionCliente || ""}
-                onChange={(value) =>
-                  updateDocumentacionField("textoFirmaAceptacionCliente", value)
-                }
-              />
-            </Box>
           </Flex>
         </Box>
 
-        {/* Botones de navegación */}
         <ButtonRow>
           <Button
             variant="secondary"

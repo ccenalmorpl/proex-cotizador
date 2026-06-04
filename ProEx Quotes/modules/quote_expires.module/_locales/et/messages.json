@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Pakkumus aegub",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Pakkumus aegub:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Pakkumuse aegumise tekst",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Betrag",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Kommentare",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Kommentare von",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Dieses Angebot ist abgelaufen.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Weitere Informationen erhalten Sie von Ihrem Vertriebsmitarbeiter",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Artikel & Beschreibung",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Anfallende Steuern & Sonstige Gebühren",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Vorbereitet von:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Preis",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Produkte & Services",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Kaufbedingungen",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Menge",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Angebot erstellt von:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Zwischensummen",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Gesamt",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Einzelpreis",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Gutschrift",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Nummer der Gutschrift",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Summe der Gutschrift",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Auftragsnr.",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Datum der Gutschrift",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Alle Gebühren werden in {{ currency_code }} aufgeführt und unterliegen der Umsatzsteuer (falls zutreffend).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Tabelle mit den Artikeln der Gutschrift",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Menge",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Steuer",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "Steuer",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Steuer",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "nach {{ discount_amount }} Rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Rechnung",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Rechnungsnummer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Rechnungsdatum",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Alle Gebühren werden in {{ currency_code }} aufgeführt und unterliegen der Umsatzsteuer (falls zutreffend).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Bestellnummer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Tabelle mit den Artikeln der Rechnung",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "nach {{ discount_amount }} Rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Menge",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Zahlung",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Restschuld",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Steuer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "Steuer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Steuer",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Rechnung an",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Versand an",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Steueradresse",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Fälligkeitsdatum",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "Rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }} % Rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }} % Rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Zwischensumme",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Zukünftige Zahlungen",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Zahlungen, die später fällig sind.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Zusammenfassung",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Dieses Angebot ist nicht verfügbar.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Weitere Informationen erhalten Sie von Ihrem Vertriebsmitarbeiter",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "n. z.",
+    "description": "",
+    "placeholders": null
+  }
+}

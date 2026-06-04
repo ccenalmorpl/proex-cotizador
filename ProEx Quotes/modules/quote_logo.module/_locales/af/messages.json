@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Maatskappylogoprent",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Dit is nie van toepassing as die versteklogo geïgnoreer word nie",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Logo maksimum hoogte",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Jou kwotasies sal outomaties die maatskappylogo van Rekeningstandaardstellings of Webwerfbladsye wys as jy dit opgestel het. Jy kan dit oorheers deur die wisselaar hier onder te gebruik.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Oorheers standaardlogo in hierdie sjabloon",
+    "description" : "",
+    "placeholders" : null
+  }
+}

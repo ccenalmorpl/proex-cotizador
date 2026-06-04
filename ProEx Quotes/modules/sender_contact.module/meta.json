@@ -1,0 +1,11 @@
+{
+  "external_js" : [ "https://static.hsappstatic.com/user-avatar-js/ex/user-avatar.js" ],
+  "global" : false,
+  "content_types" : [ "QUOTE_TEMPLATE", "QUOTE" ],
+  "master_language" : "en",
+  "host_template_types" : [ "QUOTE" ],
+  "module_id" : 188472829057,
+  "label" : "Sender contact",
+  "icon" : "user",
+  "is_available_for_new_content" : true
+}

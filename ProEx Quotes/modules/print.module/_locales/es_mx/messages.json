@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Imprimir cotización",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Texto del botón",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Imprimir",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Buyer company",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Endereço postal principal da empresa do comprador",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Localidade, distrito e código postal da empresa do comprador",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "País da empresa do comprador",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Nome da empresa do comprador",
+    "description" : "",
+    "placeholders" : null
+  }
+}

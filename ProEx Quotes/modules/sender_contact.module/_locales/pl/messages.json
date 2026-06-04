@@ -1,0 +1,72 @@
+{
+  "contact_information.default" : {
+    "message" : "<div><b>{{ ptoken_sender_full_name }}</b></div><div>{{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_email', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_phone', '') }}</div>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "contact_information.label" : {
+    "message" : "Informacje o kontakcie",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h1" : {
+    "message" : "H1",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h2" : {
+    "message" : "H2",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h3" : {
+    "message" : "H3",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h4" : {
+    "message" : "H4",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h5" : {
+    "message" : "H5",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h6" : {
+    "message" : "H6",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.help_text" : {
+    "message" : "Wybierz poziom swojego nagłówka. Najwyższy jest H1, następnie H2 itd.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.label" : {
+    "message" : "Poziom nagłówka",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_text.default" : {
+    "message" : "Pytania? Skontaktuj się ze mną",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_text.label" : {
+    "message" : "Treść nagłówka",
+    "description" : "",
+    "placeholders" : null
+  },
+  "include_hubspot_avatar.label" : {
+    "message" : "Uwzględnij awatar nadawcy HubSpot",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Dane nadawcy",
+    "description" : "",
+    "placeholders" : null
+  }
+}

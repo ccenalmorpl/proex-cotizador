@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Vásárló kapcsolattartói",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "Vásárlói kapcsolat e-mail-címe",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Vásárló kapcsolattartójának beosztása",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Vásárlói kapcsolat neve",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Vásárlói kapcsolat telefonszáma",
+    "description" : "",
+    "placeholders" : null
+  }
+}

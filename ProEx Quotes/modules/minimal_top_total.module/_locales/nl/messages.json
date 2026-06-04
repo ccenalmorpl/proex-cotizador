@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Nu verschuldigd",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Dit label vervangt 'Tekst totaalbedrag prijsopgave' indien er na het afrekenen betalingen verschuldigd zijn.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Tekst totaal nu verschuldigd",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Totaal",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "De tekst voor het totaalbedrag van de prijsopgave",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Tekst totaalbedrag prijsopgave",
+    "description" : "",
+    "placeholders" : null
+  }
+}

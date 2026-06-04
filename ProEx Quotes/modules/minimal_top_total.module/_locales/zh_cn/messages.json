@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "现在到期",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "当结账后有到期付款时，此标签会替换“报价总计文本”。",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "现在到期总额文本",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "报价总计",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "总计",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "报价总金额的文本",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "报价总计文本",
+    "description" : "",
+    "placeholders" : null
+  }
+}

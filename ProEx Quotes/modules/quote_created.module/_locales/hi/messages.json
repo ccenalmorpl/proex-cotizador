@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "क्वोट बनाया गया है",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "क्वोट बनाया गया:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "क्वोट क्रिएटेड टेक्स्ट",
+    "description" : "",
+    "placeholders" : null
+  }
+}

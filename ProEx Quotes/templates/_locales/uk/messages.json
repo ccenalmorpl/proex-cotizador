@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Сума",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Коментарі",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Коментарі від",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Сплив строк дії цієї цінової пропозиції",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Зверніться до торгового представника для отримання докладної інформації.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Товар і опис",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Інші збори",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Ким підготовлено:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Ціна",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Продукти й послуги",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Умови купівлі",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Кількість",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Ким створено цінову пропозицію:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Проміжні суми",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Загалом",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Ціна за одиницю",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Кредитне авізо",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Номер кредитного авізо",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Загальна сума кредитного авізо",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "№ рахунку до сплати",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Дата кредитного авізо",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Усі збори вказані в {{ currency_code }} і підлягають оподаткуванню податком із продажу (якщо застосовно).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Таблиця позицій у кредитному авізо",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Кількість",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Податок",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "податок",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Податок",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "після знижки {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Рахунок-фактура",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Номер рахунку-фактури",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Дата створення рахунку-фактури",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Усі збори вказані в {{ currency_code }} і підлягають оподаткуванню податком з продажу (якщо застосовно).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Номер замовлення на постачання",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Таблиця позицій у рахунку",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "після {{ discount_amount }} знижки",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Кількість",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Платіж",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Залишок до погашення",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Податок",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "податок",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Податок",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Адресат виставлення рахунку",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Доставити на адресу",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Податкова адреса",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Дата сплати",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "знижка",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% знижки",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% знижки",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Загальна сума",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Подальші платежі",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Виплати, що підлягають сплаті пізніше.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Огляд",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Ця цінова пропозиція недоступна.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Зверніться до торгового представника для отримання докладної інформації.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Немає даних",
+    "description": "",
+    "placeholders": null
+  }
+}

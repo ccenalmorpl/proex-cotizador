@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "买方公司",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "买方公司主要地址",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "买方公司所在城市、省/直辖市/自治区和邮编",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "买方公司所在国家/地区",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "买方公司名称",
+    "description" : "",
+    "placeholders" : null
+  }
+}

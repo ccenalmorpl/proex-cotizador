@@ -1,0 +1,11 @@
+[ {
+  "id" : "button_text",
+  "name" : "button_text",
+  "label" : "Button text",
+  "required" : false,
+  "locked" : false,
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text",
+  "default" : "Print quote"
+} ]

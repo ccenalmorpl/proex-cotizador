@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Εκτύπωση προσφοράς",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Κείμενο κουμπιού",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Εκτύπωση",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Skriv ut offert",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Knapptext",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Skriv ut",
+    "description" : "",
+    "placeholders" : null
+  }
+}

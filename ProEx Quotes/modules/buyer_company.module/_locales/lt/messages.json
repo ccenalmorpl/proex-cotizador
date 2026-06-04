@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Buyer company",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Pirkėjo įmonės pagrindinis adresas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Pirkėjo įmonės miestas, valstybė ir pašto indeksas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Pirkėjo įmonės šalis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Pirkėjo įmonės pavadinimas",
+    "description" : "",
+    "placeholders" : null
+  }
+}

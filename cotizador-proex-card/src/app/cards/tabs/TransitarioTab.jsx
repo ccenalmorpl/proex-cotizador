@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Heading,
@@ -21,6 +21,7 @@ import {
 } from "@hubspot/ui-extensions";
 import { hubspot } from "@hubspot/ui-extensions";
 import { API_CONFIG } from "../config";
+import { resolveIVA } from "../utils/iva.utils";
 
 const TransitarioTab = ({
   context,
@@ -31,6 +32,10 @@ const TransitarioTab = ({
   clienteData,
   tipoVentaOptions,
   tipoIVAOptions = [],
+  tipoIVASoportadoOptions = [],
+  ivaFletesDefaults = null,
+  setIvaFletesDefaults,
+  selectedTab,
 }) => {
   // Loading and error states
   const [loading, setLoading] = useState(true);
@@ -62,6 +67,8 @@ const TransitarioTab = ({
   const [loadingRutas, setLoadingRutas] = useState(false);
   const [rutasError, setRutasError] = useState(null);
   const [cotizacionRapida, setCotizacionRapida] = useState(false);
+  const rutasRequestIdRef = useRef(0);
+  const [tabEntryTick, setTabEntryTick] = useState(0);
 
   // Use shared state from parent
   const {
@@ -71,17 +78,19 @@ const TransitarioTab = ({
     localidadDestino,
     precioOrigen: precioOrigenShared,
     precioDestino: precioDestinoShared,
-    fechaValidez: fechaValidezShared,
     diasLibres,
     naviera,
     almacen,
     rutaTerrestreSeleccionada,
     rutaMaritimaSeleccionada,
     tipoIVAFletes,
+    tipoIVAFletesSoportado,
   } = transitarioData;
 
   // Determinar campos requeridos según tipo de venta
   const tipoVenta = clienteData?.tipoVenta || "";
+  const isEXW = tipoVenta?.toUpperCase().replace(/\s+/g, "_") === "EXW";
+  const isDAPTerrestre = ["DAP TERRESTRE", "DAP_TERRESTRE"].includes(tipoVenta);
   const requiresPuertoSalida = [
     "FOB",
     "CFR",
@@ -104,6 +113,10 @@ const TransitarioTab = ({
 
   // Determinar step names y current step para el StepIndicator
   const getRouteSteps = () => {
+    if (isDAPTerrestre) {
+      return ["Localidad de Carga", "Localidad Destino"];
+    }
+
     const steps = ["Localidad de Carga"];
 
     if (requiresPuertoSalida) {
@@ -159,10 +172,11 @@ const TransitarioTab = ({
 
   const currentStep = getCurrentStep();
 
-  // Local state for prices and date
+  // Local state for prices and dates
   const [precioOrigen, setPrecioOrigen] = useState(precioOrigenShared);
   const [precioDestino, setPrecioDestino] = useState(precioDestinoShared);
-  const [fechaValidez, setFechaValidez] = useState(fechaValidezShared);
+  const [fechaCaducidadSalida, setFechaCaducidadSalida] = useState(transitarioData.fechaCaducidadFleteSalida);
+  const [fechaCaducidadDestino, setFechaCaducidadDestino] = useState(transitarioData.fechaCaducidadFleteDestino);
 
   // Helper to update shared state
   const updateTransitarioField = (field, value) => {
@@ -173,32 +187,37 @@ const TransitarioTab = ({
   };
 
   /**
-   * Auto-select default IVA type based on tipoResidente
+   * Auto-select default IVA fletes from product-resolved defaults (Fase 4E).
+   * Priority: persisted value > product-resolved > residency fallback.
+   * Only runs when ivaFletesDefaults becomes available from backend.
    */
   useEffect(() => {
-    if (
-      !tipoIVAFletes &&
-      clienteData?.tipoResidente &&
-      tipoIVAOptions.length > 0
-    ) {
-      let defaultIVA = "";
-      const tipoResidente = clienteData.tipoResidente.toUpperCase();
+    if (!ivaFletesDefaults || !clienteData?.tipoResidente) return;
 
-      if (tipoResidente === "EXTRANJERO") {
-        defaultIVA = "EX";
-      } else if (tipoResidente === "EUROPA") {
-        defaultIVA = "EI21";
-      } else {
-        defaultIVA = "R21";
-      }
-
-      // Verify the IVA option exists
-      const ivaOption = tipoIVAOptions.find((opt) => opt.value === defaultIVA);
-      if (ivaOption) {
-        updateTransitarioField("tipoIVAFletes", defaultIVA);
-      }
+    if (!tipoIVAFletes && tipoIVAOptions.length > 0) {
+      const resolved = resolveIVA({
+        currentValue: tipoIVAFletes,
+        productResolvedValue: ivaFletesDefaults.repercutido,
+        product: null,
+        tipoResidente: clienteData.tipoResidente,
+        categoria: "repercutido",
+        options: tipoIVAOptions,
+      });
+      if (resolved) updateTransitarioField("tipoIVAFletes", resolved);
     }
-  }, [clienteData?.tipoResidente, tipoIVAOptions, tipoIVAFletes]);
+
+    if (!tipoIVAFletesSoportado && tipoIVASoportadoOptions.length > 0) {
+      const resolved = resolveIVA({
+        currentValue: tipoIVAFletesSoportado,
+        productResolvedValue: ivaFletesDefaults.soportado,
+        product: null,
+        tipoResidente: clienteData.tipoResidente,
+        categoria: "soportado",
+        options: tipoIVASoportadoOptions,
+      });
+      if (resolved) updateTransitarioField("tipoIVAFletesSoportado", resolved);
+    }
+  }, [ivaFletesDefaults, clienteData?.tipoResidente, tipoIVAOptions, tipoIVASoportadoOptions, tipoIVAFletes, tipoIVAFletesSoportado]);
 
   // Helper para actualizar campos select con estructura {value, options}
   const updateSelectField = useCallback(
@@ -210,6 +229,9 @@ const TransitarioTab = ({
     },
     [setTransitarioData]
   );
+
+  const readSelectValue = (v) =>
+    v && typeof v === "object" ? v.value || "" : v || "";
 
   // Load transit data on component mount
   useEffect(() => {
@@ -289,16 +311,27 @@ const TransitarioTab = ({
             );
           }
 
-          // Fecha caducidad
-          if (data.fecha_caducidad) {
-            const fecha = new Date(data.fecha_caducidad);
+          // Fechas caducidad flete
+          if (data.fecha_caducidad_flete_salida) {
+            const fecha = new Date(data.fecha_caducidad_flete_salida);
             const dateObject = {
               year: fecha.getFullYear(),
               month: fecha.getMonth(),
               date: fecha.getDate(),
             };
-            setFechaValidez(dateObject);
-            updateTransitarioField("fechaValidez", dateObject);
+            setFechaCaducidadSalida(dateObject);
+            updateTransitarioField("fechaCaducidadFleteSalida", dateObject);
+          }
+
+          if (data.fecha_caducidad_flete_destino) {
+            const fecha = new Date(data.fecha_caducidad_flete_destino);
+            const dateObject = {
+              year: fecha.getFullYear(),
+              month: fecha.getMonth(),
+              date: fecha.getDate(),
+            };
+            setFechaCaducidadDestino(dateObject);
+            updateTransitarioField("fechaCaducidadFleteDestino", dateObject);
           }
 
           // Cotización Rápida
@@ -314,6 +347,19 @@ const TransitarioTab = ({
             setCotizacionRapida(isRapida);
             // Actualizar también en el estado compartido
             updateTransitarioField("cotizacionRapida", isRapida);
+          }
+
+          // IVA Fletes (persisted values from Deal)
+          if (data.tipo_iva_fletes) {
+            updateTransitarioField("tipoIVAFletes", data.tipo_iva_fletes);
+          }
+          if (data.tipo_iva_fletes_soportado) {
+            updateTransitarioField("tipoIVAFletesSoportado", data.tipo_iva_fletes_soportado);
+          }
+
+          // Store product-resolved IVA defaults (Fase 4E)
+          if (data.iva_fletes_defaults && setIvaFletesDefaults) {
+            setIvaFletesDefaults(data.iva_fletes_defaults);
           }
         }
 
@@ -379,71 +425,57 @@ const TransitarioTab = ({
     fetchTransitData();
   }, [context]);
 
-  /**
-   * Build rutas API URL with query parameters for puerto_salida and puerto_destino
-   */
-  const buildRutasUrl = useCallback(
-    (dealId) => {
+  useEffect(() => {
+    const fetchRutas = async () => {
+      if (transitarioSeleccionado) return;
+
+      const dealId = context?.crm?.objectId;
+      if (!dealId) return;
+
+      if (!tipoVenta) return;
+
+      if (isDAPTerrestre) {
+        const localidadDestinoValue = readSelectValue(localidadDestino);
+        if (!localidadDestinoValue) {
+          setRutasTerrestres([]);
+          setRutasMaritimas([]);
+          return;
+        }
+      } else if (requiresPuertoSalida) {
+        const puertoSalidaValue = readSelectValue(puertoSalida);
+        if (!puertoSalidaValue) return;
+      }
+
       const params = new URLSearchParams();
+      if (cotizacionRapida) params.append("include_expired", "true");
 
-      // Add include_expired parameter if cotizacionRapida is true
-      if (cotizacionRapida) {
-        params.append("include_expired", "true");
-      }
-
-      // Add puerto_salida and puerto_destino from current select values
-      // This ensures we get routes for the currently selected ports even if not saved to deal yet
-      // Extract value from object structure {value, options} if present
-      const puertoSalidaValue = puertoSalida?.value || puertoSalida;
-      const puertoDestinoValue = puertoDestino?.value || puertoDestino;
-
-      if (puertoSalidaValue) {
-        params.append("puerto_salida", puertoSalidaValue);
-      }
-      if (puertoDestinoValue) {
-        params.append("puerto_destino", puertoDestinoValue);
+      if (isDAPTerrestre) {
+        params.append("localidad_destino", readSelectValue(localidadDestino));
+      } else {
+        const ps = readSelectValue(puertoSalida);
+        const pd = readSelectValue(puertoDestino);
+        if (ps) params.append("puerto_salida", ps);
+        if (pd) params.append("puerto_destino", pd);
       }
 
       const queryString = params.toString();
-      return `${API_CONFIG.baseURL}${
-        API_CONFIG.endpoints.deals
-      }/${dealId}/rutas${queryString ? `?${queryString}` : ""}`;
-    },
-    [cotizacionRapida, puertoSalida, puertoDestino]
-  );
+      const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.deals}/${dealId}/rutas${queryString ? `?${queryString}` : ""}`;
 
-  /**
-   * Fetch available rutas when transitario is not selected
-   * CONSOLIDADO: Un solo useEffect para cargar rutas, evitando llamadas múltiples al endpoint
-   */
-  useEffect(() => {
-    const fetchRutas = async () => {
-      // Only fetch rutas if no transitario is selected
-      if (transitarioSeleccionado) {
-        return;
-      }
-
-      // Solo cargar rutas si tenemos los datos mínimos necesarios
-      // Para evitar llamadas innecesarias al endpoint
-      const dealId = context?.crm?.objectId;
-      if (!dealId) {
-        return;
-      }
+      const requestId = ++rutasRequestIdRef.current;
 
       try {
         setLoadingRutas(true);
         setRutasError(null);
 
-        const url = buildRutasUrl(dealId);
-        const response = await hubspot.fetch(url, {
-          timeout: API_CONFIG.timeout,
-        });
+        const response = await hubspot.fetch(url, { timeout: API_CONFIG.timeout });
+        if (requestId !== rutasRequestIdRef.current) return;
 
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
+        if (requestId !== rutasRequestIdRef.current) return;
 
         if (!data.success) {
           throw new Error(data.error || "Error al cargar rutas");
@@ -452,10 +484,11 @@ const TransitarioTab = ({
         setRutasTerrestres(data.rutas_terrestres || []);
         setRutasMaritimas(data.rutas_maritimas || []);
       } catch (err) {
+        if (requestId !== rutasRequestIdRef.current) return;
         console.error("Error loading rutas:", err);
         setRutasError(err.message || "Error al cargar rutas disponibles");
       } finally {
-        setLoadingRutas(false);
+        if (requestId === rutasRequestIdRef.current) setLoadingRutas(false);
       }
     };
 
@@ -463,11 +496,21 @@ const TransitarioTab = ({
   }, [
     context,
     transitarioSeleccionado,
-    buildRutasUrl,
     cotizacionRapida,
     puertoSalida,
     puertoDestino,
+    localidadDestino,
+    isDAPTerrestre,
+    tipoVenta,
+    requiresPuertoSalida,
+    tabEntryTick,
   ]);
+
+  useEffect(() => {
+    if (selectedTab === "transitario") {
+      setTabEntryTick((t) => t + 1);
+    }
+  }, [selectedTab]);
 
   /**
    * Search for transitarios with debounce
@@ -516,14 +559,24 @@ const TransitarioTab = ({
 
   const transitariosFiltrados = transitariosBuscados;
 
-  /**
-   * Check if a route is expired
-   */
   const isRutaExpired = (fechaCaducidad) => {
     if (!fechaCaducidad) return false;
-    const now = new Date();
-    const expiryDate = new Date(fechaCaducidad);
-    return expiryDate < now;
+
+    let expiryDate;
+    if (typeof fechaCaducidad === "string" && /^\d{4}-\d{2}-\d{2}/.test(fechaCaducidad)) {
+      const [year, month, day] = fechaCaducidad.split("-").map(Number);
+      expiryDate = new Date(year, month - 1, day);
+    } else {
+      const ts = typeof fechaCaducidad === "string" ? parseInt(fechaCaducidad, 10) : fechaCaducidad;
+      if (isNaN(ts)) return false;
+      expiryDate = new Date(ts);
+      expiryDate.setHours(0, 0, 0, 0);
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return expiryDate < today;
   };
 
   const handleSeleccionarTransitario = (transitario) => {
@@ -551,6 +604,22 @@ const TransitarioTab = ({
     setPrecioDestino(null);
 
     // The useEffect will automatically reload routes when transitarioSeleccionado becomes null
+  };
+
+  /**
+   * Parse a ruta's fecha_caducidad (YYYY-MM-DD string or timestamp) to DateInput object
+   */
+  const parseRutaFecha = (fechaCaducidad) => {
+    if (!fechaCaducidad) return null;
+    if (typeof fechaCaducidad === "string") {
+      const [year, month, day] = fechaCaducidad.split("-").map(Number);
+      return { year, month: month - 1, date: day };
+    }
+    if (!isNaN(fechaCaducidad) && fechaCaducidad > 1000000000) {
+      const fecha = new Date(parseInt(fechaCaducidad));
+      return { year: fecha.getFullYear(), month: fecha.getMonth(), date: fecha.getDate() };
+    }
+    return null;
   };
 
   /**
@@ -582,6 +651,11 @@ const TransitarioTab = ({
     if (ruta.tipo_tramo === "terrestre") {
       setPrecioOrigen(ruta.importe);
       updateTransitarioField("rutaTerrestreSeleccionada", enrichedRuta);
+
+      // No auto-pair para DAP TERRESTRE (ruta directa, sin tramo marítimo)
+      if (isDAPTerrestre) {
+        return;
+      }
 
       // Auto-select maritime route if same transitario has one
       const rutaMaritimaDelMismoTransitario = rutasMaritimas.find(
@@ -653,55 +727,60 @@ const TransitarioTab = ({
       }
     }
 
-    // Set fecha validez from route
-    // HubSpot DateInput expects: { year: number, month: number, date: number }
-    if (ruta.fecha_caducidad) {
-      try {
-        let dateObject;
-
-        // If it's a string date (YYYY-MM-DD), parse to object
-        if (typeof ruta.fecha_caducidad === "string") {
-          const [year, month, day] = ruta.fecha_caducidad
-            .split("-")
-            .map(Number);
-          dateObject = {
-            year: year,
-            month: month - 1,
-            date: day,
-          };
+    // Auto-fill fechas caducidad según tipo de ruta seleccionada
+    if (ruta.tipo_tramo === "terrestre") {
+      const fechaSalida = parseRutaFecha(ruta.fecha_caducidad);
+      if (fechaSalida) {
+        setFechaCaducidadSalida(fechaSalida);
+        updateTransitarioField("fechaCaducidadFleteSalida", fechaSalida);
+      }
+      if (!isDAPTerrestre) {
+        const maritima = rutasMaritimas.find(
+          (r) => r.transitario_cardcode === ruta.transitario_cardcode
+        );
+        if (maritima) {
+          const fechaDestino = parseRutaFecha(maritima.fecha_caducidad);
+          if (fechaDestino) {
+            setFechaCaducidadDestino(fechaDestino);
+            updateTransitarioField("fechaCaducidadFleteDestino", fechaDestino);
+          }
         }
-        // If it's a timestamp, convert to object
-        else if (
-          !isNaN(ruta.fecha_caducidad) &&
-          ruta.fecha_caducidad > 1000000000
-        ) {
-          const fecha = new Date(parseInt(ruta.fecha_caducidad));
-          dateObject = {
-            year: fecha.getFullYear(),
-            month: fecha.getMonth(), // Already 0-indexed
-            date: fecha.getDate(),
-          };
+      }
+    } else if (ruta.tipo_tramo === "maritima") {
+      const fechaDestino = parseRutaFecha(ruta.fecha_caducidad);
+      if (fechaDestino) {
+        setFechaCaducidadDestino(fechaDestino);
+        updateTransitarioField("fechaCaducidadFleteDestino", fechaDestino);
+      }
+      const terrestre = rutasTerrestres.find(
+        (r) => r.transitario_cardcode === ruta.transitario_cardcode
+      );
+      if (terrestre) {
+        const fechaSalida = parseRutaFecha(terrestre.fecha_caducidad);
+        if (fechaSalida) {
+          setFechaCaducidadSalida(fechaSalida);
+          updateTransitarioField("fechaCaducidadFleteSalida", fechaSalida);
         }
-
-        setFechaValidez(dateObject);
-      } catch (e) {
-        console.error("Error parsing fecha_caducidad:", e);
       }
     }
   };
 
-  // Sync local prices and date to shared state
+  // Sync local prices to shared state
   useEffect(() => {
     updateTransitarioField("precioOrigen", precioOrigen);
     updateTransitarioField("precioDestino", precioDestino);
-    updateTransitarioField("fechaValidez", fechaValidez);
-  }, [precioOrigen, precioDestino, fechaValidez]);
+  }, [precioOrigen, precioDestino]);
 
   // Calculate default almacen value based on tipo_cliente and lugar_carga
   useEffect(() => {
     // Only set default if almacen is not already set
     const almacenValue = almacen?.value || almacen;
     if (almacenValue || !clienteData?.tipoCliente) {
+      return;
+    }
+
+    // Wait for options to load so the saved value resolves to a readable label
+    if (!almacenOptions || almacenOptions.length === 0) {
       return;
     }
 
@@ -752,23 +831,11 @@ const TransitarioTab = ({
         throw new Error("No se pudo obtener el ID del Deal");
       }
 
-      // Convert fechaValidez to timestamp at midnight UTC
-      let fechaCaducidadTimestamp = null;
-      if (fechaValidez) {
-        // Create date in UTC to avoid timezone issues
-        const fecha = new Date(
-          Date.UTC(
-            fechaValidez.year,
-            fechaValidez.month,
-            fechaValidez.date,
-            0,
-            0,
-            0,
-            0
-          )
-        );
-        fechaCaducidadTimestamp = fecha.getTime();
-      }
+      // Convert dates to UTC midnight timestamps
+      const toUTCTimestamp = (dateObj) => {
+        if (!dateObj) return null;
+        return new Date(Date.UTC(dateObj.year, dateObj.month, dateObj.date, 0, 0, 0, 0)).getTime();
+      };
 
       // Build request payload
       const payload = {
@@ -780,10 +847,12 @@ const TransitarioTab = ({
         transitario: transitarioSeleccionado?.cardcode || null,
         precio_ruta_hasta_puerto_de_salida: precioOrigen || null,
         precio_ruta_hasta_puerto_destino: precioDestino || null,
-        fecha_caducidad: fechaCaducidadTimestamp,
+        fecha_caducidad_flete_salida: toUTCTimestamp(fechaCaducidadSalida),
+        fecha_caducidad_flete_destino: toUTCTimestamp(fechaCaducidadDestino),
         cotizacion_rapida: cotizacionRapida ? "true" : "false",
         almacen: almacen?.value || almacen || null,
         tipo_iva_fletes: tipoIVAFletes?.value || tipoIVAFletes || null,
+        tipo_iva_fletes_soportado: tipoIVAFletesSoportado?.value || tipoIVAFletesSoportado || null,
       };
 
       const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.deals}/${dealId}/transit`;
@@ -838,7 +907,6 @@ const TransitarioTab = ({
   return (
     <Box>
       <Flex direction="column" gap="medium">
-        {/* Error Alert */}
         {error && (
           <Alert title="Error" variant="error">
             {error}
@@ -848,12 +916,10 @@ const TransitarioTab = ({
         {/* Sección: Ruta */}
         <Heading>Ruta de Transporte</Heading>
 
-        {/* Alert informativo con el tipo de venta */}
         <Alert variant="info" title={`Tipo de Venta: ${tipoVentaLabel}`}>
           <Text>Campos obligatorios: {routeSteps.join(" → ")}</Text>
         </Alert>
 
-        {/* Indicador visual de progreso de ruta */}
         <StepIndicator
           currentStep={currentStep}
           stepNames={routeSteps}
@@ -871,51 +937,55 @@ const TransitarioTab = ({
           tooltip="Este campo se establece en la pestaña de Artículos"
         />
 
-        {/* Campo 2: Puerto Salida (FOB, CFR, CIF, DAP marítimo) */}
-        <Select
-          label="2. Puerto de Salida"
-          name="puerto-salida"
-          description={
-            requiresPuertoSalida
-              ? "Puerto de origen para el envío"
-              : "Puerto de origen para el envío (opcional)"
-          }
-          placeholder="Seleccione un puerto de salida..."
-          required={requiresPuertoSalida}
-          value={puertoSalida?.value || puertoSalida}
-          onChange={(value) =>
-            updateSelectField("puertoSalida", value, puertoSalidaOptions)
-          }
-          options={puertoSalidaOptions}
-          tooltip={
-            requiresPuertoSalida
-              ? "Puerto desde donde saldrá la mercancía"
-              : "Puerto desde donde saldrá la mercancía (opcional para este tipo de venta)"
-          }
-        />
+        {/* Campo 2: Puerto Salida (FOB, CFR, CIF, DAP marítimo) — oculto para DAP TERRESTRE */}
+        {!isDAPTerrestre && (
+          <Select
+            label="2. Puerto de Salida"
+            name="puerto-salida"
+            description={
+              requiresPuertoSalida
+                ? "Puerto de origen para el envío"
+                : "Puerto de origen para el envío (opcional)"
+            }
+            placeholder="Seleccionar..."
+            required={requiresPuertoSalida}
+            value={puertoSalida?.value || puertoSalida}
+            onChange={(value) =>
+              updateSelectField("puertoSalida", value, puertoSalidaOptions)
+            }
+            options={puertoSalidaOptions}
+            tooltip={
+              requiresPuertoSalida
+                ? "Puerto desde donde saldrá la mercancía"
+                : "Puerto desde donde saldrá la mercancía (opcional para este tipo de venta)"
+            }
+          />
+        )}
 
-        {/* Campo 3: Puerto Destino (CFR, CIF, DAP marítimo) */}
-        <Select
-          label="3. Puerto de Destino"
-          name="puerto-destino"
-          description={
-            requiresPuertoDestino
-              ? "Puerto de destino para el envío"
-              : "Puerto de destino para el envío (opcional)"
-          }
-          placeholder="Seleccione un puerto de destino..."
-          required={requiresPuertoDestino}
-          value={puertoDestino?.value || puertoDestino}
-          onChange={(value) =>
-            updateSelectField("puertoDestino", value, puertoDestinoOptions)
-          }
-          options={puertoDestinoOptions}
-          tooltip={
-            requiresPuertoDestino
-              ? "Puerto donde llegará la mercancía"
-              : "Puerto donde llegará la mercancía (opcional para este tipo de venta)"
-          }
-        />
+        {/* Campo 3: Puerto Destino (CFR, CIF, DAP marítimo) — oculto para DAP TERRESTRE */}
+        {!isDAPTerrestre && (
+          <Select
+            label="3. Puerto de Destino"
+            name="puerto-destino"
+            description={
+              requiresPuertoDestino
+                ? "Puerto de destino para el envío"
+                : "Puerto de destino para el envío (opcional)"
+            }
+            placeholder="Seleccionar..."
+            required={requiresPuertoDestino}
+            value={puertoDestino?.value || puertoDestino}
+            onChange={(value) =>
+              updateSelectField("puertoDestino", value, puertoDestinoOptions)
+            }
+            options={puertoDestinoOptions}
+            tooltip={
+              requiresPuertoDestino
+                ? "Puerto donde llegará la mercancía"
+                : "Puerto donde llegará la mercancía (opcional para este tipo de venta)"
+            }
+          />
+        )}
 
         {/* Campo 4: Localidad Destino (DAP terrestre, DAP marítimo) */}
         <Select
@@ -926,7 +996,7 @@ const TransitarioTab = ({
               ? "Ciudad o localidad de entrega final"
               : "Ciudad o localidad de entrega final (opcional)"
           }
-          placeholder="Seleccione una localidad de destino..."
+          placeholder="Seleccionar..."
           required={requiresLocalidadDestino}
           value={localidadDestino?.value || localidadDestino}
           onChange={(value) =>
@@ -949,7 +1019,7 @@ const TransitarioTab = ({
           label="5. Almacén"
           name="almacen"
           description="Código de almacén para los elementos del pedido"
-          placeholder="Seleccione un almacén..."
+          placeholder="Seleccionar..."
           required={true}
           value={almacen?.value || almacen}
           onChange={(value) =>
@@ -961,12 +1031,11 @@ const TransitarioTab = ({
 
         <Divider size="small" />
 
-        {/* Selector de Naviera */}
         <Select
           label="Naviera"
           name="naviera"
           description="Seleccione la naviera para este envío"
-          placeholder="Seleccione una naviera..."
+          placeholder="Seleccionar..."
           value={naviera?.value || naviera}
           onChange={(value) =>
             updateSelectField("naviera", value, navieraOptions)
@@ -975,7 +1044,6 @@ const TransitarioTab = ({
           tooltip="Compañía naviera que realizará el transporte marítimo"
         />
 
-        {/* Días Libres en Puerto */}
         <NumberInput
           label="Días Libres en Puerto Destino"
           name="dias-libres"
@@ -1008,13 +1076,95 @@ const TransitarioTab = ({
         {!transitarioSeleccionado && (
           <>
             <Alert variant="info" title="Selección de Transitario">
-              Seleccione una ruta para asignar transitario y precio
-              automáticamente, o búsquelo manualmente más abajo.
+              {isEXW
+                ? "En ventas EXW el transitario es opcional (el comprador gestiona el transporte)."
+                : "Seleccione una ruta para asignar transitario y precio automáticamente, o búsquelo manualmente más abajo."}
             </Alert>
 
-            {/* RUTAS TERRESTRES */}
+            {/* RUTAS DIRECTAS (DAP TERRESTRE: Localidad Carga → Localidad Destino) */}
+            {isDAPTerrestre && (
+              <>
+                <Box>
+                  <Text format={{ fontWeight: "bold" }}>
+                    🚛 Rutas Directas Disponibles
+                  </Text>
+                  <Text variant="microcopy">
+                    {lugarCargaLabel} →{" "}
+                    {localidadDestinoOptions.find(
+                      (l) => l.value === (localidadDestino?.value || localidadDestino)
+                    )?.label ||
+                      localidadDestino?.value ||
+                      localidadDestino ||
+                      "Localidad Destino"}
+                  </Text>
+                </Box>
+
+                {loadingRutas && (
+                  <Flex direction="row" align="center" gap="small">
+                    <LoadingSpinner size="xs" />
+                    <Text>Cargando rutas disponibles...</Text>
+                  </Flex>
+                )}
+
+                {rutasError && (
+                  <Alert variant="warning" title="Error al cargar rutas">
+                    {rutasError}
+                  </Alert>
+                )}
+
+                {!loadingRutas && !rutasError && rutasTerrestres.length > 0 && (
+                  <Flex direction="column" gap="small">
+                    {rutasTerrestres.map((ruta) => {
+                      const isExpired = isRutaExpired(ruta.fecha_caducidad);
+                      return (
+                        <Flex
+                          key={ruta.id}
+                          direction="column"
+                          gap="extra-small"
+                        >
+                          <Flex direction="row" gap="small" align="center">
+                            <Text format={{ fontWeight: "bold" }}>
+                              {ruta.tipo_contenedor} •{" "}
+                              {ruta.transitario_cardcode}
+                              {ruta.transitario && ` - ${ruta.transitario}`}
+                            </Text>
+                            <Tag variant={isExpired ? "error" : "success"}>
+                              {isExpired ? "Caducada" : "Vigente"}
+                            </Tag>
+                            <Button
+                              size="xs"
+                              variant="secondary"
+                              onClick={() => handleSeleccionarRuta(ruta)}
+                            >
+                              Seleccionar
+                            </Button>
+                          </Flex>
+                          <Text>
+                            {ruta.importe}€ • Válida hasta:{" "}
+                            {new Date(ruta.fecha_caducidad).toLocaleDateString(
+                              "es-ES"
+                            )}
+                          </Text>
+                          {ruta.notas && (
+                            <Text variant="microcopy">{ruta.notas}</Text>
+                          )}
+                        </Flex>
+                      );
+                    })}
+                  </Flex>
+                )}
+
+                {!loadingRutas && !rutasError && rutasTerrestres.length === 0 && (
+                  <Text variant="microcopy">
+                    No hay rutas directas disponibles para esta configuración.
+                    Seleccione primero la localidad de destino.
+                  </Text>
+                )}
+              </>
+            )}
+
             {/* Solo cargar y mostrar si la ruta actual tiene "lugar de carga > puerto salida" como campos obligatorios */}
-            {requiresPuertoSalida ? (
+            {requiresPuertoSalida && !isDAPTerrestre ? (
               <>
                 <Box>
                   <Text format={{ fontWeight: "bold" }}>
@@ -1031,7 +1181,6 @@ const TransitarioTab = ({
                   </Text>
                 </Box>
 
-                {/* Loading state for rutas */}
                 {loadingRutas && (
                   <Flex direction="row" align="center" gap="small">
                     <LoadingSpinner size="xs" />
@@ -1039,14 +1188,12 @@ const TransitarioTab = ({
                   </Flex>
                 )}
 
-                {/* Error state for rutas */}
                 {rutasError && (
                   <Alert variant="warning" title="Error al cargar rutas">
                     {rutasError}
                   </Alert>
                 )}
 
-                {/* Rutas terrestres reales */}
                 {!loadingRutas && !rutasError && rutasTerrestres.length > 0 && (
                   <Flex direction="column" gap="small">
                     {rutasTerrestres.map((ruta) => {
@@ -1092,7 +1239,6 @@ const TransitarioTab = ({
                   </Flex>
                 )}
 
-                {/* Empty state for rutas terrestres */}
                 {!loadingRutas &&
                   !rutasError &&
                   rutasTerrestres.length === 0 && (
@@ -1111,7 +1257,7 @@ const TransitarioTab = ({
 
             {/* RUTAS MARÍTIMAS */}
             {/* Solo cargar y mostrar si la ruta actual tiene "puerto salida > puerto destino" como campos obligatorios */}
-            {requiresPuertoDestino ? (
+            {requiresPuertoDestino && !isDAPTerrestre ? (
               <>
                 <Box>
                   <Text format={{ fontWeight: "bold" }}>
@@ -1134,7 +1280,6 @@ const TransitarioTab = ({
                   </Text>
                 </Box>
 
-                {/* Loading state for rutas marítimas */}
                 {loadingRutas && (
                   <Flex direction="row" align="center" gap="small">
                     <LoadingSpinner size="xs" />
@@ -1142,14 +1287,12 @@ const TransitarioTab = ({
                   </Flex>
                 )}
 
-                {/* Error state for rutas marítimas */}
                 {rutasError && (
                   <Alert variant="warning" title="Error al cargar rutas">
                     {rutasError}
                   </Alert>
                 )}
 
-                {/* Rutas marítimas reales */}
                 {!loadingRutas && !rutasError && rutasMaritimas.length > 0 && (
                   <Flex direction="column" gap="small">
                     {rutasMaritimas.map((ruta) => {
@@ -1195,7 +1338,6 @@ const TransitarioTab = ({
                   </Flex>
                 )}
 
-                {/* Empty state for rutas marítimas */}
                 {!loadingRutas &&
                   !rutasError &&
                   rutasMaritimas.length === 0 && (
@@ -1231,13 +1373,12 @@ const TransitarioTab = ({
             <SearchInput
               name="buscar-transitario"
               label="Buscar Transitario"
-              placeholder="Ej: MERTRAMAR, NOATUM, Hillebrand..."
+              placeholder=""
               value={searchTransitario}
               onChange={(value) => setSearchTransitario(value)}
               description="Busque y seleccione el transitario"
             />
 
-            {/* Show loading spinner */}
             {loadingTransitarios && searchTransitario && (
               <Flex direction="row" align="center" gap="small">
                 <LoadingSpinner size="xs" />
@@ -1324,8 +1465,47 @@ const TransitarioTab = ({
                   Rutas Seleccionadas:
                 </Text>
 
-                {/* Ruta Terrestre - Solo mostrar si requiresPuertoSalida es true */}
-                {requiresPuertoSalida && rutaTerrestreSeleccionada && (
+                {/* Ruta Directa - Solo para DAP TERRESTRE */}
+                {isDAPTerrestre && rutaTerrestreSeleccionada && (
+                  <Flex
+                    direction="row"
+                    justify="space-between"
+                    align="center"
+                    gap="medium"
+                  >
+                    <Box>
+                      <Text>
+                        🚛 Ruta directa:{" "}
+                        {rutaTerrestreSeleccionada.lugar_carga_label ||
+                          rutaTerrestreSeleccionada.lugar_carga}
+                        {" → "}
+                        {localidadDestinoOptions.find(
+                          (l) => l.value === (localidadDestino?.value || localidadDestino)
+                        )?.label ||
+                          localidadDestino?.value ||
+                          localidadDestino}{" "}
+                        • {rutaTerrestreSeleccionada.tipo_contenedor}
+                      </Text>
+                      <Text variant="microcopy">
+                        Precio: {rutaTerrestreSeleccionada.importe}€ • Válida
+                        hasta:{" "}
+                        {new Date(
+                          rutaTerrestreSeleccionada.fecha_caducidad
+                        ).toLocaleDateString("es-ES")}
+                      </Text>
+                    </Box>
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      onClick={handleCambiarRutas}
+                    >
+                      Cambiar
+                    </Button>
+                  </Flex>
+                )}
+
+                {/* Ruta Terrestre - Solo mostrar si requiresPuertoSalida es true (y no DAP TERRESTRE) */}
+                {requiresPuertoSalida && !isDAPTerrestre && rutaTerrestreSeleccionada && (
                   <Flex
                     direction="row"
                     justify="space-between"
@@ -1407,68 +1587,122 @@ const TransitarioTab = ({
 
         {/* Sección: Precios de Transporte */}
         <Heading>Precios de Transporte</Heading>
-        <Text>Configure los precios de transporte marítimo:</Text>
+        <Text>
+          {isDAPTerrestre
+            ? "Configure el precio del transporte directo hasta la localidad de destino:"
+            : "Configure los precios de transporte marítimo:"}
+        </Text>
 
-        <NumberInput
-          label="Precio Ruta hasta Puerto Salida"
-          name="precio-origen"
-          description="Coste del transporte terrestre hasta el puerto de origen (EUR)"
-          placeholder="0"
-          value={precioOrigen}
-          onChange={(value) => setPrecioOrigen(value)}
-          min={0}
-          formatStyle="currency"
-          currencyCode="EUR"
-          required={requiresPuertoSalida}
-          tooltip="Coste del transporte desde la fábrica hasta el puerto de salida"
-        />
+        {isDAPTerrestre ? (
+          <Flex direction="row" gap="medium">
+            <NumberInput
+              label="Precio Ruta hasta Localidad Destino"
+              name="precio-origen"
+              description="Coste del transporte directo hasta la localidad de destino (EUR)"
+              placeholder=""
+              value={precioOrigen}
+              onChange={(value) => setPrecioOrigen(value)}
+              min={0}
+              formatStyle="currency"
+              currencyCode="EUR"
+              required={true}
+              tooltip="Coste del transporte desde la fábrica hasta la localidad de destino del cliente"
+            />
+            <DateInput
+              label="Fecha caducidad flete"
+              name="fecha-caducidad-flete-salida"
+              description="Fecha hasta la cual es válido el precio del flete"
+              value={fechaCaducidadSalida}
+              onChange={(value) => { setFechaCaducidadSalida(value); updateTransitarioField("fechaCaducidadFleteSalida", value); }}
+              format="ll"
+              required={true}
+              tooltip="Fecha límite de validez del precio de flete negociado con el transitario"
+            />
+          </Flex>
+        ) : (
+          <>
+            <Flex direction="row" gap="medium">
+              <NumberInput
+                label="Precio Ruta hasta Puerto Salida"
+                name="precio-origen"
+                description="Coste del transporte terrestre hasta el puerto de origen (EUR)"
+                placeholder=""
+                value={precioOrigen}
+                onChange={(value) => setPrecioOrigen(value)}
+                min={0}
+                formatStyle="currency"
+                currencyCode="EUR"
+                required={requiresPuertoSalida}
+                tooltip="Coste del transporte desde la fábrica hasta el puerto de salida"
+              />
+              <DateInput
+                label="Fecha caducidad flete salida"
+                name="fecha-caducidad-flete-salida"
+                description="Fecha hasta la cual es válido el precio del tramo terrestre"
+                value={fechaCaducidadSalida}
+                onChange={(value) => { setFechaCaducidadSalida(value); updateTransitarioField("fechaCaducidadFleteSalida", value); }}
+                format="ll"
+                required={requiresPuertoSalida}
+                tooltip="Fecha límite de validez del precio de flete hasta el puerto de salida"
+              />
+            </Flex>
 
-        <NumberInput
-          label="Precio Ruta hasta Puerto Destino"
-          name="precio-destino"
-          description="Coste del transporte marítimo hasta el puerto de destino (EUR)"
-          placeholder="0"
-          value={precioDestino}
-          onChange={(value) => setPrecioDestino(value)}
-          min={0}
-          formatStyle="currency"
-          currencyCode="EUR"
-          required={requiresPuertoDestino}
-          tooltip="Coste del transporte marítimo desde puerto salida hasta puerto destino"
-        />
+            <Flex direction="row" gap="medium">
+              <NumberInput
+                label="Precio Ruta hasta Puerto Destino"
+                name="precio-destino"
+                description="Coste del transporte marítimo hasta el puerto de destino (EUR)"
+                placeholder=""
+                value={precioDestino}
+                onChange={(value) => setPrecioDestino(value)}
+                min={0}
+                formatStyle="currency"
+                currencyCode="EUR"
+                required={requiresPuertoDestino}
+                tooltip="Coste del transporte marítimo desde puerto salida hasta puerto destino"
+              />
+              <DateInput
+                label="Fecha caducidad flete destino"
+                name="fecha-caducidad-flete-destino"
+                description="Fecha hasta la cual es válido el precio del tramo marítimo"
+                value={fechaCaducidadDestino}
+                onChange={(value) => { setFechaCaducidadDestino(value); updateTransitarioField("fechaCaducidadFleteDestino", value); }}
+                format="ll"
+                required={requiresPuertoDestino}
+                tooltip="Fecha límite de validez del precio de flete hasta el puerto de destino"
+              />
+            </Flex>
+          </>
+        )}
 
         <Select
-          label="Tipo IVA Fletes"
+          label="Tipo IVA Fletes (Repercutido)"
           name="tipo-iva-fletes"
-          description="Tipo de IVA a aplicar a los fletes (aplica a ambas rutas)"
-          placeholder="Seleccione un tipo de IVA..."
+          description="Tipo de IVA repercutido a aplicar a los fletes"
+          placeholder="Seleccionar..."
           value={tipoIVAFletes?.value || tipoIVAFletes}
           onChange={(value) => updateTransitarioField("tipoIVAFletes", value)}
           options={tipoIVAOptions}
-          tooltip="Define el tipo de IVA que se aplicará a los line items de FLETES"
+          tooltip="Define el tipo de IVA repercutido que se aplicará a los line items de FLETES"
         />
 
-        <DateInput
-          label="Fecha de Caducidad de la Cotización"
-          name="fecha-caducidad"
-          description="Fecha hasta la cual esta cotización es válida"
-          value={fechaValidez}
-          onChange={(value) => setFechaValidez(value)}
-          format="ll"
-          required={true}
-          tooltip="Fecha límite de caducidad de los precios de esta cotización"
+        <Select
+          label="Tipo IVA Fletes (Soportado)"
+          name="tipo-iva-fletes-soportado"
+          description="Tipo de IVA soportado a aplicar a los fletes"
+          placeholder="Seleccionar..."
+          value={tipoIVAFletesSoportado?.value || tipoIVAFletesSoportado}
+          onChange={(value) => updateTransitarioField("tipoIVAFletesSoportado", value)}
+          options={tipoIVASoportadoOptions}
+          tooltip="Define el tipo de IVA soportado que se aplicará a los line items de FLETES"
         />
 
-        <Divider size="medium" />
-
-        {/* Error al guardar */}
         {saveError && (
           <Alert variant="error" title="Error al guardar">
             {saveError}
           </Alert>
         )}
 
-        {/* Botones de navegación */}
         <ButtonRow>
           <Button
             variant="secondary"
@@ -1482,16 +1716,19 @@ const TransitarioTab = ({
             onClick={handleSaveAndContinue}
             disabled={
               saving ||
-              !fechaValidez ||
+              !fechaCaducidadSalida ||
+              (!isDAPTerrestre && requiresPuertoDestino && !fechaCaducidadDestino) ||
               !(almacen?.value || almacen) ||
               (requiresPuertoSalida &&
+                !isDAPTerrestre &&
                 !(puertoSalida?.value || puertoSalida)) ||
               (requiresPuertoDestino &&
                 !(puertoDestino?.value || puertoDestino)) ||
               (requiresLocalidadDestino &&
                 !(localidadDestino?.value || localidadDestino)) ||
-              (requiresPuertoSalida && !precioOrigen) ||
-              (requiresPuertoDestino && !precioDestino)
+              (isDAPTerrestre && !precioOrigen) ||
+              (!isDAPTerrestre && requiresPuertoSalida && !precioOrigen) ||
+              (!isDAPTerrestre && requiresPuertoDestino && !precioDestino)
             }
           >
             {saving ? "Guardando..." : "Siguiente"}

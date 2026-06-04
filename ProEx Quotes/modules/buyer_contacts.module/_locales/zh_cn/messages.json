@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "买方联系人",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "买方联系人电子邮件",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "买方联系人职称",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "买方联系人姓名",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "买方联系人电话号码",
+    "description" : "",
+    "placeholders" : null
+  }
+}

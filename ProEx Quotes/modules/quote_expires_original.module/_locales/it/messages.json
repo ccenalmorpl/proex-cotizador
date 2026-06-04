@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Scadenza preventivo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Questo preventivo scade in data",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Testo scadenza preventivo",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Imprimer la soumission",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Texte du bouton",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Impression",
+    "description" : "",
+    "placeholders" : null
+  }
+}

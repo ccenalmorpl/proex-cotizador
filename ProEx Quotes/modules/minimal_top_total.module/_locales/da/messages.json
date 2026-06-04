@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Forfalder nu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Denne mærkat erstatter \"Tekst for total for tilbud\", når der er forfaldne betalinger efter betaling.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Tekst for total af forfaldne nu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Tilbudstotal",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Teksten for det samlede tilbudsbeløb",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Tekst for total for tilbud",
+    "description" : "",
+    "placeholders" : null
+  }
+}

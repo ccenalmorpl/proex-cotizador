@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Köparens företag",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Köparföretagets huvudadress",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Köparföretagets ort, delstat och postnummer",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Köparföretagets land",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Köparens företagsnamn",
+    "description" : "",
+    "placeholders" : null
+  }
+}

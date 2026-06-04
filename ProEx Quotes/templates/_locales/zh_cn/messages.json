@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "金额",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "评论",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "评论来自",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "此报价已失效。",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "请联系你的销售代表获取更多详细信息。",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "商品和描述",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "其他费用",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "准备者：",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "价格",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "产品和服务",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "购买条款",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "数量",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "报价创建者：",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "小计",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "总计",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "单价",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "信用票据",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "信用票据号",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "信用票据合计",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "订单号",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "信用票据日期",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "所有费用均以 {{ currency_code }} 列示，且需缴纳销售税（如适用）。",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "信用票据行项目表",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "数量",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "税款",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "税金",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "税款",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "在 {{ discount_amount }} 折扣后",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "发票",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "发票编号",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "发票日期",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "所有费用均以 {{ currency_code }} 列示，且需缴纳销售税（如适用）。",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "采购订单编号",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "发票行项目表",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "在 {{ discount_amount }} 折扣后",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "数量",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "付款",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "余额截止日期",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "税费",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "税款",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "税费",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "付款方",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "收件人",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "缴税地址",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "截止日期",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "折扣",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% 的折扣",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "优惠 {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "小计",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "未来付款",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "以后到期的付款。",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_lastname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_firstname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "摘要",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "此报价不可用。",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "请联系你的销售代表获取更多详细信息。",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "不适用",
+    "description": "",
+    "placeholders": null
+  }
+}

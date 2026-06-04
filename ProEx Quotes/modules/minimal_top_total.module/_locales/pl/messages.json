@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Do zapłaty teraz",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Ta etykieta zastępuje „tekst kwoty wyceny”, jeśli istnieją płatności do uregulowania po finalizacji.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Cały tekst – do zapłaty teraz",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Wycena łącznie",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Suma",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Tekst całkowitej kwoty wyceny",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Tekst łącznej wyceny",
+    "description" : "",
+    "placeholders" : null
+  }
+}

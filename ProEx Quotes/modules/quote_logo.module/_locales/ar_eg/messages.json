@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "صورة شعار الشركة",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "لا ينطبق هذا عند تجاوز الشعار الافتراضي",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "الارتفاع الأقصى للشعار",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "بشكل افتراضي، ستعرض عروض الأسعار الخاصة بك شعار الشركة من إعدادات الحساب الافتراضية أو صفحات موقع الويب في حالة قيامك بإعدادها. يمكنك اختيار تجاوزها باستخدام زر التبديل أدناه.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "الشعار",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "تجاوز الشعار الافتراضي في هذا القالب",
+    "description" : "",
+    "placeholders" : null
+  }
+}

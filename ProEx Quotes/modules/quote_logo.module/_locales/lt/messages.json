@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Įmonės logotipo vaizdas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Netaikoma perrašant numatytąjį logotipą",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Didž. logotipo aukštis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Pagal numatytąsias nuostatas, jūsų pasiūlymuose bus matomas įmonės logotipas, paimtas iš paskyros numatytųjų nuostatų arba svetainės puslapių, jei tokios nuostatos parinktos. Galite pasirinkti galimybę šių nuostatų nepaisyti naudodami perjungimo mygtuką toliau.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logotipas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Nepaisyti numatytojo logotipo šiame šablone",
+    "description" : "",
+    "placeholders" : null
+  }
+}

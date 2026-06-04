@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Vadesi şimdi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Bu etiket, ödeme yapıldıktan sonra ödenmesi gereken ödemeler olduğunda \"Teklif toplamı metni\"nin yerini alır.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Vadesi şimdi toplam metin",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Toplam",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Toplam teklif tutarı için metin",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Teklif toplamı metni",
+    "description" : "",
+    "placeholders" : null
+  }
+}

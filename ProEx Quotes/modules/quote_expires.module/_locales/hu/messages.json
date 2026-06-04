@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Ajánlat lejárata",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Árajánlat lejár:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "„Árajánlat lejár” szövege",
+    "description" : "",
+    "placeholders" : null
+  }
+}

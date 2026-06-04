@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Perlu dibayar sekarang",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Label ini menggantikan \"Teks jumlah sebut harga\" apabila terdapat bayaran yang perlu dibayar selepas daftar keluar.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Teks jumlah perlu dibayar sekarang",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Jumlah",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Teks untuk jumlah sebut harga keseluruhan",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Teks jumlah sebut harga",
+    "description" : "",
+    "placeholders" : null
+  }
+}

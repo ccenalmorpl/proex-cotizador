@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Imagen del logotipo de la empresa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Esto no se aplica al anular el logotipo predeterminado",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Altura máxima del logotipo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "De manera predeterminada, tus cotizaciones mostrarán el logotipo de la empresa desde Valores predeterminados de la cuenta o Páginas de sitio web, si lo configuraste. Puedes elegir anularlo utilizando el interruptor que está abajo.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logotipo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Anular logotipo predeterminado en esta plantilla",
+    "description" : "",
+    "placeholders" : null
+  }
+}

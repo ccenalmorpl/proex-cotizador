@@ -9,7 +9,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-
 # Base response models
 class BaseResponse(BaseModel):
     """Base response model for all API endpoints.
@@ -29,7 +28,6 @@ class BaseResponse(BaseModel):
                 "error": None
             }
         }
-
 
 # Health check
 # Client Data Models
@@ -51,7 +49,6 @@ class PropertyOption(BaseModel):
                 "value": "exw"
             }
         }
-
 
 class PropertyWithOptions(BaseModel):
     """Property with available options and selected value.
@@ -78,23 +75,13 @@ class PropertyWithOptions(BaseModel):
             }
         }
 
-
 class ContactData(BaseModel):
-    """Contact information from HubSpot.
+    """Contact information from HubSpot (internal use only, not returned in response).
 
     Attributes:
-        firstname: Contact first name.
-        lastname: Contact last name.
-        country: Contact country (readonly).
-        hs_language: Contact language preference.
+        hs_language: Contact language preference (used for preprints language determination).
         proyecto__canal_de_origen_: Project/origin channel (for analytics).
     """
-    firstname: Optional[str] = Field(None, description="Contact first name")
-    lastname: Optional[str] = Field(None, description="Contact last name")
-    country: Optional[str] = Field(
-        None,
-        description="Contact country (readonly)"
-    )
     hs_language: Optional[str] = Field(None, description="Contact language preference")
     proyecto__canal_de_origen_: Optional[str] = Field(None, description="Project/origin channel (for beverage fair analytics)")
 
@@ -102,12 +89,9 @@ class ContactData(BaseModel):
         """Pydantic configuration."""
         json_schema_extra = {
             "example": {
-                "firstname": "Juan",
-                "lastname": "Pérez",
-                "country": "Spain"
+                "hs_language": "es"
             }
         }
-
 
 class CompanyData(BaseModel):
     """Company information from HubSpot.
@@ -145,7 +129,6 @@ class CompanyData(BaseModel):
                 "country": "Spain"
             }
         }
-
 
 class DealClientData(BaseModel):
     """Deal-specific client information.
@@ -212,9 +195,29 @@ class DealClientData(BaseModel):
         description="Commission amount in EUR (editable)",
         ge=0
     )
+    carga_por_palets: Optional[bool] = Field(
+        None,
+        description="Whether the shipment is loaded by pallets"
+    )
+    fecha_caducidad_cotizacion: Optional[int] = Field(
+        None,
+        description="Quote general expiry date (timestamp ms)"
+    )
+    tipo_iva_comision: Optional[str] = Field(
+        None,
+        description="IVA repercutido type for commission (persisted on Deal)"
+    )
+    tipo_iva_comision_soportado: Optional[str] = Field(
+        None,
+        description="IVA soportado type for commission (persisted on Deal)"
+    )
     commission_provider_info: Optional[dict] = Field(
         None,
         description="Full commission provider information (id, name, cardcode) if found"
+    )
+    iva_comision_defaults: Optional[dict] = Field(
+        None,
+        description="Product-resolved IVA defaults for commission: {repercutido, soportado}"
     )
 
     class Config:
@@ -247,7 +250,6 @@ class DealClientData(BaseModel):
             }
         }
 
-
 class UpdateContactData(BaseModel):
     """Contact data to update in HubSpot.
 
@@ -260,7 +262,6 @@ class UpdateContactData(BaseModel):
     """
     country: Optional[str] = Field(None, description="Contact country value to update (deprecated, readonly)")
 
-
 class UpdateCompanyData(BaseModel):
     """Company data to update in HubSpot from ClienteTab.
 
@@ -268,7 +269,6 @@ class UpdateCompanyData(BaseModel):
         tipo_cliente: Client type value to update (nacional or exportacion).
     """
     tipo_cliente: Optional[str] = Field(None, description="Client type value to update")
-
 
 class UpdateDealData(BaseModel):
     """Deal data to update in HubSpot from ClienteTab.
@@ -289,6 +289,7 @@ class UpdateDealData(BaseModel):
     """
     tipo_de_venta: Optional[str] = Field(None, description="Sale type value to update")
     tipo_contenedor: Optional[str] = Field(None, description="Container type value to update")
+    carga_por_palets: Optional[bool] = Field(None, description="Whether the shipment is loaded by pallets")
     margen_cliente: Optional[float] = Field(None, description="Client margin percentage to update", ge=0, le=100)
     preprints_language: Optional[str] = Field(None, description="Language for document printing to update (ES, EN, FR)")
     project: Optional[str] = Field(None, description="Project value to update")
@@ -297,7 +298,8 @@ class UpdateDealData(BaseModel):
     tipo_comision: Optional[str] = Field(None, description="Commission type to update")
     importe_comision: Optional[float] = Field(None, description="Commission amount in EUR to update", ge=0)
     tipo_iva_comision: Optional[str] = Field(None, description="IVA type for commission to update")
-
+    tipo_iva_comision_soportado: Optional[str] = Field(None, description="Input IVA type for commission to update")
+    fecha_caducidad_cotizacion: Optional[int] = Field(None, description="Quote general expiry date to update (timestamp ms)")
 
 class UpdateClientDataRequest(BaseModel):
     """Request model for updating client data from ClienteTab.
@@ -326,7 +328,6 @@ class UpdateClientDataRequest(BaseModel):
             }
         }
 
-
 class UpdateDocumentacionData(BaseModel):
     """Deal documentacion data to update in HubSpot from DocumentacionTab.
 
@@ -337,7 +338,6 @@ class UpdateDocumentacionData(BaseModel):
         preprints_language: Language for document printing (ES, EN, FR, IT).
 
         # Documentación Logística
-        tramitar_carga: Whether to process cargo.
         documentos_a_generar: Documents to generate (multi-select semicolon-separated).
         texto_en_bl: Bill of Lading text/description.
         comentarios_logistica: Internal logistics comments.
@@ -354,12 +354,10 @@ class UpdateDocumentacionData(BaseModel):
         banco_cobro: Collection bank selection.
         cotizacion_rapida: Quick quotation flag.
         texto_adicional_metodo_pago: Additional payment method text.
-        texto_firma_aceptacion_cliente: Client signature and acceptance text.
 
         # Textos Generados
         texto_banco: Bank information text.
         texto_forma_pago: Payment terms text.
-        texto_informacion_expediente: Shipment information text.
         texto_base_oferta: Base offer text.
     """
     # Idioma global
@@ -367,9 +365,10 @@ class UpdateDocumentacionData(BaseModel):
 
     # Documentación
     direccion_fiscal: Optional[str] = Field(None, description="Fiscal address for documentation")
+    direccion_de_entrega: Optional[str] = Field(None, description="Delivery address (optional)")
 
     # Documentación Logística
-    tramitar_carga: Optional[bool] = Field(None, description="Whether to process cargo")
+    desagregar_cotizacion: Optional[bool] = Field(None, description="Whether to disaggregate containers in the quote")
     documentos_a_generar: Optional[str] = Field(None, description="Documents to generate (semicolon-separated)")
     texto_en_bl: Optional[str] = Field(None, description="Bill of Lading text")
     comentarios_logistica: Optional[str] = Field(None, description="Internal logistics comments")
@@ -380,20 +379,22 @@ class UpdateDocumentacionData(BaseModel):
     shipper: Optional[str] = Field(None, description="Exporter/shipper data")
     notify: Optional[str] = Field(None, description="Notify party data")
     certificado_origen_mercancia: Optional[str] = Field(None, description="Certificate of origin merchandise description")
+    observaciones: Optional[str] = Field(None, description="Observations for certificate of origin")
 
     # Método de Pago & Textos
     metodo_pago_plantilla: Optional[str] = Field(None, description="Payment method template")
     banco_cobro: Optional[str] = Field(None, description="Collection bank")
     cotizacion_rapida: Optional[bool] = Field(None, description="Quick quotation flag")
     texto_adicional_metodo_pago: Optional[str] = Field(None, description="Additional payment method text")
-    texto_firma_aceptacion_cliente: Optional[str] = Field(None, description="Client acceptance text")
 
     # Textos Generados
     texto_banco: Optional[str] = Field(None, description="Bank information text")
     texto_forma_pago: Optional[str] = Field(None, description="Payment terms text")
-    texto_informacion_expediente: Optional[str] = Field(None, description="Shipment information text")
     texto_base_oferta: Optional[str] = Field(None, description="Base offer text")
 
+    # Identificación y Referencia
+    cif: Optional[str] = Field(None, description="NIF/CIF del cliente para la cotización (sobreescribe company.cif en el deal)")
+    referencia_cotizacion: Optional[str] = Field(None, description="Referencia de la cotización")
 
 class UpdateDocumentacionRequest(BaseModel):
     """Request model for updating documentacion data from DocumentacionTab.
@@ -409,7 +410,6 @@ class UpdateDocumentacionRequest(BaseModel):
             "example": {
                 "deal": {
                     "preprints_language": "es",
-                    "tramitar_carga": True,
                     "documentos_a_generar": "bl;packing_list;commercial_invoice",
                     "texto_en_bl": "Description of goods for BL",
                     "consignee": "ABC Import Company\n123 Main St\nParis, France",
@@ -417,7 +417,6 @@ class UpdateDocumentacionRequest(BaseModel):
                 }
             }
         }
-
 
 class DealDocumentacionData(BaseModel):
     """Deal documentacion data response model.
@@ -427,7 +426,6 @@ class DealDocumentacionData(BaseModel):
     Attributes:
         preprints_language: Language for document printing with options.
         direccion_fiscal: Fiscal address for documentation.
-        tramitar_carga: Whether to process cargo.
         documentos_a_generar: Documents to generate with options.
         texto_en_bl: Bill of Lading text.
         comentarios_logistica: Internal logistics comments.
@@ -440,10 +438,8 @@ class DealDocumentacionData(BaseModel):
         banco_cobro: Collection bank with options.
         cotizacion_rapida: Quick quotation flag.
         texto_adicional_metodo_pago: Additional payment method text.
-        texto_firma_aceptacion_cliente: Client acceptance text.
         texto_banco: Bank information text.
         texto_forma_pago: Payment terms text.
-        texto_informacion_expediente: Shipment information text.
         texto_base_oferta: Base offer text.
     """
     # Idioma global
@@ -451,9 +447,10 @@ class DealDocumentacionData(BaseModel):
 
     # Documentación
     direccion_fiscal: Optional[str] = Field(None, description="Fiscal address for documentation")
+    direccion_de_entrega: Optional[str] = Field(None, description="Delivery address (optional)")
 
     # Documentación Logística
-    tramitar_carga: Optional[bool] = Field(None, description="Whether to process cargo")
+    desagregar_cotizacion: Optional[bool] = Field(None, description="Whether to disaggregate containers in the quote")
     documentos_a_generar: Optional[PropertyWithOptions] = Field(None, description="Documents to generate")
     texto_en_bl: Optional[str] = Field(None, description="Bill of Lading text")
     comentarios_logistica: Optional[str] = Field(None, description="Internal logistics comments")
@@ -464,20 +461,22 @@ class DealDocumentacionData(BaseModel):
     shipper: Optional[str] = Field(None, description="Exporter/shipper data")
     notify: Optional[str] = Field(None, description="Notify party data")
     certificado_origen_mercancia: Optional[str] = Field(None, description="Certificate of origin merchandise description")
+    observaciones: Optional[str] = Field(None, description="Observations for certificate of origin")
 
     # Método de Pago & Textos
     metodo_pago_plantilla: Optional[PropertyWithOptions] = Field(None, description="Payment method template")
     banco_cobro: Optional[PropertyWithOptions] = Field(None, description="Collection bank")
     cotizacion_rapida: Optional[bool] = Field(None, description="Quick quotation flag")
     texto_adicional_metodo_pago: Optional[str] = Field(None, description="Additional payment method text")
-    texto_firma_aceptacion_cliente: Optional[str] = Field(None, description="Client acceptance text")
 
     # Textos Generados
     texto_banco: Optional[str] = Field(None, description="Bank information text")
     texto_forma_pago: Optional[str] = Field(None, description="Payment terms text")
-    texto_informacion_expediente: Optional[str] = Field(None, description="Shipment information text")
     texto_base_oferta: Optional[str] = Field(None, description="Base offer text")
 
+    # Identificación y Referencia
+    cif: Optional[str] = Field(None, description="NIF/CIF del cliente para la cotización")
+    referencia_cotizacion: Optional[str] = Field(None, description="Referencia de la cotización")
 
 class DealDocumentacionResponse(BaseResponse):
     """Response model for deal documentacion data endpoint.
@@ -500,7 +499,6 @@ class DealDocumentacionResponse(BaseResponse):
                             {"label": "English", "value": "en"}
                         ]
                     },
-                    "tramitar_carga": True,
                     "documentos_a_generar": {
                         "value": "bl;packing_list",
                         "options": [
@@ -514,21 +512,15 @@ class DealDocumentacionResponse(BaseResponse):
             }
         }
 
-
 class ClientDataResponse(BaseResponse):
     """Response model for client data endpoint.
 
     Attributes:
-        contact: Contact information from HubSpot.
         company: Company information from HubSpot.
         deal: Deal-specific client information.
         clasificacion: Client classification based on country (NACIONAL or EXPORTACION).
         proyecto: Project/origin channel from contact or company (for beverage fair analytics).
     """
-    contact: Optional[ContactData] = Field(
-        None,
-        description="Contact information from HubSpot"
-    )
     company: Optional[CompanyData] = Field(
         None,
         description="Company information from HubSpot"
@@ -551,14 +543,6 @@ class ClientDataResponse(BaseResponse):
         json_schema_extra = {
             "example": {
                 "success": True,
-                "contact": {
-                    "firstname": "Juan",
-                    "lastname": "Pérez",
-                    "country": {
-                        "value": "Spain",
-                        "options": []
-                    }
-                },
                 "company": {
                     "name": "Acme Corp"
                 },
@@ -576,7 +560,6 @@ class ClientDataResponse(BaseResponse):
                 }
             }
         }
-
 
 class HealthResponse(BaseModel):
     """Health check response model.
@@ -615,7 +598,6 @@ class HealthResponse(BaseModel):
             }
         }
 
-
 # Product Models
 class ProductItem(BaseModel):
     """Product item model.
@@ -629,34 +611,16 @@ class ProductItem(BaseModel):
         cardcode: Usual supplier code.
         n_articulo_proveedor: Supplier article number.
         codigo_proveedor: Supplier product code.
-        tipo_bulto_compra: Purchase package type.
         tipo_iva_soportado: Supported VAT type.
-        volumen_compra: Purchase volume in cubic meters.
-        peso_compra: Purchase weight in kilos.
         tipo_iva_repercutido: Transferred VAT type.
-        tipo_bulto_venta: Sales package type.
-        volumen_venta: Sales volume in cubic meters.
-        peso_venta: Sales weight in kilos.
         peso_neto: Net weight per box in kilos.
         cuentas_mayor: General ledger accounts.
         gestion_stock_almacen: Warehouse stock management.
-        origen: Origin.
         formato: Format.
         sap_updated: SAP updated flag.
-        hs_price_xbb: EX-WORKS ALMACEN PROEX SAN ROQUE price.
         hs_price_eur: EX-WORKS FABRICA PROVEEDOR price.
-        hist_2022: Historical cost 2022.
-        hist_2023: Historical cost 2023.
-        hist_2024: Historical cost 2024.
-        hs_price_xbd: Samples price.
-        hs_price_xba: Distribution RRP price.
         ultimo_precio_compra: Last purchase price.
         ultimo_precio_evaluado: Last evaluated price.
-        hs_price_brl: Special list for cds-0798.
-        hs_price_cuc: Special list for cds-0009.
-        hs_price_cup: Special list for cds-0334.
-        hs_price_lrd: Special list for cds-0369.
-        hs_price_lyd: Special list for cds-0766.
         name_en: Name in English.
         name_fr: Name in French.
         tipo_articulo: Article type (fabricante, transitario, servicio, etc.).
@@ -670,49 +634,31 @@ class ProductItem(BaseModel):
     cardcode: Optional[str] = Field(None, description="Usual supplier code (Proveedor habitual)")
     n_articulo_proveedor: Optional[str] = Field(None, description="Supplier article number")
     codigo_proveedor: Optional[str] = Field(None, description="Supplier product code")
-    tipo_bulto_compra: Optional[str] = Field(None, description="Purchase package type")
     tipo_iva_soportado: Optional[str] = Field(None, description="Supported VAT type")
-    volumen_compra: Optional[float] = Field(None, description="Purchase volume in cubic meters")
-    peso_compra: Optional[float] = Field(None, description="Purchase weight in kilos")
     tipo_iva_repercutido: Optional[str] = Field(None, description="Transferred VAT type")
-    tipo_bulto_venta: Optional[str] = Field(None, description="Sales package type")
-    volumen_venta: Optional[float] = Field(None, description="Sales volume in cubic meters")
-    peso_venta: Optional[float] = Field(None, description="Sales weight in kilos")
+    tipo_iva_soportado_eu: Optional[str] = Field(None, description="Supported VAT type for EU companies")
+    tipo_iva_repercutido_eu: Optional[str] = Field(None, description="Transferred VAT type for EU companies")
+    tipo_iva_soportado_ex: Optional[str] = Field(None, description="Supported VAT type for foreign companies")
+    tipo_iva_repercutido_ex: Optional[str] = Field(None, description="Transferred VAT type for foreign companies")
     peso_neto: Optional[float] = Field(None, description="Net weight per box in kilos")
     cuentas_mayor: Optional[str] = Field(None, description="General ledger accounts")
     gestion_stock_almacen: Optional[str] = Field(None, description="Warehouse stock management")
-    origen: Optional[str] = Field(None, description="Origin")
     formato: Optional[str] = Field(None, description="Format")
+    marca_certificado: Optional[str] = Field(None, description="Brand")
     sap_updated: Optional[str] = Field(None, description="SAP updated flag")
-    hs_price_xbb: Optional[float] = Field(None, description="EX-WORKS ALMACEN PROEX SAN ROQUE price")
     hs_price_eur: Optional[float] = Field(None, description="EX-WORKS FABRICA PROVEEDOR price")
-    hist_2022: Optional[float] = Field(None, description="Historical cost 2022")
-    hist_2023: Optional[float] = Field(None, description="Historical cost 2023")
-    hist_2024: Optional[float] = Field(None, description="Historical cost 2024")
-    hs_price_xbd: Optional[float] = Field(None, description="Samples price")
-    hs_price_xba: Optional[float] = Field(None, description="Distribution RRP price")
     ultimo_precio_compra: Optional[float] = Field(None, description="Last purchase price")
     ultimo_precio_evaluado: Optional[float] = Field(None, description="Last evaluated price")
-    hs_price_brl: Optional[float] = Field(None, description="Special list for cds-0798")
-    hs_price_cuc: Optional[float] = Field(None, description="Special list for cds-0009")
-    hs_price_cup: Optional[float] = Field(None, description="Special list for cds-0334")
-    hs_price_lrd: Optional[float] = Field(None, description="Special list for cds-0369")
-    hs_price_lyd: Optional[float] = Field(None, description="Special list for cds-0766")
     name_en: Optional[str] = Field(None, description="Name in English")
     name_fr: Optional[str] = Field(None, description="Name in French")
     tipo_articulo: Optional[str] = Field(None, description="Article type (fabricante, transitario, servicio, etc.)")
     hs_product_type: Optional[str] = Field(None, description="Product type (inventory, service, container)")
+    activo: Optional[str] = Field(None, description="Product active status (Activo/Inactivo)")
     # Container capacity fields
     unidades_cam16: Optional[int] = Field(None, description="Maximum units for CAMION 16P container")
     unidades_d20dr: Optional[int] = Field(None, description="Maximum units for D20DR container")
     unidades_d40dr: Optional[int] = Field(None, description="Maximum units for D40DR container")
-    unidades_d20w: Optional[int] = Field(None, description="Maximum units for D20W container")
-    unidades_d40hd: Optional[int] = Field(None, description="Maximum units for D40HD container")
-    unidades_d45hd: Optional[int] = Field(None, description="Maximum units for D45HD container")
-    unidades_d45w: Optional[int] = Field(None, description="Maximum units for D45W container")
     unidades_palet: Optional[int] = Field(None, description="Maximum units for PALETS container")
-    unidades_r20rf: Optional[int] = Field(None, description="Maximum units for R20RF container")
-    unidades_r40rf: Optional[int] = Field(None, description="Maximum units for R40RF container")
     unidades_tra80: Optional[int] = Field(None, description="Maximum units for TRAILER 80 container")
 
     class Config:
@@ -734,7 +680,6 @@ class ProductItem(BaseModel):
                 "unidades_d40dr": 2400
             }
         }
-
 
 class ProductListResponse(BaseResponse):
     """Response model for product list endpoint.
@@ -770,7 +715,6 @@ class ProductListResponse(BaseResponse):
             }
         }
 
-
 class ProviderData(BaseModel):
     """Provider/supplier data model.
 
@@ -784,7 +728,6 @@ class ProviderData(BaseModel):
     name: str = Field(..., description="Provider company name")
     cardcode: Optional[str] = Field(None, description="Provider card code")
     lugar_de_la_carga_envio: Optional[str] = Field(None, description="Loading/shipping location")
-
 
 class ProductProviderResponse(BaseResponse):
     """Response model for product provider endpoint.
@@ -807,7 +750,6 @@ class ProductProviderResponse(BaseResponse):
                 }
             }
         }
-
 
 class ProviderListResponse(BaseResponse):
     """Response model for provider list endpoint.
@@ -842,16 +784,15 @@ class ProviderListResponse(BaseResponse):
             }
         }
 
-
 # Articles Models
 class LineItemInput(BaseModel):
     """Line item input for creating line items.
 
     Attributes:
-        hs_sku: Product SKU ID from HubSpot.
+        id: HubSpot product object ID.
         margen_unitario: Unit margin percentage for the line item.
     """
-    hs_sku: str = Field(..., description="Product SKU ID from HubSpot")
+    id: str = Field(..., description="HubSpot product object ID")
     margen_unitario: Optional[float] = Field(None, description="Unit margin percentage for the line item")
 
     class Config:
@@ -862,7 +803,6 @@ class LineItemInput(BaseModel):
                 "margen_unitario": 12.0
             }
         }
-
 
 class ProviderInput(BaseModel):
     """Provider input for associating providers with deals.
@@ -879,7 +819,6 @@ class ProviderInput(BaseModel):
                 "cardcode": "P0490"
             }
         }
-
 
 class UpdateArticlesRequest(BaseModel):
     """Request model for updating deal articles from ArticulosTab.
@@ -917,7 +856,6 @@ class UpdateArticlesRequest(BaseModel):
             }
         }
 
-
 class ServiceItemInput(BaseModel):
     """Service item input for creating service line items.
 
@@ -934,7 +872,8 @@ class ServiceItemInput(BaseModel):
     provider_id: str = Field(..., description="HubSpot provider ID for this service")
     provider_cardcode: str = Field(..., description="Provider cardcode for this service")
     price: float = Field(..., description="Price for the service", gt=0)
-    tipo_iva: Optional[str] = Field(None, description="IVA type for this service")
+    tipo_iva: Optional[str] = Field(None, description="IVA repercutido type for this service")
+    tipo_iva_soportado: Optional[str] = Field(None, description="IVA soportado type for this service")
 
     class Config:
         """Pydantic configuration."""
@@ -947,7 +886,6 @@ class ServiceItemInput(BaseModel):
                 "price": 450.00
             }
         }
-
 
 class UpdateServicesRequest(BaseModel):
     """Request model for updating deal services from ServiciosTab.
@@ -983,7 +921,6 @@ class UpdateServicesRequest(BaseModel):
             }
         }
 
-
 class ServiceItem(BaseModel):
     """Service item for GET response."""
     product_id: str = Field(..., description="HubSpot product ID")
@@ -994,14 +931,13 @@ class ServiceItem(BaseModel):
     provider_cardcode: Optional[str] = Field(None, description="Provider cardcode")
     price: float = Field(..., description="Price for the service")
     tipo_iva_repercutido: Optional[str] = Field(None, description="VAT type for the service line item")
-
+    tipo_iva_soportado: Optional[str] = Field(None, description="Input VAT type for the service line item")
 
 class DealServicesResponse(BaseModel):
     """Response model for GET deal services."""
     success: bool = Field(..., description="Whether the request was successful")
     error: Optional[str] = Field(None, description="Error message if any")
     services: list[ServiceItem] = Field(default_factory=list, description="List of service items")
-
 
 # Legacy model for backwards compatibility
 class ArticleAssociation(BaseModel):
@@ -1023,7 +959,6 @@ class ArticleAssociation(BaseModel):
             }
         }
 
-
 class ArticleWithProvider(BaseModel):
     """Article with provider information.
 
@@ -1043,13 +978,7 @@ class ArticleWithProvider(BaseModel):
         unidades_cam16: Maximum units for CAMION 16P container.
         unidades_d20dr: Maximum units for D20DR container.
         unidades_d40dr: Maximum units for D40DR container.
-        unidades_d20w: Maximum units for D20W container.
-        unidades_d40hd: Maximum units for D40HD container.
-        unidades_d45hd: Maximum units for D45HD container.
-        unidades_d45w: Maximum units for D45W container.
         unidades_palet: Maximum units for PALETS container.
-        unidades_r20rf: Maximum units for R20RF container.
-        unidades_r40rf: Maximum units for R40RF container.
         unidades_tra80: Maximum units for TRAILER 80 container.
     """
     id: str = Field(..., description="HubSpot product ID")
@@ -1066,17 +995,12 @@ class ArticleWithProvider(BaseModel):
     ultimo_precio_evaluado: Optional[float] = Field(None, description="Last evaluated price")
     margen_unitario: Optional[float] = Field(None, description="Unit margin percentage for negotiation")
     tipo_iva_repercutido: Optional[str] = Field(None, description="Transferred VAT type")
+    tipo_iva_soportado: Optional[str] = Field(None, description="Input VAT type")
     # Container capacity fields
     unidades_cam16: Optional[int] = Field(None, description="Maximum units for CAMION 16P container")
     unidades_d20dr: Optional[int] = Field(None, description="Maximum units for D20DR container")
     unidades_d40dr: Optional[int] = Field(None, description="Maximum units for D40DR container")
-    unidades_d20w: Optional[int] = Field(None, description="Maximum units for D20W container")
-    unidades_d40hd: Optional[int] = Field(None, description="Maximum units for D40HD container")
-    unidades_d45hd: Optional[int] = Field(None, description="Maximum units for D45HD container")
-    unidades_d45w: Optional[int] = Field(None, description="Maximum units for D45W container")
     unidades_palet: Optional[int] = Field(None, description="Maximum units for PALETS container")
-    unidades_r20rf: Optional[int] = Field(None, description="Maximum units for R20RF container")
-    unidades_r40rf: Optional[int] = Field(None, description="Maximum units for R40RF container")
     unidades_tra80: Optional[int] = Field(None, description="Maximum units for TRAILER 80 container")
 
     class Config:
@@ -1095,7 +1019,6 @@ class ArticleWithProvider(BaseModel):
             }
         }
 
-
 class ProviderSummary(BaseModel):
     """Proveedor asociado al deal."""
     id: str = Field(..., description="ID del objeto proveedor (custom object) o cardcode si no hay ID")
@@ -1112,7 +1035,6 @@ class ProviderSummary(BaseModel):
                 "lugar_de_la_carga_envio": "Barcelona"
             }
         }
-
 
 class DealArticlesResponse(BaseResponse):
     """Respuesta del endpoint de artículos del deal (NO contenedores)."""
@@ -1169,17 +1091,16 @@ class DealArticlesResponse(BaseResponse):
             }
         }
 
-
 # Container Models
 class ContainerArticle(BaseModel):
     """Article within a container configuration.
 
     Attributes:
-        articuloId: Product SKU ID.
+        articuloId: HubSpot product object ID.
         nombre: Product name.
         numCajas: Number of boxes/cases of this product in the container.
     """
-    articuloId: str = Field(..., description="Product SKU ID", alias="articuloId")
+    articuloId: str = Field(..., description="HubSpot product object ID", alias="articuloId")
     nombre: str = Field(..., description="Product name")
     numCajas: int = Field(..., description="Number of boxes/cases", ge=0, alias="numCajas")
 
@@ -1193,7 +1114,6 @@ class ContainerArticle(BaseModel):
                 "numCajas": 200
             }
         }
-
 
 class UniqueContainerArticle(BaseModel):
     """Article within a unique container configuration with unique name.
@@ -1218,6 +1138,7 @@ class UniqueContainerArticle(BaseModel):
     precio_de_coste: Optional[float] = Field(None, description="Negotiated cost price per unit")
     margen_unitario: Optional[float] = Field(None, description="Unit margin (decimal 0-1)")
     tipo_iva_repercutido: Optional[str] = Field(None, description="Type of VAT to charge")
+    tipo_iva_soportado: Optional[str] = Field(None, description="Type of input VAT")
 
     class Config:
         """Pydantic configuration."""
@@ -1234,7 +1155,6 @@ class UniqueContainerArticle(BaseModel):
             }
         }
 
-
 class ContainerConfig(BaseModel):
     """Container configuration stored as JSON.
 
@@ -1247,7 +1167,7 @@ class ContainerConfig(BaseModel):
         default_factory=list,
         description="List of articles with quantities"
     )
-    ocupacion: float = Field(..., description="Occupancy percentage (0-103, allowing ±3% margin)", ge=97, le=103)
+    ocupacion: float = Field(..., description="Occupancy percentage", ge=0, le=200)
     pesoNeto: float = Field(..., description="Net weight in kg", ge=0, alias="pesoNeto")
 
     class Config:
@@ -1272,7 +1192,6 @@ class ContainerConfig(BaseModel):
             }
         }
 
-
 class UniqueContainerConfig(BaseModel):
     """Unique container configuration with articles containing articuloName.
 
@@ -1285,7 +1204,7 @@ class UniqueContainerConfig(BaseModel):
         default_factory=list,
         description="List of articles with unique names"
     )
-    ocupacion: float = Field(..., description="Occupancy percentage (0-103, allowing ±3% margin)", ge=97, le=103)
+    ocupacion: float = Field(..., description="Occupancy percentage", ge=0, le=200)
     pesoNeto: float = Field(..., description="Net weight in kg", ge=0, alias="pesoNeto")
 
     class Config:
@@ -1311,7 +1230,6 @@ class UniqueContainerConfig(BaseModel):
                 "pesoNeto": 5040
             }
         }
-
 
 class ContainerLineItemInput(BaseModel):
     """Container line item input for creating container line items.
@@ -1352,7 +1270,6 @@ class ContainerLineItemInput(BaseModel):
                 }
             }
         }
-
 
 class UpdateContainersRequest(BaseModel):
     """Request model for updating deal containers from ContenedoresTab.
@@ -1406,6 +1323,77 @@ class UpdateContainersRequest(BaseModel):
             }
         }
 
+class ContainerArticleEdit(BaseModel):
+    """Article in a container edit payload.
+
+    Existing articles carry line_item_id; new articles omit it so the backend
+    creates the line item (and the matching ELEMENTO custom object if any).
+    """
+    line_item_id: Optional[str] = Field(None, description="Existing HubSpot line item ID (omit for new article)")
+    articuloId: str = Field(..., description="HubSpot product object ID", alias="articuloId")
+    articuloName: Optional[str] = Field(None, description="Article name (without container prefix)", alias="articuloName")
+    nombre: Optional[str] = Field(None, description="Article name (alias for articuloName)")
+    numCajas: int = Field(..., description="Number of boxes/cases", ge=0, alias="numCajas")
+    precio_de_coste: Optional[float] = Field(None, description="Provider cost price")
+    price: Optional[float] = Field(None, description="Sale (EXW) price per unit")
+    margen_unitario: Optional[float] = Field(None, description="Unit margin (decimal 0-1)")
+    tipo_iva_repercutido: Optional[str] = Field(None, description="VAT charged to customer")
+    tipo_iva_soportado: Optional[str] = Field(None, description="Input VAT")
+
+    class Config:
+        populate_by_name = True
+
+class ContainerConfigEdit(BaseModel):
+    """Container configuration for edit-in-place operations.
+
+    Does not enforce 97-103% occupancy: the modal lets the user save freely
+    and surfaces an inline warning instead of blocking.
+    """
+    articulos: list[ContainerArticleEdit] = Field(default_factory=list)
+    ocupacion: float = Field(..., description="Occupancy percentage", ge=0, le=200)
+    pesoNeto: float = Field(..., description="Net weight in kg", ge=0, alias="pesoNeto")
+    pesoBruto: Optional[float] = Field(None, description="Gross weight in kg", alias="pesoBruto")
+    totalCajas: Optional[int] = Field(None, description="Total boxes in the container", alias="totalCajas")
+
+    class Config:
+        populate_by_name = True
+        extra = "allow"
+
+class UpdateSingleContainerRequest(BaseModel):
+    """Request body for PATCH /{deal_id}/containers/{container_line_item_id}.
+
+    Carries the new desired state of a single container. The backend diffs it
+    against the current state and edits line items + ELEMENTO custom objects in place.
+    """
+    container_config: ContainerConfigEdit = Field(..., description="Updated container configuration")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "container_config": {
+                    "articulos": [
+                        {
+                            "line_item_id": "11111",
+                            "articuloId": "0303005008-00205",
+                            "articuloName": "Vino Tinto",
+                            "numCajas": 250,
+                            "price": 13.5,
+                            "precio_de_coste": 11.0,
+                            "margen_unitario": 0.22,
+                            "tipo_iva_repercutido": "R21",
+                            "tipo_iva_soportado": "S21"
+                        },
+                        {
+                            "articuloId": "0303005009-00106",
+                            "articuloName": "Vino Blanco",
+                            "numCajas": 100
+                        }
+                    ],
+                    "ocupacion": 99.0,
+                    "pesoNeto": 5500
+                }
+            }
+        }
 
 class ContainerItem(BaseModel):
     """Container item with full details.
@@ -1444,7 +1432,6 @@ class ContainerItem(BaseModel):
                 }
             }
         }
-
 
 class UniqueContainerItem(BaseModel):
     """Individual container item with unique name.
@@ -1488,6 +1475,15 @@ class UniqueContainerItem(BaseModel):
             }
         }
 
+class UpdateSingleContainerResponse(BaseResponse):
+    """Response model for PATCH /{deal_id}/containers/{container_line_item_id}.
+
+    Returns the updated container in the same shape the frontend uses for
+    `unique_containers`, plus optional info about commission recalc and elements sync.
+    """
+    container: Optional[UniqueContainerItem] = Field(None, description="Updated unique container item")
+    elementos_synced: bool = Field(False, description="Whether ELEMENTO custom objects were synced")
+    intermediario_recalculated: bool = Field(False, description="Whether the intermediario commission was recomputed")
 
 class DealContainersResponse(BaseResponse):
     """Response model for deal containers endpoint.
@@ -1557,7 +1553,6 @@ class DealContainersResponse(BaseResponse):
             }
         }
 
-
 # Transit/Route Models
 class DealTransitResponse(BaseResponse):
     """Response model for deal transit/route data endpoint.
@@ -1620,7 +1615,6 @@ class DealTransitResponse(BaseResponse):
             }
         }
 
-
 # Route Models (Rutas Hubspot Custom Object)
 class RutaItem(BaseModel):
     """Single route item from HubSpot custom object.
@@ -1678,7 +1672,6 @@ class RutaItem(BaseModel):
                 "tipo_tramo": "terrestre"
             }
         }
-
 
 class DealRutasResponse(BaseResponse):
     """Response model for deal routes endpoint.
@@ -1753,7 +1746,6 @@ class DealRutasResponse(BaseResponse):
             }
         }
 
-
 class DealTransitUpdateRequest(BaseModel):
     """Request model for updating transit data in a deal.
 
@@ -1766,7 +1758,8 @@ class DealTransitUpdateRequest(BaseModel):
         transitario: Freight forwarder HubSpot ID.
         precio_ruta_hasta_puerto_de_salida: Price for route to departure port (EUR).
         precio_ruta_hasta_puerto_destino: Price for route to destination port (EUR).
-        fecha_caducidad: Quote expiration date (timestamp milliseconds).
+        fecha_caducidad_flete_salida: Expiry date for terrestrial route (timestamp milliseconds).
+        fecha_caducidad_flete_destino: Expiry date for maritime route (timestamp milliseconds).
         almacen: Warehouse code for order items.
         tipo_iva_fletes: IVA type for freight line items.
     """
@@ -1778,11 +1771,14 @@ class DealTransitUpdateRequest(BaseModel):
     transitario: Optional[str] = Field(None, description="Freight forwarder HubSpot ID")
     precio_ruta_hasta_puerto_de_salida: Optional[float] = Field(None, description="Price for route to departure port (EUR)", ge=0)
     precio_ruta_hasta_puerto_destino: Optional[float] = Field(None, description="Price for route to destination port (EUR)", ge=0)
-    fecha_caducidad: Optional[int] = Field(None, description="Quote expiration date (timestamp milliseconds)")
+    fecha_caducidad_flete_salida: Optional[int] = Field(None, description="Expiry date for terrestrial route (timestamp milliseconds)")
+    fecha_caducidad_flete_destino: Optional[int] = Field(None, description="Expiry date for maritime route (timestamp milliseconds)")
     cotizacion_rapida: Optional[str] = Field(None, description="Quick quote flag (true/false as string)")
     transitario_name: Optional[str] = Field(None, description="Freight forwarder name (for response purposes only)")
     almacen: Optional[str] = Field(None, description="Warehouse code for order items")
-    tipo_iva_fletes: Optional[str] = Field(None, description="IVA type for freight line items")
+    tipo_iva_fletes: Optional[str] = Field(None, description="IVA repercutido type for freight line items")
+    tipo_iva_fletes_soportado: Optional[str] = Field(None, description="IVA soportado type for freight line items")
+    iva_fletes_defaults: Optional[dict] = Field(None, description="Product-resolved IVA defaults for fletes: {repercutido, soportado}")
 
     class Config:
         """Pydantic configuration."""
@@ -1800,7 +1796,6 @@ class DealTransitUpdateRequest(BaseModel):
                 "fecha_caducidad": 1735689600000
             }
         }
-
 
 class DealTransitDataResponse(BaseModel):
     """Response model for deal transit data.
@@ -1834,7 +1829,6 @@ class DealTransitDataResponse(BaseModel):
             }
         }
 
-
 class NegociacionArticleItem(BaseModel):
     """Individual article negotiation data for a unique line item.
 
@@ -1848,6 +1842,7 @@ class NegociacionArticleItem(BaseModel):
     price: float = Field(..., description="Negotiated price per unit", gt=0)
     margen_unitario: float = Field(..., description="Effective unit margin (0-1 range)", ge=0, le=1)
     tipo_iva_repercutido: str = Field(..., description="VAT type code")
+    tipo_iva_soportado: Optional[str] = Field(None, description="Input VAT type code")
 
     class Config:
         """Pydantic configuration."""
@@ -1859,7 +1854,6 @@ class NegociacionArticleItem(BaseModel):
                 "tipo_iva_repercutido": "A21"
             }
         }
-
 
 class UpdateNegociacionRequest(BaseModel):
     """Request model for updating negotiation data for unique line items.
@@ -1890,7 +1884,6 @@ class UpdateNegociacionRequest(BaseModel):
             }
         }
 
-
 # Textos Cotizacion Models (HubDB)
 class TextosCotizacionRequest(BaseModel):
     """Request model for querying HubDB textos_cotizaciones table.
@@ -1916,7 +1909,6 @@ class TextosCotizacionRequest(BaseModel):
                 "subgrupo": None
             }
         }
-
 
 class TextoCotizacionItem(BaseModel):
     """Individual text item from HubDB textos_cotizaciones table.
@@ -1945,7 +1937,6 @@ class TextoCotizacionItem(BaseModel):
                 "texto": "TÉRMINOS DE PAGO.- 30% al confirmar el pedido, 70% antes del envío."
             }
         }
-
 
 class TextosCotizacionResponse(BaseResponse):
     """Response model for textos cotizacion endpoint.
@@ -2012,7 +2003,6 @@ class TipoIVAFilter(BaseModel):
             }
         }
 
-
 class TipoIVARequest(BaseModel):
     """Request model for querying HubDB tipo_de_iva_soportado table.
 
@@ -2037,7 +2027,6 @@ class TipoIVARequest(BaseModel):
                 ]
             }
         }
-
 
 class TipoIVAItem(BaseModel):
     """Represents one row of the HubDB table tipo_de_iva_soportado.
@@ -2069,7 +2058,6 @@ class TipoIVAItem(BaseModel):
                 "tipo_residencia": "NACIONAL"
             }
         }
-
 
 class TipoIVAResponse(BaseResponse):
     """Response model for tipo-iva HubDB endpoint.
@@ -2109,10 +2097,7 @@ class TipoIVAResponse(BaseResponse):
             }
         }
 
-
-# ============================================================================
 # Publish Quote Models
-# ============================================================================
 
 class QuoteHeader(BaseModel):
     """Header information for the quote."""
@@ -2127,17 +2112,14 @@ class QuoteHeader(BaseModel):
     etd: Optional[str] = None
     eta: Optional[str] = None
 
-
 class QuoteEmpresa(BaseModel):
     """Company information."""
     nombre: str
     direccion: str
     iniciales: str
 
-
 class QuoteCliente(BaseModel):
     """Client information."""
-    nombreCliente: str
     nombreEmpresa: str
     pais: str
     tipoCliente: str
@@ -2149,7 +2131,7 @@ class QuoteCliente(BaseModel):
     tipoResidente: Optional[str] = None
     cif: Optional[str] = None
     paisOperaciones: Optional[str] = None
-
+    fechaCaducidadCotizacion: Optional[str] = None
 
 class QuoteRuta(BaseModel):
     """Route and logistics information."""
@@ -2164,8 +2146,8 @@ class QuoteRuta(BaseModel):
     diasLibres: int
     precioOrigen: float
     precioDestino: float
-    fechaValidez: Optional[str] = None
-
+    tipoIVAFletes: Optional[str] = None
+    tipoIVAFletesSoportado: Optional[str] = None
 
 class QuoteLineItem(BaseModel):
     """Line item in the quote."""
@@ -2180,11 +2162,14 @@ class QuoteLineItem(BaseModel):
     total: float
     margen_unitario: Optional[float] = None
     tipo_iva_repercutido: Optional[str] = None
+    tipo_iva_soportado: Optional[str] = None
     # From product: use these so quote line items match the associated product (do not override with inferred values)
     tipo_articulo: Optional[str] = None
     hs_product_type: Optional[str] = None
     numero_container: Optional[str] = None
-
+    peso_neto: Optional[str] = None
+    name_en: Optional[str] = None
+    name_fr: Optional[str] = None
 
 class QuotePrecios(BaseModel):
     """Pricing breakdown by Incoterm."""
@@ -2198,7 +2183,6 @@ class QuotePrecios(BaseModel):
     totalDAP_TERRESTRE: float
     totalDAP_MARITIMO: float
 
-
 class QuoteEstadisticas(BaseModel):
     """Quote statistics and totals."""
     totalColis: int
@@ -2209,16 +2193,12 @@ class QuoteEstadisticas(BaseModel):
     numContainers: int
     totalEuros: float
 
-
 class QuoteTextos(BaseModel):
     """Legal and commercial texts."""
     textoBaseOferta: str
     textoBanco: str
     textoFormaPago: str
     textoAdicionalMetodoPago: Optional[str] = None
-    textoInfoExpediente: Optional[str] = None
-    textoFirmaAceptacion: Optional[str] = None
-
 
 class QuoteIntermediario(BaseModel):
     """Intermediary/broker information."""
@@ -2227,7 +2207,8 @@ class QuoteIntermediario(BaseModel):
     tipoComision: str
     importeComision: float
     repercutirACliente: str
-
+    tipoIVAComision: Optional[str] = None
+    tipoIVAComisionSoportado: Optional[str] = None
 
 class QuoteDocumentacion(BaseModel):
     """Documentation settings."""
@@ -2236,7 +2217,6 @@ class QuoteDocumentacion(BaseModel):
     bancoCobro: str
     documentosAGenerar: List[str]
     direccionFiscal: str
-    tramitarCarga: bool
     consignee: Optional[str] = None
     shipper: Optional[str] = None
     notify: Optional[str] = None
@@ -2244,7 +2224,6 @@ class QuoteDocumentacion(BaseModel):
     textoEnBl: Optional[str] = None
     comentariosLogistica: Optional[str] = None
     comentariosTransitario: Optional[str] = None
-
 
 class PublishQuoteRequest(BaseModel):
     """Request model for publishing a quote.
@@ -2285,7 +2264,6 @@ class PublishQuoteRequest(BaseModel):
                     "iniciales": "AD"
                 },
                 "cliente": {
-                    "nombreCliente": "Alex Suarez",
                     "nombreEmpresa": "Pymext",
                     "pais": "Andorra",
                     "tipoCliente": "exportacion",
@@ -2309,8 +2287,7 @@ class PublishQuoteRequest(BaseModel):
                     "almacen": "FURGONETA 2",
                     "diasLibres": 10,
                     "precioOrigen": 525,
-                    "precioDestino": 1200,
-                    "fechaValidez": "2025-12-30T23:00:00.000Z"
+                    "precioDestino": 1200
                 },
                 "lineItems": [],
                 "precios": {
@@ -2343,12 +2320,10 @@ class PublishQuoteRequest(BaseModel):
                     "metodoPago": "100% anticipado",
                     "bancoCobro": "La Caixa",
                     "documentosAGenerar": [],
-                    "direccionFiscal": "Calle Tuétaro 10",
-                    "tramitarCarga": True
+                    "direccionFiscal": "Calle Tuétaro 10"
                 }
             }
         }
-
 
 class PublishQuoteResponse(BaseResponse):
     """Response model for quote publication.
@@ -2371,10 +2346,7 @@ class PublishQuoteResponse(BaseResponse):
             }
         }
 
-
-# ============================================================================
 # CUSTOM OBJECTS: CONTENEDOR Y ELEMENTO
-# ============================================================================
 
 class ContenedorCreate(BaseModel):
     """Model for creating a Contenedor custom object.
@@ -2383,7 +2355,7 @@ class ContenedorCreate(BaseModel):
         nombre: Unique container name (format: dealId-numeroContainer, e.g., "46298478914-001")
         tipo_contenedor: Container type (camion_16p, d20dr, d40dr, etc.)
         numero_container: Sequential container number within the deal (1, 2, 3...)
-        ocupacion: Container occupancy percentage (allowed range: 97-103%)
+        ocupacion: Container occupancy percentage (allowed range: 90-103%)
         peso_neto: Total net weight in kilograms
         peso_bruto: Total gross weight in kilograms
         container_config: Complete container configuration in JSON format
@@ -2395,7 +2367,7 @@ class ContenedorCreate(BaseModel):
     nombre: str = Field(..., description="Unique container name (format: dealId-numeroContainer)")
     tipo_contenedor: str = Field(..., description="Container type")
     numero_container: int = Field(..., description="Sequential container number")
-    ocupacion: Optional[float] = Field(None, description="Occupancy percentage (97-103%)")
+    ocupacion: Optional[float] = Field(None, description="Occupancy percentage (90-103%)")
     peso_neto: Optional[float] = Field(None, description="Total net weight in kg")
     peso_bruto: Optional[float] = Field(None, description="Total gross weight in kg")
     container_config: Optional[str] = Field(None, description="Container configuration JSON")
@@ -2422,7 +2394,6 @@ class ContenedorCreate(BaseModel):
             }
         }
 
-
 class ContenedorUpdate(BaseModel):
     """Model for updating a Contenedor custom object.
 
@@ -2439,7 +2410,6 @@ class ContenedorUpdate(BaseModel):
     price: Optional[float] = Field(None, description="Container price")
     numero_precinto: Optional[str] = Field(None, description="Security seal number")
 
-
 class ContenedorResponse(BaseModel):
     """Response model for Contenedor operations.
 
@@ -2453,7 +2423,6 @@ class ContenedorResponse(BaseModel):
     properties: ContenedorCreate = Field(..., description="Container properties")
     created_at: Optional[str] = Field(None, description="Creation timestamp")
     updated_at: Optional[str] = Field(None, description="Last update timestamp")
-
 
 class ElementoCreate(BaseModel):
     """Model for creating an Elemento custom object.
@@ -2496,6 +2465,11 @@ class ElementoCreate(BaseModel):
     tipo_iva_repercutido: Optional[str] = Field(None, description="VAT type")
     codigo_proveedor: Optional[str] = Field(None, description="Provider product code")
     line_item_id: Optional[str] = Field(None, description="Line item ID for dual tracking")
+    nombre_es: Optional[str] = Field(None, description="Spanish name (clean, from product description)")
+    nombre_en: Optional[str] = Field(None, description="Name in English")
+    nombre_fr: Optional[str] = Field(None, description="Name in French")
+    formato: Optional[str] = Field(None, description="Format")
+    marca: Optional[str] = Field(None, description="Brand")
 
     class Config:
         """Pydantic configuration."""
@@ -2522,7 +2496,6 @@ class ElementoCreate(BaseModel):
             }
         }
 
-
 class ElementoUpdate(BaseModel):
     """Model for updating an Elemento custom object.
 
@@ -2545,7 +2518,11 @@ class ElementoUpdate(BaseModel):
     nombre_proveedor: Optional[str] = Field(None, description="Provider name")
     tipo_iva_repercutido: Optional[str] = Field(None, description="VAT type")
     codigo_proveedor: Optional[str] = Field(None, description="Provider product code")
-
+    nombre_es: Optional[str] = Field(None, description="Spanish name (clean, from product description)")
+    nombre_en: Optional[str] = Field(None, description="Name in English")
+    nombre_fr: Optional[str] = Field(None, description="Name in French")
+    formato: Optional[str] = Field(None, description="Format")
+    marca: Optional[str] = Field(None, description="Brand")
 
 class ElementoResponse(BaseModel):
     """Response model for Elemento operations.

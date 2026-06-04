@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "รูปภาพโลโก้บริษัท",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "ไม่มีผลเมื่อแทนที่โลโก้ตามค่าเริ่มต้น",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "ความสูงสูงสุดของโลโก้",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "ตามค่าเริ่มต้น ใบเสนอราคาของคุณจะแสดงโลโก้บริษัทจากหน้าค่าเริ่มต้นของบัญชีหรือหน้าเว็บไซต์หากคุณตั้งค่าเอาไว้ คุณอาจเลือกแทนที่การตั้งค่าเหล่านี้โดยใช้ตัวสลับด้านล่าง",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "โลโก้",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "แทนที่โลโก้เริ่มต้นในเทมเพลตนี้",
+    "description" : "",
+    "placeholders" : null
+  }
+}

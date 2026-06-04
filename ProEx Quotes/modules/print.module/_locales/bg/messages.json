@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Отпечатване на оферта",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Текст на бутон",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Печат",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,30 @@
+{# company logo data: image #}
+{% from '../../imports/mock_data.html' import SAMPLE_TEMPLATE_DATA as mock_data %}
+{% set QUOTE = template_data.quote || mock_data.quote %}
+
+<div class="logo_wrapper">
+  {% if module.override_default_logo && module.company_logo_image.src %}
+    <img class="company-logo__image custom-logo"
+      width="{{ module.company_logo_image.width|escape_attr }}"
+      height="{{ module.company_logo_image.height|escape_attr }}"
+      loading="lazy"
+      src="{{ module.company_logo_image.src|escape_url }}"
+      alt="{{ module.company_logo_image.alt|escape_attr }}">
+  {% elif brandSettings.primaryLogo.src %}
+    {% set brandSettingsLogoHeight = brandSettings.primaryLogo.height ? brandSettings.primaryLogo.height : module.default_logo_max_height %}
+    <img class="company-logo__image branding-logo"
+      style="height: {{ brandSettingsLogoHeight|escape_attr }}px; max-height: {{ module.default_logo_max_height|escape_attr }}px; max-width: 100%"
+      loading="lazy"
+      src="{{ brandSettings.primaryLogo.src|escape_url }}"
+      alt="{{ brandSettings.primaryLogo.alt|escape_attr }}">
+  {% elif !brandSettings.primaryLogo.src && site_settings.logoSrc %}
+    {% set siteSettingsLogoHeight = site_settings.logoHeight ? site_settings.logoHeight : module.default_logo_max_height %}
+    <img class="company-logo__image quote-logo"
+      style="height: {{ siteSettingsLogoHeight|escape_attr }}px; max-height: {{ module.default_logo_max_height|escape_attr }}px; max-width: 100%"
+      loading="lazy"
+      src="{{ site_settings.logoSrc|escape_url }}"
+      alt="{{ site_settings.logoAlt|escape_attr }}">
+  {% elif !brandSettings.primaryLogo.src && !site_settings.logoSrc && QUOTE.hs_sender_company_name %}
+    <h1 class="company-logo quote-title">{{ QUOTE.hs_sender_company_name|sanitize_html }}</h1>
+  {% endif %}
+</div>

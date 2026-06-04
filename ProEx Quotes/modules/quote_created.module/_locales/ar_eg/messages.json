@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "إنشاء عرض الأسعار",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "تم إنشاء عرض الأسعار:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "نص عرض الأسعار الذي تم إنشاؤه",
+    "description" : "",
+    "placeholders" : null
+  }
+}

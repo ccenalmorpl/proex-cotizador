@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "কোটেশন মুদ্রণ করুন",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "বোতাম টেক্সট",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "প্রিন্ট করুন",
+    "description" : "",
+    "placeholders" : null
+  }
+}

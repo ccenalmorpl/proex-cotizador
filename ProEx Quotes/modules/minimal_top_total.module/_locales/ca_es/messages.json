@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Venç ara",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Aquesta quota substitueix el \"text del total del pressupost\" quan hi ha pagaments deguts després de finalitzar la compra.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Text del total que venç ara",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Pressupost total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "El text de l'import del pressupost total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Text del total de la cotització",
+    "description" : "",
+    "placeholders" : null
+  }
+}

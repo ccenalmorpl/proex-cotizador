@@ -1,0 +1,72 @@
+{
+  "contact_information.default" : {
+    "message" : "<div><b>{{ ptoken_sender_full_name }}</b></div><div>{{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_email', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_phone', '') }}</div>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "contact_information.label" : {
+    "message" : "Maklumat kenalan",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h1" : {
+    "message" : "H1",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h2" : {
+    "message" : "H2",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h3" : {
+    "message" : "H3",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h4" : {
+    "message" : "H4",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h5" : {
+    "message" : "H5",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h6" : {
+    "message" : "H6",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.help_text" : {
+    "message" : "Pilih aras tajuk. H1 ialah aras yang paling besar, diikuti oleh H2 dan seterusnya",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.label" : {
+    "message" : "Aras tajuk",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_text.default" : {
+    "message" : "Soalan? Hubungi saya",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_text.label" : {
+    "message" : "Kandungan tajuk",
+    "description" : "",
+    "placeholders" : null
+  },
+  "include_hubspot_avatar.label" : {
+    "message" : "Sertakan avatar HubSpot penghantar",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Kenalan penghantar",
+    "description" : "",
+    "placeholders" : null
+  }
+}

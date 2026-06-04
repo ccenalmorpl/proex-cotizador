@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "क्वोट की वैधता समाप्त होगी",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "इस क्वोट की वैधता समाप्त होगी",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "क्वोट टेक्स्ट समाप्त हो चुका है",
+    "description" : "",
+    "placeholders" : null
+  }
+}

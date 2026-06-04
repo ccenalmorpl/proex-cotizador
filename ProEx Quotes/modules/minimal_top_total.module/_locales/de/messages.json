@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Jetzt fällig",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Dieses Label ersetzt „Text für Angebotssumme“, wenn nach dem Checkout noch Zahlungen fällig sind.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Gesamter Text „Jetzt fällig“",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Gesamt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Der Text für den Gesamtbetrag des Angebots",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Text für Angebotssumme",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Obraz logo firmy",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Nie ma to zastosowania w przypadku nadpisywania domyślnego logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Maksymalna wysokość logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Twoje wyceny będą domyślnie zawierały logo firmy pobrane z ustawień konta lub ze strony w witrynie internetowej, jeśli taka strona istnieje. Możesz wybrać, czy zastąpić to ustawienie za pomocą przełącznika poniżej.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Zastąp domyślne logo w tym szablonie",
+    "description" : "",
+    "placeholders" : null
+  }
+}

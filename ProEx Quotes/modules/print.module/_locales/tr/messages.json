@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Teklifi yazdır",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Düğme metni",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Yazdır",
+    "description" : "",
+    "placeholders" : null
+  }
+}

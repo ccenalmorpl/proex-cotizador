@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Image du logo de l'entreprise",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Cela ne s'applique pas lors du remplacement du logo par défaut",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Hauteur maximale du logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Par défaut, le logo de l'entreprise affiché sur les devis est le logo par défaut du compte ou celui des pages de site Web, si ceux-ci ont été définis. Vous pouvez remplacer ce logo à l'aide de la bascule ci-dessous.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Remplacer le logo par défaut dans ce modèle",
+    "description" : "",
+    "placeholders" : null
+  }
+}

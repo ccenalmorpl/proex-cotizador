@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Kupující společnost",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Hlavní adresa kupující společnosti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Město, stát a poštovní směrovací číslo kupující společnosti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Země kupující společnosti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Název kupující společnosti",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Kontakty kupujúceho",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "E-mail kontaktu kupujúceho",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Názov pozície kontaktu kupujúceho",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Meno kontaktu kupujúceho",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Telefón kontaktu kupujúceho",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Summa",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Kommentarer",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Kommentarer från",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Giltighetstiden för den här offerten har löpt ut.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Kontakta din försäljningsrepresentant för mer information.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Föremål och beskrivning",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Andra avgifter",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Skapad av:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Pris",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Produkter och tjänster",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Köpvillkor",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Antal",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Offert skapat av:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Subtotal",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Totalt",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Enhetspris",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Kreditnota",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Kreditnotanummer",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Summa kreditnota",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Inköpsorder #",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Datum för kreditnota",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Alla avgifter är listade i {{ currency_code }}och är föremål för säljskatt (i förekommande fall).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Radobjektstabell för kreditnotor",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Antal",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "efter {{ discount_amount }} rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Faktura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Fakturanummer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Faktureringsdatum",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Alla avgifter är listade i {{ currency_code }}och är föremål för säljskatt (i förekommande fall).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "PO-nummer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Radobjektstabell för fakturor",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "efter {{ discount_amount }} rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Antal",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Betalning",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Saldo som förfaller",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Fakturera till",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Skicka till",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Skatteadress",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Utgångsdatum",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }} % av",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Delsumma",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Framtida betalningar",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Betalningar som förfaller senare.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Sammanfattning",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Denna offert är inte tillgänglig.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Kontakta din försäljningsrepresentant för mer information.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Ej tillämpligt",
+    "description": "",
+    "placeholders": null
+  }
+}

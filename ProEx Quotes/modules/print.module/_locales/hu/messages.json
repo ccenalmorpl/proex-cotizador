@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Árajánlat nyomtatása",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Gombfelirat",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Nyomtatás",
+    "description" : "",
+    "placeholders" : null
+  }
+}

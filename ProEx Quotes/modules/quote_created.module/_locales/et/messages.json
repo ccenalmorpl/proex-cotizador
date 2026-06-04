@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Pakkumus koostatud",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Pakkumus koostatud:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Pakkumuse koostamise tekst",
+    "description" : "",
+    "placeholders" : null
+  }
+}

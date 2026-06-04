@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Billede af virksomhedens logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Dette gælder ikke ved tilsidesættelse af standardlogoet",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Maks. højde på logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Som standard viser dine tilbud virksomhedslogoet fra kontostandarderne eller webstedssiderne, hvis du har konfigureret disse. Du kan vælge at tilsidesætte disse med kontakten herunder.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Tilsidesæt standardlogo i denne skabelon",
+    "description" : "",
+    "placeholders" : null
+  }
+}

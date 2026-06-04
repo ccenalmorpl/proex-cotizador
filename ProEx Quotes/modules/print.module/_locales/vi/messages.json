@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "In bảng báo giá",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Văn bản trên nút",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "In",
+    "description" : "",
+    "placeholders" : null
+  }
+}

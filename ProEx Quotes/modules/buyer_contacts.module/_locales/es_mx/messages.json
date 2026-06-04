@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Contactos compradores",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "Correo de contacto comprador",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Cargo del contacto del comprador",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Nombre de contacto comprador",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Teléfono de contacto comprador",
+    "description" : "",
+    "placeholders" : null
+  }
+}

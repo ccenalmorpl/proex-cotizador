@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "現在のご請求",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "お支払い後に支払いが必要な残額がある場合に、このラベルによって「見積もり合計テキスト」が置き換えられます。",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "現在のご請求合計のテキスト",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "見積もり合計",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "合計",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "合計見積もり金額のテキスト",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "見積もり合計テキスト",
+    "description" : "",
+    "placeholders" : null
+  }
+}

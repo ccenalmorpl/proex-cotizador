@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "طباعة عرض الأسعار",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "نص الزر",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "طباعة",
+    "description" : "",
+    "placeholders" : null
+  }
+}

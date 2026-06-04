@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "انتهاء صلاحية عرض الأسعار",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "انتهاء صلاحية عرض الأسعار:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "نص انتهاء صلاحية عرض الأسعار",
+    "description" : "",
+    "placeholders" : null
+  }
+}

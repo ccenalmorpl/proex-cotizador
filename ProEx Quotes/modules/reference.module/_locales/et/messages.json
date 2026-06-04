@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Viide",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "Viide: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "Viitenumber",
+    "description" : "",
+    "placeholders" : null
+  }
+}

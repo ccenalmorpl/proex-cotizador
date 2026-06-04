@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "סכום",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "תגובות",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "תגובות מאת",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "פג התוקף של הצעת מחיר זו.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "פנה לנציג המכירות שלך לפרטים נוספים.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "פריט ותיאור",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "עמלות אחרות",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "נוצר על-ידי:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "מחיר",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "מוצרים ושירותים",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "רכוש פריטים",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "כמות",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "הצעת מחיר נוצרה על-ידי:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "סכומי ביניים",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "סך הכול",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "מחיר ליחידה",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "אישור הזיכוי",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "מספר אישור הזיכוי",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "אישור הזיכוי הכולל",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "מספר הזמנת רכש",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "תאריך אישור הזיכוי",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "כל העמלות מפורטות ב-{{ currency_code }} וחייבות במס מכירות (באופן הרלוונטי).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "טבלת פריטי הסדרה של אישור הזיכוי",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "כמות",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "מס",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "מס",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "מס",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "לאחר הנחה של {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "קבלה",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "מספר קבלה",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "תאריך חשבונית",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "כל העמלות מפורטות ב-{{ currency_code }} וחייבות במס מכירות (באופן הרלוונטי).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "מספר PO",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "טבלת פרטי שורת חשבונית",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "לאחר הנחה של {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "כמות",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "תשלום",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "יתרת פירעון",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "מס",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "מס",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "מס",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "חייב את",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "לשלוח אל",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "כתובת מס",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "מועד פירעון",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "הנחה",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "%{{ fee_amount }} הנחה",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "הנחה של %{{ fee_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "סכום ביניים",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "תשלומים עתידיים",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "תשלומים המגיעים לפירעון מאוחר יותר.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "סיכום",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "הצעת המחיר לא זמינה.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "פנה לנציג המכירות שלך לפרטים נוספים.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "לא ישים",
+    "description": "",
+    "placeholders": null
+  }
+}

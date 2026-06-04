@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Yrityksen logokuva",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Tätä ei sovelleta, kun oletuslogo ohitetaan",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Logon enimmäiskorkeus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Oletusarvoisesti tarjouksesi näyttävät yrityksen logon tilin oletusasetuksista tai verkkosivuston sivuilta, jos olet määrittänyt ne. Voit halutessasi ohittaa nämä asetukset alla olevalla kytkimellä.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Ohita tämän mallipohjan oletuslogo",
+    "description" : "",
+    "placeholders" : null
+  }
+}

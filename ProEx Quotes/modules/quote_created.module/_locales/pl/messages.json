@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Wycena utworzona",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Wycena utworzona:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Tekst utworzenia wyceny",
+    "description" : "",
+    "placeholders" : null
+  }
+}

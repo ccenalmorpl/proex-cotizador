@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Изображение логотипа компании",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Это не применяется при переопределении логотипа по умолчанию",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Максимальная высота логотипа",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "По умолчанию на ваших ценовых предложениях будет отображаться логотип компании из раздела «Значения по умолчанию учетной записи» или «Страницы веб-сайта», если они настроены. Можно переопределить эти логотипы с помощью переключателя ниже.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Логотип",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Переопределить логотип по умолчанию в этом шаблоне",
+    "description" : "",
+    "placeholders" : null
+  }
+}

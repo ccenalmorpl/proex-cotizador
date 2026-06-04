@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Forfaller nå",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Denne etiketten erstatter «Totaltilbud tekst» når det er mer som skal betales etter betalingen.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Tekst for sum som forfaller nå",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Tilbud total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Totalsum",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Tekst for totalt tilbudsbeløp",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Totaltilbud tekst",
+    "description" : "",
+    "placeholders" : null
+  }
+}

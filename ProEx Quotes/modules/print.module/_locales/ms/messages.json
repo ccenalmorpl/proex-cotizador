@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Cetak sebut harga",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Teks butang",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Cetak",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Kenalan pembeli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "E-mel hubungan pembeli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Nama jawatan kenalan pembeli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Nama hubungan pembeli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Telefon hubungan pembeli",
+    "description" : "",
+    "placeholders" : null
+  }
+}

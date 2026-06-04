@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Bedrag",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Opmerkings",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Opmerkings vanaf",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Hierdie kwotasie het verval.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Kontak asseblief jou verkoopsverteenwoordiger vir meer besonderhede.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Item en beskrywing",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Ander fooie",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Voorberei deur:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Prys",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Produkte en dienste",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Aankoopvoorwaardes",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Hoeveelheid",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Kwotasie geskep deur:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Subtotale",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Totaal",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Eenheidsprys",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Kredietmemo",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Kredietmemonommer",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Kredietmemototaal",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Posbus #",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Kredietmemodatum",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Alle fooie word gelys in {{ currency_code }} en is onderhewig aan verkoopsbelasting (soos van toepassing).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Tabel vir lynitems van kredietmemo's",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Hoeveelheid",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Belasting",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "belasting",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Belasting",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "ná {{ discount_amount }}-afslag",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Faktuur",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Faktuurnommer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Faktuurdatum",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Alle fooie is gelys in {{ currency_code }} en is onderhewig aan verkoopsbelasting (soos van toepassing).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "AB-nommer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Faktuurlynitemtabel",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "ná {{ discount_amount }}-afslag",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Hoeveelheid",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Betaling",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Balans verskuldig",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Belasting",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "belasting",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Belasting",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Rekening na",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Versend na",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Belastingadres",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Sperdatum",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "afslag",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% afslag",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% af",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Subtotaal",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Toekomstige betalings",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Betalings wat later verskuldig is.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Opsomming",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Hierdie kwotasie is nie beskikbaar nie.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Kontak asseblief jou verkoopsverteenwoordiger vir meer besonderhede.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Nvt",
+    "description": "",
+    "placeholders": null
+  }
+}

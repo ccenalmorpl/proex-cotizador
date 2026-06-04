@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Slika logotipa tvrtke",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Ovo se ne primjenjuje pri nadjačavanju zadanog logotipa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Maks. visina logotipa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Prema zadanim postavkama vaše će ponude prikazivati logotip tvrtke iz zadanih postavki računa ili stranica na web-mjestu ako ste ih postavili. Možete zaobići te postavke pomoću preklobnog gumba ispod.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logotip",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Zaobiđite zadani logotip u ovome predlošku",
+    "description" : "",
+    "placeholders" : null
+  }
+}

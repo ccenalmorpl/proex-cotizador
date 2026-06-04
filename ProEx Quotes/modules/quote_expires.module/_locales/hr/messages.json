@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Ponuda istječe",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Ponuda istječe:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Tekst o isteku ponude",
+    "description" : "",
+    "placeholders" : null
+  }
+}

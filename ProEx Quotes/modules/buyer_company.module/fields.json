@@ -1,0 +1,41 @@
+[ {
+  "id" : "show_company_name",
+  "name" : "show_company_name",
+  "label" : "Buyer company name",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "show_company_address",
+  "name" : "show_company_address",
+  "label" : "Buyer company main address",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "show_company_city_state_zip",
+  "name" : "show_company_city_state_zip",
+  "label" : "Buyer company city, state, and zip",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "show_company_country",
+  "name" : "show_company_country",
+  "label" : "Buyer company country",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+} ]

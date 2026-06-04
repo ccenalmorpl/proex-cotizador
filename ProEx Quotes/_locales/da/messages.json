@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "Tilbudstema i CMS",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "Globale farver",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "Primær farve",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "Sekundær farve",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "Globale skrifttyper",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "Primær skrifttype",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "Sekundær skrifttype",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "Knapindstillinger",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "Knappens baggrundsfarve",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "Knappens skriftfarve",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "Bannerindstillinger",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "Bannerskrifttypefarve",
+    "description": "",
+    "placeholders": null
+  }
+}

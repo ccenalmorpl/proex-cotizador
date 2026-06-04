@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Đã đến hạn",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Nhãn này thay thế \"Văn bản tổng của báo giá\" khi có các khoản thanh toán đến hạn sau khi thanh toán.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Văn bản tổng hiện đã đến hạn",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Tổng báo giá",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Tổng số",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Văn bản cho tổng số tiền báo giá",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Văn bản tổng của báo giá",
+    "description" : "",
+    "placeholders" : null
+  }
+}

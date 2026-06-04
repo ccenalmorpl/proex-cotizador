@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Dospijeće sada",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Ova oznaka zamjenjuje \"tekst ukupne ponude\" kada postoje plaćanja s rokom dospijeća nakon završetka kupnje.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Tekst ukupnog iznosa za dospijeće sada",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Ukupna ponuda",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Ukupno",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Tekst za ukupni iznos ponude",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Tekst ukupne ponude",
+    "description" : "",
+    "placeholders" : null
+  }
+}

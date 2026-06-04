@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Nagawa ang quote",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Ginawang quote:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Text na ginawang quote",
+    "description" : "",
+    "placeholders" : null
+  }
+}

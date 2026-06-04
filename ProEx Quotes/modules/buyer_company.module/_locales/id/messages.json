@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Perusahaan pembeli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Alamat utama perusahaan pembeli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Kota, negara bagian, dan kode pos perusahaan pembeli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Negara perusahaan pembeli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Nama perusahaan pembeli",
+    "description" : "",
+    "placeholders" : null
+  }
+}

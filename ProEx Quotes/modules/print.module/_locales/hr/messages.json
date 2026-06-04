@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Ispiši ponudu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Tekst gumba",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Ispiši",
+    "description" : "",
+    "placeholders" : null
+  }
+}

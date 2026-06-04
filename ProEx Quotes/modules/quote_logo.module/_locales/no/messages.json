@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Bilde av selskapets logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Dette gjelder ikke når standardlogoen overstyres",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Maks høyde på logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Som standard vil tilbudene dine vise selskapets logo fra kontostandarder og nettstedssider om du har konfigurert disse. Du kan velge å overstyre dem ved å bruke bryteren under.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Overstyre standard logo i denne malen",
+    "description" : "",
+    "placeholders" : null
+  }
+}

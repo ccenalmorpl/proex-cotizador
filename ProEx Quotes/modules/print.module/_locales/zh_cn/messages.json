@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "打印报价",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "按钮文本",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "打印",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote created",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Prijsopgave aangemaakt:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Tekst Prijsopgave aangemaakt",
+    "description" : "",
+    "placeholders" : null
+  }
+}

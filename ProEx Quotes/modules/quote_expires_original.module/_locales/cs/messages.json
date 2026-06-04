@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Nabídka vyprší",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Tato nabídka vyprší",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Text vypršení nabídky",
+    "description" : "",
+    "placeholders" : null
+  }
+}

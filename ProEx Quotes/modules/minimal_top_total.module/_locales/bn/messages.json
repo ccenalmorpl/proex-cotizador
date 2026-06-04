@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "এখন বাকী আছে",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "এই লেবেলটি \"মোট টেক্সট কোট\" প্রতিস্থাপন করে যখন চেকআউটের পরে পেমেন্ট থাকে।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "এখন মোট বাকী থাকা টেক্সট",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "মোট",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "মোট কোট পরিমাণের জন্য টেক্সট",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "কোট টোটাল টেক্সট",
+    "description" : "",
+    "placeholders" : null
+  }
+}

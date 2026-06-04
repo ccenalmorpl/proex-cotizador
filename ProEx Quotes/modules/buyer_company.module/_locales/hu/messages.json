@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Vásárló vállalat",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Vásárló vállalat elsődleges címe",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Vásárló vállalat városa, állama és irányítószáma",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Vásárló vállalat országa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Vásárló vállalat neve",
+    "description" : "",
+    "placeholders" : null
+  }
+}

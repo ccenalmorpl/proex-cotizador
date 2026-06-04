@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Препратка",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "Препратка: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "Референтен номер",
+    "description" : "",
+    "placeholders" : null
+  }
+}

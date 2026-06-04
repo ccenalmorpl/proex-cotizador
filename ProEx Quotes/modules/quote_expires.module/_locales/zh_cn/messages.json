@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "报价到期日期",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "报价到期日期：",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "报价到期文本",
+    "description" : "",
+    "placeholders" : null
+  }
+}

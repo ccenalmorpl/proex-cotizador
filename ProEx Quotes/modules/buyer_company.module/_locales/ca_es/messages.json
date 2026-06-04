@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Empresa del comprador",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Adreça principal de l'empresa compradora",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Ciutat, estat i correu postal de l'empresa compradora",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "País de l'empresa compradora",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Nom de l'empresa compradora",
+    "description" : "",
+    "placeholders" : null
+  }
+}

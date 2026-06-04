@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Компания купувач",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Основен адрес на компанията купувач",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Град, щат и пощенски код на компанията купувач",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Държава на компанията купувач",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Име на компанията купувач",
+    "description" : "",
+    "placeholders" : null
+  }
+}

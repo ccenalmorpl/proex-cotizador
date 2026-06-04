@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Orçamento criado em",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Orçamento criado:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Texto de orçamento criado",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Import",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Comentaris",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Comentaris de",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Aquest pressupost ha caducat.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Contacta amb el teu agent comercial per obtenir-ne més detalls.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Article i descripció",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Altres comissions",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Preparat per:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Preu",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Productes i serveis",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Condicions de compra",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Quantitat",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Pressupost creat per:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Subtotals",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Total",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Preu per unitat",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Nota de crèdit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Número de nota de crèdit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Total de la nota de crèdit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Núm. de PO",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Data de la nota de crèdit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Totes les tarifes s'indiquen en {{ currency_code }} i estan subjectes a l'impost sobre les vendes (segons escaigui).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Taula d'elements de línia de nota de crèdit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Quantitat",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Impost",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "impost",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Impost",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "després del descompte de {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Factura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Número de factura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Data de la factura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Totes les tarifes s'indiquen en {{ currency_code }} i estan subjectes a l'impost sobre les vendes (segons escaigui).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Número d'ordre de compra",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Taula d'elements de línia de factura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "després del descompte de {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Quantitat",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Pagament",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Saldo pendent",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Impost",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "impost",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Impost",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Factura a",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Envia a",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Adreça fiscal",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Data de venciment",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "descompte",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% de descompte",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% de descompte",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Subtotal",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Pagaments futurs",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Pagaments que vencen  més tard.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Resum",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Aquest pressupost no està disponible.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Contacta amb el teu agent comercial per obtenir-ne més detalls.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "N/A",
+    "description": "",
+    "placeholders": null
+  }
+}

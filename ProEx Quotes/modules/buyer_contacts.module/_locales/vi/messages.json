@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Liên hệ người mua",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "Email liên hệ của người mua",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Chức danh của liên hệ người mua",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Tên liên hệ của người mua",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Điện thoại liên hệ của người mua",
+    "description" : "",
+    "placeholders" : null
+  }
+}

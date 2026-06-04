@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Pressupost creat",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Data de creació de la cotització:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Text de la data de creació de la cotització",
+    "description" : "",
+    "placeholders" : null
+  }
+}

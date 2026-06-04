@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Imprimeix el pressupost",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Text del botó",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Imprimeix",
+    "description" : "",
+    "placeholders" : null
+  }
+}

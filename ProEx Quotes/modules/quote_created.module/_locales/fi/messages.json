@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Tarjous luotu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Tarjous luotu:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Tarjouksen luonnin teksti",
+    "description" : "",
+    "placeholders" : null
+  }
+}

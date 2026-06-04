@@ -18,40 +18,43 @@ import {
   TableCell,
   TableFooter,
   StepperInput,
+  NumberInput,
   Select,
+  Dropdown,
   Tag,
   Alert,
   EmptyState,
   LoadingSpinner,
   Tile,
+  Modal,
 } from "@hubspot/ui-extensions";
 import { fetchFromAPI } from "../utils/api.utils";
+import EditarContenedorModal from "../components/EditarContenedorModal";
 import {
-  ERROR_MESSAGES,
   LOADING_MESSAGES,
   INITIAL_RENDER_DELAY_MS,
 } from "../constants/common.constants";
 import { getContainerTypeLabel } from "../constants/containers.constants";
+import {
+  calcularPrecioPorCajaPorIncoterm,
+  calcularPrecioEXWDesdeIncoterm,
+  calcularTotalesPorTipoVenta,
+} from "../utils/pricing.utils";
+import { getIVAPorcentaje, getPorcentajesIVA, getDefaultIVAByResidencia } from "../utils/iva.utils";
 
-// Constantes
-const SEGURO_PORCENTAJE = 2;
-
-// Helper: Calcular margen efectivo de un artículo en un contenedor
 const calcularMargenArticuloEnContenedor = (
   artContenedor,
   preciosEXW,
   comisionPorCaja,
   clienteData
 ) => {
-  // Usar el line_item_id del artículo directamente
   const lineItemId = artContenedor.line_item_id;
-  const costePorCaja =
-    artContenedor.precio_de_coste || artContenedor.price || 0;
+  const costePorCaja = artContenedor.precio_de_coste || 0;
   const margenInicial =
-    artContenedor.margen_unitario !== null &&
-    artContenedor.margen_unitario !== undefined
+    artContenedor.margen_unitario != null &&
+    artContenedor.margen_unitario > 0
       ? artContenedor.margen_unitario * 100
-      : clienteData?.margen || 12;
+      : (clienteData?.margen ?? 12);
 
   const precioEXWFinal =
     preciosEXW[lineItemId] ||
@@ -61,7 +64,6 @@ const calcularMargenArticuloEnContenedor = (
     costePorCaja > 0 ? (margenEnEuros / costePorCaja) * 100 : 0;
 
   let margenEfectivo = margenActual;
-  // Extraer el valor si es un objeto {value, options}
   const repercutirAClienteValue =
     clienteData?.repercutirACliente?.value || clienteData?.repercutirACliente;
   if (comisionPorCaja > 0 && repercutirAClienteValue === "no") {
@@ -70,20 +72,6 @@ const calcularMargenArticuloEnContenedor = (
   }
 
   return margenEfectivo;
-};
-
-// Función para obtener el porcentaje de IVA de un artículo usando datos dinámicos de HubDB
-const getIVAPorcentaje = (tipoIVA, ivaDataMap) => {
-  // Si no hay tipo de IVA o es vacío, devolver 21%
-  if (!tipoIVA || tipoIVA === "") {
-    return 21;
-  }
-  // Si el tipo existe en los datos dinámicos, devolver el porcentaje total
-  if (ivaDataMap && tipoIVA in ivaDataMap) {
-    return ivaDataMap[tipoIVA].porcentaje_total;
-  }
-  // Si no se encuentra el tipo, por defecto 21%
-  return 21;
 };
 
 // Tipos de venta (Incoterms)
@@ -96,27 +84,39 @@ const TIPOS_VENTA = {
   CIF: { label: "CIF", descripcion: "Cost, Insurance & Freight" },
 };
 
+const EDITAR_CONTENEDOR_MODAL_ID = "editar-contenedor-modal";
+
 const NegociacionTab = ({
   context,
+  actions,
   onNavigate,
   transitarioData,
   serviciosData,
   clienteData, // Necesitamos el margen del cliente como fallback
   tipoIVAOptions = [], // Opciones de tipo de IVA repercutido
+  tipoIVASoportadoOptions = [], // Opciones de tipo de IVA soportado
   ivaData = {}, // Datos completos de IVA indexados por code
+  articulosSeleccionados = [], // Catálogo de artículos del deal (incluye peso_neto y unidades_*)
   contenedoresUnicos, // Contenedores únicos (nueva estructura que reemplaza articulosData y contenedoresData)
+  setContenedoresUnicos, // Setter del estado global de contenedores únicos
   preciosEXW, // Estado compartido de precios EXW
   setPreciosEXW, // Setter para precios EXW
   tiposIVA, // Estado compartido de tipos de IVA
   setTiposIVA, // Setter para tipos de IVA
+  tiposIVASoportado, // Estado compartido de tipos de IVA soportado
+  setTiposIVASoportado, // Setter para tipos de IVA soportado
 }) => {
-  // ============================================
+  // LOGS INICIALES
+  console.log("[NegociacionTab] === COMPONENTE MONTADO/ACTUALIZADO ===");
+  console.log("[NegociacionTab] clienteData.margen:", clienteData?.margen);
+  console.log("[NegociacionTab] contenedoresUnicos:", contenedoresUnicos);
+
   // DATOS DE ARTÍCULOS DESDE CONTENEDORES ÚNICOS
-  // ============================================
 
   // Transformar artículos desde contenedoresUnicos a formato necesario para negociación
   // Se extraen artículos únicos de todos los contenedores para la vista agregada
   const articulosParaNegociacion = useMemo(() => {
+    console.log("[NegociacionTab] Recalculando articulosParaNegociacion...");
     if (
       !contenedoresUnicos ||
       !Array.isArray(contenedoresUnicos) ||
@@ -155,11 +155,11 @@ const NegociacionTab = ({
           const articuloId = art.articuloId;
 
           if (!articulosMap.has(articuloId)) {
-            const costePorCaja = art.precio_de_coste || art.price || 0;
+            const costePorCaja = art.precio_de_coste || 0;
             const margenInicial =
-              art.margen_unitario !== null && art.margen_unitario !== undefined
+              art.margen_unitario != null && art.margen_unitario > 0
                 ? art.margen_unitario * 100
-                : clienteData?.margen || 12;
+                : (clienteData?.margen ?? 12);
 
             articulosMap.set(articuloId, {
               id: articuloId,
@@ -168,13 +168,18 @@ const NegociacionTab = ({
               costePorCaja: costePorCaja,
               margen: margenInicial,
               tipo_iva_repercutido: art.tipo_iva_repercutido || null,
+              tipo_iva_soportado: art.tipo_iva_soportado || null,
+              priceEXW: (art.price != null && art.price !== "") ? Number(art.price) : null,
+              hasMargenUnitario: art.margen_unitario != null, // Flag: ¿tiene margen_unitario guardado?
             });
           }
         });
       }
     });
 
-    return Array.from(articulosMap.values());
+    const result = Array.from(articulosMap.values());
+    console.log("[NegociacionTab] articulosParaNegociacion:", result);
+    return result;
   }, [contenedoresUnicos, clienteData]);
 
   // Total de contenedores del pedido (cada contenedor único ya cuenta como 1)
@@ -191,16 +196,16 @@ const NegociacionTab = ({
     [articulosParaNegociacion]
   );
 
-  // Gastos por tramo por caja
+  // Gastos por tramo por caja (el flete es por contenedor, se multiplica por totalContenedores)
   const gastosPorTramo = useMemo(
     () => ({
-      hastaLocalidadDestino: transitarioData?.precioOrigen / totalCajas || 0,
-      hastaPuertoSalida: transitarioData?.precioOrigen / totalCajas || 0,
-      hastaPuertoDestino: transitarioData?.precioDestino / totalCajas || 0,
+      hastaLocalidadDestino: (transitarioData?.precioOrigen || 0) * totalContenedores / totalCajas || 0,
+      hastaPuertoSalida: (transitarioData?.precioOrigen || 0) * totalContenedores / totalCajas || 0,
+      hastaPuertoDestino: (transitarioData?.precioDestino || 0) * totalContenedores / totalCajas || 0,
       hastaPuertoDestinoLocalidad:
-        transitarioData?.precioDestino / totalCajas || 0,
+        (transitarioData?.precioDestino || 0) * totalContenedores / totalCajas || 0,
     }),
-    [transitarioData, totalCajas]
+    [transitarioData, totalCajas, totalContenedores]
   );
 
   // Servicios totales
@@ -249,9 +254,7 @@ const NegociacionTab = ({
     return 0;
   }, [clienteData, totalCajas, totalContenedores]);
 
-  // ============================================
   // ESTADO
-  // ============================================
 
   // NOTA: preciosEXW, setPreciosEXW, tiposIVA, setTiposIVA ahora vienen como props compartidos
 
@@ -259,10 +262,21 @@ const NegociacionTab = ({
   const [contenedorUnicoSeleccionado, setContenedorUnicoSeleccionado] =
     useState(null);
 
+  const [batchSelectedArticulos, setBatchSelectedArticulos] = useState([]);   // line_item_id[] seleccionados para batch
+  const [batchNuevoPrecio, setBatchNuevoPrecio] = useState(null);             // null = no cambiar
+  const [batchNuevoIVA, setBatchNuevoIVA] = useState("");                      // "" = no cambiar
+  const [batchNuevoIVASoportado, setBatchNuevoIVASoportado] = useState("");    // "" = no cambiar
+
   // Estado de carga y errores
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+
+  // Estado del job publish-custom-objects (para bloquear el botón Editar contenedor)
+  const [customObjectsJobStatus, setCustomObjectsJobStatus] = useState(null);
+  const isCustomObjectsJobBusy =
+    customObjectsJobStatus === "pending" ||
+    customObjectsJobStatus === "processing";
 
   // Obtener el contenedor seleccionado
   const contenedorSeleccionado = useMemo(() => {
@@ -280,6 +294,7 @@ const NegociacionTab = ({
 
   // Artículos únicos del contenedor seleccionado para la tabla
   const articulosUnicosParaNegociacion = useMemo(() => {
+    console.log("[NegociacionTab] Recalculando articulosUnicosParaNegociacion...");
     if (!contenedorSeleccionado || !contenedorSeleccionado.container_config) {
       return [];
     }
@@ -287,14 +302,27 @@ const NegociacionTab = ({
     const articulos = contenedorSeleccionado.container_config.articulos || [];
 
     return articulos.map((art) => {
-      // Usar precio_de_coste como coste base (costo del fabricante), fallback a price
-      const costePorCaja = art.precio_de_coste || art.price || 0;
+      // precio_de_coste es el coste del proveedor (inmutable). Sin fallback a price.
+      const costePorCaja = art.precio_de_coste || 0;
 
-      // Usar margen_unitario del artículo, o el margen del cliente como fallback
+      // Usar margen_unitario del artículo (si es > 0), o el margen del cliente como fallback
+      // Si margen_unitario es 0 o null/undefined, usar clienteData.margen
       const margenInicial =
-        art.margen_unitario !== null && art.margen_unitario !== undefined
+        art.margen_unitario != null && art.margen_unitario > 0
           ? art.margen_unitario * 100
-          : clienteData?.margen || 12;
+          : (clienteData?.margen ?? 12);
+
+      // Un margen previo existe si: margen_unitario > 0 (no contamos 0 como un margen previo)
+      const hasMargenUnitario = art.margen_unitario != null && art.margen_unitario > 0;
+      const priceEXW = (art.price != null && art.price !== "") ? Number(art.price) : null;
+
+      console.log(`[NegociacionTab] Artículo: ${art.articuloName}`, {
+        margen_unitario: art.margen_unitario,
+        hasMargenUnitario,
+        priceEXW,
+        costePorCaja,
+        margenInicial,
+      });
 
       return {
         id: art.line_item_id, // HubSpot line item ID del artículo
@@ -304,6 +332,9 @@ const NegociacionTab = ({
         costePorCaja: costePorCaja,
         margen: margenInicial,
         tipo_iva_repercutido: art.tipo_iva_repercutido || null,
+        tipo_iva_soportado: art.tipo_iva_soportado || null,
+        priceEXW,
+        hasMargenUnitario, // Flag: ¿tiene margen_unitario guardado?
       };
     });
   }, [contenedorSeleccionado, clienteData]);
@@ -367,56 +398,133 @@ const NegociacionTab = ({
     }
   }, [contenedoresUnicos, contenedorUnicoSeleccionado]);
 
-  // Sincronizar precios y tipos de IVA cuando cambien los artículos
   useEffect(() => {
-    // Determinar qué lista de artículos usar
-    const articulos = contenedorUnicoSeleccionado
-      ? articulosUnicosParaNegociacion
-      : articulosParaNegociacion;
-
-    if (articulos.length > 0) {
-      setPreciosEXW((prevPrecios) => {
-        const newPrecios = { ...prevPrecios }; // Mantener todos los precios anteriores
-        articulos.forEach((art) => {
-          // SOLO inicializar si NO existe (nunca sobrescribir valores editados)
-          if (newPrecios[art.id] === undefined) {
-            // Calcular precio inicial: coste + margen por defecto
-            const margenInicial = art.costePorCaja * (art.margen / 100);
-            newPrecios[art.id] = art.costePorCaja + margenInicial;
-          }
-        });
-        return newPrecios;
-      });
-
-      // Sincronizar tipos de IVA
-      setTiposIVA((prevTipos) => {
-        const newTipos = { ...prevTipos }; // Mantener todos los tipos anteriores
-        articulos.forEach((art) => {
-          // SOLO inicializar si NO existe (nunca sobrescribir valores editados)
-          if (newTipos[art.id] === undefined) {
-            newTipos[art.id] =
-              art.tipo_iva_repercutido ||
-              (tipoIVAOptions.length > 0 ? tipoIVAOptions[0].value : "");
-          }
-        });
-        return newTipos;
-      });
+    if (
+      !contenedoresUnicos ||
+      !Array.isArray(contenedoresUnicos) ||
+      contenedoresUnicos.length === 0
+    ) {
+      return;
     }
-  }, [
-    contenedorUnicoSeleccionado,
-    articulosUnicosParaNegociacion,
-    articulosParaNegociacion,
-    tipoIVAOptions,
-  ]);
 
-  // ============================================
+    const margenCliente = clienteData?.margen ?? 12;
+
+    setPreciosEXW((prevPrecios) => {
+      const newPrecios = { ...prevPrecios };
+      contenedoresUnicos.forEach((contenedor) => {
+        contenedor.container_config?.articulos?.forEach((art) => {
+          const lineItemId = art.line_item_id;
+          if (newPrecios[lineItemId] !== undefined) return;
+
+          const costePorCaja = art.precio_de_coste || 0;
+          const tieneMargenUnitario =
+            art.margen_unitario != null && art.margen_unitario > 0;
+          const priceEXW =
+            art.price != null && art.price !== "" ? Number(art.price) : null;
+
+          if (priceEXW != null && tieneMargenUnitario) {
+            newPrecios[lineItemId] = priceEXW;
+          } else {
+            const margenInicial = tieneMargenUnitario
+              ? art.margen_unitario * 100
+              : margenCliente;
+            newPrecios[lineItemId] =
+              costePorCaja + (costePorCaja * margenInicial) / 100;
+          }
+        });
+      });
+      return newPrecios;
+    });
+
+    setTiposIVA((prevTipos) => {
+      const newTipos = { ...prevTipos };
+      contenedoresUnicos.forEach((contenedor) => {
+        contenedor.container_config?.articulos?.forEach((art) => {
+          const lineItemId = art.line_item_id;
+          if (newTipos[lineItemId] !== undefined) return;
+          newTipos[lineItemId] =
+            art.tipo_iva_repercutido ||
+            getDefaultIVAByResidencia(clienteData?.tipoResidente, tipoIVAOptions);
+        });
+      });
+      return newTipos;
+    });
+
+    setTiposIVASoportado((prevTipos) => {
+      const newTipos = { ...prevTipos };
+      contenedoresUnicos.forEach((contenedor) => {
+        contenedor.container_config?.articulos?.forEach((art) => {
+          const lineItemId = art.line_item_id;
+          if (newTipos[lineItemId] !== undefined) return;
+          newTipos[lineItemId] =
+            art.tipo_iva_soportado ||
+            getDefaultIVAByResidencia(
+              clienteData?.tipoResidente,
+              tipoIVASoportadoOptions,
+              "soportado"
+            );
+        });
+      });
+      return newTipos;
+    });
+  }, [contenedoresUnicos, clienteData, tipoIVAOptions, tipoIVASoportadoOptions]);
+
   // CÁLCULOS
-  // ============================================
 
-  // Coste de servicios por caja (diluido equitativamente)
+  // Coste de servicios por caja (el servicio es por contenedor, se multiplica por totalContenedores)
   const serviciosPorCaja = useMemo(
-    () => (totalCajas > 0 ? totalServicios / totalCajas : 0),
-    [totalCajas, totalServicios]
+    () => (totalCajas > 0 ? (totalServicios * totalContenedores) / totalCajas : 0),
+    [totalCajas, totalServicios, totalContenedores]
+  );
+
+  // Coste del seguro por caja (filtrado de serviciosPorCaja para CFR)
+  const seguroPorCaja = useMemo(() => {
+    if (!serviciosData?.serviciosSeleccionados || totalCajas === 0) return 0;
+    const totalSeguro = serviciosData.serviciosSeleccionados
+      .filter((s) => s.tipoArticulo === "seguro")
+      .reduce((sum, s) => sum + (Number(s.importe) || 0), 0);
+    return (totalSeguro * totalContenedores) / totalCajas;
+  }, [serviciosData, totalCajas, totalContenedores]);
+
+  // CÁLCULOS DE PRECIO POR TIPO DE VENTA
+
+  // Tipo de venta seleccionado normalizado
+  const tipoVentaSeleccionado = useMemo(() => {
+    const tipoVentaValue =
+      clienteData?.tipoVenta?.value || clienteData?.tipoVenta || "EXW";
+    return tipoVentaValue.toUpperCase().replace(/\s+/g, "_");
+  }, [clienteData]);
+
+  // Valor de repercutirACliente normalizado
+  const repercutirAClienteValue = useMemo(() => {
+    return (
+      clienteData?.repercutirACliente?.value || clienteData?.repercutirACliente
+    );
+  }, [clienteData]);
+
+  // Parámetros compartidos para las funciones de pricing
+  const pricingParams = useMemo(
+    () => ({
+      gastosPorTramo,
+      serviciosPorCaja,
+      seguroPorCaja,
+      comisionCliente: repercutirAClienteValue === "si" ? comisionPorCaja : 0,
+    }),
+    [gastosPorTramo, serviciosPorCaja, seguroPorCaja, comisionPorCaja, repercutirAClienteValue]
+  );
+
+  // Convierte EXW → Precio final visible al cliente para el tipo de venta seleccionado.
+  const calcularPrecioFinalPorTipoVenta = useCallback(
+    (precioEXW) =>
+      calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVentaSeleccionado, pricingParams),
+    [tipoVentaSeleccionado, pricingParams]
+  );
+
+  // Back-calculation: Precio final → EXW. Función inversa exacta de calcularPrecioFinalPorTipoVenta.
+  const calcularPrecioEXWDesdeFinal = useCallback(
+    (precioFinal) =>
+      calcularPrecioEXWDesdeIncoterm(precioFinal, tipoVentaSeleccionado, pricingParams),
+    [tipoVentaSeleccionado, pricingParams]
   );
 
   // Calcular precio EXW por caja de cada artículo
@@ -461,9 +569,12 @@ const NegociacionTab = ({
         }
       }
 
-      // Obtener el porcentaje de IVA de este artículo
+      // % IVA efectivo = % IVA + % recargo equivalencia si la company lo tiene (equ === "si")
       const tipoIVAArticulo = tiposIVA[art.id] || art.tipo_iva_repercutido;
-      const ivaPorcentaje = getIVAPorcentaje(tipoIVAArticulo, ivaData);
+      const { iva: ivaBase = 0, recargo: recargoBase = 0 } =
+        getPorcentajesIVA(tipoIVAArticulo, ivaData) || {};
+      const aplicaRE = (clienteData?.equ || "").toString().toLowerCase() === "si";
+      const ivaPorcentaje = ivaBase + (aplicaRE ? recargoBase : 0);
 
       return {
         ...art,
@@ -471,9 +582,8 @@ const NegociacionTab = ({
         margenEnEuros,
         margenEfectivo,
         margenEfectivoEnEuros,
-        precioPorCaja: precioEXWFinal,
-        precioEXWEditable: precioEXWFinal,
-        subtotal: precioEXWFinal * art.cajas,
+        precioPorCaja: calcularPrecioPorCajaPorIncoterm(precioEXWFinal, "EXW", pricingParams),
+        precioFinalEditable: Math.round(calcularPrecioFinalPorTipoVenta(precioEXWFinal) * 1000) / 1000,
         ivaPorcentaje,
       };
     });
@@ -486,6 +596,8 @@ const NegociacionTab = ({
     clienteData,
     tiposIVA,
     ivaData,
+    calcularPrecioFinalPorTipoVenta,
+    pricingParams,
   ]);
 
   // Calcular totales para el footer de la tabla
@@ -496,7 +608,7 @@ const NegociacionTab = ({
         totalCoste: 0,
         totalComision: 0,
         totalMargenEfectivoEnEuros: 0,
-        totalPrecioEXW: 0,
+        totalPrecioFinal: 0,
       };
     }
 
@@ -513,8 +625,8 @@ const NegociacionTab = ({
       (sum, art) => sum + art.margenEfectivoEnEuros * art.cajas,
       0
     );
-    const totalPrecioEXW = articulosConPrecios.reduce(
-      (sum, art) => sum + art.precioPorCaja * art.cajas,
+    const totalPrecioFinal = articulosConPrecios.reduce(
+      (sum, art) => sum + art.precioFinalEditable * art.cajas,
       0
     );
 
@@ -523,121 +635,36 @@ const NegociacionTab = ({
       totalCoste,
       totalComision,
       totalMargenEfectivoEnEuros,
-      totalPrecioEXW,
+      totalPrecioFinal,
     };
   }, [articulosConPrecios, comisionPorCaja]);
 
+  // Calcular total con IVA para el contenedor seleccionado reutilizando calcularTotalesPorTipoVenta
+  const totalesConIVAContenedorSeleccionado = useMemo(() => {
+    if (!contenedorSeleccionado) return {};
+    return calcularTotalesPorTipoVenta([contenedorSeleccionado], preciosEXW, pricingParams, {
+      clienteData,
+      tiposIVA,
+      ivaData,
+      getPorcentajesIVA,
+      incotermRef: tipoVentaSeleccionado,
+    });
+  }, [contenedorSeleccionado, preciosEXW, pricingParams, clienteData, tiposIVA, ivaData, tipoVentaSeleccionado]);
+
   // Calcular precios por tipo de venta GLOBALES (sin IVA y con IVA ponderado)
-  // IMPORTANTE: Este cálculo SIEMPRE usa todos los artículos de todos los contenedores
-  const preciosPorTipoVenta = useMemo(() => {
-    // Calcular precios totales por tipo de venta (sumando por artículo)
-    let totalEXW = 0;
-    let totalDAP_TERRESTRE = 0;
-    let totalFOB = 0;
-    let totalCFR = 0;
-    let totalDAP_MARITIMO = 0;
-    let totalCIF = 0;
-
-    // Calcular precios con IVA (aplicando el IVA específico de cada artículo)
-    let totalEXW_IVA = 0;
-    let totalDAP_TERRESTRE_IVA = 0;
-    let totalFOB_IVA = 0;
-    let totalCFR_IVA = 0;
-    let totalDAP_MARITIMO_IVA = 0;
-    let totalCIF_IVA = 0;
-
-    // Iterar por TODOS los contenedores y TODOS los artículos
-    if (contenedoresUnicos && Array.isArray(contenedoresUnicos)) {
-      contenedoresUnicos.forEach((contenedor) => {
-        if (
-          contenedor.container_config?.articulos &&
-          Array.isArray(contenedor.container_config.articulos)
-        ) {
-          contenedor.container_config.articulos.forEach((artContenedor) => {
-            const lineItemId = artContenedor.line_item_id;
-            const costePorCaja =
-              artContenedor.precio_de_coste || artContenedor.price || 0;
-            const cajas = artContenedor.numCajas || 0;
-
-            // Obtener el precio EXW editado o calcular el inicial
-            const margenInicial =
-              artContenedor.margen_unitario !== null &&
-              artContenedor.margen_unitario !== undefined
-                ? artContenedor.margen_unitario * 100
-                : clienteData?.margen || 12;
-
-            const precioEXWFinal =
-              preciosEXW[lineItemId] ||
-              costePorCaja + (costePorCaja * margenInicial) / 100;
-
-            // Obtener el tipo de IVA del artículo
-            const tipoIVAArticulo =
-              tiposIVA[lineItemId] || artContenedor.tipo_iva_repercutido;
-            const ivaPorcentaje = getIVAPorcentaje(tipoIVAArticulo, ivaData);
-
-            // Calcular precios por tipo de venta
-            const exw = precioEXWFinal * cajas;
-            const dapTerrestre =
-              (precioEXWFinal +
-                gastosPorTramo.hastaLocalidadDestino +
-                serviciosPorCaja) *
-              cajas;
-            const fob =
-              (precioEXWFinal +
-                gastosPorTramo.hastaPuertoSalida +
-                serviciosPorCaja) *
-              cajas;
-            const cfr = fob + gastosPorTramo.hastaPuertoDestino * cajas;
-            const dapMaritimo =
-              cfr +
-              gastosPorTramo.hastaPuertoDestinoLocalidad * cajas +
-              (cfr * SEGURO_PORCENTAJE) / 100;
-            const cif = cfr + (cfr * SEGURO_PORCENTAJE) / 100;
-
-            // Sumar precios sin IVA
-            totalEXW += exw;
-            totalDAP_TERRESTRE += dapTerrestre;
-            totalFOB += fob;
-            totalCFR += cfr;
-            totalDAP_MARITIMO += dapMaritimo;
-            totalCIF += cif;
-
-            // Sumar precios con IVA (aplicando el porcentaje específico de cada artículo)
-            totalEXW_IVA += exw * (1 + ivaPorcentaje / 100);
-            totalDAP_TERRESTRE_IVA += dapTerrestre * (1 + ivaPorcentaje / 100);
-            totalFOB_IVA += fob * (1 + ivaPorcentaje / 100);
-            totalCFR_IVA += cfr * (1 + ivaPorcentaje / 100);
-            totalDAP_MARITIMO_IVA += dapMaritimo * (1 + ivaPorcentaje / 100);
-            totalCIF_IVA += cif * (1 + ivaPorcentaje / 100);
-          });
-        }
-      });
-    }
-
-    return {
-      EXW: totalEXW,
-      DAP_TERRESTRE: totalDAP_TERRESTRE,
-      FOB: totalFOB,
-      CFR: totalCFR,
-      DAP_MARITIMO: totalDAP_MARITIMO,
-      CIF: totalCIF,
-      // Precios con IVA ponderado
-      EXW_IVA: totalEXW_IVA,
-      DAP_TERRESTRE_IVA: totalDAP_TERRESTRE_IVA,
-      FOB_IVA: totalFOB_IVA,
-      CFR_IVA: totalCFR_IVA,
-      DAP_MARITIMO_IVA: totalDAP_MARITIMO_IVA,
-      CIF_IVA: totalCIF_IVA,
-    };
-  }, [
-    contenedoresUnicos,
-    preciosEXW,
-    tiposIVA,
-    gastosPorTramo,
-    serviciosPorCaja,
-    clienteData,
-    ivaData,
-  ]);
+  // IMPORTANTE: Este cálculo SIEMPRE usa todos los artículos de todos los contenedores.
+  // Usa calcularTotalesPorTipoVenta (utilidad compartida con RevisionTab).
+  const preciosPorTipoVenta = useMemo(
+    () =>
+      calcularTotalesPorTipoVenta(contenedoresUnicos, preciosEXW, pricingParams, {
+        clienteData,
+        tiposIVA,
+        ivaData,
+        getPorcentajesIVA,
+        incotermRef: tipoVentaSeleccionado,
+      }),
+    [contenedoresUnicos, preciosEXW, pricingParams, clienteData, tiposIVA, ivaData, tipoVentaSeleccionado]
+  );
 
   // Calcular márgenes por cada contenedor único
   const margenesPorContenedor = useMemo(() => {
@@ -672,13 +699,12 @@ const NegociacionTab = ({
 
           // Calcular margen en euros por artículo
           const lineItemId = artContenedor.line_item_id;
-          const costePorCaja =
-            artContenedor.precio_de_coste || artContenedor.price || 0;
+          const costePorCaja = artContenedor.precio_de_coste || 0;
           const margenInicial =
-            artContenedor.margen_unitario !== null &&
-            artContenedor.margen_unitario !== undefined
+            artContenedor.margen_unitario != null &&
+            artContenedor.margen_unitario > 0
               ? artContenedor.margen_unitario * 100
-              : clienteData?.margen || 12;
+              : (clienteData?.margen ?? 12);
 
           const precioEXWFinal =
             preciosEXW[lineItemId] ||
@@ -778,13 +804,12 @@ const NegociacionTab = ({
       ) {
         contenedor.container_config.articulos.forEach((artContenedor) => {
           const lineItemId = artContenedor.line_item_id;
-          const costePorCaja =
-            artContenedor.precio_de_coste || artContenedor.price || 0;
+          const costePorCaja = artContenedor.precio_de_coste || 0;
           const margenInicial =
-            artContenedor.margen_unitario !== null &&
-            artContenedor.margen_unitario !== undefined
+            artContenedor.margen_unitario != null &&
+            artContenedor.margen_unitario > 0
               ? artContenedor.margen_unitario * 100
-              : clienteData?.margen || 12;
+              : (clienteData?.margen ?? 12);
 
           const precioEXWFinal =
             preciosEXW[lineItemId] ||
@@ -811,6 +836,13 @@ const NegociacionTab = ({
     };
   }, [contenedoresUnicos, preciosEXW, comisionPorCaja, clienteData]);
 
+  // Deshabilitar el botón "Aplicar" si no hay artículos seleccionados o no hay ningún valor nuevo
+  const isBatchApplyDisabled = useMemo(() => {
+    if (batchSelectedArticulos.length === 0) return true;
+    const hasPrice = batchNuevoPrecio !== null && batchNuevoPrecio !== undefined;
+    return !hasPrice && batchNuevoIVA === "" && batchNuevoIVASoportado === "";
+  }, [batchSelectedArticulos, batchNuevoPrecio, batchNuevoIVA, batchNuevoIVASoportado]);
+
   // Opciones para el select de contenedores únicos
   const contenedoresUnicosOptions = useMemo(() => {
     if (
@@ -826,17 +858,19 @@ const NegociacionTab = ({
     }));
   }, [contenedoresUnicos]);
 
-  // ============================================
   // HANDLERS
-  // ============================================
 
-  const handlePrecioChange = useCallback((articuloId, nuevoPrecio) => {
-    const valor = parseFloat(nuevoPrecio) || 0;
-    setPreciosEXW((prev) => ({
-      ...prev,
-      [articuloId]: valor,
-    }));
-  }, []);
+  const handlePrecioChange = useCallback(
+    (articuloId, nuevoPrecioFinal) => {
+      const valor = parseFloat(nuevoPrecioFinal) || 0;
+      const precioEXW = calcularPrecioEXWDesdeFinal(valor);
+      setPreciosEXW((prev) => ({
+        ...prev,
+        [articuloId]: Math.max(0, precioEXW),
+      }));
+    },
+    [calcularPrecioEXWDesdeFinal, setPreciosEXW]
+  );
 
   const handleTipoIVAChange = useCallback((articuloId, nuevoTipoIVA) => {
     setTiposIVA((prev) => ({
@@ -844,6 +878,178 @@ const NegociacionTab = ({
       [articuloId]: nuevoTipoIVA,
     }));
   }, []);
+
+  const handleTipoIVASoportadoChange = useCallback((articuloId, nuevoTipoIVA) => {
+    setTiposIVASoportado((prev) => ({
+      ...prev,
+      [articuloId]: nuevoTipoIVA,
+    }));
+  }, []);
+
+  // Colectar todos los line_item_id que comparten articuloId en todos los contenedores
+  const getLineItemIdsParaArticulo = useCallback((articuloId) => {
+    const ids = [];
+    contenedoresUnicos?.forEach((contenedor) => {
+      contenedor.container_config?.articulos?.forEach((art) => {
+        if (art.articuloId === articuloId) ids.push(art.line_item_id);
+      });
+    });
+    return ids;
+  }, [contenedoresUnicos]);
+
+  // Seleccionar solo el line_item_id de esta fila (este contenedor)
+  const handleSelectSolo = useCallback((lineItemId) => {
+    setBatchSelectedArticulos((prev) =>
+      prev.includes(lineItemId) ? prev : [...prev, lineItemId]
+    );
+  }, []);
+
+  // Seleccionar el mismo artículo en todos los contenedores
+  const handleSelectEnTodos = useCallback((articuloId) => {
+    const ids = getLineItemIdsParaArticulo(articuloId);
+    setBatchSelectedArticulos((prev) => {
+      const merged = new Set(prev);
+      ids.forEach((id) => merged.add(id));
+      return Array.from(merged);
+    });
+  }, [getLineItemIdsParaArticulo]);
+
+  // Deseleccionar el artículo (todas sus instancias)
+  const handleDeseleccionarArticulo = useCallback((articuloId) => {
+    const toRemove = new Set(getLineItemIdsParaArticulo(articuloId));
+    setBatchSelectedArticulos((prev) => prev.filter((id) => !toRemove.has(id)));
+  }, [getLineItemIdsParaArticulo]);
+
+  // Seleccionar todos los artículos solo en el contenedor actual
+  const handleSelectAllSolo = useCallback(() => {
+    const currentIds = articulosConPrecios.map((art) => art.id);
+    setBatchSelectedArticulos((prev) => {
+      const merged = new Set(prev);
+      currentIds.forEach((id) => merged.add(id));
+      return Array.from(merged);
+    });
+  }, [articulosConPrecios]);
+
+  // Seleccionar todos los artículos del contenedor actual en todos los contenedores
+  const handleSelectAllTodos = useCallback(() => {
+    const articuloIdsActuales = new Set(articulosConPrecios.map((art) => art.articuloId));
+    const allIds = [];
+    contenedoresUnicos?.forEach((contenedor) => {
+      contenedor.container_config?.articulos?.forEach((art) => {
+        if (articuloIdsActuales.has(art.articuloId)) allIds.push(art.line_item_id);
+      });
+    });
+    setBatchSelectedArticulos((prev) => {
+      const merged = new Set(prev);
+      allIds.forEach((id) => merged.add(id));
+      return Array.from(merged);
+    });
+  }, [articulosConPrecios, contenedoresUnicos]);
+
+  // Limpiar toda la selección
+  const handleDeseleccionarTodos = useCallback(() => {
+    setBatchSelectedArticulos([]);
+  }, []);
+
+  const handleBatchApply = useCallback(() => {
+    if (isBatchApplyDisabled) return;
+
+    const lineItemIds = batchSelectedArticulos;
+    if (lineItemIds.length === 0) return;
+
+    if (batchNuevoPrecio !== null && batchNuevoPrecio !== undefined) {
+      const precioEXW = Math.max(0, calcularPrecioEXWDesdeFinal(batchNuevoPrecio));
+      setPreciosEXW((prev) => {
+        const next = { ...prev };
+        lineItemIds.forEach((id) => { next[id] = precioEXW; });
+        return next;
+      });
+    }
+
+    if (batchNuevoIVA !== "") {
+      setTiposIVA((prev) => {
+        const next = { ...prev };
+        lineItemIds.forEach((id) => { next[id] = batchNuevoIVA; });
+        return next;
+      });
+    }
+
+    if (batchNuevoIVASoportado !== "") {
+      setTiposIVASoportado((prev) => {
+        const next = { ...prev };
+        lineItemIds.forEach((id) => { next[id] = batchNuevoIVASoportado; });
+        return next;
+      });
+    }
+
+    setBatchSelectedArticulos([]);
+    setBatchNuevoPrecio(null);
+    setBatchNuevoIVA("");
+    setBatchNuevoIVASoportado("");
+  }, [
+    isBatchApplyDisabled,
+    batchSelectedArticulos,
+    batchNuevoPrecio,
+    batchNuevoIVA,
+    batchNuevoIVASoportado,
+    calcularPrecioEXWDesdeFinal,
+    setPreciosEXW,
+    setTiposIVA,
+    setTiposIVASoportado,
+  ]);
+
+  // Polling ligero del estado del job publish-custom-objects para bloquear el botón Editar.
+  // Ritmo adaptativo: 3s cuando el job está en vuelo (pending/processing), 15s en idle.
+  useEffect(() => {
+    const dealId = context?.crm?.objectId;
+    if (!dealId) return;
+
+    let cancelled = false;
+    let timeoutId = null;
+
+    const poll = async () => {
+      if (cancelled) return;
+      let status = null;
+      try {
+        const data = await fetchFromAPI(
+          `/api/v1/deals/${dealId}/custom-objects/status`,
+        );
+        status = data?.data?.status || null;
+      } catch (err) {
+        status = null;
+      }
+      if (cancelled) return;
+      setCustomObjectsJobStatus(status);
+      const nextDelay =
+        status === "pending" || status === "processing" ? 3000 : 15000;
+      timeoutId = setTimeout(poll, nextDelay);
+    };
+
+    poll();
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [context?.crm?.objectId]);
+
+  // Handler invocado por la modal de edición tras el PATCH exitoso
+  const handleContenedorActualizado = useCallback(
+    (updatedContainer) => {
+      if (!updatedContainer || !setContenedoresUnicos) return;
+      setContenedoresUnicos((prev) => {
+        const list = Array.isArray(prev?.contenedoresUnicos)
+          ? prev.contenedoresUnicos
+          : [];
+        const next = list.map((c) =>
+          c.line_item_id === updatedContainer.line_item_id
+            ? updatedContainer
+            : c,
+        );
+        return { ...prev, contenedoresUnicos: next };
+      });
+    },
+    [setContenedoresUnicos],
+  );
 
   // Handler para guardar la negociación
   const handleGuardarNegociacion = useCallback(async () => {
@@ -865,15 +1071,13 @@ const NegociacionTab = ({
             contenedor.container_config.articulos.forEach((art) => {
               const lineItemId = art.line_item_id;
               const articuloId = art.articuloId;
-              // Usar precio_de_coste, fallback a price para datos antiguos
-              const costePorCaja = art.precio_de_coste || art.price || 0;
+              const costePorCaja = art.precio_de_coste || 0;
 
               // Obtener el precio EXW editado o calcular el inicial
               const margenInicial =
-                art.margen_unitario !== null &&
-                art.margen_unitario !== undefined
+                art.margen_unitario != null && art.margen_unitario > 0
                   ? art.margen_unitario * 100
-                  : clienteData?.margen || 12;
+                  : (clienteData?.margen ?? 12);
 
               // Buscar precio por line_item_id primero, luego por articuloId (vista agregada)
               const precioEXWFinal =
@@ -899,12 +1103,17 @@ const NegociacionTab = ({
               // Siempre agregar el artículo (el backend validará si es necesario)
               todosLosArticulos.push({
                 line_item_id: lineItemId,
-                price: precioEXWFinal,
+                price: Math.round(precioEXWFinal * 1000000) / 1000000,
                 margen_unitario: margenEfectivo / 100,
                 tipo_iva_repercutido:
                   tiposIVA[lineItemId] ||
                   tiposIVA[articuloId] ||
                   art.tipo_iva_repercutido ||
+                  "",
+                tipo_iva_soportado:
+                  tiposIVASoportado[lineItemId] ||
+                  tiposIVASoportado[articuloId] ||
+                  art.tipo_iva_soportado ||
                   "",
               });
             });
@@ -943,13 +1152,14 @@ const NegociacionTab = ({
     clienteData,
     onNavigate,
     ivaData,
+    calcularPrecioFinalPorTipoVenta,
   ]);
 
-  // Formateo de moneda (3 decimales para precisión en negociación)
-  const formatCurrency = useCallback((value) => {
+  // Formateo de moneda: 3 dec por defecto (por caja), pasar decimals=2 para totales
+  const formatCurrency = useCallback((value, decimals = 3) => {
     return `${value.toLocaleString("es-ES", {
-      minimumFractionDigits: 3,
-      maximumFractionDigits: 3,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     })}€`;
   }, []);
 
@@ -1004,9 +1214,7 @@ const NegociacionTab = ({
     return Object.keys(TIPOS_VENTA);
   }, [clienteData]);
 
-  // ============================================
   // RENDER
-  // ============================================
 
   // Wait only for initial delay, not for containers
   // This prevents permanent loading state when containers are recreated
@@ -1093,7 +1301,6 @@ const NegociacionTab = ({
           </Tile>
         </Flex>
 
-        {/* Alerta informativa sobre datos faltantes */}
         {articulosParaNegociacion.length > 0 &&
           articulosParaNegociacion.some((art) => art.costePorCaja === 0) && (
             <Alert title="Datos de costes pendientes" variant="warning">
@@ -1111,23 +1318,60 @@ const NegociacionTab = ({
             Ajuste de Márgenes por Artículo
           </Text>
 
-          {/* Selector de contenedor único */}
           {contenedoresUnicosOptions.length > 0 && (
             <Flex direction="column" gap="small">
               <Text variant="microcopy">
                 Seleccione un contenedor para ajustar los precios de sus
                 artículos:
               </Text>
-              <Box>
-                <Select
-                  name="contenedor-unico-selector"
-                  label="Contenedor"
-                  placeholder="Seleccione un contenedor"
-                  value={contenedorUnicoSeleccionado || ""}
-                  onChange={(value) => setContenedorUnicoSeleccionado(value)}
-                  options={contenedoresUnicosOptions}
-                />
-              </Box>
+              <Flex direction="row" gap="small" align="end">
+                <Box flex={1}>
+                  <Select
+                    name="contenedor-unico-selector"
+                    label="Contenedor"
+                    placeholder="Seleccionar..."
+                    value={contenedorUnicoSeleccionado || ""}
+                    onChange={(value) => setContenedorUnicoSeleccionado(value)}
+                    options={contenedoresUnicosOptions}
+                  />
+                </Box>
+                {contenedorSeleccionado && (
+                  <Button
+                    variant="primary"
+                    disabled={isCustomObjectsJobBusy}
+                    overlay={
+                      <Modal
+                        id={EDITAR_CONTENEDOR_MODAL_ID}
+                        title={`Editar contenedor ${contenedorSeleccionado.container_name || ""}`}
+                        width="lg"
+                      >
+                        <EditarContenedorModal
+                          dealId={context?.crm?.objectId}
+                          contenedor={contenedorSeleccionado}
+                          contenedoresUnicos={contenedoresUnicos}
+                          clienteData={clienteData}
+                          articulosSeleccionados={articulosSeleccionados}
+                          onClose={() =>
+                            actions &&
+                            actions.closeOverlay(EDITAR_CONTENEDOR_MODAL_ID)
+                          }
+                          onUpdated={(updated) => {
+                            handleContenedorActualizado(updated);
+                          }}
+                        />
+                      </Modal>
+                    }
+                  >
+                    Editar contenedor
+                  </Button>
+                )}
+              </Flex>
+              {isCustomObjectsJobBusy && (
+                <Text variant="microcopy">
+                  Publicación de objetos en curso. La edición se habilitará al
+                  finalizar.
+                </Text>
+              )}
             </Flex>
           )}
 
@@ -1142,123 +1386,273 @@ const NegociacionTab = ({
               </Text>
             </EmptyState>
           ) : (
-            <Table bordered={true}>
-              <TableHead>
-                <TableRow>
-                  <TableHeader>Artículo</TableHeader>
-                  <TableHeader>Cajas</TableHeader>
-                  <TableHeader>Coste/Caja</TableHeader>
-                  <TableHeader>Comisión/Caja</TableHeader>
-                  <TableHeader>Margen Efectivo</TableHeader>
-                  <TableHeader>Precio/Caja (EXW)</TableHeader>
-                  <TableHeader>Tipo IVA</TableHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {articulosConPrecios.map((art) => (
-                  <TableRow key={art.id}>
-                    <TableCell>{art.nombre}</TableCell>
-                    <TableCell>{art.cajas}</TableCell>
-                    <TableCell>{formatCurrency(art.costePorCaja)}</TableCell>
-                    <TableCell>
-                      {comisionPorCaja > 0 ? (
+            <>
+              <Table bordered={true}>
+                <TableHead>
+                  <TableRow>
+                    <TableHeader width="auto">
+                      <Dropdown
+                        buttonText="+"
+                        variant="transparent"
+                        buttonSize="xs"
+                      >
+                        <Dropdown.ButtonItem onClick={handleSelectAllSolo}>
+                          Seleccionar todos (este contenedor)
+                        </Dropdown.ButtonItem>
+                        {contenedoresUnicos.length > 1 && (
+                          <Dropdown.ButtonItem onClick={handleSelectAllTodos}>
+                            Seleccionar todos (todos los contenedores)
+                          </Dropdown.ButtonItem>
+                        )}
+                        {batchSelectedArticulos.length > 0 && (
+                          <Dropdown.ButtonItem onClick={handleDeseleccionarTodos}>
+                            Deseleccionar todos
+                          </Dropdown.ButtonItem>
+                        )}
+                      </Dropdown>
+                    </TableHeader>
+                    <TableHeader width="auto">Artículo</TableHeader>
+                    <TableHeader width="auto">Cajas</TableHeader>
+                    <TableHeader width="auto">Coste/Caja</TableHeader>
+                    <TableHeader width="auto">Comisión/Caja</TableHeader>
+                    <TableHeader width="auto">Margen Efectivo</TableHeader>
+                    <TableHeader width="auto">
+                      Precio/Caja (
+                      {TIPOS_VENTA[tipoVentaSeleccionado]?.label ||
+                        tipoVentaSeleccionado}
+                      )
+                    </TableHeader>
+                    <TableHeader width="auto">IVA</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {articulosConPrecios.map((art) => (
+                    <TableRow key={art.id}>
+                      <TableCell width="auto">
+                        <Dropdown
+                          buttonText={batchSelectedArticulos.includes(art.id) ? "✓" : "+"}
+                          variant="transparent"
+                          buttonSize="xs"
+                        >
+                          {batchSelectedArticulos.includes(art.id) ? (
+                            <Dropdown.ButtonItem onClick={() => handleDeseleccionarArticulo(art.articuloId)}>
+                              Deseleccionar
+                            </Dropdown.ButtonItem>
+                          ) : (
+                            <>
+                              <Dropdown.ButtonItem onClick={() => handleSelectSolo(art.id)}>
+                                Seleccionar solo en este contenedor
+                              </Dropdown.ButtonItem>
+                              {contenedoresUnicos.length > 1 && (
+                                <Dropdown.ButtonItem onClick={() => handleSelectEnTodos(art.articuloId)}>
+                                  Seleccionar en todos los contenedores
+                                </Dropdown.ButtonItem>
+                              )}
+                            </>
+                          )}
+                        </Dropdown>
+                      </TableCell>
+                      <TableCell width="auto">{art.nombre}</TableCell>
+                      <TableCell width="auto">{art.cajas}</TableCell>
+                      <TableCell width="auto">{formatCurrency(art.costePorCaja)}</TableCell>
+                      <TableCell width="auto">
+                        {comisionPorCaja > 0 ? (
+                          <Flex direction="column" gap="extra-small">
+                            <Text format={{ fontWeight: "bold" }}>
+                              {formatCurrency(comisionPorCaja)}
+                            </Text>
+                            <Text>
+                              {(() => {
+                                const repercutirAClienteValue =
+                                  clienteData?.repercutirACliente?.value ||
+                                  clienteData?.repercutirACliente;
+                                return repercutirAClienteValue === "si" ? (
+                                  <Tag variant="success">+ Cliente</Tag>
+                                ) : (
+                                  <Tag variant="warning">- Margen</Tag>
+                                );
+                              })()}
+                            </Text>
+                          </Flex>
+                        ) : (
+                          <Text>-</Text>
+                        )}
+                      </TableCell>
+                      <TableCell width="auto">
                         <Flex direction="column" gap="extra-small">
                           <Text format={{ fontWeight: "bold" }}>
-                            {formatCurrency(comisionPorCaja)}
+                            {formatPercent(art.margenEfectivo)}
                           </Text>
-                          <Text>
-                            {/* Extraer el valor si es un objeto {value, options} */}
-                            {(() => {
-                              const repercutirAClienteValue =
-                                clienteData?.repercutirACliente?.value ||
-                                clienteData?.repercutirACliente;
-                              return repercutirAClienteValue === "si" ? (
-                                <Tag variant="success">+ Cliente</Tag>
-                              ) : (
-                                <Tag variant="warning">- Margen</Tag>
-                              );
-                            })()}
-                          </Text>
+                          <Text>{formatCurrency(art.margenEfectivoEnEuros)}</Text>
                         </Flex>
-                      ) : (
-                        <Text>-</Text>
-                      )}
+                      </TableCell>
+                      <TableCell width="auto">
+                        <Flex direction="column" gap="extra-small">
+                          <StepperInput
+                            name={`precio-${art.id}`}
+                            value={art.precioFinalEditable || 0}
+                            onChange={(value) => handlePrecioChange(art.id, value)}
+                            stepSize={0.001}
+                            min={0}
+                            precision={3}
+                            formatStyle="decimal"
+                            minValueReachedTooltip="El precio no puede ser negativo"
+                          />
+                          {tipoVentaSeleccionado !== "EXW" && (
+                            <Text variant="microcopy">
+                              EXW: {formatCurrency(art.precioPorCaja)}
+                            </Text>
+                          )}
+                        </Flex>
+                      </TableCell>
+                      <TableCell width="auto">
+                        <Flex direction="column" gap="small">
+                          <Flex direction="column" gap="extra-small">
+                            <Text variant="microcopy" format={{ fontWeight: "demibold" }}>Repercutido</Text>
+                            <Select
+                              name={`tipo-iva-${art.id}`}
+                              value={tiposIVA[art.id] || ""}
+                              onChange={(value) => handleTipoIVAChange(art.id, value)}
+                              options={tipoIVAOptions}
+                            />
+                          </Flex>
+                          <Flex direction="column" gap="extra-small">
+                            <Text variant="microcopy" format={{ fontWeight: "demibold" }}>Soportado</Text>
+                            <Select
+                              name={`tipo-iva-sop-${art.id}`}
+                              value={tiposIVASoportado[art.id] || ""}
+                              onChange={(value) => handleTipoIVASoportadoChange(art.id, value)}
+                              options={tipoIVASoportadoOptions}
+                            />
+                          </Flex>
+                        </Flex>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TableCell />
+                    <TableCell>
+                      <Text format={{ fontWeight: "bold" }}>TOTALES</Text>
                     </TableCell>
                     <TableCell>
-                      <Flex direction="column" gap="extra-small">
-                        <Text format={{ fontWeight: "bold" }}>
-                          {formatPercent(art.margenEfectivo)}
-                        </Text>
-                        <Text>{formatCurrency(art.margenEfectivoEnEuros)}</Text>
-                      </Flex>
+                      <Text format={{ fontWeight: "bold" }}>
+                        {totalesContenedorSeleccionado.totalCajas}
+                      </Text>
                     </TableCell>
                     <TableCell>
-                      <StepperInput
-                        name={`precio-${art.id}`}
-                        value={art.precioEXWEditable || 0}
-                        onChange={(value) => handlePrecioChange(art.id, value)}
-                        stepSize={0.001}
-                        min={0}
-                        precision={3}
-                        formatStyle="decimal"
-                        minValueReachedTooltip="El precio no puede ser negativo"
-                      />
+                      <Text format={{ fontWeight: "bold" }}>
+                        {formatCurrency(totalesContenedorSeleccionado.totalCoste, 2)}
+                      </Text>
                     </TableCell>
                     <TableCell>
-                      <Select
-                        name={`tipo-iva-${art.id}`}
-                        value={tiposIVA[art.id] || ""}
-                        onChange={(value) => handleTipoIVAChange(art.id, value)}
-                        options={tipoIVAOptions}
-                      />
+                      <Text format={{ fontWeight: "bold" }}>
+                        {totalesContenedorSeleccionado.totalComision > 0
+                          ? formatCurrency(totalesContenedorSeleccionado.totalComision, 2)
+                          : "-"}
+                      </Text>
+                    </TableCell>
+                    <TableCell>
+                      <Text format={{ fontWeight: "bold" }}>
+                        {formatCurrency(totalesContenedorSeleccionado.totalMargenEfectivoEnEuros, 2)}
+                      </Text>
+                    </TableCell>
+                    <TableCell>
+                      <Text format={{ fontWeight: "bold" }}>
+                        {formatCurrency(totalesContenedorSeleccionado.totalPrecioFinal, 2)}
+                      </Text>
+                    </TableCell>
+                    <TableCell>
+                      <Text format={{ fontWeight: "bold" }}>
+                        {formatCurrency(totalesConIVAContenedorSeleccionado[`${tipoVentaSeleccionado}_IVA`] ?? 0, 2)}
+                      </Text>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell>
-                    <Text format={{ fontWeight: "bold" }}>TOTALES</Text>
-                  </TableCell>
-                  <TableCell>
+                </TableFooter>
+              </Table>
+
+              {/* ========== EDICIÓN MASIVA ========== */}
+              {batchSelectedArticulos.length > 0 && (
+                <Tile>
+                  <Flex direction="column" gap="medium">
                     <Text format={{ fontWeight: "bold" }}>
-                      {totalesContenedorSeleccionado.totalCajas}
+                      Edición Masiva ({batchSelectedArticulos.length} artículo{batchSelectedArticulos.length > 1 ? "s" : ""} seleccionado{batchSelectedArticulos.length > 1 ? "s" : ""})
                     </Text>
-                  </TableCell>
-                  <TableCell>
-                    <Text format={{ fontWeight: "bold" }}>
-                      {formatCurrency(totalesContenedorSeleccionado.totalCoste)}
-                    </Text>
-                  </TableCell>
-                  <TableCell>
-                    <Text format={{ fontWeight: "bold" }}>
-                      {totalesContenedorSeleccionado.totalComision > 0
-                        ? formatCurrency(
-                            totalesContenedorSeleccionado.totalComision
-                          )
-                        : "-"}
-                    </Text>
-                  </TableCell>
-                  <TableCell>
-                    <Text format={{ fontWeight: "bold" }}>
-                      {formatCurrency(
-                        totalesContenedorSeleccionado.totalMargenEfectivoEnEuros
-                      )}
-                    </Text>
-                  </TableCell>
-                  <TableCell>
-                    <Text format={{ fontWeight: "bold" }}>
-                      {formatCurrency(
-                        totalesContenedorSeleccionado.totalPrecioEXW
-                      )}
-                    </Text>
-                  </TableCell>
-                  <TableCell>
-                    <Text>-</Text>
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
+                    <Divider size="small" />
+
+                    <Flex direction="row" gap="medium">
+                      <Flex direction="column" gap="extra-small">
+                        <Text variant="microcopy" format={{ fontWeight: "demibold" }}>
+                          Precio/Caja ({TIPOS_VENTA[tipoVentaSeleccionado]?.label || tipoVentaSeleccionado})
+                        </Text>
+                        <NumberInput
+                          name="batch-precio"
+                          label="Nuevo precio/caja"
+                          value={batchNuevoPrecio ?? undefined}
+                          onChange={(value) => setBatchNuevoPrecio(value)}
+                          min={0}
+                          precision={3}
+                          formatStyle="decimal"
+                          placeholder=""
+                        />
+                      </Flex>
+
+                      <Flex direction="column" gap="extra-small">
+                        <Text variant="microcopy" format={{ fontWeight: "demibold" }}>IVA Repercutido</Text>
+                        <Select
+                          name="batch-iva-rep"
+                          label="IVA Repercutido"
+                          placeholder="Seleccionar..."
+                          value={batchNuevoIVA}
+                          onChange={(value) => setBatchNuevoIVA(value)}
+                          options={tipoIVAOptions}
+                        />
+                      </Flex>
+
+                      <Flex direction="column" gap="extra-small">
+                        <Text variant="microcopy" format={{ fontWeight: "demibold" }}>IVA Soportado</Text>
+                        <Select
+                          name="batch-iva-sop"
+                          label="IVA Soportado"
+                          placeholder="Seleccionar..."
+                          value={batchNuevoIVASoportado}
+                          onChange={(value) => setBatchNuevoIVASoportado(value)}
+                          options={tipoIVASoportadoOptions}
+                        />
+                      </Flex>
+                    </Flex>
+
+                    {isBatchApplyDisabled && (
+                      <Text variant="microcopy">
+                        Introduce al menos un valor (precio o IVA) para poder aplicar.
+                      </Text>
+                    )}
+
+                    <ButtonRow>
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setBatchSelectedArticulos([]);
+                          setBatchNuevoPrecio(null);
+                          setBatchNuevoIVA("");
+                          setBatchNuevoIVASoportado("");
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        variant="primary"
+                        onClick={handleBatchApply}
+                        disabled={isBatchApplyDisabled}
+                      >
+                        Aplicar a seleccionados
+                      </Button>
+                    </ButtonRow>
+                  </Flex>
+                </Tile>
+              )}
+            </>
           )}
         </Box>
 
@@ -1276,7 +1670,7 @@ const NegociacionTab = ({
             </Flex>
             <Flex direction="column" gap="extra-small">
               <Text variant="microcopy">Servicios totales</Text>
-              <Text>{formatCurrency(totalServicios)}</Text>
+              <Text>{formatCurrency(totalServicios, 2)}</Text>
             </Flex>
             <Flex direction="column" gap="extra-small">
               <Text variant="microcopy">Servicios/caja</Text>
@@ -1293,10 +1687,6 @@ const NegociacionTab = ({
               <Text>
                 {formatCurrency(gastosPorTramo.hastaPuertoDestino)}/caja
               </Text>
-            </Flex>
-            <Flex direction="column" gap="extra-small">
-              <Text variant="microcopy">Seguro</Text>
-              <Text>{SEGURO_PORCENTAJE}%</Text>
             </Flex>
           </Flex>
         </Box>
@@ -1338,12 +1728,12 @@ const NegociacionTab = ({
               <StatisticsItem
                 key={contenedor.id}
                 label={"MARGEN CONTRIBUCIÓN " + contenedor.label}
-                number={formatCurrency(contenedor.margenTotalEnEuros)}
+                number={formatCurrency(contenedor.margenTotalEnEuros, 2)}
               ></StatisticsItem>
             ))}
             <StatisticsItem
               label="Margen de Contribución Total"
-              number={formatCurrency(margenNegocioEnEuros.total)}
+              number={formatCurrency(margenNegocioEnEuros.total, 2)}
             >
               <Text format={{ fontWeight: "demibold" }}>
                 {formatPercent(margenNegocio)}
@@ -1382,16 +1772,16 @@ const NegociacionTab = ({
                 totalCajas > 0 ? precioGlobal / totalCajas : 0;
               const precioPorCajaConIVA =
                 totalCajas > 0 ? totalConIva / totalCajas : 0;
-
+              
               return (
                 <StatisticsItem
                   key={key}
                   label={tipo.label}
-                  number={formatCurrency(precioGlobal)}
+                  number={formatCurrency(precioGlobal, 2)}
                 >
                   <StatisticsTrend
                     direction="increase"
-                    value={`${formatCurrency(totalConIva)} c/IVA`}
+                    value={`${formatCurrency(totalConIva, 2)} c/IVA`}
                   />
                   <Text variant="microcopy">
                     {formatCurrency(precioPorCajaSinIVA)}/caja -{" "}

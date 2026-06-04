@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Cetak penawaran",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Teks tombol",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Cetak",
+    "description" : "",
+    "placeholders" : null
+  }
+}

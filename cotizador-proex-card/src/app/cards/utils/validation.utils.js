@@ -1,22 +1,7 @@
-/**
- * Validation utilities for form fields
- */
-
-/**
- * Check if a value is present (not undefined, null, or empty string)
- * @param {*} value - Value to check
- * @returns {boolean}
- */
 export const isValuePresent = (value) => {
   return value !== undefined && value !== null && value !== "";
 };
 
-/**
- * Validate required field
- * @param {*} value - Value to validate
- * @param {string} fieldName - Name of the field for error message
- * @returns {string|null} - Error message or null if valid
- */
 export const validateRequired = (value, fieldName) => {
   if (!isValuePresent(value)) {
     return `${fieldName} es requerido`;
@@ -24,12 +9,6 @@ export const validateRequired = (value, fieldName) => {
   return null;
 };
 
-/**
- * Validate number field
- * @param {*} value - Value to validate
- * @param {string} fieldName - Name of the field for error message
- * @returns {string|null} - Error message or null if valid
- */
 export const validateNumber = (value, fieldName) => {
   if (typeof value !== "number" || isNaN(value)) {
     return `${fieldName} debe ser un número válido`;
@@ -37,14 +16,6 @@ export const validateNumber = (value, fieldName) => {
   return null;
 };
 
-/**
- * Validate number range
- * @param {number} value - Value to validate
- * @param {number} min - Minimum value
- * @param {number} max - Maximum value
- * @param {string} fieldName - Name of the field for error message
- * @returns {string|null} - Error message or null if valid
- */
 export const validateRange = (value, min, max, fieldName) => {
   if (value < min || value > max) {
     return `${fieldName} debe estar entre ${min} y ${max}`;
@@ -52,11 +23,6 @@ export const validateRange = (value, min, max, fieldName) => {
   return null;
 };
 
-/**
- * Validate margen field (percentage 0-100)
- * @param {*} margen - Margen value to validate
- * @returns {string|null} - Error message or null if valid
- */
 export const validateMargen = (margen) => {
   if (!isValuePresent(margen)) {
     return "El margen es requerido";
@@ -74,11 +40,6 @@ export const validateMargen = (margen) => {
   return null;
 };
 
-/**
- * Get validation messages for cliente data
- * @param {Object} clienteData - Cliente data object
- * @returns {string[]} - Array of validation error messages
- */
 export const getClienteValidationMessages = (clienteData) => {
   const messages = [];
 
@@ -95,15 +56,13 @@ export const getClienteValidationMessages = (clienteData) => {
     messages.push("Debe especificar el % Margen");
   }
 
+  if (!clienteData.fechaCaducidadCotizacion) {
+    messages.push("Debe especificar la fecha de caducidad de la cotización");
+  }
+
   return messages;
 };
 
-/**
- * Validate form data against rules
- * @param {Object} data - Form data to validate
- * @param {Object} rules - Validation rules { fieldName: [validatorFn, ...] }
- * @returns {{ isValid: boolean, errors: Object }} - Validation result
- */
 export const validateForm = (data, rules) => {
   const errors = {};
 
@@ -112,7 +71,7 @@ export const validateForm = (data, rules) => {
       const error = validation(data[field]);
       if (error) {
         errors[field] = error;
-        break; // Stop at first error per field
+        break;
       }
     }
   });

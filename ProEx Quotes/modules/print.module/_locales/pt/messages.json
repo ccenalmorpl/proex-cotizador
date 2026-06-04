@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Imprimir orçamento",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Texto do botão",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Imprimir",
+    "description" : "",
+    "placeholders" : null
+  }
+}

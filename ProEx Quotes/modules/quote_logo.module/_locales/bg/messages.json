@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Изображение на логото на компанията",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Това не важи при замяна на логото по подразбиране",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Максимална височина на логото",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "По подразбиране вашите оферти ще показват логото на компанията от \"Настройки по подразбиране на акаунта\" или \"Страници на уеб сайта\" ако сте ги настроили. Можете да изберете да ги замените, като използвате превключвателя по-долу.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Лого",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Замяна на логото по подразбиране в този шаблон",
+    "description" : "",
+    "placeholders" : null
+  }
+}

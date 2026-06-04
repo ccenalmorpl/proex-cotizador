@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Imej logo syarikat",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Ini tidak terpakai semasa menggantikan logo lalai",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Tinggi maksimum logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Sebut harga anda akan menunjukkan logo syarikat daripada Lalai Akaun atau Halaman Laman Web secara lalai jika anda telah menetapkannya. Anda boleh memilih untuk menggantikan ini menggunakan togol di bawah.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Gantikan logo lalai dalam templat ini",
+    "description" : "",
+    "placeholders" : null
+  }
+}

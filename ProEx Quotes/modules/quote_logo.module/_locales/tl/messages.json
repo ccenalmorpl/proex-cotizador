@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Larawang logo ng kompanya",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Hindi ito nalalapat kapag ino-override ang default na logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Maximum na taas ng logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Nang default, ipapakita ng iyong mga quote ang logo ng kompanya mula sa Account Defaults o mga Website Page kung may ganito kang mga set up. Maaari mong piliin na i-override ang mga ito gamit ang toggle sa ibaba.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "I-override ang default na logo sa template na ito",
+    "description" : "",
+    "placeholders" : null
+  }
+}

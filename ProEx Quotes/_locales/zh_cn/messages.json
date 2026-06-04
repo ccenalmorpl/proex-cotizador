@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "CMS 报价主题",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "全局颜色",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "主要颜色",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "次要颜色",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "全局字体",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "主要字体",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "次要字体",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "按钮设置",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "按钮背景颜色",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "按钮字体颜色",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "横幅设置",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "横幅字体颜色",
+    "description": "",
+    "placeholders": null
+  }
+}

@@ -1,0 +1,213 @@
+<!--
+  templateType: quote
+  isAvailableForNewContent: true
+  label: Original
+  screenshotPath: ../images/original.png
+-->
+
+{% extends './layouts/base.html' %}
+
+{% block stylesheet %}
+  {{ require_css(get_asset_url("../css/original.css")) }}
+{% endblock stylesheet %}
+
+{% block body %}
+
+{% require_css %}
+  <style>
+    .line-items__table #line-items__table-body {
+      border-top: 2px solid rgba({{ theme.global_colors.primary_color.color|convert_rgb }}, {{ theme.global_colors.primary_color.opacity / 100 }});
+      border-bottom: 2px solid rgba({{ theme.global_colors.primary_color.color|convert_rgb }}, {{ theme.global_colors.primary_color.opacity / 100 }});
+    }
+
+    {% if module_data|attr('logo')|attr('hidden') %}
+      .hs-quotes .header { display: none; }
+    {% endif %}
+
+    {% if module_data|attr('quote_name')|attr('hidden') &&
+      module_data|attr('quote_created')|attr('hidden') &&
+      module_data|attr('reference')|attr('hidden') &&
+      module_data|attr('buyer_company')|attr('hidden') &&
+      module_data|attr('buyer_contacts')|attr('hidden') &&
+      module_data|attr('comments')|attr('hidden') &&
+      module_data|attr('comment_sender')|attr('hidden')
+    %}
+      .hs-quotes .banner--top { display: none; }
+    {% endif %}
+
+    {% if module_data|attr('line_items_table')|attr('hidden') %}
+      .hs-quotes .line-items_wrapper { display: none; }
+    {% endif %}
+
+    {% if module_data|attr('payment-schedule')|attr('hidden') || !ASSOCIATED_OBJECTS.payment_schedule %}
+      .hs-quotes .container.payment-schedule { display: none; }
+    {% endif %}
+
+    {% if !QUOTE.hs_payment_enabled %}
+      .hs-quotes .container.payment { display: none; }
+    {% endif %}
+
+    {% if !QUOTE.hs_esign_enabled && !QUOTE.hs_show_signature_box %}
+      .hs-quotes .signature_wrapper.signature { display: none; }
+    {% endif %}
+
+    {% if module_data|attr('quote_expires')|attr('hidden') &&
+      module_data|attr('terms')|attr('hidden')
+    %}
+      .hs-quotes .terms { display: none; }
+    {% endif %}
+
+    {% if module_data|attr('sender_contact')|attr('hidden') &&
+      module_data|attr('download')|attr('hidden') &&
+      module_data|attr('print')|attr('hidden') &&
+      module_data|attr('sender_company')|attr('hidden')
+    %}
+      .hs-quotes .banner--bottom { display: none; }
+    {% endif %}
+  </style>
+{% end_require_css %}
+
+<body class="hs-quotes hs-quotes--original">
+  <div class="header">
+    <div class="container">
+      {% module "logo" path="../modules/quote_logo" %}
+    </div>
+  </div>
+
+  <div class="colored-section banner banner--top">
+    <div class="container">
+      {% module "quote_name"
+        label="Quote name"
+        path="@hubspot/rich_text"
+        html="<h1>{{ personalization_token('template_data.quote.hs_title', '') }}</h1>"
+      %}
+
+      <div class="quote-info">
+        {% module "quote_created" path="../modules/quote_created" %}
+        {% module "reference" path="../modules/reference" %}
+      </div>
+
+      <div class="recipient-info_wrapper">
+        <div class="recipient-company-module_wrapper">
+          {% module "buyer_company" path="../modules/buyer_company" %}
+        </div>
+        <div class="recipient-contacts-module_wrapper">
+          {% module "buyer_contacts" path="../modules/buyer_contacts" %}
+        </div>
+      </div>
+
+      <div class="comments_wrapper">
+        <div class="comments-text_wrapper">
+          {% module "comments"
+            label="Comments"
+            path="@hubspot/rich_text"
+            html={{
+              "<h3>" ~ template_translations.comments.message ~ "</h3>" ~
+              "<strong>" ~ ptoken_comments ~ "</strong>"
+            }}
+          %}
+        </div>
+
+        <div class="comments-author_wrapper">
+          {% module "comment_sender"
+            label="Comments left by"
+            path="../modules/sender_user_with_avatar"
+          %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="line-items_wrapper">
+    <div class="container line-items">
+      {% module "line_items_table"
+        path="../modules/line_items_table"
+        future_charges={
+          table_heading: '<h2 style="text-align: center;">' ~ template_translations.future_charges.message ~ '</h2>
+                          <p style="text-align: center;">' ~  template_translations.future_payments_subheading.message ~ '</p>'
+        }
+        line_item_column=[
+          {
+            "column_title": "",
+            "column_property": "item_description"
+          },
+          {
+            "column_title": "",
+            "column_property": "quantity_amount"
+          }
+        ]
+        future_payments_summary_table={
+          columns: {
+            line_item_name_heading: "",
+            payment_summary_heading: ""
+          }
+        }
+        subtotal_title=""
+        other_fees_title=""
+      %}
+    </div>
+  </div>
+
+  <div class="container payment-schedule">
+    {% module "payment-schedule" path="@hubspot/quote_payment_schedule" %}
+  </div>
+
+  <div class="container payment">
+    {% module "payment" path="@hubspot/quote_payment" heading_tag="h3" %}
+  </div>
+
+  <div class="signature_wrapper signature">
+    {% module "signature" path="@hubspot/quote_signature" %}
+  </div>
+
+  <div class="container terms">
+    <div class="quote-expires_wrapper">
+      {% module "quote_expires" path="../modules/quote_expires_original" %}
+    </div>
+    <div class="terms_wrapper">
+      {% module "terms"
+        label="Terms"
+        path="@hubspot/rich_text"
+        html={{
+          "<h3>" ~ template_translations.purchase_terms.message ~ "</h3>" ~
+          "<strong>" ~ ptoken_terms ~ "</strong>"
+        }}
+      %}
+    </div>
+  </div>
+
+  <div class="colored-section banner banner--bottom">
+    <div class="container contacts">
+      <div class="sender-contact_wrapper">
+        {% module "sender_contact" path="../modules/sender_contact" heading_tag="h3" %}
+      </div>
+      <br>
+      <div class="options_wrapper">
+        <div class="option-download">
+          {% module "download" path="@hubspot/quote_download" %}
+        </div>
+        <div class="option-print">
+          {% module "print" path="../modules/print" %}
+        </div>
+      </div>
+
+      <div class="sender-company_wrapper">
+        {% module "sender_company"
+           label="Sender company"
+           path="@hubspot/rich_text"
+           html="
+            <div><b>{{ personalization_token('template_data.quote.hs_sender_company_name', '') }}</b></div>
+            <div>{{ personalization_token('template_data.quote.hs_sender_company_address', '') }} {{ personalization_token('template_data.quote.hs_sender_company_address2', '') }}</div>
+            <div>
+              {{ personalization_token('template_data.quote.hs_sender_company_city', '') }}{% if template_data.quote.hs_sender_company_city %},{% endif %}
+              {{ personalization_token('template_data.quote.hs_sender_company_state', '') }}
+              {{ personalization_token('template_data.quote.hs_sender_company_zip', '') }}
+            </div>
+            <div>{{ personalization_token('template_data.quote.hs_sender_company_country', '') }}</div>
+          "
+        %}
+     </div>
+    </div>
+  </div>
+</body>
+{% endblock body %}

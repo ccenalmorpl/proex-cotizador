@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Beløp",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Kommentarer",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Kommentarer fra",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Dette tilbudet er utløpt.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Kontakt salgsrepresentanten for mer informasjon.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Element og beskrivelse",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Andre avgifter",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Klargjort av:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Pris",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Produkter og tjenester",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Kjøpsbetingelser",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Antall",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Tilbud opprettet av:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Deltotaler",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Totalsum",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Enhetspris",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Kredittnota",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Kreditnotanummer",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Samlet kreditnota",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Kjøpsordre nr.",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Dato for kreditnota",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Alle gebyrer er oppgitt i {{ currency_code }} og er underlagt omsetningsavgift (hvis aktuelt).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Tabell over kreditnotalinjeelementer",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Mengde",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "etter {{ discount_amount }} rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Faktura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Fakturanummer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Fakturadato",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Alle gebyrer er oppgitt i {{ currency_code }} og er underlagt omsetningsavgift (hvis aktuelt).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "PO-nummer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Tabell over fakturalinjeelementer",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "etter {{ discount_amount }} rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Mengde",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Betaling",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Forfalt saldo",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Skatt",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Fakturer",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Send til",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Skatteadresse",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Forfallsdato",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }} % rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }} % rabatt",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Delsum",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Fremtidige betalinger",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Betalinger som forfaller senere.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Oppsummering",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Dette tilbudet er ikke tilgjengelig.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Kontakt salgsrepresentanten for mer informasjon.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Ikke aktuelt",
+    "description": "",
+    "placeholders": null
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Hình ảnh logo công ty",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Không áp dụng khi thay thế logo mặc định",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Chiều cao tối đa của logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Theo mặc định, báo giá của bạn sẽ hiển thị logo công ty từ các Trang web hoặc Tài khoản mặc định nếu bạn thiết lập những mục này. Bạn có thể chọn ghi đè những mục này bằng cách sử dụng chuyển đổi bên dưới.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Ghi đè logo mặc định trong mẫu này",
+    "description" : "",
+    "placeholders" : null
+  }
+}

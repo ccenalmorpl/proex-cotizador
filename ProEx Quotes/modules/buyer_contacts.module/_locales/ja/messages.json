@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "購入者コンタクト",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "購入者の連絡先Eメール",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "購入者のコンタクトの役職・職種",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "購入者のコンタクト名",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "購入者の連絡先電話番号",
+    "description" : "",
+    "placeholders" : null
+  }
+}

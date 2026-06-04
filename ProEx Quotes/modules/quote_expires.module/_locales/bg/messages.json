@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Офертата изтича",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Изтичане на оферта:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Текст на изтичане на оферта:",
+    "description" : "",
+    "placeholders" : null
+  }
+}

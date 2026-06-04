@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Ссылка",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "Ссылка: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "Номер ссылки",
+    "description" : "",
+    "placeholders" : null
+  }
+}

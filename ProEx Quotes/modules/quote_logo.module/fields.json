@@ -1,0 +1,54 @@
+[ {
+  "id" : "default_logo_max_height",
+  "name" : "default_logo_max_height",
+  "label" : "Logo max height",
+  "help_text" : "This does not apply when overriding the default logo",
+  "required" : false,
+  "locked" : false,
+  "visibility" : {
+    "controlling_field" : "override_default_logo",
+    "controlling_field_path" : null,
+    "controlling_value_regex" : "false",
+    "property" : null,
+    "operator" : "EQUAL",
+    "access" : null
+  },
+  "display" : "text",
+  "min" : 10,
+  "max" : 500,
+  "step" : 1,
+  "suffix" : "px",
+  "display_width" : null,
+  "type" : "number",
+  "default" : 100
+}, {
+  "id" : "override_default_logo",
+  "name" : "override_default_logo",
+  "label" : "Override default logo in this template",
+  "required" : false,
+  "locked" : false,
+  "display" : "toggle",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : false
+}, {
+  "id" : "company_logo_image",
+  "name" : "company_logo_image",
+  "label" : "Company logo image",
+  "required" : false,
+  "locked" : false,
+  "visibility" : {
+    "controlling_field" : "override_default_logo",
+    "controlling_field_path" : null,
+    "controlling_value_regex" : "true",
+    "property" : null,
+    "operator" : "EQUAL",
+    "access" : null
+  },
+  "responsive" : false,
+  "resizable" : true,
+  "show_loading" : false,
+  "display_width" : null,
+  "type" : "image",
+  "default" : { }
+} ]

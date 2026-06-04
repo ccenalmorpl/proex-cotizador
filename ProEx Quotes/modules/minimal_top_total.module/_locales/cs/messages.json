@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Okamžitá splatnost",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Toto označení nahrazuje „Celkový text nabídky“ v případě, že jsou některé platby splatné po odbavení u pokladny.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Text k celkové částce s okamžitou splatností",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Celková nabídka",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Celkem",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Text k celkové částce nabídky",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Celkový text nabídky",
+    "description" : "",
+    "placeholders" : null
+  }
+}

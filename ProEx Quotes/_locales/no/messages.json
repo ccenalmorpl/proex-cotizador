@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "Tema for CMS-tilbud",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "Globale farger",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "Primærfarge",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "Sekundærfarge",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "Globale skrifttyper",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "Primær skrifttype",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "Sekundær skrifttype",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "Knappinnstillinger",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "Bakgrunnsfarge for knapp",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "Skriftfarge på knapp",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "Bannerinnstillinger",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "Skriftfarge for banner",
+    "description": "",
+    "placeholders": null
+  }
+}

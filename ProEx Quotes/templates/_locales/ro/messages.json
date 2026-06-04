@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Sumă",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Comentarii",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Comentarii de la",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Această ofertă a expirat.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Contactați reprezentantul de vânzări pentru mai multe detalii.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Articol și descriere",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Alte taxe",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Pregătit de:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Preț",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Produse și servicii",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Termeni de achiziție",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Cantitate",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Ofertă creată de:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Subtotaluri",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Total",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Preț unitar",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Notă de credit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Număr notă de credit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Total notă de credit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Nr. P.O.",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Dată notă de credit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Toate taxele sunt listate în {{ currency_code }} și sunt supuse impozitului pe vânzări (dacă este cazul).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Tabel articole de linie pentru notă de credit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Cantit.",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Taxă",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "taxă",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Taxă",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "după reducerea de {{ discount_amount }}  ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Factură",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Număr factură",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Dată factură",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Toate taxele sunt listate în {{ currency_code }} și sunt supuse impozitului pe vânzări (dacă este cazul).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Număr PO",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Tabel articole de linie pentru factură",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "după reducerea de {{ discount_amount }} ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Cantit.",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Plată",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Sold restant",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Taxă",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "taxă",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Taxă",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Facturare către",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Expediere către",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Adresă fiscală",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Scadență",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "reducere",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% reducere",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "Reducere {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Subtotal",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Plăți viitoare",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Plăți care sunt scadente mai târziu.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Sumar",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Oferta este indisponibilă.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Contactați reprezentantul de vânzări pentru mai multe detalii.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Indisponibil",
+    "description": "",
+    "placeholders": null
+  }
+}

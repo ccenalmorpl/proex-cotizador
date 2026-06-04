@@ -37,6 +37,17 @@ import RevisionTab from "./tabs/RevisionTab";
 import ServiciosTab from "./tabs/ServiciosTab";
 import NegociacionTab from "./tabs/NegociacionTab";
 
+// Mapeo de código numérico HubSpot → etiqueta textual de tipo de residente
+const RESIDENNUM_MAP: Record<string, string> = {
+  "1": "NACIONAL",
+  "2": "EUROPA",
+  "4": "EXTRANJERO",
+};
+const mapResidennum = (value: string | undefined | null): string => {
+  if (!value) return "";
+  return RESIDENNUM_MAP[value] ?? value;
+};
+
 hubspot.extend(({ context, actions }) => (
   <Extension context={context} actions={actions} />
 ));
@@ -46,19 +57,17 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
   const [selectedTab, setSelectedTab] = useState<string>("cliente");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [noContactAssociated, setNoContactAssociated] =
+  const [noCompanyAssociated, setNoCompanyAssociated] =
     useState<boolean>(false);
 
   // Data state - Cliente
   const [clienteData, setClienteData] = useState<ClienteData>({
-    nombreCliente: "",
     nombreEmpresa: "",
     country: "",
     tipoVenta: "",
     tipoContenedor: "",
     tipoCliente: "",
     margen: 12,
-    idioma: "ES",
     proyecto: "",
     lugarCarga: "",
     lugarCargaLabel: "",
@@ -68,9 +77,16 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
     tipoComision: "",
     importeComision: 0,
     tipoIVAComision: "",
+    tipoIVAComisionSoportado: "",
     tipoResidente: "",
     cif: "",
     paisOperaciones: "",
+    cargaPorPalets: false,
+    fechaCaducidadCotizacion: (() => {
+      const d = new Date();
+      d.setMonth(d.getMonth() + 1);
+      return { year: d.getFullYear(), month: d.getMonth(), date: d.getDate() };
+    })(),
   });
 
   // Data state - Dynamic options
@@ -82,7 +98,6 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
     []
   );
   const [navieraOptions, setNavieraOptions] = useState<SelectOption[]>([]);
-  const [idiomaOptions, setIdiomaOptions] = useState<SelectOption[]>([]);
   const [proyectoOptions, setProyectoOptions] = useState<SelectOption[]>([]);
   const [repercutirAClienteOptions, setRepercutirAClienteOptions] = useState<
     SelectOption[]
@@ -95,8 +110,10 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
   const [articulosSeleccionados, setArticulosSeleccionados] = useState<
     ArticuloItem[]
   >([]);
-  const [tipoIVAOptions, setTipoIVAOptions] = useState<SelectOption[]>([]);
-  const [ivaData, setIvaData] = useState<Record<string, any>>({});
+  const [tipoIVARepercutidoOptions, setTipoIVARepercutidoOptions] = useState<SelectOption[]>([]);
+  const [ivaRepercutidoData, setIvaRepercutidoData] = useState<Record<string, any>>({});
+  const [tipoIVASoportadoOptions, setTipoIVASoportadoOptions] = useState<SelectOption[]>([]);
+  const [ivaSoportadoData, setIvaSoportadoData] = useState<Record<string, any>>({});
 
   // Data state - Contenedores
   const [contenedoresData, setContenedoresData] = useState<ContenedoresData>({
@@ -113,6 +130,11 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
   // Data state - Negociación (shared pricing state)
   const [preciosEXW, setPreciosEXW] = useState<Record<string, number>>({});
   const [tiposIVA, setTiposIVA] = useState<Record<string, string>>({});
+  const [tiposIVASoportado, setTiposIVASoportado] = useState<Record<string, string>>({});
+
+  // IVA defaults resolved from product (Fase 4E)
+  const [ivaComisionDefaults, setIvaComisionDefaults] = useState<{ repercutido?: string; soportado?: string } | null>(null);
+  const [ivaFletesDefaults, setIvaFletesDefaults] = useState<{ repercutido?: string; soportado?: string } | null>(null);
 
   // Data state - Transitario
   const [transitarioData, setTransitarioData] = useState<TransitarioData>({
@@ -122,12 +144,14 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
     localidadDestino: "",
     precioOrigen: 0,
     precioDestino: 0,
-    fechaValidez: null,
+    fechaCaducidadFleteSalida: null,
+    fechaCaducidadFleteDestino: null,
     diasLibres: 0,
     naviera: "",
     almacen: "",
     cotizacionRapida: false,
     tipoIVAFletes: "",
+    tipoIVAFletesSoportado: "",
   });
 
   // Data state - Servicios
@@ -143,9 +167,12 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
 
       // Documentación
       direccionFiscal: "",
+      direccionDeEntrega: "",
+      cif: "",
+      referenciaCotizacion: "",
 
       // Documentación Logística
-      tramitarCarga: false,
+      desagregarCotizacion: false,
       documentosAGenerar: null,
       textoEnBl: "",
       comentariosLogistica: "",
@@ -156,36 +183,20 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
       shipper: "",
       notify: "",
       certificadoOrigenMercancia: "",
+      observaciones: "",
 
       // Método de Pago & Textos
       metodoPagoPlantilla: null,
       bancoCobro: null,
       cotizacionRapida: false,
       textoAdicionalMetodoPago: "",
-      textoFirmaAceptacionCliente: "",
 
       // Textos Generados
       textoBanco: "",
       textoFormaPago: "",
-      textoInfoExpediente: "",
       textoBaseOferta: "",
     }
   );
-
-  /**
-   * Check if error message indicates missing contact association
-   *
-   * @param errorMsg - Error message to check
-   * @returns true if error is related to missing contact
-   */
-  const isContactError = useCallback((errorMsg: string): boolean => {
-    const lowerMsg = errorMsg.toLowerCase();
-    return (
-      lowerMsg.includes("contacto") ||
-      lowerMsg.includes("contact") ||
-      lowerMsg.includes("asociad")
-    );
-  }, []);
 
   /**
    * Fetch client data on component mount
@@ -218,33 +229,13 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
         )) as ClientAPIResponse;
 
         if (!data.success) {
-          const errorMsg = data.error || ERROR_MESSAGES.LOAD_ERROR;
-
-          if (isContactError(errorMsg)) {
-            setNoContactAssociated(true);
-            setError(ERROR_MESSAGES.NO_CONTACT_ASSOCIATED);
-          } else {
-            throw new Error(errorMsg);
-          }
-          setIsLoading(false);
-          return;
+          throw new Error(data.error || ERROR_MESSAGES.LOAD_ERROR);
         }
 
-        // Check if contact or company are missing
-        const missingContact = !data.contact;
-        const missingCompany = !data.company;
-
-        if (missingContact || missingCompany) {
-          setNoContactAssociated(true);
-
-          if (missingContact && missingCompany) {
-            setError(ERROR_MESSAGES.NO_CONTACT_AND_COMPANY);
-          } else if (missingContact) {
-            setError(ERROR_MESSAGES.NO_CONTACT_ASSOCIATED);
-          } else {
-            setError(ERROR_MESSAGES.NO_COMPANY_ASSOCIATED);
-          }
-
+        // Block only if company is missing — contact is optional
+        if (!data.company) {
+          setNoCompanyAssociated(true);
+          setError(ERROR_MESSAGES.NO_COMPANY_ASSOCIATED);
           setIsLoading(false);
           return;
         }
@@ -289,22 +280,19 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
         }
 
         // Update clienteData with API response
+        const margenCalculado = data.deal?.margen_cliente
+          ? data.deal.margen_cliente * PERCENTAGE_CONVERSION_FACTOR
+          : 12;
+
         setClienteData({
-          nombreCliente:
-            `${data.contact?.firstname || ""} ${
-              data.contact?.lastname || ""
-            }`.trim() || "No especificado",
           nombreEmpresa: data.company?.name || "No especificado",
-          country: data.contact?.country || "",
+          country: data.company?.country || "",
           // Extraer valores de objetos {value, options} para campos que deben ser strings
           tipoVenta: data.deal?.tipo_de_venta?.value || "",
           tipoContenedor: data.deal?.tipo_contenedor?.value || "",
           tipoCliente: data.company?.tipo_cliente?.value || "",
           // Convert from HubSpot format (0.12) to display format (12)
-          margen: data.deal?.margen_cliente
-            ? data.deal.margen_cliente * PERCENTAGE_CONVERSION_FACTOR
-            : 12,
-          idioma: data.deal?.preprints_language?.value || "ES",
+          margen: margenCalculado,
           proyecto: data.deal?.project?.value || data.proyecto || "",
           lugarCarga: data.deal?.lugar_carga || "",
           lugarCargaLabel: "", // Will be loaded when needed
@@ -313,11 +301,28 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
           repercutirACliente: data.deal?.repercutir_a_cliente?.value || "",
           tipoComision: data.deal?.tipo_comision?.value || "",
           importeComision: data.deal?.importe_comision || 0,
-          tipoIVAComision: "",
-          tipoResidente: data.company?.residennum || "",
+          tipoIVAComision: data.deal?.tipo_iva_comision || "",
+          tipoIVAComisionSoportado: data.deal?.tipo_iva_comision_soportado || "",
+          tipoResidente: mapResidennum(data.company?.residennum),
           cif: data.company?.cif || "",
           paisOperaciones: data.company?.pais_de_operaciones || "",
+          cargaPorPalets: data.deal?.carga_por_palets || false,
+          fechaCaducidadCotizacion: (() => {
+            const ts = data.deal?.fecha_caducidad_cotizacion;
+            if (ts) {
+              const d = new Date(ts);
+              return { year: d.getFullYear(), month: d.getMonth(), date: d.getDate() };
+            }
+            const d = new Date();
+            d.setMonth(d.getMonth() + 1);
+            return { year: d.getFullYear(), month: d.getMonth(), date: d.getDate() };
+          })(),
         });
+
+       // Store IVA defaults resolved from product (Fase 4E)
+        if (data.deal?.iva_comision_defaults) {
+          setIvaComisionDefaults(data.deal.iva_comision_defaults);
+        }
 
         // Update transitarioData with diasLibres and naviera from deal
         setTransitarioData((prev) => ({
@@ -338,9 +343,12 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
 
             // Documentación
             direccionFiscal: docData.deal.direccion_fiscal || "",
+            direccionDeEntrega: docData.deal.direccion_de_entrega || "",
+            cif: docData.deal.cif || "",
+            referenciaCotizacion: docData.deal.referencia_cotizacion || "",
 
             // Documentación Logística
-            tramitarCarga: docData.deal.tramitar_carga || false,
+            desagregarCotizacion: docData.deal.desagregar_cotizacion || false,
             documentosAGenerar: docData.deal.documentos_a_generar || null,
             textoEnBl: docData.deal.texto_en_bl || "",
             comentariosLogistica: docData.deal.comentarios_logistica || "",
@@ -352,6 +360,7 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
             notify: docData.deal.notify || "",
             certificadoOrigenMercancia:
               docData.deal.certificado_origen_mercancia || "",
+            observaciones: docData.deal.observaciones || "",
 
             // Método de Pago & Textos
             metodoPagoPlantilla: docData.deal.metodo_pago_plantilla || null,
@@ -359,16 +368,11 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
             cotizacionRapida: docData.deal.cotizacion_rapida || false,
             textoAdicionalMetodoPago:
               docData.deal.texto_adicional_metodo_pago || "",
-            textoFirmaAceptacionCliente:
-              docData.deal.texto_firma_aceptacion_cliente || "",
 
             // Textos Generados - Limpiar HTML para mostrar como texto plano
             textoBanco: cleanHTMLToText(docData.deal.texto_banco || ""),
             textoFormaPago: cleanHTMLToText(
               docData.deal.texto_forma_pago || ""
-            ),
-            textoInfoExpediente: cleanHTMLToText(
-              docData.deal.texto_informacion_expediente || ""
             ),
             textoBaseOferta: cleanHTMLToText(
               docData.deal.texto_base_oferta || ""
@@ -389,9 +393,6 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
         if (data.deal?.naviera?.options) {
           setNavieraOptions(data.deal.naviera.options);
         }
-        if (data.deal?.preprints_language?.options) {
-          setIdiomaOptions(data.deal.preprints_language.options);
-        }
         if (data.deal?.project?.options) {
           setProyectoOptions(data.deal.project.options);
         }
@@ -404,23 +405,17 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
 
         // Clear errors if successful
         setError(null);
-        setNoContactAssociated(false);
+        setNoCompanyAssociated(false);
       } catch (err: any) {
-        const errorMsg = err.message || ERROR_MESSAGES.LOAD_ERROR;
-
-        if (isContactError(errorMsg)) {
-          setNoContactAssociated(true);
-          setError(ERROR_MESSAGES.NO_CONTACT_ASSOCIATED);
-        } else {
-          setError(errorMsg);
-        }
+        setError(err.message || ERROR_MESSAGES.LOAD_ERROR);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchClientData();
-  }, [context, isContactError]);
+
+  }, [context]);
 
   /**
    * Load IVA options when tipoResidente changes
@@ -428,53 +423,50 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
   useEffect(() => {
     const loadIVAOptions = async () => {
       if (!clienteData.tipoResidente) {
-        setTipoIVAOptions([]);
-        setIvaData({});
+        setTipoIVARepercutidoOptions([]);
+        setIvaRepercutidoData({});
+        setTipoIVASoportadoOptions([]);
+        setIvaSoportadoData({});
         return;
       }
 
       const result = (await fetchTipoIVA(clienteData.tipoResidente)) as {
-        options: SelectOption[];
-        ivaData: Record<string, any>;
+        repercutidoOptions: SelectOption[];
+        repercutidoData: Record<string, any>;
+        soportadoOptions: SelectOption[];
+        soportadoData: Record<string, any>;
       };
-      setTipoIVAOptions(result.options);
-      setIvaData(result.ivaData);
+      setTipoIVARepercutidoOptions(result.repercutidoOptions);
+      setIvaRepercutidoData(result.repercutidoData);
+      setTipoIVASoportadoOptions(result.soportadoOptions);
+      setIvaSoportadoData(result.soportadoData);
     };
 
     loadIVAOptions();
   }, [clienteData.tipoResidente]);
 
-  /**
-   * Handle tab navigation with contact validation
-   *
-   * Prevents navigation away from "cliente" tab if no contact is associated.
-   * This ensures users associate a contact before proceeding with other tabs.
-   *
-   * @param tabId - ID of the tab to navigate to
-   */
+  // Bloquea la navegación a otras tabs hasta que el deal tenga company asociada
   const handleNavigate = useCallback(
     (tabId: string) => {
-      if (noContactAssociated && tabId !== "cliente") {
+      if (noCompanyAssociated && tabId !== "cliente") {
         return;
       }
       setSelectedTab(tabId);
     },
-    [noContactAssociated]
+    [noCompanyAssociated]
   );
 
   return (
     <Flex direction="column" gap="medium">
-      {/* Error Alert */}
       {error && (
         <Alert
-          title={noContactAssociated ? "Contacto Requerido" : "Error"}
+          title={noCompanyAssociated ? "Empresa Requerida" : "Error"}
           variant="error"
         >
           {error}
         </Alert>
       )}
 
-      {/* Tab Content */}
       <Box>
         <Tabs
           variant="enclosed"
@@ -490,11 +482,12 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
               tipoVentaOptions={tipoVentaOptions}
               tipoContenedorOptions={tipoContenedorOptions}
               tipoClienteOptions={tipoClienteOptions}
-              idiomaOptions={idiomaOptions}
               proyectoOptions={proyectoOptions}
               repercutirAClienteOptions={repercutirAClienteOptions}
               tipoComisionOptions={tipoComisionOptions}
-              tipoIVAOptions={tipoIVAOptions}
+              tipoIVAOptions={tipoIVARepercutidoOptions}
+              tipoIVASoportadoOptions={tipoIVASoportadoOptions}
+              ivaComisionDefaults={ivaComisionDefaults}
               loading={isLoading}
             />
           </Tab>
@@ -502,11 +495,11 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
           <Tab
             tabId="articulos"
             title="Artículos"
-            disabled={noContactAssociated}
+            disabled={noCompanyAssociated}
           >
             <ArticulosTab
               context={context}
-              onNavigate={setSelectedTab}
+              onNavigate={handleNavigate}
               articulosSeleccionados={articulosSeleccionados}
               setArticulosSeleccionados={setArticulosSeleccionados}
               tipoContenedorOptions={tipoContenedorOptions}
@@ -523,44 +516,50 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
           <Tab
             tabId="contenedores"
             title="Contenedores"
-            disabled={noContactAssociated}
+            disabled={noCompanyAssociated}
           >
             <ContenedoresTab
               context={context}
-              onNavigate={setSelectedTab}
+              onNavigate={handleNavigate}
               articulosSeleccionados={articulosSeleccionados}
               contenedoresData={contenedoresData}
               setContenedoresData={setContenedoresData}
               tipoContenedorOptions={tipoContenedorOptions}
               tipoContenedorSeleccionado={clienteData.tipoContenedor}
               setContenedoresUnicos={setContenedoresUnicos}
+              cargaPorPalets={clienteData.cargaPorPalets}
             />
           </Tab>
 
-          <Tab tabId="transitario" title="Rutas" disabled={noContactAssociated}>
+          <Tab tabId="transitario" title="Rutas" disabled={noCompanyAssociated}>
             <TransitarioTab
               context={context}
-              onNavigate={setSelectedTab}
+              onNavigate={handleNavigate}
               transitarioData={transitarioData}
               setTransitarioData={setTransitarioData}
               navieraOptions={navieraOptions}
               clienteData={clienteData}
               tipoVentaOptions={tipoVentaOptions}
-              tipoIVAOptions={tipoIVAOptions}
+              tipoIVAOptions={tipoIVARepercutidoOptions}
+              tipoIVASoportadoOptions={tipoIVASoportadoOptions}
+              ivaFletesDefaults={ivaFletesDefaults}
+              setIvaFletesDefaults={setIvaFletesDefaults}
+              selectedTab={selectedTab}
             />
           </Tab>
 
           <Tab
             tabId="servicios"
             title="Servicios"
-            disabled={noContactAssociated}
+            disabled={noCompanyAssociated}
           >
             <ServiciosTab
               context={context}
-              onNavigate={setSelectedTab}
+              onNavigate={handleNavigate}
               serviciosData={serviciosData}
               setServiciosData={setServiciosData}
-              tipoIVAOptions={tipoIVAOptions}
+              tipoIVAOptions={tipoIVARepercutidoOptions}
+              tipoIVASoportadoOptions={tipoIVASoportadoOptions}
               clienteData={clienteData}
             />
           </Tab>
@@ -568,35 +567,42 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
           <Tab
             tabId="negociacion"
             title="Negociación"
-            disabled={noContactAssociated}
+            disabled={noCompanyAssociated}
           >
             <NegociacionTab
               context={context}
-              onNavigate={setSelectedTab}
+              actions={actions}
+              onNavigate={handleNavigate}
               transitarioData={transitarioData}
               serviciosData={serviciosData}
               clienteData={clienteData}
+              articulosSeleccionados={articulosSeleccionados}
               contenedoresUnicos={contenedoresUnicos.contenedoresUnicos}
-              tipoIVAOptions={tipoIVAOptions}
-              ivaData={ivaData}
+              setContenedoresUnicos={setContenedoresUnicos}
+              tipoIVAOptions={tipoIVARepercutidoOptions}
+              tipoIVASoportadoOptions={tipoIVASoportadoOptions}
+              ivaData={ivaRepercutidoData}
               preciosEXW={preciosEXW}
               setPreciosEXW={setPreciosEXW}
               tiposIVA={tiposIVA}
               setTiposIVA={setTiposIVA}
+              tiposIVASoportado={tiposIVASoportado}
+              setTiposIVASoportado={setTiposIVASoportado}
             />
           </Tab>
 
           <Tab
             tabId="documentacion"
             title="Documentación"
-            disabled={noContactAssociated}
+            disabled={noCompanyAssociated}
           >
             <DocumentacionTab
               context={context}
-              onNavigate={setSelectedTab}
+              onNavigate={handleNavigate}
               documentacionData={documentacionData}
               setDocumentacionData={setDocumentacionData}
               articulosSeleccionados={articulosSeleccionados}
+              contenedoresData={contenedoresData}
               transitarioData={transitarioData}
             />
           </Tab>
@@ -604,11 +610,11 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
           <Tab
             tabId="revision"
             title="Vista previa"
-            disabled={noContactAssociated}
+            disabled={noCompanyAssociated}
           >
             <RevisionTab
               context={context}
-              onNavigate={setSelectedTab}
+              onNavigate={handleNavigate}
               clienteData={clienteData}
               articulosSeleccionados={articulosSeleccionados}
               contenedoresData={contenedoresData}
@@ -616,10 +622,12 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
               serviciosData={serviciosData}
               documentacionData={documentacionData}
               contenedoresUnicos={contenedoresUnicos.contenedoresUnicos}
-              tipoIVAOptions={tipoIVAOptions}
-              ivaData={ivaData}
+              tipoIVAOptions={tipoIVARepercutidoOptions}
+              ivaData={ivaRepercutidoData}
               preciosEXW={preciosEXW}
               tiposIVA={tiposIVA}
+              tipoIVASoportadoOptions={tipoIVASoportadoOptions}
+              tiposIVASoportado={tiposIVASoportado}
             />
           </Tab>
         </Tabs>

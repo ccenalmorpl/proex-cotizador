@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "In scadenza ora",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Questa etichetta sostituisce \"Testo totale preventivo\" quando sono presenti pagamenti in scadenza dopo il checkout.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Testo totale In scadenza ora",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Totale preventivo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Totale",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Il testo per l'importo totale del preventivo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Testo totale preventivo",
+    "description" : "",
+    "placeholders" : null
+  }
+}

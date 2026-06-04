@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "参考",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "参考: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "参考号码",
+    "description" : "",
+    "placeholders" : null
+  }
+}

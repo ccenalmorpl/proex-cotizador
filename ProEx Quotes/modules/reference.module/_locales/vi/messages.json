@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Tham chiếu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "Tham chiếu: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "Số tham chiếu",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Buyer company",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "ক্রেতা কোম্পানির প্রধান ঠিকানা",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "ক্রেতা কোম্পানির শহর, স্টেট ও জিপকোড",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "ক্রেতা কোম্পানির দেশ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "ক্রেতা কোম্পানির নাম",
+    "description" : "",
+    "placeholders" : null
+  }
+}

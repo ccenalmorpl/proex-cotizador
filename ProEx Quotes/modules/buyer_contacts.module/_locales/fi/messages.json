@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Ostajan yhteystiedot",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "Ostajan yhteyshenkilön sähköposti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Ostajan yhteystiedon työnimike",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Ostajan yhteyshenkilön nimi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Ostajan yhteyshenkilön puhelinnumero",
+    "description" : "",
+    "placeholders" : null
+  }
+}

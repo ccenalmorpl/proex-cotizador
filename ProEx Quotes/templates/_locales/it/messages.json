@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Importo",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Commenti",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Commenti da",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Il preventivo è scaduto.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Contatta il rappresentante delle vendite per ulteriori dettagli.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Oggetto e descrizione",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Altre quote",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Preparazione effettuata da:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Prezzo",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Prodotti e servizi",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Termini di acquisto",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Quantità",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Preventivo creato da:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Subtotali",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Totale",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Prezzo unitario",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Nota di credito",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Numero nota di credito",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Totale nota di credito",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "N. OdA",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Data nota di credito",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Tutte le commissioni sono elencate in {{ currency_code }} e sono soggette all'imposta sulle vendite (ove applicabile).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Tabella voci nota di credito",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Quantità",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Tassa",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "imposte",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Tassa",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "dopo uno sconto di {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Fattura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Numero fattura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Data fattura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Tutte le commissioni sono elencate in {{ currency_code }} e sono soggette all'imposta sulle vendite (ove applicabile).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Numero OdA",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Tabella voci fattura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "dopo uno sconto di {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Quantità",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Pagamento",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Saldo dovuto",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Tassa",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "imposte",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Tassa",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Fattura a",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Destinatario spedizione",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Indirizzo fiscale",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Data di scadenza",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "sconto",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "sconto {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% di sconto",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Subtotale",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Pagamenti futuri",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "I pagamenti in scadenza in un secondo momento.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Riepilogo",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Questo preventivo non è disponibile.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Contatta il rappresentante delle vendite per ulteriori dettagli.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "N/D",
+    "description": "",
+    "placeholders": null
+  }
+}

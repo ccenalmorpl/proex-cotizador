@@ -1,0 +1,72 @@
+{
+  "contact_information.default" : {
+    "message" : "<div><b>{{ ptoken_sender_full_name }}</b></div><div>{{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_email', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_phone', '') }}</div>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "contact_information.label" : {
+    "message" : "যোগাযোগের তথ্য",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h1" : {
+    "message" : "H1",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h2" : {
+    "message" : "H2",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h3" : {
+    "message" : "H3",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h4" : {
+    "message" : "H4",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h5" : {
+    "message" : "H5",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h6" : {
+    "message" : "H6",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.help_text" : {
+    "message" : "একটি হেডিং স্তর নির্বাচন করুন। H1 হ'ল বৃহত্তম, তারপরে H2 এবং তারপর আরও অনেক কিছু",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.label" : {
+    "message" : "হেডিং স্তর ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_text.default" : {
+    "message" : "প্রশ্ন? আমার সঙ্গে যোগাযোগ করুন",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_text.label" : {
+    "message" : "হেডিংয়ের বিষয়বস্তু",
+    "description" : "",
+    "placeholders" : null
+  },
+  "include_hubspot_avatar.label" : {
+    "message" : "প্রেরকের HubSpot অবতার অন্তর্ভুক্ত করুন",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "প্রেরকের পরিচিতি",
+    "description" : "",
+    "placeholders" : null
+  }
+}

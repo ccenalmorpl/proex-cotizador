@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Kontakty nabywcy",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "E-mail kontaktu nabywcy",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Nazwa stanowiska kontaktu kupującego",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Nazwa kontaktu nabywcy",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Telefon kontaktu nabywcy",
+    "description" : "",
+    "placeholders" : null
+  }
+}

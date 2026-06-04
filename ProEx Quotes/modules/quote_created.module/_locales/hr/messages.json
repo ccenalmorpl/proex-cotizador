@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Ponuda stvorena",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Ponuda stvorena:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Tekst stvorene ponude",
+    "description" : "",
+    "placeholders" : null
+  }
+}

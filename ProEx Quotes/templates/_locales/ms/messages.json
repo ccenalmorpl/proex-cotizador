@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Jumlah",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Komen",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Komen daripada",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Sebut harga ini telah tamat tempoh.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Sila hubungi wakil jualan anda untuk mendapatkan butiran lanjut.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Item & Penerangan",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Yuran Lain",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Disediakan oleh:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Harga",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Produk & Perkhidmatan",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Terma pembelian",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Kuantiti",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Sebut harga diciptakan oleh:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Subjumlah",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Jumlah",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Harga Unit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Memo Kredit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Nombor Memo Kredit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Jumlah memo kredit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "P.O. #",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Tarikh Memo Kredit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Semua yuran disenaraikan dalam {{ currency_code }} dan tertakluk pada cukai jualan (sepertimana yang berkenaan).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Jadual item baris Memo Kredit",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Kuantiti",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Cukai",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "cukai",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Cukai",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "selepas {{ discount_amount }} diskaun",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Invois",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Nombor invois",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Tarikh invois",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Semua yuran disenaraikan dalam {{ currency_code }} dan tertakluk pada cukai jualan (sepertimana yang berkenaan).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Nombor PO",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Jadual item baris invois",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "selepas {{ discount_amount }} diskaun",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Kuantiti",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Bayaran",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Baki perlu dibayar",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Cukai",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "cukai",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Cukai",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Bil kepada",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Hantar ke",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Alamat cukai",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Tarikh akhir",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "diskaun",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% diskaun",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "Diskaun {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Subjumlah",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Bayaran akan datang",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Bayaran yang perlu dibayar kemudian.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Ringkasan",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Petikan ini tidak tersedia.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Sila hubungi wakil jualan anda untuk mendapatkan butiran lanjut.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "T/B",
+    "description": "",
+    "placeholders": null
+  }
+}

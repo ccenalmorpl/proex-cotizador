@@ -1,0 +1,11 @@
+[ {
+  "id" : "quote_created_text",
+  "name" : "quote_created_text",
+  "label" : "Quote created text",
+  "required" : false,
+  "locked" : false,
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text",
+  "default" : "Quote created:"
+} ]

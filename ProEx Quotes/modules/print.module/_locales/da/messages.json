@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Udskriv tilbud",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Knaptekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Udskriv",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Most esedékes",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Ez a címke lép az „Árajánlat teljes szövege” helyébe, amikor fizetés esedékes a megrendelés után.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Most esedékes teljes szöveg",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Ajánlat összesen",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Összesen",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "A teljes árajánlat összegéhez tartozó szöveg",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Árajánlat teljes szövege",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "include_hubspot_avatar.label" : {
+    "message" : "包含寄件人的 HubSpot 頭像",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "寄件人用戶",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.default" : {
+    "message" : "{{ personalization_token('template_data.quote.hs_sender_company_name', '') }} {{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }} - {{ ptoken_sender_full_name }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.label" : {
+    "message" : "寄件人資料",
+    "description" : "",
+    "placeholders" : null
+  }
+}

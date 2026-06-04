@@ -1,0 +1,1109 @@
+[ {
+  "id" : "display_heading",
+  "name" : "display_heading",
+  "label" : "Display table heading",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "heading",
+  "name" : "heading",
+  "label" : "Table heading",
+  "inline_help_text" : "Add a heading to the line items table",
+  "required" : false,
+  "locked" : false,
+  "visibility" : {
+    "controlling_field" : "display_heading",
+    "controlling_field_path" : null,
+    "controlling_value_regex" : "true",
+    "property" : null,
+    "operator" : "EQUAL",
+    "access" : null
+  },
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text",
+  "default" : "Products & Services"
+}, {
+  "id" : "line_item_column",
+  "name" : "line_item_column",
+  "label" : "Line item column",
+  "required" : false,
+  "locked" : false,
+  "occurrence" : {
+    "min" : 0,
+    "max" : 6,
+    "sorting_label_field" : "column_title",
+    "default" : null
+  },
+  "children" : [ {
+    "id" : "line_item_column.column_title",
+    "name" : "column_title",
+    "label" : "Column title",
+    "inline_help_text" : "Add a title to your column",
+    "required" : false,
+    "locked" : false,
+    "placeholder" : "Column description",
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : ""
+  }, {
+    "id" : "line_item_column.column_property",
+    "name" : "column_property",
+    "label" : "Select column property",
+    "required" : false,
+    "locked" : false,
+    "display" : "select",
+    "choices" : [ [ "recurringbillingfrequency", "Billing frequency" ], [ "price", "Unit price" ], [ "description", "Description" ], [ "hs_images", "Image" ], [ "item_description", "Item & Description" ], [ "name", "Item name" ], [ "quantity", "Item quantity" ], [ "hs_sku", "Item SKU" ], [ "amount", "Total" ], [ "quantity_amount", "Quantity & Total" ], [ "hs_recurring_billing_start_date", "Start Date" ], [ "hs_term_in_months", "Term" ], [ "hs_cost_of_goods_sold", "Unit Cost" ], [ "discount", "Unit Discount" ], [ "hs_url", "URL" ] ],
+    "multiple" : false,
+    "reordering_enabled" : true,
+    "preset" : null,
+    "display_width" : null,
+    "type" : "choice",
+    "default" : ""
+  } ],
+  "tab" : "CONTENT",
+  "expanded" : false,
+  "group_occurrence_meta" : null,
+  "display_width" : null,
+  "type" : "group",
+  "default" : [ ]
+}, {
+  "id" : "line_item_subheadings",
+  "name" : "line_item_subheadings",
+  "label" : "Line item subheadings",
+  "required" : false,
+  "locked" : false,
+  "children" : [ {
+    "id" : "line_item_subheadings.due_now_text",
+    "name" : "due_now_text",
+    "label" : "Due now text",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Items due now"
+  }, {
+    "id" : "line_item_subheadings.due_later_text",
+    "name" : "due_later_text",
+    "label" : "Due later text",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Items due later"
+  }, {
+    "id" : "line_item_subheadings.font_style",
+    "name" : "font_style",
+    "label" : "Font style",
+    "required" : false,
+    "locked" : false,
+    "visibility" : {
+      "controlling_field" : null,
+      "controlling_field_path" : null,
+      "controlling_value_regex" : null,
+      "property" : null,
+      "operator" : null,
+      "access" : null,
+      "hidden_subfields" : {
+        "font" : true,
+        "size" : true
+      }
+    },
+    "inherited_value" : {
+      "property_value_paths" : {
+        "color" : "theme.global_colors.primary_color.color"
+      }
+    },
+    "load_external_fonts" : true,
+    "display_width" : null,
+    "type" : "font",
+    "default" : {
+      "styles" : {
+        "font-weight" : "bold"
+      }
+    }
+  }, {
+    "id" : "line_item_subheadings.background_color",
+    "name" : "background_color",
+    "label" : "Background color",
+    "required" : false,
+    "locked" : false,
+    "display_width" : null,
+    "type" : "color",
+    "default" : {
+      "color" : null,
+      "opacity" : null,
+      "rgba" : null,
+      "rgb" : null,
+      "hex" : null
+    }
+  } ],
+  "tab" : "CONTENT",
+  "expanded" : false,
+  "group_occurrence_meta" : null,
+  "display_width" : null,
+  "type" : "group",
+  "default" : {
+    "due_now_text" : "Items due now",
+    "due_later_text" : "Items due later",
+    "font_style" : {
+      "styles" : {
+        "font-weight" : "bold"
+      }
+    },
+    "background_color" : {
+      "color" : null,
+      "opacity" : null,
+      "rgba" : null,
+      "rgb" : null,
+      "hex" : null
+    }
+  }
+}, {
+  "id" : "display_payment_starts",
+  "name" : "display_payment_starts",
+  "label" : "Display payment start date",
+  "inline_help_text" : "Display the \"Payment starts\" text under each line item that has a future billing date.",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "default_text",
+  "name" : "default_text",
+  "label" : "Default text",
+  "required" : false,
+  "locked" : true,
+  "children" : [ {
+    "id" : "default_text.day",
+    "name" : "day",
+    "label" : "Day",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "day"
+  }, {
+    "id" : "default_text.days",
+    "name" : "days",
+    "label" : "Days",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "days"
+  }, {
+    "id" : "default_text.week",
+    "name" : "week",
+    "label" : "Week",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "week"
+  }, {
+    "id" : "default_text.weeks",
+    "name" : "weeks",
+    "label" : "Weeks",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "weeks"
+  }, {
+    "id" : "default_text.month",
+    "name" : "month",
+    "label" : "Month",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "month"
+  }, {
+    "id" : "default_text.months",
+    "name" : "months",
+    "label" : "Months",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "months"
+  }, {
+    "id" : "default_text.year",
+    "name" : "year",
+    "label" : "Year",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "year"
+  }, {
+    "id" : "default_text.years",
+    "name" : "years",
+    "label" : "Years",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "years"
+  }, {
+    "id" : "default_text.weekly",
+    "name" : "weekly",
+    "label" : "Weekly",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Weekly"
+  }, {
+    "id" : "default_text.per_two_weeks",
+    "name" : "per_two_weeks",
+    "label" : "Per two weeks",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Per two weeks"
+  }, {
+    "id" : "default_text.monthly",
+    "name" : "monthly",
+    "label" : "Monthly",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Monthly"
+  }, {
+    "id" : "default_text.quarterly",
+    "name" : "quarterly",
+    "label" : "Quarterly",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Quarterly"
+  }, {
+    "id" : "default_text.annually",
+    "name" : "annually",
+    "label" : "Annually",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Annually"
+  }, {
+    "id" : "default_text.annual",
+    "name" : "annual",
+    "label" : "Annual",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Annual"
+  }, {
+    "id" : "default_text.per_six_months",
+    "name" : "per_six_months",
+    "label" : "Per six months",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Per six months"
+  }, {
+    "id" : "default_text.per_two_years",
+    "name" : "per_two_years",
+    "label" : "Per two years",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Per two years"
+  }, {
+    "id" : "default_text.per_three_years",
+    "name" : "per_three_years",
+    "label" : "Per three years",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Per three years"
+  }, {
+    "id" : "default_text.per_four_years",
+    "name" : "per_four_years",
+    "label" : "Per four years",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Per four years"
+  }, {
+    "id" : "default_text.per_five_years",
+    "name" : "per_five_years",
+    "label" : "Per five years",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Per five years"
+  }, {
+    "id" : "default_text.one_time",
+    "name" : "one_time",
+    "label" : "One-time",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "One-time"
+  }, {
+    "id" : "default_text.every_week",
+    "name" : "every_week",
+    "label" : "/ week",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "/ week"
+  }, {
+    "id" : "default_text.every_two_weeks",
+    "name" : "every_two_weeks",
+    "label" : "/ 2 weeks",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "/ 2 weeks"
+  }, {
+    "id" : "default_text.every_month",
+    "name" : "every_month",
+    "label" : "/ month",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "/ month"
+  }, {
+    "id" : "default_text.every_quarter",
+    "name" : "every_quarter",
+    "label" : "/ quarter",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "/ quarter"
+  }, {
+    "id" : "default_text.every_six_months",
+    "name" : "every_six_months",
+    "label" : "/ 6 months",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "/ 6 months"
+  }, {
+    "id" : "default_text.every_year",
+    "name" : "every_year",
+    "label" : "/ year",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "/ year"
+  }, {
+    "id" : "default_text.every_two_years",
+    "name" : "every_two_years",
+    "label" : "/ 2 years",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "/ 2 years"
+  }, {
+    "id" : "default_text.every_three_years",
+    "name" : "every_three_years",
+    "label" : "/ 3 years",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "/ 3 years"
+  }, {
+    "id" : "default_text.every_four_years",
+    "name" : "every_four_years",
+    "label" : "/ 4 years",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "/ 4 years"
+  }, {
+    "id" : "default_text.every_five_years",
+    "name" : "every_five_years",
+    "label" : "/ 5 years",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "/ 5 years"
+  }, {
+    "id" : "default_text.after_discount",
+    "name" : "after_discount",
+    "label" : "after discount",
+    "required" : false,
+    "locked" : false,
+    "display_width" : null,
+    "type" : "richtext",
+    "default" : "<span class=\"discount-notice highlighted\">after {{ discount_amount }} discount</span>"
+  }, {
+    "id" : "default_text.for_weeks",
+    "name" : "for_weeks",
+    "label" : "for weeks",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "for {{ week }} {{ week_text }}"
+  }, {
+    "id" : "default_text.for_months",
+    "name" : "for_months",
+    "label" : "for months",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "for {{ line_item.hs_term_in_months }} {{ month_text }}"
+  }, {
+    "id" : "default_text.for_years",
+    "name" : "for_years",
+    "label" : "for years",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "for {{ year }} {{ year_text }}"
+  }, {
+    "id" : "default_text.frequency_subtotal",
+    "name" : "frequency_subtotal",
+    "label" : "frequency subtotal",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ frequency_text }} subtotal"
+  }, {
+    "id" : "default_text.percent_discount",
+    "name" : "percent_discount",
+    "label" : "percent discount",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ fee_amount }}% discount"
+  }, {
+    "id" : "default_text.line_item_tax",
+    "name" : "line_item_tax",
+    "label" : "line item tax value",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "+{{ taxAmount }} {{line_item.hs_tax_label }}"
+  }, {
+    "id" : "default_text.line_item_tax_with_label",
+    "name" : "line_item_tax_with_label",
+    "label" : "line item tax with label value",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "+{{ taxAmount }} {{ taxLabel }}"
+  }, {
+    "id" : "default_text.line_item_tax_without_label",
+    "name" : "line_item_tax_without_label",
+    "label" : "line item tax without label value",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "+{{ taxAmount }} tax"
+  }, {
+    "id" : "default_text.percent_fee",
+    "name" : "percent_fee",
+    "label" : "Percent fee",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ fee_amount }}% fee"
+  }, {
+    "id" : "default_text.percent_tax",
+    "name" : "percent_tax",
+    "label" : "Percent tax",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ fee_amount }}% tax"
+  }, {
+    "id" : "default_text.percent",
+    "name" : "percent",
+    "label" : "percent",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ percentage_amount }}%"
+  }, {
+    "id" : "default_text.payment",
+    "name" : "payment",
+    "label" : "Payment",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "payment"
+  }, {
+    "id" : "default_text.payments",
+    "name" : "payments",
+    "label" : "Payments",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "payments"
+  }, {
+    "id" : "default_text.future_charges",
+    "name" : "future_charges",
+    "label" : "Future payments",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Future payments"
+  }, {
+    "id" : "default_text.tax",
+    "name" : "tax",
+    "label" : "Tax",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Tax"
+  }, {
+    "id" : "default_text.first_payment_date",
+    "name" : "first_payment_date",
+    "label" : "First payment date",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "First payment: {{ formatted_first_payment_date }}"
+  }, {
+    "id" : "default_text.payment_start_date",
+    "name" : "payment_start_date",
+    "label" : "Payment start date",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Payment starts: {{ formatted_first_payment_date }}"
+  }, {
+    "id" : "default_text.relative_payment_start_date",
+    "name" : "relative_payment_start_date",
+    "label" : "Relative payment start date",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Payment starts: {{ billing_delay_period }} {{ billing_delay_unit }} after initial payment"
+  }, {
+    "id" : "default_text.payment_due_date",
+    "name" : "payment_due_date",
+    "label" : "Payment due date",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Payment due: {{ formatted_first_payment_date }}"
+  }, {
+    "id" : "default_text.relative_payment_due_date",
+    "name" : "relative_payment_due_date",
+    "label" : "Relative payment due date",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Payment due: {{ billing_delay_period }} {{ billing_delay_unit }} after initial payment"
+  }, {
+    "id" : "default_text.future_one_time_date_delay",
+    "name" : "future_one_time_date_delay",
+    "label" : "Future one time date delay",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ formatted_price }} on {{ formatted_first_payment_date }}"
+  }, {
+    "id" : "default_text.future_one_time_relative_delay",
+    "name" : "future_one_time_relative_delay",
+    "label" : "Future one time relative delay",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ formatted_price }} due {{ billing_delay_period }} {{ billing_delay_unit }} after initial payment"
+  }, {
+    "id" : "default_text.future_recurring_relative_delay",
+    "name" : "future_recurring_relative_delay",
+    "label" : "Future recurring relative delay",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ formatted_price }} {{ recurring_frequency }} starting {{ billing_delay_period }} {{ billing_delay_unit }} after initial payment"
+  }, {
+    "id" : "default_text.future_recurring_date_delay",
+    "name" : "future_recurring_date_delay",
+    "label" : "Future recurring date delay",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ formatted_price }} {{ recurring_frequency }} starting on {{ formatted_first_payment_date }}"
+  }, {
+    "id" : "default_text.future_recurring_relative_delay_fixed",
+    "name" : "future_recurring_relative_delay_fixed",
+    "label" : "Future recurring relative delay fixed",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ formatted_price }} {{ recurring_frequency }} starting {{ billing_delay_period }} {{ billing_delay_unit }} after initial payment for {{ number_of_payments }} {{ payment_pluralized }}"
+  }, {
+    "id" : "default_text.future_recurring_date_delay_fixed",
+    "name" : "future_recurring_date_delay_fixed",
+    "label" : "Future recurring date delay fixed",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "{{ formatted_price }} {{ recurring_frequency }} starting on {{ formatted_first_payment_date }} for {{ number_of_payments }} {{ payment_pluralized }}"
+  } ],
+  "tab" : "CONTENT",
+  "expanded" : false,
+  "group_occurrence_meta" : null,
+  "display_width" : null,
+  "type" : "group",
+  "default" : {
+    "day" : "day",
+    "days" : "days",
+    "week" : "week",
+    "weeks" : "weeks",
+    "month" : "month",
+    "months" : "months",
+    "year" : "year",
+    "years" : "years",
+    "weekly" : "Weekly",
+    "per_two_weeks" : "Per two weeks",
+    "monthly" : "Monthly",
+    "quarterly" : "Quarterly",
+    "annually" : "Annually",
+    "annual" : "Annual",
+    "per_six_months" : "Per six months",
+    "per_two_years" : "Per two years",
+    "per_three_years" : "Per three years",
+    "per_four_years" : "Per four years",
+    "per_five_years" : "Per five years",
+    "one_time" : "One-time",
+    "every_week" : "/ week",
+    "every_two_weeks" : "/ 2 weeks",
+    "every_month" : "/ month",
+    "every_quarter" : "/ quarter",
+    "every_six_months" : "/ 6 months",
+    "every_year" : "/ year",
+    "every_two_years" : "/ 2 years",
+    "every_three_years" : "/ 3 years",
+    "every_four_years" : "/ 4 years",
+    "every_five_years" : "/ 5 years",
+    "after_discount" : "<span class=\"discount-notice highlighted\">after {{ discount_amount }} discount</span>",
+    "for_weeks" : "for {{ week }} {{ week_text }}",
+    "for_months" : "for {{ line_item.hs_term_in_months }} {{ month_text }}",
+    "for_years" : "for {{ year }} {{ year_text }}",
+    "frequency_subtotal" : "{{ frequency_text }} subtotal",
+    "percent_discount" : "{{ fee_amount }}% discount",
+    "line_item_tax" : "+{{ taxAmount }} {{line_item.hs_tax_label }}",
+    "line_item_tax_with_label" : "+{{ taxAmount }} {{ taxLabel }}",
+    "line_item_tax_without_label" : "+{{ taxAmount }} tax",
+    "percent_fee" : "{{ fee_amount }}% fee",
+    "percent_tax" : "{{ fee_amount }}% tax",
+    "percent" : "{{ percentage_amount }}%",
+    "payment" : "payment",
+    "payments" : "payments",
+    "future_charges" : "Future payments",
+    "tax" : "Tax",
+    "first_payment_date" : "First payment: {{ formatted_first_payment_date }}",
+    "payment_start_date" : "Payment starts: {{ formatted_first_payment_date }}",
+    "relative_payment_start_date" : "Payment starts: {{ billing_delay_period }} {{ billing_delay_unit }} after initial payment",
+    "payment_due_date" : "Payment due: {{ formatted_first_payment_date }}",
+    "relative_payment_due_date" : "Payment due: {{ billing_delay_period }} {{ billing_delay_unit }} after initial payment",
+    "future_one_time_date_delay" : "{{ formatted_price }} on {{ formatted_first_payment_date }}",
+    "future_one_time_relative_delay" : "{{ formatted_price }} due {{ billing_delay_period }} {{ billing_delay_unit }} after initial payment",
+    "future_recurring_relative_delay" : "{{ formatted_price }} {{ recurring_frequency }} starting {{ billing_delay_period }} {{ billing_delay_unit }} after initial payment",
+    "future_recurring_date_delay" : "{{ formatted_price }} {{ recurring_frequency }} starting on {{ formatted_first_payment_date }}",
+    "future_recurring_relative_delay_fixed" : "{{ formatted_price }} {{ recurring_frequency }} starting {{ billing_delay_period }} {{ billing_delay_unit }} after initial payment for {{ number_of_payments }} {{ payment_pluralized }}",
+    "future_recurring_date_delay_fixed" : "{{ formatted_price }} {{ recurring_frequency }} starting on {{ formatted_first_payment_date }} for {{ number_of_payments }} {{ payment_pluralized }}"
+  }
+}, {
+  "id" : "future_charges",
+  "name" : "future_charges",
+  "label" : "Future payments",
+  "required" : false,
+  "locked" : true,
+  "children" : [ ],
+  "tab" : "CONTENT",
+  "expanded" : false,
+  "group_occurrence_meta" : null,
+  "display_width" : null,
+  "type" : "group",
+  "default" : { }
+}, {
+  "id" : "display_subtotals",
+  "name" : "display_subtotals",
+  "label" : "Display subtotals",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "display_subtotal_title",
+  "name" : "display_subtotal_title",
+  "label" : "Display subtotal title",
+  "required" : false,
+  "locked" : true,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : false
+}, {
+  "id" : "subtotal_title",
+  "name" : "subtotal_title",
+  "label" : "Subtotal title",
+  "required" : false,
+  "locked" : true,
+  "visibility" : {
+    "controlling_field" : "display_subtotals",
+    "controlling_field_path" : null,
+    "controlling_value_regex" : "true",
+    "property" : null,
+    "operator" : "EQUAL",
+    "access" : null
+  },
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text",
+  "default" : "Subtotals"
+}, {
+  "id" : "display_other_fees",
+  "name" : "display_other_fees",
+  "label" : "Display other fees",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "other_fees_title",
+  "name" : "other_fees_title",
+  "label" : "Other fees text",
+  "required" : false,
+  "locked" : true,
+  "visibility" : {
+    "controlling_field" : "display_other_fees",
+    "controlling_field_path" : null,
+    "controlling_value_regex" : "true",
+    "property" : null,
+    "operator" : "EQUAL",
+    "access" : null
+  },
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text",
+  "default" : "Other Fees"
+}, {
+  "id" : "display_totals",
+  "name" : "display_totals",
+  "label" : "Display totals",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "total_title",
+  "name" : "total_title",
+  "label" : "Total text",
+  "required" : false,
+  "locked" : false,
+  "visibility" : {
+    "controlling_field" : "display_totals",
+    "controlling_field_path" : null,
+    "controlling_value_regex" : "true",
+    "property" : null,
+    "operator" : "EQUAL",
+    "access" : null
+  },
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text",
+  "default" : "Total"
+}, {
+  "id" : "due_now_title",
+  "name" : "due_now_title",
+  "label" : "Due now text",
+  "inline_help_text" : "This label replaces \"Total text\" when there are payments due after checkout.",
+  "required" : false,
+  "locked" : false,
+  "visibility" : {
+    "controlling_field" : "display_totals",
+    "controlling_field_path" : null,
+    "controlling_value_regex" : "true",
+    "property" : null,
+    "operator" : "EQUAL",
+    "access" : null
+  },
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text",
+  "default" : "Due now"
+}, {
+  "id" : "total_contract_value_title",
+  "name" : "total_contract_value_title",
+  "label" : "Total contract value text",
+  "inline_help_text" : "Customize the text to accurately describe this value. (The default is an annual value if no terms are set.)",
+  "required" : false,
+  "locked" : false,
+  "visibility" : {
+    "controlling_field" : "display_totals",
+    "controlling_field_path" : null,
+    "controlling_value_regex" : "true",
+    "property" : null,
+    "operator" : "EQUAL",
+    "access" : null
+  },
+  "visibility_rules" : "ADVANCED",
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text",
+  "default" : "Total contract value"
+}, {
+  "id" : "future_payments_summary_table",
+  "name" : "future_payments_summary_table",
+  "label" : "Future payments summary table",
+  "required" : false,
+  "locked" : false,
+  "children" : [ {
+    "id" : "future_payments_summary_table.display_future_payments_summary_table",
+    "name" : "display_future_payments_summary_table",
+    "label" : "Display future payments summary table",
+    "required" : false,
+    "locked" : false,
+    "display" : "checkbox",
+    "display_width" : null,
+    "type" : "boolean",
+    "default" : true
+  }, {
+    "id" : "future_payments_summary_table.display_heading",
+    "name" : "display_heading",
+    "label" : "Display table heading",
+    "required" : false,
+    "locked" : false,
+    "visibility" : {
+      "controlling_field" : "future_payments_summary_table.display_future_payments_summary_table",
+      "controlling_field_path" : null,
+      "controlling_value_regex" : "true",
+      "property" : null,
+      "operator" : "EQUAL",
+      "access" : null
+    },
+    "display" : "checkbox",
+    "display_width" : null,
+    "type" : "boolean",
+    "default" : true
+  }, {
+    "id" : "future_payments_summary_table.heading",
+    "name" : "heading",
+    "label" : "Table heading",
+    "inline_help_text" : "Add a heading to the future payments summary table",
+    "required" : false,
+    "locked" : false,
+    "visibility_rules" : "ADVANCED",
+    "advanced_visibility" : {
+      "boolean_operator" : "AND",
+      "criteria" : [ {
+        "controlling_field" : null,
+        "controlling_field_path" : "future_payments_summary_table.display_heading",
+        "controlling_value_regex" : "true",
+        "property" : null,
+        "operator" : "EQUAL",
+        "access" : null
+      }, {
+        "controlling_field" : null,
+        "controlling_field_path" : "future_payments_summary_table.display_future_payments_summary_table",
+        "controlling_value_regex" : "true",
+        "property" : null,
+        "operator" : "EQUAL",
+        "access" : null
+      } ],
+      "children" : [ ]
+    },
+    "allow_new_line" : false,
+    "display_width" : null,
+    "type" : "text",
+    "default" : "Future Payments Summary"
+  }, {
+    "id" : "future_payments_summary_table.columns",
+    "name" : "columns",
+    "label" : "Columns",
+    "required" : false,
+    "locked" : false,
+    "visibility" : {
+      "controlling_field" : "future_payments_summary_table.display_future_payments_summary_table",
+      "controlling_field_path" : null,
+      "controlling_value_regex" : "true",
+      "property" : null,
+      "operator" : "EQUAL",
+      "access" : null
+    },
+    "children" : [ {
+      "id" : "future_payments_summary_table.columns.line_item_name_heading",
+      "name" : "line_item_name_heading",
+      "label" : "Line item name heading",
+      "required" : false,
+      "locked" : false,
+      "allow_new_line" : false,
+      "display_width" : null,
+      "type" : "text",
+      "default" : "Item"
+    }, {
+      "id" : "future_payments_summary_table.columns.payment_summary_heading",
+      "name" : "payment_summary_heading",
+      "label" : "Payment summary heading",
+      "required" : false,
+      "locked" : false,
+      "allow_new_line" : false,
+      "display_width" : null,
+      "type" : "text",
+      "default" : "Payment"
+    } ],
+    "tab" : "CONTENT",
+    "expanded" : false,
+    "group_occurrence_meta" : null,
+    "display_width" : null,
+    "type" : "group",
+    "default" : {
+      "line_item_name_heading" : "Item",
+      "payment_summary_heading" : "Payment"
+    }
+  } ],
+  "tab" : "CONTENT",
+  "expanded" : false,
+  "group_occurrence_meta" : null,
+  "display_width" : null,
+  "type" : "group",
+  "default" : {
+    "display_future_payments_summary_table" : true,
+    "display_heading" : true,
+    "heading" : "Future Payments Summary",
+    "columns" : {
+      "line_item_name_heading" : "Item",
+      "payment_summary_heading" : "Payment"
+    }
+  }
+}, {
+  "id" : "b6de6c0c-b835-e6f9-989f-56c3dca4e445",
+  "name" : "display_totals_table",
+  "label" : "Display totals",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : false
+}, {
+  "id" : "203b9b6a-75ea-e5d5-2d4e-8d47af903dbe",
+  "name" : "pedido_de_compra",
+  "label" : "Pedido de Compra",
+  "required" : false,
+  "locked" : false,
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text"
+} ]

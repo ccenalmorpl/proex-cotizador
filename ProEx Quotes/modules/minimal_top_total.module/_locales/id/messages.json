@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Jatuh tempo sekarang",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Label ini menggantikan \"Penawaran total teks\" jika ada pembayaran yang harus dibayar setelah checkout.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Teks keseluruhan jatuh tempo sekarang",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Total penawaran",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Teks untuk total jumlah penawaran",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Teks total penawaran",
+    "description" : "",
+    "placeholders" : null
+  }
+}

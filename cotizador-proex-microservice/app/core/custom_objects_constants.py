@@ -1,17 +1,4 @@
-"""
-Constantes para objetos personalizados de HubSpot.
-
-Este archivo contiene los Object Type IDs de los objetos personalizados
-CONTENEDOR y ELEMENTO. Estos IDs se obtienen después de ejecutar el script
-de creación de objetos.
-
-IMPORTANTE: Actualizar estos valores después de ejecutar:
-    python scripts/create_custom_objects.py
-"""
-
-# ============================================================================
 # OBJECT TYPE IDS
-# ============================================================================
 # NOTA: Estos valores deben actualizarse con los IDs reales después de
 # crear los objetos personalizados en HubSpot.
 
@@ -25,19 +12,13 @@ OBJECT_TYPE_CONTENEDOR = "2-54989406"
 # Actualizar después de ejecutar create_custom_objects.py
 OBJECT_TYPE_ELEMENTO = "2-54989407"
 
-
-# ============================================================================
 # NOMBRES INTERNOS DE OBJETOS
-# ============================================================================
 
 # Nombres internos de los objetos (para búsquedas y operaciones)
 OBJECT_NAME_CONTENEDOR = "contenedor"
 OBJECT_NAME_ELEMENTO = "elemento"
 
-
-# ============================================================================
 # TIPOS DE CONTENEDOR
-# ============================================================================
 
 TIPO_CONTENEDOR_OPTIONS = [
     "camion_16p",
@@ -68,10 +49,7 @@ TIPO_CONTENEDOR_LABELS = {
     "trailer_80": "TRAILER 80"
 }
 
-
-# ============================================================================
 # TIPOS DE ARTÍCULO
-# ============================================================================
 
 TIPO_ARTICULO_OPTIONS = [
     "fabricante",
@@ -90,10 +68,7 @@ TIPO_ARTICULO_LABELS = {
     "seguro": "Seguro"
 }
 
-
-# ============================================================================
 # TIPOS DE IVA
-# ============================================================================
 
 TIPO_IVA_OPTIONS = [
     "r21",
@@ -108,10 +83,7 @@ TIPO_IVA_LABELS = {
     "ex": "EX - EXPORTACIONES"
 }
 
-
-# ============================================================================
 # ASOCIACIONES
-# ============================================================================
 
 # Nombres de asociaciones entre objetos
 ASSOCIATION_CONTENEDOR_TO_DEAL = "contenedor"
@@ -134,10 +106,20 @@ ASSOCIATION_TYPE_ID_CONTENEDOR_TO_COMPANY = 513  # Contenedor → Company
 ASSOCIATION_TYPE_ID_ELEMENTO_TO_CONTACT = 521  # Elemento → Contact
 ASSOCIATION_TYPE_ID_ELEMENTO_TO_COMPANY = 519  # Elemento → Company
 
+# Movimiento de tesorería (Pagos) gestionado en pagos-proex-microservice.
+OBJECT_TYPE_PAGO = "2-44408688"
+# Aceptamos ambas direcciones de la etiqueta cobros_to_contenedor: HubSpot
+# expone 499 y 500 como dos caras de la misma asociación inversa.
+ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PAGO = 499  # mantener por compatibilidad
+ASSOCIATION_TYPE_IDS_CONTENEDOR_TO_PAGO = {499, 500}
+PAGO_PROP_ACTUALIZACION_PEDIDO = "actualizacion_pedido"
+PAGO_PROP_DOCTYPE = "doctype"
+PAGO_DOCTYPE_CONTENEDOR = "contenedor"
 
-# ============================================================================
+CONTENEDOR_PROP_ACTUALIZACION_PEDIDO = "actualizacion_pedido"
+DEAL_PROP_ACTUALIZACION_PEDIDO = "actualizacion_pedido"
+
 # PROPIEDADES REQUERIDAS
-# ============================================================================
 
 # Propiedades obligatorias para crear un CONTENEDOR
 CONTENEDOR_REQUIRED_PROPERTIES = [
@@ -152,23 +134,17 @@ ELEMENTO_REQUIRED_PROPERTIES = [
     "tipo_articulo"
 ]
 
-
-# ============================================================================
 # VALIDACIONES
-# ============================================================================
 
 # Rango permitido de ocupación del contenedor (%)
-OCUPACION_MIN = 97.0
+OCUPACION_MIN = 90.0
 OCUPACION_MAX = 103.0
 
 # Formato del nombre de contenedor
 # Ejemplo: "46298478914-001"
 NOMBRE_CONTENEDOR_PATTERN = r"^\d+-\d{3}$"
 
-
-# ============================================================================
 # HELPER FUNCTIONS
-# ============================================================================
 
 def validate_object_type_ids():
     """
@@ -188,7 +164,6 @@ def validate_object_type_ids():
             "Ejecuta: python scripts/create_custom_objects.py"
         )
 
-
 def get_tipo_contenedor_label(value: str) -> str:
     """
     Obtiene el label de un tipo de contenedor.
@@ -201,7 +176,6 @@ def get_tipo_contenedor_label(value: str) -> str:
     """
     return TIPO_CONTENEDOR_LABELS.get(value, value)
 
-
 def get_tipo_articulo_label(value: str) -> str:
     """
     Obtiene el label de un tipo de artículo.
@@ -213,7 +187,6 @@ def get_tipo_articulo_label(value: str) -> str:
         Label legible o el valor original si no se encuentra
     """
     return TIPO_ARTICULO_LABELS.get(value, value)
-
 
 def get_tipo_iva_label(value: str) -> str:
     """

@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Bild des Unternehmenslogos",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Dies gilt nicht, wenn Sie das Standardlogo überschreiben.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Logo max. Höhe",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Standardmäßig wird in Ihren Angeboten das Unternehmenslogo aus den Account-Standardeinstellungen oder den Website-Seiten angezeigt, sofern Sie diese eingerichtet haben. Sie können diese mit dem unten stehenden Schalter außer Kraft setzen.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Standardlogo in dieser Vorlage außer Kraft setzen",
+    "description" : "",
+    "placeholders" : null
+  }
+}

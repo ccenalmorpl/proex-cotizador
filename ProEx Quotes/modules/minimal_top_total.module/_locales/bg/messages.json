@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Дължимо сега",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Този етикет замества „Текст за общата сума на офертата“, когато има дължими плащания след плащането на касата.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Дължима обща сума сега текст",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Обща сума на оферта",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Общо",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Текстът за общата сума на офертата",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Текст на обща сума на оферта",
+    "description" : "",
+    "placeholders" : null
+  }
+}

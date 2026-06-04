@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "הפניה",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.default" : {
+    "message" : "סימוכין: {{ personalization_token('template_data.quote.hs_quote_number', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "reference.label" : {
+    "message" : "מספר של הפניה",
+    "description" : "",
+    "placeholders" : null
+  }
+}

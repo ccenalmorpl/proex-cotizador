@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Summa",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Kommentaarid",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Kommentaarid lisanud",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "See pakkumus on aegunud.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Täpsemate üksikasjade saamiseks võtke palun ühendust oma müügiesindajaga.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Ühik ja kirjeldus",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Muud tasud",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Valmistaja:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Hind",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Tooted ja teenused",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Ostutingimused",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Kogus",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Pakkumuse koostanud:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Vahesummad",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Kokku",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Ühiku hind",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Krediidimärkus",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Krediidimärkuse number",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Krediidimärkus kokku",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Ostutellimuse #",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Krediidimärkuse kuupäev",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Kõik tasud on märgitud valuutas {{ currency_code }} ja neile kehtib käibemaks (kui kohaldatakse).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Krediidimärkuse reaüksuste tabel",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Kogus",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Maksud",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "maks",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Maksud",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "pärast {{ discount_amount }} allahindlust",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Arve",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Arve number",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Arve kuupäev",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Kõik tasud on märgitud valuutas {{ currency_code }} ja neile kehtib käibemaks (kui kohaldatakse).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Ostutellimuse number",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Arve reaüksuste tabel",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "pärast {{ discount_amount }} allahindlust",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Kogus",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Makse",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Tasumisele kuuluv saldo",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Maksud",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "maks",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Maksud",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Arve saaja",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Tarneaadress",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Maksuaadress",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Tähtaeg",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "allahindlus",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% allahindlus",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% soodsamalt",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Vahesumma",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Tulevased maksed",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Maksed, mille tähtaeg on hiljem.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Kokkuvõte",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "See pakkumus ei ole saadaval.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Täpsemate üksikasjade saamiseks võtke palun ühendust oma müügiesindajaga.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Ei kehti",
+    "description": "",
+    "placeholders": null
+  }
+}

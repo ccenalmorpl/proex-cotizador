@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "المبلغ",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "التعليقات",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "التعليقات من",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "لقد انتهت صلاحية عرض الأسعار هذا.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "يرجى الاتصال بمندوب المبيعات الخاص بك للحصول على مزيد من التفاصيل.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "العنصر والوصف",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "الرسوم الأخرى",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "تم الإعداد بواسطة:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "السعر",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "المنتجات والخدمات",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "شروط الشراء",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "الكمية",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "تم إنشاء عرض الأسعار بواسطة:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "المبالغ الإجمالية الفرعية",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "الإجمالي",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "سعر الوحدة",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "مذكرة الائتمان",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "رقم مذكرة الائتمان",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "إجمالي مذكرة الائتمان",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "رقم طلب الشراء",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "تاريخ مذكرة الائتمان",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "جميع الرسوم مدرجة في {{ currency_code }} وتخضع لضريبة المبيعات (حسب الاقتضاء).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "جدول بنود مذكرة الائتمان",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "الكمية",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "الضريبة",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "الضريبة",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "الضريبة",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "بعد خصم {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "الفاتورة",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "رقم الفاتورة",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "تاريخ الفاتورة",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "جميع الرسوم مدرجة في {{ currency_code }} وتخضع لضريبة المبيعات (حسب الاقتضاء).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "رقم أمر الشراء",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "جدول بنود الفاتورة",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "بعد خصم {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "الكمية",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "الدفع",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "الرصيد المستحق",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "الضريبة",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "الضريبة",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "الضريبة",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "إرسال فاتورة إلى",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "الشحن إلى",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "العنوان الضريبي",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "تاريخ الاستحقاق",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "الخصم",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "خصم {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "خصم {{ fee_amount }}%",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "المبلغ الإجمالي الفرعي",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "عمليات الدفع المستقبلية",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "المدفوعات المستحقة في وقت لاحق.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "الملخص",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "هذا العرض غير متوفر.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "يرجى الاتصال بمندوب المبيعات الخاص بك للحصول على مزيد من التفاصيل.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "غير متاح",
+    "description": "",
+    "placeholders": null
+  }
+}

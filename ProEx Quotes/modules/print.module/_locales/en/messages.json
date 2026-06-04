@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Print quote",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Button text",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Print",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,11 +1,3 @@
-/**
- * Common TypeScript interfaces and types for the Cotizador application
- */
-
-// ============================================================================
-// SELECT OPTIONS
-// ============================================================================
-
 export interface SelectOption {
   label: string;
   value: string;
@@ -15,10 +7,6 @@ export interface PropertyWithOptions {
   value: string | null;
   options?: SelectOption[];
 }
-
-// ============================================================================
-// CLIENTE (CLIENT) INTERFACES
-// ============================================================================
 
 export interface CommissionProvider {
   id: string | null;
@@ -31,14 +19,12 @@ export interface CommissionProvider {
 }
 
 export interface ClienteData {
-  nombreCliente: string;
   nombreEmpresa: string;
   country: string;
   tipoVenta: string;
   tipoContenedor: string;
   tipoCliente: string;
   margen: number;
-  idioma: string;
   proyecto: string;
   lugarCarga: string;
   lugarCargaLabel: string;
@@ -48,14 +34,13 @@ export interface ClienteData {
   tipoComision: string;
   importeComision: number;
   tipoIVAComision: string;
+  tipoIVAComisionSoportado: string;
   tipoResidente: string;
   cif: string;
   paisOperaciones: string;
+  cargaPorPalets: boolean;
+  fechaCaducidadCotizacion: { year: number; month: number; date: number } | null;
 }
-
-// ============================================================================
-// ARTÍCULOS (ARTICLES) INTERFACES
-// ============================================================================
 
 export interface ArticuloItem {
   id: string;
@@ -63,8 +48,11 @@ export interface ArticuloItem {
   name: string;
   cantidad: number;
   precio: number;
+  name_en?: string;
+  name_fr?: string;
   margen_unitario?: number;
   tipo_iva_repercutido?: string;
+  tipo_iva_soportado?: string;
   peso_neto?: number;
   proveedor_habitual?: {
     id: string;
@@ -72,10 +60,6 @@ export interface ArticuloItem {
     name: string;
   };
 }
-
-// ============================================================================
-// CONTENEDORES (CONTAINERS) INTERFACES
-// ============================================================================
 
 export interface ContenedorDefinido {
   tipo: string;
@@ -111,6 +95,7 @@ export interface ContenedorUnicoDefinido {
       price?: number;
       margen_unitario?: number;
       tipo_iva_repercutido?: string;
+      tipo_iva_soportado?: string;
       pesoNeto?: number;
       line_item_id?: string;
     }>;
@@ -119,10 +104,6 @@ export interface ContenedorUnicoDefinido {
 export interface ContenedoresUnicosData {
   contenedoresUnicos: ContenedorUnicoDefinido[];
 }
-
-// ============================================================================
-// TRANSITARIO (FREIGHT FORWARDER) INTERFACES
-// ============================================================================
 
 export interface TransitarioSeleccionado {
   id: string;
@@ -137,17 +118,15 @@ export interface TransitarioData {
   localidadDestino: string;
   precioOrigen: number;
   precioDestino: number;
-  fechaValidez: string | null;
+  fechaCaducidadFleteSalida: { year: number; month: number; date: number } | null;
+  fechaCaducidadFleteDestino: { year: number; month: number; date: number } | null;
   diasLibres: number;
   naviera: string;
   almacen: string;
   cotizacionRapida: boolean;
   tipoIVAFletes: string;
+  tipoIVAFletesSoportado: string;
 }
-
-// ============================================================================
-// SERVICIOS (SERVICES) INTERFACES
-// ============================================================================
 
 export interface ServicioItem {
   id: number;
@@ -164,19 +143,18 @@ export interface ServiciosData {
   serviciosSeleccionados: ServicioItem[];
 }
 
-// ============================================================================
-// DOCUMENTACIÓN (DOCUMENTATION) INTERFACES
-// ============================================================================
-
 export interface DocumentacionData {
   // Idioma global
   idiomaCotizacion: PropertyWithOptions | null;
 
   // Documentación
   direccionFiscal: string;
+  direccionDeEntrega: string;
+  cif: string;
+  referenciaCotizacion: string;
 
   // Documentación Logística
-  tramitarCarga: boolean;
+  desagregarCotizacion: boolean;
   documentosAGenerar: PropertyWithOptions | null;
   textoEnBl: string;
   comentariosLogistica: string;
@@ -187,43 +165,33 @@ export interface DocumentacionData {
   shipper: string;
   notify: string;
   certificadoOrigenMercancia: string;
+  observaciones: string;
 
   // Método de Pago & Textos
   metodoPagoPlantilla: PropertyWithOptions | null;
   bancoCobro: PropertyWithOptions | null;
   cotizacionRapida: boolean;
   textoAdicionalMetodoPago: string;
-  textoFirmaAceptacionCliente: string;
 
   // Textos Generados
   textoBanco: string;
   textoFormaPago: string;
-  textoInfoExpediente: string;
   textoBaseOferta: string;
 }
-
-// ============================================================================
-// API RESPONSE INTERFACES
-// ============================================================================
 
 export interface ClientAPIResponse {
   success: boolean;
   error?: string;
-  contact: {
-    firstname?: string;
-    lastname?: string;
-    country?: string;
-  };
   company: {
     name?: string;
     residennum?: string;
     cif?: string;
     pais_de_operaciones?: string;
+    country?: string;
     tipo_cliente: {
       value: string;
       options?: SelectOption[];
     };
-
   };
   deal: {
     tipo_de_venta?: {
@@ -247,6 +215,7 @@ export interface ClientAPIResponse {
       options?: SelectOption[];
     };
     margen_cliente?: number;
+    carga_por_palets?: boolean;
     dias_libres?: number;
     lugar_carga?: string;
     codigo_intermediario?: string;
@@ -259,6 +228,10 @@ export interface ClientAPIResponse {
       options?: SelectOption[];
     };
     importe_comision?: number;
+    tipo_iva_comision?: string;
+    tipo_iva_comision_soportado?: string;
+    iva_comision_defaults?: { repercutido?: string; soportado?: string };
+    fecha_caducidad_cotizacion?: number;
     commission_provider_info?: {
       id: string | null;
       name: string;
@@ -269,8 +242,8 @@ export interface ClientAPIResponse {
     };
     // Documentación
     direccion_fiscal?: string;
+    direccion_de_entrega?: string;
     // Documentación Logística
-    tramitar_carga?: boolean;
     documentos_a_generar?: {
       value: string | null;
       options?: SelectOption[];
@@ -283,6 +256,7 @@ export interface ClientAPIResponse {
     shipper?: string;
     notify?: string;
     certificado_origen_mercancia?: string;
+    observaciones?: string;
     // Método de Pago & Textos
     metodo_pago_plantilla?: {
       value: string | null;
@@ -294,19 +268,13 @@ export interface ClientAPIResponse {
     };
     cotizacion_rapida?: boolean;
     texto_adicional_metodo_pago?: string;
-    texto_firma_aceptacion_cliente?: string;
     // Textos Generados
     texto_banco?: string;
     texto_forma_pago?: string;
-    texto_informacion_expediente?: string;
     texto_base_oferta?: string;
   };
   proyecto?: string;
 }
-
-// ============================================================================
-// DOCUMENTACIÓN API RESPONSE
-// ============================================================================
 
 export interface DocumentacionAPIResponse {
   success: boolean;
@@ -314,7 +282,7 @@ export interface DocumentacionAPIResponse {
   deal?: {
     preprints_language?: PropertyWithOptions;
     direccion_fiscal?: string;
-    tramitar_carga?: boolean;
+    direccion_de_entrega?: string;
     documentos_a_generar?: PropertyWithOptions;
     texto_en_bl?: string;
     comentarios_logistica?: string;
@@ -323,21 +291,16 @@ export interface DocumentacionAPIResponse {
     shipper?: string;
     notify?: string;
     certificado_origen_mercancia?: string;
+    observaciones?: string;
     metodo_pago_plantilla?: PropertyWithOptions;
     banco_cobro?: PropertyWithOptions;
     cotizacion_rapida?: boolean;
     texto_adicional_metodo_pago?: string;
-    texto_firma_aceptacion_cliente?: string;
     texto_banco?: string;
     texto_forma_pago?: string;
-    texto_informacion_expediente?: string;
     texto_base_oferta?: string;
   };
 }
-
-// ============================================================================
-// COMPONENT PROPS INTERFACES
-// ============================================================================
 
 export interface ExtensionProps {
   context: any;

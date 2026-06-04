@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "شركة المشتري",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "العنوان الرئيسي لشركة المشتري",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "مدينة شركة المشتري وولايتها ورمزها البريدي",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "بلد شركة المشتري",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "اسم شركة المشتري",
+    "description" : "",
+    "placeholders" : null
+  }
+}

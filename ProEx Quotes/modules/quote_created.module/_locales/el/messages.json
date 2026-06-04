@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote created",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Η προσφορά δημιουργήθηκε στις:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Κείμενο πραγματοποίησης δημιουργίας προσφοράς",
+    "description" : "",
+    "placeholders" : null
+  }
+}

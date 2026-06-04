@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Imagem do logotipo da empresa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Isso não se aplica ao substituir o logotipo padrão",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Altura máx. do logotipo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Por padrão, o logotipo da empresa será exibido em seus orçamentos nos padrões da conta ou nas páginas do site, se você os tiver configurado. Você pode optar por substituir essa configuração usando o botão abaixo.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logotipo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Substituir logotipo padrão neste modelo",
+    "description" : "",
+    "placeholders" : null
+  }
+}

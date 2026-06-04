@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "회사 로고 이미지",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "기본 로고를 재정의할 때는 해당되지 않음",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "로고 최대 높이",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "설정한 경우 계정 기본값 또는 웹사이트 페이지의 회사 로고가 견적서에 기본적으로 표시됩니다. 아래 토글을 사용하여 재정의할 수 있습니다.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "로고",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "이 템플릿의 기본값 로고 재정의",
+    "description" : "",
+    "placeholders" : null
+  }
+}

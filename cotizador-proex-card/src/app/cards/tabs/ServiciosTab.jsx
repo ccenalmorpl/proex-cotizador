@@ -1,5 +1,5 @@
 // React
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 
 // HubSpot UI Components
 import {
@@ -10,7 +10,7 @@ import {
   ButtonRow,
   Button,
   Select,
-  Input,
+  NumberInput,
   Table,
   TableHead,
   TableRow,
@@ -25,6 +25,7 @@ import {
 // Utils & Config
 import { fetchFromAPI } from "../utils/api.utils";
 import { API_CONFIG } from "../config";
+import { resolveIVA } from "../utils/iva.utils";
 import {
   ERROR_MESSAGES,
   LOADING_MESSAGES,
@@ -36,6 +37,7 @@ const ServiciosTab = ({
   serviciosData,
   setServiciosData,
   tipoIVAOptions = [],
+  tipoIVASoportadoOptions = [],
   clienteData,
 }) => {
   // Estado para los servicios disponibles (cargados desde API)
@@ -47,18 +49,22 @@ const ServiciosTab = ({
   const [proveedoresDisponibles, setProveedoresDisponibles] = useState([]);
   const [loadingProveedores, setLoadingProveedores] = useState(false);
 
+  // Caché de proveedores por tipoArticulo, alimenta los Select editables de cada fila
+  const [proveedoresPorTipo, setProveedoresPorTipo] = useState({});
+
   // Estado para el selector de artículo de servicio
   const [articuloSeleccionado, setArticuloSeleccionado] = useState(null);
 
   // Estado para el configurador del servicio
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState(null);
-  const [precioServicio, setPrecioServicio] = useState("");
+  const [precioServicio, setPrecioServicio] = useState(undefined);
 
   // Estado para la tabla de servicios agregados
   const [serviciosAgregados, setServiciosAgregados] = useState([]);
 
   // Estado para tipos de IVA por servicio (key: servicio.id, value: tipo_iva)
   const [tiposIVAServicios, setTiposIVAServicios] = useState({});
+  const [tiposIVAServiciosSoportado, setTiposIVAServiciosSoportado] = useState({});
 
   // Estado para carga inicial de servicios guardados
   const [loadingGuardados, setLoadingGuardados] = useState(true);
@@ -66,6 +72,19 @@ const ServiciosTab = ({
   // Estado para el guardado
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+
+  // Auto-precarga de seguro: aplica a CIF, DAP marítimo y DAP terrestre
+  const tipoVentaNorm = (clienteData?.tipoVenta || "")
+    .toString()
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+  const isCIF = tipoVentaNorm === "CIF";
+  const isDAPMaritimo =
+    tipoVentaNorm === "DAP_MARITIMO" || tipoVentaNorm === "DAP_MARÍTIMO";
+  const isDAPTerrestre = tipoVentaNorm === "DAP_TERRESTRE";
+  const requiereSeguroAuto = isCIF || isDAPMaritimo || isDAPTerrestre;
+  const [seguroEliminadoAviso, setSeguroEliminadoAviso] = useState(false);
+  const seguroAutoAddedRef = useRef(false);
 
   /**
    * Carga los servicios guardados del deal desde la API
@@ -94,6 +113,18 @@ const ServiciosTab = ({
           proveedorCardcode: service.provider_cardcode,
           importe: service.price,
         }));
+
+        // Restaurar tipo de IVA guardado por cada servicio
+        const ivasGuardados = {};
+        const ivasSopGuardados = {};
+        serviciosCargados.forEach((s, index) => {
+          const tipoIva = data.services[index]?.tipo_iva_repercutido;
+          if (tipoIva) ivasGuardados[s.id] = tipoIva;
+          const tipoIvaSop = data.services[index]?.tipo_iva_soportado;
+          if (tipoIvaSop) ivasSopGuardados[s.id] = tipoIvaSop;
+        });
+        setTiposIVAServicios(ivasGuardados);
+        setTiposIVAServiciosSoportado(ivasSopGuardados);
 
         console.log("[ServiciosTab] Servicios cargados:", serviciosCargados.length, "items");
         setServiciosAgregados(serviciosCargados);
@@ -129,6 +160,13 @@ const ServiciosTab = ({
         label: product.name,
         tipoArticulo: product.tipo_articulo,
         precioDefault: product.hs_price_eur,
+        // IVA properties from product (6 fields)
+        tipo_iva_repercutido: product.tipo_iva_repercutido || null,
+        tipo_iva_repercutido_eu: product.tipo_iva_repercutido_eu || null,
+        tipo_iva_repercutido_ex: product.tipo_iva_repercutido_ex || null,
+        tipo_iva_soportado: product.tipo_iva_soportado || null,
+        tipo_iva_soportado_eu: product.tipo_iva_soportado_eu || null,
+        tipo_iva_soportado_ex: product.tipo_iva_soportado_ex || null,
       }));
       setServiciosDisponibles(options);
     } catch (error) {
@@ -140,11 +178,12 @@ const ServiciosTab = ({
 
   /**
    * Carga los proveedores disponibles para un tipo de artículo
+   * y cachea las opciones en proveedoresPorTipo para los Selects en la tabla.
    */
   const loadProveedores = useCallback(async (tipoArticulo) => {
     if (!tipoArticulo) {
       setProveedoresDisponibles([]);
-      return;
+      return [];
     }
 
     setLoadingProveedores(true);
@@ -165,18 +204,125 @@ const ServiciosTab = ({
       }));
 
       setProveedoresDisponibles(options);
+      setProveedoresPorTipo((prev) => ({ ...prev, [tipoArticulo]: options }));
+      return options;
     } catch {
       setProveedoresDisponibles([]);
+      return [];
     } finally {
       setLoadingProveedores(false);
     }
   }, []);
+
+  const ensureProveedoresPorTipo = useCallback(
+    async (tipoArticulo) => {
+      if (!tipoArticulo || proveedoresPorTipo[tipoArticulo]) return;
+      try {
+        const data = await fetchFromAPI(
+          `${
+            API_CONFIG.endpoints.articles
+          }/services/providers/list?tipo_proveedor=${encodeURIComponent(
+            tipoArticulo
+          )}`
+        );
+        const options = data.providers.map((provider) => ({
+          value: provider.id,
+          label: provider.name,
+          cardcode: provider.cardcode,
+        }));
+        setProveedoresPorTipo((prev) => ({ ...prev, [tipoArticulo]: options }));
+      } catch {
+        setProveedoresPorTipo((prev) => ({ ...prev, [tipoArticulo]: [] }));
+      }
+    },
+    [proveedoresPorTipo]
+  );
 
   // Cargar servicios disponibles y servicios guardados al montar el componente
   useEffect(() => {
     loadServicios();
     loadServiciosGuardados();
   }, [loadServicios, loadServiciosGuardados]);
+
+  // Precargar el caché de proveedores para los tipos de los servicios ya agregados
+  useEffect(() => {
+    const tipos = Array.from(
+      new Set(serviciosAgregados.map((s) => s.tipoArticulo).filter(Boolean))
+    );
+    tipos.forEach((tipo) => {
+      ensureProveedoresPorTipo(tipo);
+    });
+  }, [serviciosAgregados, ensureProveedoresPorTipo]);
+
+  // Auto-precargar seguro cuando tipoVenta requiere seguro (CIF, DAP marítimo, DAP terrestre)
+  useEffect(() => {
+    if (loadingServicios || loadingGuardados) return;
+    if (!requiereSeguroAuto) return;
+    if (seguroAutoAddedRef.current) return;
+    seguroAutoAddedRef.current = true;
+
+    const seguroProducto = serviciosDisponibles.find(
+      (s) => s.tipoArticulo === "seguro"
+    );
+    if (!seguroProducto) return;
+
+    const precargarSeguro = async () => {
+      try {
+        const data = await fetchFromAPI(
+          `${API_CONFIG.endpoints.articles}/services/providers/list?tipo_proveedor=seguro`
+        );
+        const proveedor = data.providers?.[0];
+        if (!proveedor) return;
+
+        const nuevoSeguro = {
+          id: Date.now(),
+          servicioId: seguroProducto.value,
+          nombreServicio: seguroProducto.label,
+          tipoArticulo: "seguro",
+          proveedorId: proveedor.id,
+          nombreProveedor: proveedor.name,
+          proveedorCardcode: proveedor.cardcode,
+          importe: parseFloat(seguroProducto.precioDefault || 0),
+        };
+
+        setServiciosAgregados((prev) => {
+          if (prev.some((s) => s.tipoArticulo === "seguro")) return prev;
+          const nuevos = [...prev, nuevoSeguro];
+          if (setServiciosData) setServiciosData({ serviciosSeleccionados: nuevos });
+          return nuevos;
+        });
+
+        // IVA resolved from insurance product (Fase 4E)
+        const defaultIVA = resolveIVA({
+          currentValue: undefined,
+          product: seguroProducto,
+          tipoResidente: clienteData?.tipoResidente,
+          categoria: "repercutido",
+          options: tipoIVAOptions,
+        }) || "R21";
+        setTiposIVAServicios((prev) => ({ ...prev, [nuevoSeguro.id]: defaultIVA }));
+        const defaultIVASop = resolveIVA({
+          currentValue: undefined,
+          product: seguroProducto,
+          tipoResidente: clienteData?.tipoResidente,
+          categoria: "soportado",
+          options: tipoIVASoportadoOptions,
+        }) || "S21";
+        setTiposIVAServiciosSoportado((prev) => ({ ...prev, [nuevoSeguro.id]: defaultIVASop }));
+      } catch (e) {
+        console.error("[ServiciosTab] Error precargando seguro:", e);
+      }
+    };
+
+    precargarSeguro();
+  }, [
+    loadingServicios,
+    loadingGuardados,
+    requiereSeguroAuto,
+    serviciosDisponibles,
+    clienteData?.tipoResidente,
+    setServiciosData,
+  ]);
 
   /**
    * Handler cuando cambia el artículo seleccionado
@@ -188,7 +334,7 @@ const ServiciosTab = ({
       setArticuloSeleccionado(servicio || null);
       setProveedorSeleccionado(null);
       setPrecioServicio(
-        servicio?.precioDefault ? String(servicio.precioDefault) : ""
+        servicio?.precioDefault != null ? Number(servicio.precioDefault) : undefined
       );
       setProveedoresDisponibles([]);
 
@@ -211,34 +357,10 @@ const ServiciosTab = ({
   );
 
   /**
-   * Get default IVA type based on tipoResidente
-   */
-  const getDefaultIVA = useCallback(() => {
-    if (!clienteData?.tipoResidente || tipoIVAOptions.length === 0) {
-      return "";
-    }
-
-    let defaultIVA = "";
-    const tipoResidente = clienteData.tipoResidente.toUpperCase();
-
-    if (tipoResidente === "EXTRANJERO") {
-      defaultIVA = "EX";
-    } else if (tipoResidente === "EUROPA") {
-      defaultIVA = "EI21";
-    } else {
-      defaultIVA = "R21";
-    }
-
-    // Verify the IVA option exists
-    const ivaOption = tipoIVAOptions.find((opt) => opt.value === defaultIVA);
-    return ivaOption ? defaultIVA : "";
-  }, [clienteData?.tipoResidente, tipoIVAOptions]);
-
-  /**
    * Handler para agregar servicio a la tabla
    */
   const handleAgregarServicio = useCallback(() => {
-    if (!articuloSeleccionado || !proveedorSeleccionado || !precioServicio) {
+    if (!articuloSeleccionado || !proveedorSeleccionado || precioServicio == null) {
       return;
     }
 
@@ -250,19 +372,42 @@ const ServiciosTab = ({
       proveedorId: proveedorSeleccionado.value,
       nombreProveedor: proveedorSeleccionado.label,
       proveedorCardcode: proveedorSeleccionado.cardcode,
-      importe: parseFloat(precioServicio),
+      importe: precioServicio,
     };
-
+    if (requiereSeguroAuto && nuevoServicio?.tipoArticulo === "seguro") {
+      setSeguroEliminadoAviso(false);
+    }
     const nuevosServicios = [...serviciosAgregados, nuevoServicio];
     setServiciosAgregados(nuevosServicios);
 
-    // Auto-select default IVA for the new service
-    const defaultIVA = getDefaultIVA();
+    // Resolve IVA repercutido from service product (Fase 4E)
+    const defaultIVA = resolveIVA({
+      currentValue: undefined,
+      product: articuloSeleccionado,
+      tipoResidente: clienteData?.tipoResidente,
+      categoria: "repercutido",
+      options: tipoIVAOptions,
+    });
     if (defaultIVA) {
       setTiposIVAServicios({
         ...tiposIVAServicios,
         [nuevoServicio.id]: defaultIVA,
       });
+    }
+
+    // Resolve IVA soportado from service product (Fase 4E)
+    const defaultIVASop = resolveIVA({
+      currentValue: undefined,
+      product: articuloSeleccionado,
+      tipoResidente: clienteData?.tipoResidente,
+      categoria: "soportado",
+      options: tipoIVASoportadoOptions,
+    });
+    if (defaultIVASop) {
+      setTiposIVAServiciosSoportado((prev) => ({
+        ...prev,
+        [nuevoServicio.id]: defaultIVASop,
+      }));
     }
 
     if (setServiciosData) {
@@ -272,7 +417,7 @@ const ServiciosTab = ({
     // Reset del configurador
     setArticuloSeleccionado(null);
     setProveedorSeleccionado(null);
-    setPrecioServicio("");
+    setPrecioServicio(undefined);
     setProveedoresDisponibles([]);
   }, [
     articuloSeleccionado,
@@ -280,25 +425,72 @@ const ServiciosTab = ({
     precioServicio,
     serviciosAgregados,
     setServiciosData,
-    getDefaultIVA,
     tiposIVAServicios,
+    clienteData?.tipoResidente,
+    tipoIVAOptions,
+    tipoIVASoportadoOptions,
   ]);
+
+  const handleProveedorRowChange = useCallback(
+    (rowId, providerId) => {
+      setServiciosAgregados((prev) => {
+        const nuevos = prev.map((s) => {
+          if (s.id !== rowId) return s;
+          const opt = (proveedoresPorTipo[s.tipoArticulo] || []).find(
+            (o) => o.value === providerId
+          );
+          return opt
+            ? {
+                ...s,
+                proveedorId: opt.value,
+                nombreProveedor: opt.label,
+                proveedorCardcode: opt.cardcode,
+              }
+            : s;
+        });
+        if (setServiciosData) {
+          setServiciosData({ serviciosSeleccionados: nuevos });
+        }
+        return nuevos;
+      });
+    },
+    [proveedoresPorTipo, setServiciosData]
+  );
+
+  const handleImporteRowChange = useCallback(
+    (rowId, value) => {
+      const num = Math.round((parseFloat(value) || 0) * 100) / 100;
+      setServiciosAgregados((prev) => {
+        const nuevos = prev.map((s) =>
+          s.id === rowId ? { ...s, importe: num } : s
+        );
+        if (setServiciosData) {
+          setServiciosData({ serviciosSeleccionados: nuevos });
+        }
+        return nuevos;
+      });
+    },
+    [setServiciosData]
+  );
 
   /**
    * Handler para eliminar servicio de la tabla
    */
   const handleEliminarServicio = useCallback(
     (id) => {
-      const nuevosServicios = serviciosAgregados.filter(
-        (servicio) => servicio.id !== id
-      );
+      const servicio = serviciosAgregados.find((s) => s.id === id);
+      if (requiereSeguroAuto && servicio?.tipoArticulo === "seguro") {
+        setSeguroEliminadoAviso(true);
+      }
+
+      const nuevosServicios = serviciosAgregados.filter((s) => s.id !== id);
       setServiciosAgregados(nuevosServicios);
 
       if (setServiciosData) {
         setServiciosData({ serviciosSeleccionados: nuevosServicios });
       }
     },
-    [serviciosAgregados, setServiciosData]
+    [serviciosAgregados, setServiciosData, requiereSeguroAuto]
   );
 
   /**
@@ -314,14 +506,24 @@ const ServiciosTab = ({
         throw new Error(ERROR_MESSAGES.NO_DEAL_ID);
       }
 
+      const servicioInvalido = serviciosAgregados.find(
+        (s) => !(Number(s.importe) > 0)
+      );
+      if (servicioInvalido) {
+        throw new Error(
+          `El precio del servicio "${servicioInvalido.nombreServicio}" debe ser mayor que 0 €.`
+        );
+      }
+
       const payload = {
         services: serviciosAgregados.map((servicio) => ({
           product_id: servicio.servicioId,
           product_name: servicio.nombreServicio,
           provider_id: servicio.proveedorId,
           provider_cardcode: servicio.proveedorCardcode,
-          price: servicio.importe,
+          price: Math.round(servicio.importe * 100) / 100,
           tipo_iva: tiposIVAServicios[servicio.id] || "",
+          tipo_iva_soportado: tiposIVAServiciosSoportado[servicio.id] || "",
         })),
       };
 
@@ -340,6 +542,7 @@ const ServiciosTab = ({
     context?.crm?.objectId,
     serviciosAgregados,
     tiposIVAServicios,
+    tiposIVAServiciosSoportado,
     onNavigate,
   ]);
 
@@ -377,7 +580,7 @@ const ServiciosTab = ({
           <Select
             label="Seleccionar Servicio"
             name="articulo-servicio"
-            placeholder="Seleccione un servicio..."
+            placeholder="Seleccionar..."
             value={articuloSeleccionado?.value || ""}
             onChange={handleArticuloChange}
             options={serviciosDisponibles.filter(
@@ -393,7 +596,6 @@ const ServiciosTab = ({
         {/* CONFIGURADOR DEL SERVICIO (se muestra solo si hay artículo seleccionado) */}
         {articuloSeleccionado && (
           <Flex direction="column" gap="medium">
-            {/* Select de proveedores */}
             {loadingProveedores ? (
               <Flex direction="row" gap="small" align="center">
                 <LoadingSpinner size="xs" />
@@ -403,7 +605,7 @@ const ServiciosTab = ({
               <Select
                 label="Proveedor del Servicio"
                 name="proveedor-servicio"
-                placeholder="Seleccione un proveedor..."
+                placeholder="Seleccionar..."
                 value={proveedorSeleccionado?.value || ""}
                 onChange={handleProveedorChange}
                 options={proveedoresDisponibles}
@@ -411,22 +613,23 @@ const ServiciosTab = ({
               />
             )}
 
-            {/* Input de precio */}
-            <Input
+            <NumberInput
               label="Precio del Servicio (€)"
               name="precio-servicio"
-              placeholder="0.00"
+              placeholder=""
               value={precioServicio}
               onChange={setPrecioServicio}
               description="Introduzca el importe del servicio en euros"
+              min={0}
+              precision={2}
+              formatStyle="decimal"
             />
 
-            {/* Botón de añadir */}
             <ButtonRow>
               <Button
                 variant="primary"
                 onClick={handleAgregarServicio}
-                disabled={!proveedorSeleccionado || !precioServicio}
+                disabled={!proveedorSeleccionado || precioServicio == null}
               >
                 Añadir Servicio
               </Button>
@@ -436,7 +639,6 @@ const ServiciosTab = ({
 
         <Divider size="medium" />
 
-        {/* TABLA DE SERVICIOS SELECCIONADOS */}
         <Box>
           <Heading>Servicios Seleccionados</Heading>
 
@@ -448,49 +650,123 @@ const ServiciosTab = ({
             <Table bordered={true}>
               <TableHead>
                 <TableRow>
-                  <TableHeader>Servicio</TableHeader>
-                  <TableHeader>Proveedor</TableHeader>
-                  <TableHeader>Importe (€)</TableHeader>
-                  <TableHeader>Tipo IVA</TableHeader>
-                  <TableHeader>Acciones</TableHeader>
+                  <TableHeader width="min">Servicio</TableHeader>
+                  <TableHeader width={220}>Proveedor</TableHeader>
+                  <TableHeader width="min">Importe (€)</TableHeader>
+                  <TableHeader width={200}>IVA (Rep./Sop.)</TableHeader>
+                  <TableHeader width="min">Acciones</TableHeader>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {serviciosAgregados.map((servicio) => (
-                  <TableRow key={servicio.id}>
-                    <TableCell>{servicio.nombreServicio}</TableCell>
-                    <TableCell>{servicio.nombreProveedor}</TableCell>
-                    <TableCell>
-                      {servicio.importe.toLocaleString("es-ES", {
-                        minimumFractionDigits: 3,
-                        maximumFractionDigits: 3,
-                      })}€
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        name={`tipo-iva-${servicio.id}`}
-                        value={tiposIVAServicios[servicio.id] || ""}
-                        onChange={(value) =>
-                          setTiposIVAServicios({
-                            ...tiposIVAServicios,
-                            [servicio.id]: value,
-                          })
-                        }
-                        options={tipoIVAOptions}
-                        placeholder="Seleccionar..."
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="destructive"
-                        size="xs"
-                        onClick={() => handleEliminarServicio(servicio.id)}
-                      >
-                        Eliminar
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {serviciosAgregados.map((servicio) => {
+                  const proveedoresOpts =
+                    proveedoresPorTipo[servicio.tipoArticulo] || [];
+                  const proveedorEnCache = proveedoresOpts.some(
+                    (o) => o.value === servicio.proveedorId
+                  );
+                  const rawProveedorOptions = proveedorEnCache
+                    ? proveedoresOpts
+                    : [
+                        ...proveedoresOpts,
+                        ...(servicio.proveedorId
+                          ? [
+                              {
+                                value: servicio.proveedorId,
+                                label: servicio.nombreProveedor || "(actual)",
+                                cardcode: servicio.proveedorCardcode || "",
+                              },
+                            ]
+                          : []),
+                      ];
+                  const proveedorOptions = rawProveedorOptions.map((o) => ({
+                    ...o,
+                    label: o.label
+                  }));
+
+                  return (
+                    <TableRow key={servicio.id}>
+                      <TableCell width="min">{servicio.nombreServicio}</TableCell>
+                      <TableCell width={220}>
+                        <Select
+                          name={`proveedor-${servicio.id}`}
+                          value={servicio.proveedorId || ""}
+                          onChange={(value) =>
+                            handleProveedorRowChange(servicio.id, value)
+                          }
+                          options={proveedorOptions}
+                          placeholder="Seleccionar..."
+                        />
+                      </TableCell>
+                      <TableCell width="min">
+                        <NumberInput
+                          name={`importe-${servicio.id}`}
+                          value={servicio.importe}
+                          onChange={(value) =>
+                            handleImporteRowChange(servicio.id, value)
+                          }
+                          min={0}
+                          precision={2}
+                          formatStyle="decimal"
+                        />
+                      </TableCell>
+                      <TableCell width={200}>
+                        <Flex direction="column" gap="small">
+                          <Flex direction="column" gap="extra-small">
+                            <Text
+                              variant="microcopy"
+                              format={{ fontWeight: "demibold" }}
+                            >
+                              Repercutido
+                            </Text>
+                            <Select
+                              name={`tipo-iva-${servicio.id}`}
+                              value={tiposIVAServicios[servicio.id] || ""}
+                              onChange={(value) =>
+                                setTiposIVAServicios({
+                                  ...tiposIVAServicios,
+                                  [servicio.id]: value,
+                                })
+                              }
+                              options={tipoIVAOptions}
+                              placeholder="Seleccionar..."
+                            />
+                          </Flex>
+                          <Flex direction="column" gap="extra-small">
+                            <Text
+                              variant="microcopy"
+                              format={{ fontWeight: "demibold" }}
+                            >
+                              Soportado
+                            </Text>
+                            <Select
+                              name={`tipo-iva-sop-${servicio.id}`}
+                              value={
+                                tiposIVAServiciosSoportado[servicio.id] || ""
+                              }
+                              onChange={(value) =>
+                                setTiposIVAServiciosSoportado({
+                                  ...tiposIVAServiciosSoportado,
+                                  [servicio.id]: value,
+                                })
+                              }
+                              options={tipoIVASoportadoOptions}
+                              placeholder="Seleccionar..."
+                            />
+                          </Flex>
+                        </Flex>
+                      </TableCell>
+                      <TableCell width="min">
+                        <Button
+                          variant="destructive"
+                          size="xs"
+                          onClick={() => handleEliminarServicio(servicio.id)}
+                        >
+                          Eliminar
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -502,22 +778,35 @@ const ServiciosTab = ({
                 {serviciosAgregados
                   .reduce((total, servicio) => total + servicio.importe, 0)
                   .toLocaleString("es-ES", {
-                    minimumFractionDigits: 3,
-                    maximumFractionDigits: 3,
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
                   })}€
               </Text>
             </Box>
           )}
         </Box>
 
-        {/* Error de guardado */}
+        {seguroEliminadoAviso && isCIF && (
+          <Alert title="Cotización sin seguro" variant="warning">
+            Al no incluir el seguro, esta cotización se generará como tipo CFR
+            (sin seguro incluido), no como CIF. Si desea mantener el incoterm
+            CIF, añada de nuevo el servicio de seguro.
+          </Alert>
+        )}
+        {seguroEliminadoAviso && !isCIF && requiereSeguroAuto && (
+          <Alert title="Cotización sin seguro" variant="warning">
+            Al no incluir el seguro, esta cotización se generará sin el coste
+            del seguro incluido en el precio. Si desea mantenerlo, añada de
+            nuevo el servicio.
+          </Alert>
+        )}
+
         {saveError && (
           <Alert title="Error al guardar" variant="error">
             {saveError}
           </Alert>
         )}
 
-        {/* Botones de navegación */}
         <ButtonRow>
           <Button variant="secondary" onClick={() => onNavigate("transitario")}>
             Anterior

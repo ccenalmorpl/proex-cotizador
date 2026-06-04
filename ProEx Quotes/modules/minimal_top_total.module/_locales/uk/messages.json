@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Підлягає оплаті зараз",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Цей ярлик замінює \"Текст загальної суми цінової пропозиції\", якщо є обов’язкові платежі після оформлення замовлення.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Текст поля \"Загальна сума, що підлягає оплаті зараз\"",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Загалом",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Ткст загальної суми цінової пропозиції",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Текст для загальної суми цінової пропозиції",
+    "description" : "",
+    "placeholders" : null
+  }
+}

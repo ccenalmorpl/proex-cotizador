@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Công ty người mua",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Địa chỉ chính của công ty người mua",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Thành phố, tiểu bang và mã zip của công ty người mua",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Quốc gia của công ty người mua",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Tên công ty người mua",
+    "description" : "",
+    "placeholders" : null
+  }
+}

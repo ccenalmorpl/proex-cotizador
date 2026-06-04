@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Oferta expiră",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Oferta expiră:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Text Oferta expiră",
+    "description" : "",
+    "placeholders" : null
+  }
+}

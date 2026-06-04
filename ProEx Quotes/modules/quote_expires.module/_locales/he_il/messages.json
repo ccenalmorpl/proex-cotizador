@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote expires",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "הצעת המחיר פגה תוקף ב:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "טקסט פקיעת תוקף הצעת המחיר",
+    "description" : "",
+    "placeholders" : null
+  }
+}

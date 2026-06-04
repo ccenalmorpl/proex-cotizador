@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Ποσό",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Σχόλια",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Σχόλια από",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Αυτή η προσφορά έχει λήξει",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Επικοινωνήστε με τον αντιπρόσωπο πωλήσεών σας για περισσότερες λεπτομέρειες.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Είδος και περιγραφή",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Άλλες χρεώσεις",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Προετοιμάστηκε από:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Τιμή",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Προϊόντα και υπηρεσίες",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Όροι αγοράς",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Ποσότητα",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Η προσφορά δημιουργήθηκε από:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Υποσύνολο",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Σύνολο",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Τιμή μονάδας",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Πιστωτικό σημείωμα",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Αριθμός πιστωτικού σημειώματος",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Σύνολο πιστωτικών σημειωμάτων",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Αρ. εντολής παραγγελίας",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Ημερομηνία πιστωτικού σημειώματος",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Όλες οι χρεώσεις παρατίθενται σε {{ currency_code }} και υπόκεινται σε φόρο επί των πωλήσεων (κατά περίπτωση).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Πίνακας στοιχείων γραμμής πιστωτικού σημειώματος",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Ποσότητα",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Φόρος",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "φόρος",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Φόρος",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "μετά από έκπτωση {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Τιμολόγιο",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Αριθμός τιμολογίου",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Ημερομηνία τιμολογίου",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Όλες οι χρεώσεις παρατίθενται σε {{ currency_code }} και υπόκεινται σε φόρο επί των πωλήσεων (κατά περίπτωση).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Αριθμός εντολής αγοράς",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Πίνακας στοιχείων γραμμής τιμολογίου",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "μετά από έκπτωση {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Ποσότητα",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Πληρωμή",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Οφειλόμενο υπόλοιπο",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Φόρος",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "φόρος",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Φόρος",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Χρέωση σε",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Αποστολή σε",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Διεύθυνση φορολογίας",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Προθεσμία",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "έκπτωση",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% έκπτωση",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% έκπτωση",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Υποσύνολο",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Μελλοντικές πληρωμές",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Πληρωμές που πρέπει να καταβληθούν αργότερα.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Σύνοψη",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Η προσφορά δεν είναι διαθέσιμη.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Επικοινωνήστε με τον αντιπρόσωπο πωλήσεών σας για περισσότερες λεπτομέρειες.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "Μ/Δ",
+    "description": "",
+    "placeholders": null
+  }
+}

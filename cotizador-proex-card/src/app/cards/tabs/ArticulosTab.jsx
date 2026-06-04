@@ -189,14 +189,21 @@ const ArticulosTab = ({
         const articulosMap = new Map();
 
         (data.articles || []).forEach((art) => {
-          const sku = art.hs_sku;
+          // Usar HubSpot product id como clave (siempre único).
+          // Antes se usaba hs_sku, que puede ser null y colapsaba todos los productos
+          // sin SKU en una única entrada del Map.
+          const productId = art.id;
 
-          // If we haven't seen this SKU yet, add it
-          if (!articulosMap.has(sku)) {
-            articulosMap.set(sku, {
-              id: sku,
+          // Si no hemos visto este producto aún, añadirlo
+          if (!articulosMap.has(productId)) {
+            articulosMap.set(productId, {
+              id: productId,
+              hs_sku: art.hs_sku || "", // SKU separado para el payload al guardar
               codigoProveedor: art.codigo_proveedor || "",
+              proveedor: art.codigo_proveedor || "", // Para consistencia con search results
               nombre: art.name || "",
+              name_en: art.name_en || "",
+              name_fr: art.name_fr || "",
               pesoNeto: art.peso_neto || 0,
               cajas20: 0,
               cajas40: 0,
@@ -207,13 +214,7 @@ const ArticulosTab = ({
               unidades_cam16: art.unidades_cam16 || 0,
               unidades_d20dr: art.unidades_d20dr || 0,
               unidades_d40dr: art.unidades_d40dr || 0,
-              unidades_d20w: art.unidades_d20w || 0,
-              unidades_d40hd: art.unidades_d40hd || 0,
-              unidades_d45hd: art.unidades_d45hd || 0,
-              unidades_d45w: art.unidades_d45w || 0,
               unidades_palet: art.unidades_palet || 0,
-              unidades_r20rf: art.unidades_r20rf || 0,
-              unidades_r40rf: art.unidades_r40rf || 0,
               unidades_tra80: art.unidades_tra80 || 0,
               hs_price_eur: art.hs_price_eur || 0,
               margen_unitario: art.margen_unitario || null, // Puede ser null si no está definido
@@ -283,16 +284,11 @@ const ArticulosTab = ({
       CAMION16P: "unidades_cam16",
       D20DR: "unidades_d20dr",
       D40DR: "unidades_d40dr",
-      D20W: "unidades_d20w",
-      D40HD: "unidades_d40hd",
-      D45HD: "unidades_d45hd",
-      D45W: "unidades_d45w",
       PALETS: "unidades_palet",
-      R20RF: "unidades_r20rf",
-      R40RF: "unidades_r40rf",
       TRAILER80: "unidades_tra80",
+      "TRAILER 80": "unidades_tra80",
     };
-
+        
     const field = containerFieldMap[tipoContenedor];
     if (field && articulo[field] !== undefined) {
       const value = articulo[field];
@@ -334,42 +330,37 @@ const ArticulosTab = ({
       if (!data.success) {
         throw new Error(data.error || "Error al buscar productos");
       }
-
+      
       // Mapear la respuesta del API a la estructura esperada y filtrar ya seleccionados
       const productosFormateados = data.products
         .filter(
+          // Usar HubSpot product id (siempre único) para excluir ya seleccionados.
+          // Antes se usaba hs_sku, lo que causaba que null === null filtrara todo.
           (producto) =>
-            !articulosSeleccionados.find((art) => art.id === producto.hs_sku)
+            !articulosSeleccionados.find((art) => art.id === producto.id)
         )
         .map((producto) => ({
-          id: producto.hs_sku,
+          id: producto.id,        // HubSpot product ID (siempre único)
+          hs_sku: producto.hs_sku || "", // SKU separado para el payload al guardar
           nombre: producto.name,
           codigoProveedor: producto.codigo_proveedor || "",
           pesoNeto: producto.peso_neto || 0,
           cajas20: 0,
           cajas40: 0,
-          pesoCaja: producto.peso_venta || 0,
           proveedor: producto.cardcode || "",
           lugarCarga: "",
           puertoSalida: "",
           // Guardamos datos adicionales del producto
           description: producto.description,
           barcode: producto.barcode,
-          tipo_bulto_venta: producto.tipo_bulto_venta,
-          volumen_venta: producto.volumen_venta,
           // Container capacity fields
           unidades_cam16: producto.unidades_cam16 || 0,
           unidades_d20dr: producto.unidades_d20dr || 0,
           unidades_d40dr: producto.unidades_d40dr || 0,
-          unidades_d20w: producto.unidades_d20w || 0,
-          unidades_d40hd: producto.unidades_d40hd || 0,
-          unidades_d45hd: producto.unidades_d45hd || 0,
-          unidades_d45w: producto.unidades_d45w || 0,
           unidades_palet: producto.unidades_palet || 0,
-          unidades_r20rf: producto.unidades_r20rf || 0,
-          unidades_r40rf: producto.unidades_r40rf || 0,
           unidades_tra80: producto.unidades_tra80 || 0,
         }));
+      console.log("[buscarProductos] Cardcodes recibidos:", productosFormateados);
 
       setProductosFiltrados(productosFormateados);
     } catch (err) {
@@ -421,16 +412,33 @@ const ArticulosTab = ({
     );
 
     // Auto-añadir proveedor SOLO si NO estamos en carga inicial
-    if (autoAddProviderEnabledRef.current && producto.proveedor) {
+    // codigoProveedor = cardcode del proveedor habitual (ej. "P0670")
+    // proveedor/cardcode = código interno del artículo (ej. "0303003002-00147")
+    const proveedorCode = producto.codigoProveedor || producto.proveedor;
+    console.log("[AutoSelect] producto seleccionado:", {
+      id: producto.id,
+      nombre: producto.nombre,
+      cardcode: producto.proveedor,
+      codigoProveedor: producto.codigoProveedor,
+      proveedorCode,
+      autoAddEnabled: autoAddProviderEnabledRef.current,
+    });
+
+    if (autoAddProviderEnabledRef.current && proveedorCode) {
       const fetchProviderData = async () => {
         try {
-          const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.articles}/provider/${producto.proveedor}`;
+          const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.articles}/provider/${proveedorCode}`;
+          console.log("[AutoSelect] Buscando proveedor en:", url);
           const response = await hubspot.fetch(url, {
             timeout: API_CONFIG.timeout
           });
 
+          console.log("[AutoSelect] Respuesta HTTP:", response.status, response.ok);
+
           if (response.ok) {
             const data = await response.json();
+            console.log("[AutoSelect] Datos proveedor recibidos:", data);
+
             if (data.success && data.provider) {
               // Validar que el proveedor tenga cardcode
               if (
@@ -438,7 +446,7 @@ const ArticulosTab = ({
                 data.provider.cardcode.trim() === ""
               ) {
                 console.warn(
-                  "Proveedor obtenido no tiene cardcode válido, no se agregará automáticamente"
+                  "[AutoSelect] Proveedor obtenido no tiene cardcode válido, no se agregará automáticamente"
                 );
                 return;
               }
@@ -448,7 +456,9 @@ const ArticulosTab = ({
                 const existe = prevProveedores.find(
                   (p) => p.cardcode === data.provider.cardcode
                 );
+                console.log("[AutoSelect] ¿Proveedor ya existe en lista?", !!existe, "| cardcode:", data.provider.cardcode);
                 if (!existe) {
+                  console.log("[AutoSelect] Añadiendo proveedor a la lista:", data.provider.cardcode, data.provider.name);
                   return [
                     ...prevProveedores,
                     {
@@ -461,22 +471,25 @@ const ArticulosTab = ({
                 }
                 return prevProveedores;
               });
+            } else {
+              console.warn("[AutoSelect] Respuesta sin proveedor válido:", data);
             }
           } else {
             console.error(
-              "Error al obtener proveedor:",
+              "[AutoSelect] Error al obtener proveedor:",
               response.status,
               response.statusText
             );
           }
         } catch (err) {
-          console.error("Error al obtener datos del proveedor:", err);
-          // No hacer nada si hay error, el producto ya está en la lista
+          console.error("[AutoSelect] Excepción al obtener datos del proveedor:", err);
         }
       };
 
       // Ejecutar en segundo plano
       fetchProviderData();
+    } else {
+      console.warn("[AutoSelect] Condición no cumplida — autoAddEnabled:", autoAddProviderEnabledRef.current, "| proveedorCode:", proveedorCode);
     }
   };
 
@@ -489,13 +502,6 @@ const ArticulosTab = ({
     // Limpiar búsqueda de artículos
     setSearchValue("");
     setProductosFiltrados([]);
-
-    // Si no quedan artículos, limpiar también los proveedores
-    if (nuevosArticulos.length === 0) {
-      setProveedoresSeleccionados([]);
-      setProveedorSearchValue("");
-      setProveedoresFiltrados([]);
-    }
   };
 
   // Función para buscar proveedores en la sección de proveedores
@@ -625,7 +631,7 @@ const ArticulosTab = ({
       // Construir el payload con el nuevo formato
       const payload = {
         line_items: articulosSeleccionados.map((art) => ({
-          hs_sku: art.id, // art.id contiene el hs_sku del producto
+          id: art.id, // HubSpot product object ID
           // Si el artículo tiene margen_unitario, usarlo; sino usar el margen del cliente
           margen_unitario: art.margen_unitario !== null && art.margen_unitario !== undefined
             ? art.margen_unitario / 100 // Convertir a decimal
@@ -768,7 +774,6 @@ const ArticulosTab = ({
       <Heading>Selección de Artículos</Heading>
 
       <Flex direction="column" gap="medium">
-        {/* Sección de búsqueda */}
         <Text>Busque y seleccione los productos para la cotización:</Text>
 
         <Flex direction="row" gap="small" align="end">
@@ -776,7 +781,7 @@ const ArticulosTab = ({
             <SearchInput
               name="buscar-articulo"
               label="Buscar Artículo"
-              placeholder="Ej: Vino Tinto, Vino Blanco..."
+              placeholder=""
               value={searchValue}
               onChange={(value) => setSearchValue(value)}
               description="Busque productos por nombre"
@@ -784,7 +789,6 @@ const ArticulosTab = ({
           </Box>
         </Flex>
 
-        {/* Mostrar error si existe */}
         {error && (
           <Alert
             title={submitting ? "Error al guardar" : "Error"}
@@ -794,7 +798,6 @@ const ArticulosTab = ({
           </Alert>
         )}
 
-        {/* Mostrar loading spinner durante búsqueda */}
         {loading && searchValue && (
           <Flex direction="row" align="center" gap="small">
             <LoadingSpinner size="xs" />
@@ -802,7 +805,6 @@ const ArticulosTab = ({
           </Flex>
         )}
 
-        {/* Mostrar resultados de búsqueda */}
         {!loading && searchValue && productosFiltrados.length > 0 && (
           <Box>
             <Text format={{ fontWeight: "bold" }}>
@@ -863,7 +865,6 @@ const ArticulosTab = ({
             </Text>
           )}
 
-        {/* Tabla de artículos seleccionados */}
         <Heading>Artículos Seleccionados</Heading>
 
         {tipoContenedorOptions &&
@@ -935,7 +936,6 @@ const ArticulosTab = ({
 
         <Divider size="medium" />
 
-        {/* Sección de Proveedores */}
         <Heading>Selección de Proveedores</Heading>
 
         {articulosSeleccionados.length === 0 ? (
@@ -955,7 +955,7 @@ const ArticulosTab = ({
                 <SearchInput
                   name="buscar-proveedor"
                   label="Buscar Proveedor"
-                  placeholder="Buscar por nombre o cardcode..."
+                  placeholder=""
                   value={proveedorSearchValue}
                   onChange={(value) => setProveedorSearchValue(value)}
                   description="Busque proveedores por nombre o código"
@@ -975,7 +975,6 @@ const ArticulosTab = ({
             </Flex>
           )}
 
-        {/* Resultados de búsqueda de proveedores */}
         {articulosSeleccionados.length > 0 &&
           !proveedorLoading &&
           proveedorSearchValue &&
@@ -1031,7 +1030,6 @@ const ArticulosTab = ({
 
         {articulosSeleccionados.length > 0 && (
           <>
-            {/* Tabla de proveedores seleccionados */}
             <Heading>Proveedores Seleccionados</Heading>
 
             {proveedoresSeleccionados.length === 0 ? (
@@ -1077,7 +1075,6 @@ const ArticulosTab = ({
               </Table>
             )}
 
-            {/* Alerta de múltiples proveedores */}
             {proveedoresSeleccionados.length > 1 && (
               <>
                 <Divider size="medium" />
@@ -1113,7 +1110,6 @@ const ArticulosTab = ({
           </>
         )}
 
-        {/* Selector de Localidad de Carga */}
         <Select
           label="Localidad de Carga"
           name="lugar-carga"
@@ -1122,7 +1118,7 @@ const ArticulosTab = ({
               ? "Con múltiples proveedores, la mercancía debe salir del Almacén PROEX"
               : "Seleccione el lugar desde donde se cargará la mercancía"
           }
-          placeholder="Seleccione una localidad..."
+          placeholder="Seleccionar..."
           required={true}
           value={lugarCarga}
           onChange={(value) => setLugarCarga(value)}
@@ -1135,9 +1131,6 @@ const ArticulosTab = ({
           }
         />
 
-        <Divider size="medium" />
-
-        {/* Mensaje de validación para continuar */}
         {(articulosSeleccionados.length === 0 ||
           proveedoresSeleccionados.length === 0) && (
           <Alert title="Información Requerida" variant="warning">
@@ -1152,7 +1145,6 @@ const ArticulosTab = ({
           </Alert>
         )}
 
-        {/* Botones de navegación */}
         <ButtonRow>
           <Button
             variant="secondary"

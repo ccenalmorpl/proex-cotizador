@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Ponudba je bila ustvarjena",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Ponudba ustvarjena:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Besedilo ustvarjene ponudbe",
+    "description" : "",
+    "placeholders" : null
+  }
+}

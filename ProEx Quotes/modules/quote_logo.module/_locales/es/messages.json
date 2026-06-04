@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Imagen del logotipo de la empresa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Esto no se aplica si se anula el logotipo predeterminado",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Altura máxima del logotipo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "De forma predeterminada, en tus presupuestos se mostrará el logotipo de la empresa en los valores predeterminados de la cuenta o en las páginas web, en caso de que los logotipos estén configurados. Puedes optar por anular estos utilizando el botón de más abajo.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logotipo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Anular el logotipo predeterminado de esta plantilla",
+    "description" : "",
+    "placeholders" : null
+  }
+}

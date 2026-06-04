@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Orçamento expira em",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Este orçamento expira em",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Texto de orçamento expira em",
+    "description" : "",
+    "placeholders" : null
+  }
+}

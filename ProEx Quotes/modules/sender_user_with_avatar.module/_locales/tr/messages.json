@@ -1,0 +1,22 @@
+{
+  "include_hubspot_avatar.label" : {
+    "message" : "Gönderenin HubSpot avatarını dahil edin",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Gönderen kullanıcı",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.default" : {
+    "message" : "{{ ptoken_sender_full_name }} - {{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }} {{ personalization_token('template_data.quote.hs_sender_company_name', '') }}",
+    "description" : "",
+    "placeholders" : null
+  },
+  "sender_information.label" : {
+    "message" : "Gönderen bilgileri",
+    "description" : "",
+    "placeholders" : null
+  }
+}

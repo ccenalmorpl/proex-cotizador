@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "見積もりの失効",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "この見積もりの失効日：",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "見積もりの有効期限テキスト",
+    "description" : "",
+    "placeholders" : null
+  }
+}

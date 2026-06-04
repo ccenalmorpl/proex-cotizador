@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Afbeelding van bedrijfslogo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Dit geldt niet wanneer het standaardlogo wordt overschreven",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Max. hoogte logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Op je prijsopgaven wordt standaard het bedrijfslogo van je accountgegevens of websitepagina's weergegeven, als je deze hebt ingesteld. Je kunt ervoor kiezen dit te overschrijven met behulp van de schakeloptie hieronder.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Standaardlogo in deze sjabloon overschrijven",
+    "description" : "",
+    "placeholders" : null
+  }
+}

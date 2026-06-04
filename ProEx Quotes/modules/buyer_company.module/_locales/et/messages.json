@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Ostja ettevõte",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Ostja ettevõtte põhiaadress",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Ostja ettevõtte linn, osariik ja suunakood",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Ostja ettevõtte riik",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Ostja ettevõtte nimi",
+    "description" : "",
+    "placeholders" : null
+  }
+}

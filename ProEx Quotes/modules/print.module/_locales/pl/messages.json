@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Wydrukuj wycenę",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Tekst przycisku",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Drukuj",
+    "description" : "",
+    "placeholders" : null
+  }
+}

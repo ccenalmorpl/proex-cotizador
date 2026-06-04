@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "견적서 인쇄",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "버튼 텍스트",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "인쇄",
+    "description" : "",
+    "placeholders" : null
+  }
+}

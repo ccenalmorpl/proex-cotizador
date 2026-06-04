@@ -1,0 +1,62 @@
+{
+  "name": {
+    "message": "ערכת נושא \"הצעות מחיר\" ב-CMS",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.label": {
+    "message": "צבעים גלובליים",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.primary_color.label": {
+    "message": "צבע עיקרי",
+    "description": "",
+    "placeholders": null
+  },
+  "global_colors.secondary_color.label": {
+    "message": "צבע משני",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.label": {
+    "message": "גופנים גלובליים",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.primary_font.label": {
+    "message": "גופן עיקרי",
+    "description": "",
+    "placeholders": null
+  },
+  "global_fonts.secondary_font.label": {
+    "message": "גופן משני",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.label": {
+    "message": "הגדרות לחצן",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_background_color.label": {
+    "message": "צבע רקע של לחצן",
+    "description": "",
+    "placeholders": null
+  },
+  "button_settings.button_font_color.label": {
+    "message": "צבע גופן לחצן",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.label": {
+    "message": "הגדרות כרזה",
+    "description": "",
+    "placeholders": null
+  },
+  "banner_settings.banner_font_color.label": {
+    "message": "צבע גופן כרזה",
+    "description": "",
+    "placeholders": null
+  }
+}

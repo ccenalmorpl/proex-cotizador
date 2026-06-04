@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "Prindi pakkumus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Nupu tekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Prindi",
+    "description" : "",
+    "placeholders" : null
+  }
+}

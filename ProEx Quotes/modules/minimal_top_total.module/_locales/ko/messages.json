@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "지금 만기",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "이 레이블은 체크아웃 후 남은 결제액이 있을 때 \"견적 합계 텍스트\"를 대체합니다.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "지금 만기 합계 텍스트",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "견적 합계",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "합계",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "총 견적 금액에 해당하는 텍스트",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "견적 합계 텍스트",
+    "description" : "",
+    "placeholders" : null
+  }
+}

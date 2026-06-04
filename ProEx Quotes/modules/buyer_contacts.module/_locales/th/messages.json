@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "ผู้ติดต่อของผู้ซื้อ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "อีเมลติดต่อของผู้ซื้อ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "ชื่อตำแหน่งงานของรายชื่อติดต่อที่เป็นผู้ซื้อ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "ชื่อผู้ติดต่อของผู้ซื้อ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "หมายเลขติดต่อของผู้ซื้อ",
+    "description" : "",
+    "placeholders" : null
+  }
+}

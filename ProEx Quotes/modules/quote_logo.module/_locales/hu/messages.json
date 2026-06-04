@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Vállalat logójának képe",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Az alapértelmezett logó felülbírálásakor ez nem érvényes",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Logó maximális magassága",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Az árajánlatain alapértelmezettként az alapértelmezett fiókban vagy a honlap oldalain megadott vállalati logó lesz látható, amennyiben ezeket beállította. Dönthet úgy, hogy a lenti váltógomb segítségével felülírja ezeket.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logó",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Alapértelmezett logó felülírása ebben a sablonban",
+    "description" : "",
+    "placeholders" : null
+  }
+}

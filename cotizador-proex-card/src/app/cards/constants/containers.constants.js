@@ -1,7 +1,3 @@
-/**
- * Container-related constants
- */
-
 // Container type values (must match HubSpot property values - no spaces)
 export const CONTAINER_TYPES = {
   CAMION_16P: "CAMION16P",
@@ -20,11 +16,6 @@ export const CONTAINER_TYPE_LABELS = {
   TRAILER80: "TRAILER 80",
 };
 
-/**
- * Get display label for a container type
- * @param {string} containerType - Container type value
- * @returns {string} Display label
- */
 export const getContainerTypeLabel = (containerType) => {
   return CONTAINER_TYPE_LABELS[containerType] || containerType;
 };

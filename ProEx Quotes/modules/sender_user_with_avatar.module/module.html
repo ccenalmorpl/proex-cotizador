@@ -1,0 +1,29 @@
+{# Section with sender information, including optional HubSpot avatar, to accompany quote comments #}
+{% from '../../imports/mock_data.html' import SAMPLE_TEMPLATE_DATA as mock_data %}
+{% set QUOTE = template_data.quote || mock_data.quote %}
+{% set HUBSPOT_BASE_URL = template_data.hubspot_base_url || mock_data.hubspot_base_url %}
+{% set IMAGE_ID = "comment-sender-user-avatar" %}
+
+<div class="comments-author__module-wrapper">
+  {{ module.sender_information|render|sanitize_html }}
+  {% if module.include_hubspot_avatar %}
+    <img
+      src="https://static.hsappstatic.net/salesImages/static-1.362/avatars/default-avatar.png"
+      alt="Sender avatar"
+      id="{{ IMAGE_ID|escape_attr }}"
+    />
+  {% endif %}
+</div>
+
+{# DO NOT EDIT - used for sender's HubSpot user avatar #}
+{% require_js position="head" %}
+  <script type="application/json" data-module-instance="user-avatar">
+    {
+      "include_hubspot_avatar": {{ module.include_hubspot_avatar|escapejson }},
+      "hubspot_user_email": "{{ QUOTE.hs_sender_email|escapejson }}",
+      "hubspot_user_name": "{{ format_name(QUOTE.hs_sender_firstname, QUOTE.hs_sender_lastname, false)|escapejson }}",
+      "hubspot_base_url": "{{ HUBSPOT_BASE_URL|escapejson }}",
+      "image_id": "{{ IMAGE_ID|escapejson }}"
+    }
+  </script>
+{% end_require_js %}

@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Şirket logo görüntüsü",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Bu, varsayılan logo geçersiz kılınırken uygulanmaz",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Logo maks. yükseklik",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Varsayılan olarak, tekliflerinizde bunları ayarladıysanız, Hesap Varsayılanları veya Web Sitesi Sayfalarından şirket logosunu gösterecektir. Aşağıdaki seçimi kullanarak bunları geçersiz kılmayı seçebilirsiniz.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Bu şablonda varsayılan logoyu geçersiz kıl",
+    "description" : "",
+    "placeholders" : null
+  }
+}

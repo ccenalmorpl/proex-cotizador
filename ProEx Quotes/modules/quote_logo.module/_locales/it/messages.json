@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Immagine logo azienda",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Non vale quando si sovrascrive il logo predefinito",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Altezza massima logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Per impostazione predefinita, i preventivi mostreranno il logo dell'azienda delle impostazioni predefinite dell'account o delle pagine del sito web, se le hai configurate. Puoi scegliere di sovrascriverle utilizzando il pulsante di attivazione/disattivazione qui sotto.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Sovrascrivi il logo predefinito in questo modello",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "পরিমাণ",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "মন্তব্য",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "এর থেকে মন্তব্য",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "এই কোটের মেয়াদ শেষ হয়েছে।",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "আরও বিশদ তথ্যের জন্য অনুগ্রহ করে আপনার সেলস রিপ্রেজেন্টেটিভের সঙ্গে যোগাযোগ করুন।",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "আইটেম এবং বর্ণনা",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "অন্যান্য ফি",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "প্রস্তুতকারক:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "দাম ",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "প্রোডাক্ট এবং পরিষেবা",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "ক্রয়ের শর্তাবলী",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "পরিমাণ",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "উদ্ধৃতি এর দ্বারা তৈরি:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "সাবটোটাল",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "মোট",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "একক দাম",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "ক্রেডিট মেমো",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "ক্রেডিট মেমোর নম্বর",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "মোট ক্রেডিট মেমো",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "P.O. #",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "ক্রেডিট মেমোর তারিখ",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "সমস্ত ফি {{ currency_code }} এ তালিকাভুক্ত করা হয়েছে এবং বিক্রয় করের সাপেক্ষে (প্রযোজ্য হিসাবে)।",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "ক্রেডিট মেমো লাইন আইটেমের টেবিল",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "পরিমাণ",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "ট্যাক্স",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "ট্যাক্স",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "ট্যাক্স",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "{{ discount_amount }}ছাড়ের পরে",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "চালান",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "চালান নম্বর",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "চালানের তারিখ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "সমস্ত ফি {{ currency_code }} এ তালিকাভুক্ত করা হয়েছে এবং বিক্রয় করের সাপেক্ষে (প্রযোজ্য হিসাবে)।",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "PO নাম্বার ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "চালান লাইন আইটেম টেবিল",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "{{ discount_amount }}ছাড়ের পরে",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "পরিমাণ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "পেমেন্ট ",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "টাকা বাকী আছে",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "ট্যাক্স",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "ট্যাক্স",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "ট্যাক্স",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "একে বিল করা ",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "এখানে পণ্য ডেলিভার করা হবে",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "ট্যাক্সের ঠিকানা",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "নির্দিষ্ট তারিখ",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "ছাড়",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% ছাড়",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% ছাড়",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "সাবটোটাল",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "ভবিষ্যতের পেমেন্ট",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "পরে বকেয়া পেমেন্ট।",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "সারাংশ",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "এই উদ্ধৃতি অনুপলব্ধ।",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "আরও বিশদ তথ্যের জন্য অনুগ্রহ করে আপনার সেলস রিপ্রেজেন্টেটিভের সঙ্গে যোগাযোগ করুন।",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "N/A",
+    "description": "",
+    "placeholders": null
+  }
+}

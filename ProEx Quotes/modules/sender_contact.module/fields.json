@@ -1,0 +1,45 @@
+[ {
+  "id" : "heading_text",
+  "name" : "heading_text",
+  "label" : "Heading content",
+  "required" : false,
+  "locked" : false,
+  "allow_new_line" : false,
+  "display_width" : null,
+  "type" : "text",
+  "default" : "Questions? Contact me"
+}, {
+  "id" : "heading_tag",
+  "name" : "heading_tag",
+  "label" : "Heading level",
+  "help_text" : "Choose a heading level. H1 is the largest, followed by H2, and so on",
+  "required" : false,
+  "locked" : false,
+  "display" : "select",
+  "choices" : [ [ "h1", "H1" ], [ "h2", "H2" ], [ "h3", "H3" ], [ "h4", "H4" ], [ "h5", "H5" ], [ "h6", "H6" ] ],
+  "multiple" : false,
+  "reordering_enabled" : true,
+  "preset" : null,
+  "display_width" : null,
+  "type" : "choice",
+  "default" : "h2"
+}, {
+  "id" : "include_hubspot_avatar",
+  "name" : "include_hubspot_avatar",
+  "label" : "Include sender's HubSpot avatar",
+  "required" : false,
+  "locked" : false,
+  "display" : "checkbox",
+  "display_width" : null,
+  "type" : "boolean",
+  "default" : true
+}, {
+  "id" : "contact_information",
+  "name" : "contact_information",
+  "label" : "Contact information",
+  "required" : true,
+  "locked" : false,
+  "display_width" : null,
+  "type" : "richtext",
+  "default" : "<div><b>{{ ptoken_sender_full_name }}</b></div><div>{{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_email', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_phone', '') }}</div>"
+} ]

@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "見積もり作成",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "見積もり作成日：",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "見積もり作成日テキスト",
+    "description" : "",
+    "placeholders" : null
+  }
+}

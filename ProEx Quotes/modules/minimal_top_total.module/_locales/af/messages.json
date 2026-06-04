@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Nou verskuldig",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Hierdie etiket vervang \"Teks vir totale kwotasie\" wanneer betalings verskuldig is ná betaalpunt.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Teks vir \"totaal nou verskuldig\"",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Totaal",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Die teks vir die totale kwotasiebedrag",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Teks van kwotasietotaal",
+    "description" : "",
+    "placeholders" : null
+  }
+}

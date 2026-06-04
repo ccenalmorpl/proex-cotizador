@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Összeg",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Megjegyzések",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Megjegyzések a következőtől:",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Az árajánlat lejárt.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "További részletekért lépjen kapcsolatba az üzletkötőjével.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Elem és leírás",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Egyéb díjak",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Készítette:",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Ár",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Termékek és szolgáltatások",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Vásárlási feltételek",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Mennyiség",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Árajánlat létrehozója:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Részösszegek",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Összesen",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Egységár",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Kreditmemo",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Kreditmemo száma",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Kreditmemo összesen",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Megrendelési szám",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Kreditmemo dátuma",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Minden díj {{ currency_code }} pénznemben értendő, és forgalmi adót kell felszámítani rá (ha érvényben van ilyen).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Kreditmemo sortételtáblázata",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Menny.",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Adó",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "adó",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Adó",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "{{ discount_amount }} kedvezmény után",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Számla",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Számla száma",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Számla dátuma",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Minden díj {{ currency_code }} pénznemben értendő, és forgalmi adót kell felszámítani rá (ha érvényben van ilyen).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Megrendelési szám",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Számla sortételtáblázata",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "{{ discount_amount }} kedvezmény után",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Menny.",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Fizetés",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Esedékes összeg",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Adó",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "adó",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Adó",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": " Számlafizető",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Szállítás a következőnek:",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Adózási cím",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Az esedékesség dátuma",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "engedmény",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% kedvezmény",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "{{ fee_amount }}% kedvezmény",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Részösszeg",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Jövőbeli fizetések",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Később esedékes fizetések.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_lastname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_firstname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Összefoglalás",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Ez az árajánlat nem elérhető.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "További részletekért lépjen kapcsolatba az üzletkötőjével.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "N.a.",
+    "description": "",
+    "placeholders": null
+  }
+}

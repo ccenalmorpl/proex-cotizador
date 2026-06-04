@@ -1,0 +1,72 @@
+{
+  "contact_information.default" : {
+    "message" : "<div><b>{{ ptoken_sender_full_name }}</b></div><div>{{ personalization_token('template_data.quote.hs_sender_jobtitle', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_email', '') }}</div><div>{{ personalization_token('template_data.quote.hs_sender_phone', '') }}</div>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "contact_information.label" : {
+    "message" : "Kontakinligting",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h1" : {
+    "message" : "O1",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h2" : {
+    "message" : "O2",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h3" : {
+    "message" : "O3",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h4" : {
+    "message" : "O4",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h5" : {
+    "message" : "O5",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.choices.h6" : {
+    "message" : "O6",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.help_text" : {
+    "message" : "Kies 'n opskrifvlak. O1 is die grootste, gevolg deur O2, ensovoorts",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_tag.label" : {
+    "message" : "Opskrifvlak",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_text.default" : {
+    "message" : "Vrae? Kontak my",
+    "description" : "",
+    "placeholders" : null
+  },
+  "heading_text.label" : {
+    "message" : "Opskrifinhoud",
+    "description" : "",
+    "placeholders" : null
+  },
+  "include_hubspot_avatar.label" : {
+    "message" : "Sluit sender se HubSpot-avatar in",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Senderkontak",
+    "description" : "",
+    "placeholders" : null
+  }
+}

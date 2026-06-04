@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "報價建立",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "報價建立日期：",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "報價建立日期文字",
+    "description" : "",
+    "placeholders" : null
+  }
+}

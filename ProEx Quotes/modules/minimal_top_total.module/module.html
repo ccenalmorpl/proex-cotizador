@@ -1,0 +1,15 @@
+{# The total for the quote #}
+{% from '../imports/mock_data.html' import SAMPLE_TEMPLATE_DATA as mock_data %}
+{% set QUOTE = template_data.quote || mock_data.quote %}
+{% set CURRENCY = QUOTE.hs_currency || 'USD' %}
+{% set LOCALE = QUOTE.hs_locale || 'en-US' %}
+{% set ASSOCIATED_OBJECTS = QUOTE.associated_objects %}
+{% set QUOTE_TOTAL = ASSOCIATED_OBJECTS.totals.total_first_payment %}
+{% set FUTURE_CHARGES = ASSOCIATED_OBJECTS.line_items_by_start_date.FUTURE %}
+
+{% set total_text = FUTURE_CHARGES|length > 0 ? module.due_now_total_text : module.total_text %}
+
+<section class="quote-total">
+  <span>{{ total_text|sanitize_html }}</span>
+  <span>{{ QUOTE_TOTAL|format_currency_value(locale=LOCALE, currency=CURRENCY)|sanitize_html }}</span>
+</section>

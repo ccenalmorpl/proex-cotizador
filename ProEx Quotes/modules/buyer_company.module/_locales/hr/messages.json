@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Tvrtka kupca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Glavna adresa tvrtke kupca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Grad i država u kojoj se nalazi tvrtka kupca te poštanski broj",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Zemlja tvrtke kupca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Naziv tvrtke kupca",
+    "description" : "",
+    "placeholders" : null
+  }
+}

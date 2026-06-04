@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Obrázok loga spoločnosti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Nie je to relevantné pri prepise predvoleného loga",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Maximálna výška loga",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Predvolene sa vo vašich cenových ponukách bude zobrazovať logo spoločnosti z Predvolených nastavení účtu alebo webových stránok, ak ich máte nastavené. Tieto nastavenia môžete prepísať pomocou prepínača nižšie.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Prepísať predvolené logo v tejto šablóne",
+    "description" : "",
+    "placeholders" : null
+  }
+}

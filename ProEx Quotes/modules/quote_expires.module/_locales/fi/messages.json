@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Tarjous vanhenee",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Tarjous vanhenee:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Tarjouksen erääntymisen teksti",
+    "description" : "",
+    "placeholders" : null
+  }
+}

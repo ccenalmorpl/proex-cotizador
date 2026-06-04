@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "購入者の会社",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "購入者の会社の主な住所",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "購入者の会社の市区町村、都道府県、郵便番号",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "購入者の会社の国",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "購入者の会社名",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "company_logo_image.label" : {
+    "message" : "Gambar logo perusahaan",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.help_text" : {
+    "message" : "Ini tidak berlaku saat menimpa logo default",
+    "description" : "",
+    "placeholders" : null
+  },
+  "default_logo_max_height.label" : {
+    "message" : "Tinggi maksimal logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Secara default, penawaran Anda akan menampilkan logo perusahaan dari Default Akun atau Halaman Situs Web jika Anda belum mengaturnya. Anda dapat memilih untuk menimpanya menggunakan tombol berikut.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Logo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "override_default_logo.label" : {
+    "message" : "Timpa logo default pada templat ini",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -6,18 +6,15 @@ import logging
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-
 class QuoteTemplate(BaseModel):
     id: str
     name: str
     is_default: bool = False
 
-
 class TemplatesResponse(BaseModel):
     success: bool
     templates: list[QuoteTemplate] = []
     error: str = None
-
 
 @router.get("", response_model=TemplatesResponse)
 async def get_quote_templates():

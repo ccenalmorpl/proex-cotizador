@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Vence ahora",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Esta etiqueta reemplaza \"Texto de total de la cotización\" cuando hay pagos vencidos después del pago.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Texto de Total por pagar ahora",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "El texto para el monto total de la cotización",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Texto de total de la cotización",
+    "description" : "",
+    "placeholders" : null
+  }
+}

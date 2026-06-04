@@ -1,0 +1,17 @@
+{
+  "button_text.default" : {
+    "message" : "พิมพ์ใบเสนอราคา",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "ข้อความบนปุ่ม",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "พิมพ์",
+    "description" : "",
+    "placeholders" : null
+  }
+}

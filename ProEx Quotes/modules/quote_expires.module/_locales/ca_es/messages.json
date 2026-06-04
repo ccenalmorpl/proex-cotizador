@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "El pressupost caduca",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Data de caducitat de la cotització:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Text de la data de caducitat de la cotització",
+    "description" : "",
+    "placeholders" : null
+  }
+}

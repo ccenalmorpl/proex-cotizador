@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Köparens kontakter",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_email.label" : {
+    "message" : "Köparens kontakt-e-post",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_job_title.label" : {
+    "message" : "Yrkestitel på köparkontakt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_name.label" : {
+    "message" : "Köparens kontaktnamn",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_contact_phone.label" : {
+    "message" : "Köparens kontaktnummer",
+    "description" : "",
+    "placeholders" : null
+  }
+}

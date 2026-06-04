@@ -1,0 +1,27 @@
+{
+  "name" : {
+    "message" : "Kjøperselskap",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_address.label" : {
+    "message" : "Kjøperselskapets hovedadresse",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_city_state_zip.label" : {
+    "message" : "Kjøperselskapets by, stat og postnummer",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_country.label" : {
+    "message" : "Landet til kjøper-selskapet",
+    "description" : "",
+    "placeholders" : null
+  },
+  "show_company_name.label" : {
+    "message" : "Kjøperselskapets navn",
+    "description" : "",
+    "placeholders" : null
+  }
+}

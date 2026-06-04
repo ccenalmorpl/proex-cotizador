@@ -1,0 +1,37 @@
+{
+  "due_now_total_text.default" : {
+    "message" : "Mokėjimo terminas suėjęs",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.inline_help_text" : {
+    "message" : "Ši žyma keičia elementą „Pasiūlymo bendrosios sumos tekstas“, kai mokėjimai turi būti atliekami po pirkimo užbaigimo.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "due_now_total_text.label" : {
+    "message" : "Mokėtinos bendrosios sumos tekstas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Quote total",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.default" : {
+    "message" : "Iš viso",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.inline_help_text" : {
+    "message" : "Pasiūlymo bendrosios sumos tekstas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "total_text.label" : {
+    "message" : "Pasiūlymo bendrosios sumos tekstas",
+    "description" : "",
+    "placeholders" : null
+  }
+}

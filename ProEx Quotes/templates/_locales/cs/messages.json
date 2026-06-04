@@ -1,0 +1,282 @@
+{
+  "amount": {
+    "message": "Částka",
+    "description": "",
+    "placeholders": null
+  },
+  "comments": {
+    "message": "Komentáře",
+    "description": "",
+    "placeholders": null
+  },
+  "comments_from": {
+    "message": "Komentáře od",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_title": {
+    "message": "Tato nabídka již není aktuální.",
+    "description": "",
+    "placeholders": null
+  },
+  "expired_subtitle": {
+    "message": "Další podrobnosti si můžete vyžádat od prodejního zástupce.",
+    "description": "",
+    "placeholders": null
+  },
+  "item_and_description": {
+    "message": "Položka a popis",
+    "description": "",
+    "placeholders": null
+  },
+  "other_fees": {
+    "message": "Jiné poplatky",
+    "description": "",
+    "placeholders": null
+  },
+  "prepared_by": {
+    "message": "Připravil uživatel",
+    "description": "",
+    "placeholders": null
+  },
+  "price": {
+    "message": "Cena",
+    "description": "",
+    "placeholders": null
+  },
+  "products_and_services": {
+    "message": "Produkty a služby",
+    "description": "",
+    "placeholders": null
+  },
+  "purchase_terms": {
+    "message": "Podmínky nákupu",
+    "description": "",
+    "placeholders": null
+  },
+  "quantity": {
+    "message": "Množství",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_created_by": {
+    "message": "Nabídku vytvořil uživatel:",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotals": {
+    "message": "Mezisoučty",
+    "description": "",
+    "placeholders": null
+  },
+  "total": {
+    "message": "Celkem",
+    "description": "",
+    "placeholders": null
+  },
+  "unit_price": {
+    "message": "Jednotková cena",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo": {
+    "message": "Dobropis",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_number": {
+    "message": "Číslo dobropisu",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_total": {
+    "message": "Celková částka dobropisu",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_purchase_order_number": {
+    "message": "Č. objednávky",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_date": {
+    "message": "Datum dobropisu",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_legal_disclaimer": {
+    "message": "Všechny poplatky jsou uvedeny v {{ currency_code }} a podléhají dani z prodeje (je-li to relevantní).",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_label": {
+    "message": "Tabulka položek řádku dobropisu",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_line_item_quantity": {
+    "message": "Množství",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_header": {
+    "message": "Daň",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_column_default_value": {
+    "message": "daň",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_tax_total_label": {
+    "message": "Daň",
+    "description": "",
+    "placeholders": null
+  },
+  "creditMemo_after_discount": {
+    "message": "po slevě {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice": {
+    "message": "Faktura",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_number": {
+    "message": "Číslo faktury",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_date": {
+    "message": "Datum faktury",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_legal_disclaimer": {
+    "message": "Všechny poplatky jsou uvedeny v {{ currency_code }} a podléhají dani z prodeje (je-li to relevantní).",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_purchase_order_number": {
+    "message": "Číslo objednávky",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_label": {
+    "message": "Tabulka řadových položek faktury",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_after_discount": {
+    "message": "po slevě {{ discount_amount }}",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_line_item_quantity": {
+    "message": "Množství",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_payment": {
+    "message": "Platba",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_balance_due": {
+    "message": "Zůstatek k úhradě",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_header": {
+    "message": "Daň",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_column_default_value": {
+    "message": "daň",
+    "description": "",
+    "placeholders": null
+  },
+  "invoice_tax_total_label": {
+    "message": "Daň",
+    "description": "",
+    "placeholders": null
+  },
+  "bill_to": {
+    "message": "Příjemce faktury",
+    "description": "",
+    "placeholders": null
+  },
+  "ship_to": {
+    "message": "Příjemce zásilky",
+    "description": "",
+    "placeholders": null
+  },
+  "tax_address": {
+    "message": "Adresa pro daňové účely",
+    "description": "",
+    "placeholders": null
+  },
+  "due_date": {
+    "message": "Termín",
+    "description": "",
+    "placeholders": null
+  },
+  "discount": {
+    "message": "sleva",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount": {
+    "message": "{{ fee_amount }}% sleva",
+    "description": "",
+    "placeholders": null
+  },
+  "percent_discount_off": {
+    "message": "Sleva {{ fee_amount }} %",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal": {
+    "message": "Mezisoučet",
+    "description": "",
+    "placeholders": null
+  },
+  "future_charges": {
+    "message": "Budoucí platby",
+    "description": "",
+    "placeholders": null
+  },
+  "future_payments_subheading": {
+    "message": "Platby, které jsou splatné později.",
+    "description": "",
+    "placeholders": null
+  },
+  "sender_contact_name": {
+    "message": "{{ personalization_token('template_data.quote.hs_sender_firstname', '') ~ ' ' ~ personalization_token('template_data.quote.hs_sender_lastname', '') }}",
+    "description": "",
+    "placeholders": null
+  },
+  "subtotal_table_title": {
+    "message": "Souhrn",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_title": {
+    "message": "Tato nabídka není dostupná.",
+    "description": "",
+    "placeholders": null
+  },
+  "quote_unavailable_subtitle": {
+    "message": "Další podrobnosti si můžete vyžádat od prodejního zástupce.",
+    "description": "",
+    "placeholders": null
+  },
+  "not_applicable": {
+    "message": "–",
+    "description": "",
+    "placeholders": null
+  }
+}

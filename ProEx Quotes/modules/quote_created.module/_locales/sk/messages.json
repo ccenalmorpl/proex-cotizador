@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Dátum vytvorenia cenovej ponuky",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Dátum vytvorenia cenovej ponuky:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Text dátumu vytvorenia cenovej ponuky",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Quote expires",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.default" : {
+    "message" : "Строк дії цієї цінової пропозиції завершується",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_expires_text.label" : {
+    "message" : "Текст строку дії цінової пропозиції",
+    "description" : "",
+    "placeholders" : null
+  }
+}

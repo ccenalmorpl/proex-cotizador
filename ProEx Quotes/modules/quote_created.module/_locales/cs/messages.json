@@ -1,0 +1,17 @@
+{
+  "name" : {
+    "message" : "Nabídka vytvořena",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.default" : {
+    "message" : "Nabídka vytvořena:",
+    "description" : "",
+    "placeholders" : null
+  },
+  "quote_created_text.label" : {
+    "message" : "Text vytvoření nabídky",
+    "description" : "",
+    "placeholders" : null
+  }
+}

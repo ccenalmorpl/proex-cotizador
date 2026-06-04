@@ -1,0 +1,1489 @@
+<!--
+  templateType: quote
+  isAvailableForNewContent: true
+  label: PROEX Commercial Quote
+  screenshotPath: ../images/basic.png
+-->
+
+{% extends './layouts/base.html' %}
+
+{% block stylesheet %}
+  {{ require_css(get_asset_url("../css/basic.css")) }}
+{% endblock stylesheet %}
+
+{% if html_lang_dir == 'dir="rtl"' %}
+  {{ require_css(get_asset_url("../css/rtl-print.css")) }}
+{% endif %}
+
+{% block body %}
+
+{% set SHOW_DEBUG = false %}
+
+{# ===================================================== #}
+{# Helpers: pseudo-parse JSON desde string                 #}
+{# ===================================================== #}
+
+{# Normaliza el JSON si llega con ""{ ... }""              #}
+{% macro normalize_json(raw) %}
+  {% set x = raw|default("")|trim %}
+  {% set starts = x|split('""{') %}
+  {% if starts|length > 1 %}
+    {% set x = x|replace('""{', '{') %}
+  {% endif %}
+  {% if x|split('}""')|length > 1 %}
+    {% set x = x|replace('}""', '}') %}
+  {% endif %}
+  {{ x }}
+{% endmacro %}
+
+{# Extrae valor string: "key": "VALUE" #}
+{% macro json_get_str(raw, key, fallback="") %}
+  {% set t = raw|default("") %}
+  {% set parts = t|split('"' ~ key ~ '": "') %}
+  {% if parts|length > 1 %}
+    {{ parts[1]|split('"')|first }}
+  {% else %}
+    {{ fallback }}
+  {% endif %}
+{% endmacro %}
+
+{# Extrae valor numérico: "key": 123.45 (hasta coma o }) #}
+{% macro json_get_num(raw, key, fallback="0") %}
+  {% set t = raw|default("") %}
+  {% set parts = t|split('"' ~ key ~ '": ') %}
+  {% if parts|length > 1 %}
+    {% set tail = parts[1] %}
+    {% set cut1 = tail|split(',')|first %}
+    {% set cut2 = cut1|split('}')|first %}
+    {{ cut2|trim }}
+  {% else %}
+    {{ fallback }}
+  {% endif %}
+{% endmacro %}
+
+{# Extrae un “sub-objeto” {...} tras "key": { ... }       #}
+{% macro json_get_obj(raw, key) %}
+  {% set t = raw|default("") %}
+  {% set parts = t|split('"' ~ key ~ '": {') %}
+  {% if parts|length > 1 %}
+    {% set rest = parts[1] %}
+    {% set obj_body = rest|split('}, "')|first %}
+    {{ '{' ~ obj_body ~ '}' }}
+  {% else %}
+    {{ '{}' }}
+  {% endif %}
+{% endmacro %}
+
+{# Fechas ISO o timestamp(ms/s) — HubSpot envía timestamps como string #}
+{% macro format_date(value) %}
+  {% if value %}
+    {% set s = value|string|trim %}
+    {% set as_int = s|int(0) %}
+    {% if as_int > 9999999999 %}
+      {# Timestamp en milisegundos (13 dígitos) — datetimeformat espera ms #}
+      {{ as_int|datetimeformat("%d/%m/%Y", "UTC") }}
+    {% elif as_int > 0 %}
+      {# Timestamp en segundos (10 dígitos) — convertir a ms #}
+      {{ (as_int * 1000)|datetimeformat("%d/%m/%Y", "UTC") }}
+    {% else %}
+      {# Cadena ISO: "2025-12-31" o "2025-12-31T..." #}
+      {% set date_only = s|split('T')|first %}
+      {% set parts = date_only|split('-') %}
+      {% if parts|length == 3 %}
+        {{ parts[2] }}/{{ parts[1] }}/{{ parts[0] }}
+      {% else %}
+        {{ s }}
+      {% endif %}
+    {% endif %}
+  {% else %}
+    N/A
+  {% endif %}
+{% endmacro %}
+
+{# Formateo de moneda — produce "1,234.56" (estilo en-US). La conversión a
+   formato es-ES/fr-FR se hace tras la llamada con el macro `loc()`. #}
+{% macro format_money(value, currency_symbol="", decimals=2) %}
+  {% if value %}
+    {% set num_value = value|string|trim|float %}
+    {% if currency_symbol %}
+      {{ num_value|round(decimals)|format_number(decimals) }} {{ currency_symbol }}
+    {% else %}
+      {{ num_value|round(decimals)|format_number(decimals) }}
+    {% endif %}
+  {% else %}
+    {% set zero_str = "0." ~ ("0" * decimals) %}
+    {% if currency_symbol %}
+      {{ zero_str }} {{ currency_symbol }}
+    {% else %}
+      {{ zero_str }}
+    {% endif %}
+  {% endif %}
+{% endmacro %}
+
+{# ===================================================== #}
+{# Datos HubSpot (asociaciones)                            #}
+{# ===================================================== #}
+{% set quote = template_data.quote %}
+{% set associated = quote.associated_objects if quote and quote.associated_objects else none %}
+{% set deal = associated.deal if associated else none %}
+
+{% set company = associated.company if associated else none %}
+{% set contact = associated.contacts[0] if (associated and associated.contacts) else none %}
+
+{# ===================================================== #}
+{# Deal.quote_data_payload (solo para lo que NO está en HS) #}
+{# ===================================================== #}
+{% set payload_raw = deal.quote_data_payload if (deal and deal.quote_data_payload) else "" %}
+{% set payload_json = normalize_json(payload_raw) %}
+{% set dealId = deal.referencia_cotizacion %}
+
+{# Parse top-level desde payload (fallbacks) #}
+{% set header_raw = json_get_obj(payload_json, "header") %}
+{% set precios_raw = json_get_obj(payload_json, "precios") %}
+{% set estadisticas_raw = json_get_obj(payload_json, "estadisticas") %}
+{% set textos_raw = json_get_obj(payload_json, "textos") %}
+
+{# ===================================================== #}
+{# VARIABLES: preferir asociaciones (deal/company/quote)    #}
+{# ===================================================== #}
+
+{# Quote #}
+{% set offerNumber = json_get_str(header_raw, "offerNumber", "N/A") %}
+{% if deal and deal.hs_object_id %}{% set offerNumber = deal.hs_object_id %}{% endif %}
+{% set currency = quote.hs_currency|default(json_get_str(header_raw, "currency", "€")) %}
+
+{# Deal (preferente) #}
+{% set destinationPort = deal.puerto_destino|default(json_get_str(header_raw, "destinationPort", "")|trim) %}
+{% set terms = deal.tipo_de_venta|default(quote.hs_terms|default(json_get_str(header_raw, "terms", "EXW"))) %}
+{% set container = deal.tipo_contenedor|default(json_get_str(header_raw, "container", "N/A")) %}
+{% set textoBaseOferta = deal.texto_base_oferta|default(json_get_str(textos_raw, "textoBaseOferta", "")) %}
+{% set textoFormaPago = deal.texto_forma_pago|default(json_get_str(textos_raw, "textoFormaPago", "")) %}
+{% set textoBanco = deal.texto_banco|default(json_get_str(textos_raw, "textoBanco", "")) %}
+{# Fecha cabecera: quote.hs_createdate como default #}
+{% set header_date = quote.hs_createdate|default(json_get_str(header_raw, "date", "")) %}
+
+{# Estos 4 normalmente NO están en asociaciones: dejamos payload como fallback #}
+{% set vessel = json_get_str(header_raw, "vessel", "")|trim %}
+{% set sealNumber = json_get_str(header_raw, "sealNumber", "")|trim %}
+{% set etd = json_get_str(header_raw, "etd", "")|trim %}
+{% set eta = json_get_str(header_raw, "eta", "")|trim %}
+
+{# Company (cliente) #}
+{% set cliente_nombreEmpresa = company.name|default("N/A") %}
+
+{# País: preferimos el label del custom property (más “humano”), si existe #}
+{% set cliente_pais = "N/A" %}
+{% if company and company.custom_properties and company.custom_properties.pais_de_operaciones and company.custom_properties.pais_de_operaciones.label %}
+  {% set cliente_pais = company.custom_properties.pais_de_operaciones.label %}
+{% elif company and company.country %}
+  {% set cliente_pais = company.country %}
+{% else %}
+  {# fallback al payload #}
+  {% set cliente_pais = json_get_str(json_get_obj(payload_json, "cliente"), "pais", "N/A") %}
+{% endif %}
+
+{# ===================================================== #}
+{# Precios/Stats: siguen viniendo del payload (por ahora)   #}
+{# ===================================================== #}
+{% set precios_totalEXW = json_get_num(precios_raw, "totalEXW", "0")|string|trim|float %}
+{% set precios_fobExpenses = json_get_num(precios_raw, "fobExpenses", "0")|string|trim|float %}
+{% set precios_totalFOB = json_get_num(precios_raw, "totalFOB", "0")|string|trim|float %}
+{% set precios_seafreightRate = json_get_num(precios_raw, "seafreightRate", "0")|string|trim|float %}
+{% set precios_totalCFR = json_get_num(precios_raw, "totalCFR", "0")|string|trim|float %}
+{% set precios_insurance = json_get_num(precios_raw, "insurance", "0")|string|trim|float %}
+{% set precios_totalCIF = json_get_num(precios_raw, "totalCIF", "0")|string|trim|float %}
+{% set precios_totalDAP_TERRESTRE = json_get_num(precios_raw, "totalDAP_TERRESTRE", "0")|string|trim|float %}
+{% set precios_totalDAP_MARITIMO  = json_get_num(precios_raw, "totalDAP_MARITIMO",  "0")|string|trim|float %}
+
+{% set stats_totalColis = json_get_num(estadisticas_raw, "totalColis", "0") %}
+{% set stats_netWeightKg = json_get_num(estadisticas_raw, "netWeightKg", "0") %}
+{% set stats_grossWeightKg = json_get_num(estadisticas_raw, "grossWeightKg", "0") %}
+{% set stats_containerType = json_get_str(estadisticas_raw, "containerType", "N/A") %}
+{% set stats_filledUpTo = json_get_num(estadisticas_raw, "filledUpTo", "0") %}
+{% set stats_numContainers = json_get_num(estadisticas_raw, "numContainers", "0") %}
+{% set stats_totalEuros = json_get_num(estadisticas_raw, "totalEuros", "0")|string|trim|float %}
+
+{# ===================================================== #}
+{# Tipo de cotización: Nacional vs. Exportación           #}
+{# Nacional si deal.tipo_de_venta == "DAP_TERRESTRE"      #}
+{# ===================================================== #}
+{% set quote_type = company.custom_properties.tipo_cliente.internal if company and company.custom_properties else none %}
+{% set is_nacional = (quote_type == "nacional") %}
+
+{# ===================================================== #}
+{# Idioma: Español / Inglés (default) / Francés          #}
+{# deal.preprints_language: "Español (por defecto)"       #}
+{#                          "Inglés"                      #}
+{#                          "Francés"                     #}
+{# ===================================================== #}
+{% set _lang_raw = deal.preprints_language|default("") %}
+{% if _lang_raw == "Español (por defecto)" or _lang_raw == "ES"%}
+  {% set lbl_invoice_title   = "Factura proforma Nº:" %}
+  {% set lbl_ref             = "REF:" %}
+  {% set lbl_number          = "Número:" %}
+  {% set lbl_date            = "Fecha:" %}
+  {% set lbl_dest_port       = "Puerto de Destino:" %}
+  {% set lbl_terms           = "Términos:" %}
+  {% set lbl_container_hdr   = "Contenedor:" %}
+  {% set lbl_etd             = "ETD:" %}
+  {% set lbl_booking         = "RESERVA:" %}
+  {% set lbl_vessel          = "Buque:" %}
+  {% set lbl_currency        = "Moneda:" %}
+  {% set lbl_seal            = "Precinto N°:" %}
+  {% set lbl_eta             = "ETA:" %}
+  {% set lbl_products_title  = "Productos" %}
+  {% set lbl_col_code        = "CÓDIGO" %}
+  {% set lbl_col_item        = "ARTÍCULO" %}
+  {% set lbl_col_colis       = "BULTOS" %}
+  {% set lbl_col_weight      = "PESO" %}
+  {% set lbl_col_qty         = "CANT." %}
+  {% set lbl_col_unit        = "UNIDAD" %}
+  {% set lbl_col_price       = "PRECIO" %}
+  {% set lbl_col_total       = "TOTAL" %}
+  {% set lbl_unit_case       = "CAJA" %}
+  {% set lbl_tax_base        = "TOTAL € BASE IMPONIBLE" %}
+  {% set lbl_vat             = "TOTAL € IVA" %}
+  {% set lbl_total_amount    = "TOTAL € IMPORTE" %}
+  {% set lbl_price_exw       = "PRECIO EXW" %}
+  {% set lbl_fob_expenses    = "GASTOS FOB" %}
+  {% set lbl_total_fob       = "TOTAL FOB" %}
+  {% set lbl_seafreight      = "FLETE MARÍTIMO" %}
+  {% set lbl_total_cfr       = "TOTAL CFR" %}
+  {% set lbl_insurance       = "SEGURO" %}
+  {% set lbl_total_cif       = "TOTAL CIF" %}
+  {% set lbl_total_colis     = "TOTAL BULTOS" %}
+  {% set lbl_net_weight      = "PESO NETO KG." %}
+  {% set lbl_gross_weight    = "PESO BRUTO KG." %}
+  {% set lbl_vgm             = "VGM KG." %}
+  {% set lbl_container_type  = "TIPO CONTENEDOR" %}
+  {% set lbl_filled_up_to    = "OCUPACIÓN (%)" %}
+  {% set lbl_num_containers  = "Nº CONTENEDORES" %}
+  {% set lbl_grand_total     = "TOTAL" %}
+  {% set lbl_additional_info = "Información Adicional" %}
+  {% set lbl_payment_terms   = "Forma de Pago" %}
+  {% set lbl_bank_details    = "Datos Bancarios" %}
+  {% set lbl_client_accept   = "Aceptación del Cliente" %}
+  {% set lbl_aseguradora     = "IMPORTANTE: ESTA OPERACIÓN ESTÁ ASEGURADA POR: SOLUNION" %}
+  {% set lbl_page            = "Pág." %}
+{% elif _lang_raw == "Francés" or _lang_raw == "FR" %}
+  {% set lbl_invoice_title   = "Facture pro forma N°:" %}
+  {% set lbl_ref             = "RÉF :" %}
+  {% set lbl_number          = "Numéro :" %}
+  {% set lbl_date            = "Date :" %}
+  {% set lbl_dest_port       = "Port de Destination :" %}
+  {% set lbl_terms           = "Conditions :" %}
+  {% set lbl_container_hdr   = "Conteneur :" %}
+  {% set lbl_etd             = "ETD :" %}
+  {% set lbl_booking         = "RÉSERVATION :" %}
+  {% set lbl_vessel          = "Navire :" %}
+  {% set lbl_currency        = "Devise :" %}
+  {% set lbl_seal            = "Scellé N° :" %}
+  {% set lbl_eta             = "ETA :" %}
+  {% set lbl_products_title  = "Produits" %}
+  {% set lbl_col_code        = "CODE" %}
+  {% set lbl_col_item        = "ARTICLE" %}
+  {% set lbl_col_colis       = "COLIS" %}
+  {% set lbl_col_weight      = "POIDS" %}
+  {% set lbl_col_qty         = "QTÉ" %}
+  {% set lbl_col_unit        = "UNITÉ" %}
+  {% set lbl_col_price       = "PRIX" %}
+  {% set lbl_col_total       = "TOTAL" %}
+  {% set lbl_unit_case       = "CAISSE" %}
+  {% set lbl_tax_base        = "TOTAL € BASE IMPOSABLE" %}
+  {% set lbl_vat             = "TOTAL € TVA" %}
+  {% set lbl_total_amount    = "TOTAL € MONTANT" %}
+  {% set lbl_price_exw       = "PRIX EXW" %}
+  {% set lbl_fob_expenses    = "FRAIS FOB" %}
+  {% set lbl_total_fob       = "TOTAL FOB" %}
+  {% set lbl_seafreight      = "FRET MARITIME" %}
+  {% set lbl_total_cfr       = "TOTAL CFR" %}
+  {% set lbl_insurance       = "ASSURANCE" %}
+  {% set lbl_total_cif       = "TOTAL CIF" %}
+  {% set lbl_total_colis     = "TOTAL COLIS" %}
+  {% set lbl_net_weight      = "POIDS NET KG." %}
+  {% set lbl_gross_weight    = "POIDS BRUT KG." %}
+  {% set lbl_vgm             = "VGM KG." %}
+  {% set lbl_container_type  = "TYPE CONTENEUR" %}
+  {% set lbl_filled_up_to    = "REMPLISSAGE (%)" %}
+  {% set lbl_num_containers  = "Nº CONTENEURS" %}
+  {% set lbl_grand_total     = "TOTAL" %}
+  {% set lbl_additional_info = "Informations Complémentaires" %}
+  {% set lbl_payment_terms   = "Conditions de Paiement" %}
+  {% set lbl_bank_details    = "Coordonnées Bancaires" %}
+  {% set lbl_client_accept   = "Acceptation du Client" %}
+  {% set lbl_aseguradora     = "IMPORTANT : CETTE OPÉRATION EST COUVERTE PAR : SOLUNION" %}
+  {% set lbl_page            = "Page" %}
+{% else %}
+  {# ENGLISH (default: null / "Inglés" / cualquier otro valor) #}
+  {% set lbl_invoice_title   = "Proforma Invoice N°:" %}
+  {% set lbl_ref             = "REF:" %}
+  {% set lbl_number          = "Number:" %}
+  {% set lbl_date            = "Date:" %}
+  {% set lbl_dest_port       = "Destination Port:" %}
+  {% set lbl_terms           = "Terms:" %}
+  {% set lbl_container_hdr   = "Container:" %}
+  {% set lbl_etd             = "ETD:" %}
+  {% set lbl_booking         = "BOOKING:" %}
+  {% set lbl_vessel          = "Vessel:" %}
+  {% set lbl_currency        = "Currency:" %}
+  {% set lbl_seal            = "Seal N°:" %}
+  {% set lbl_eta             = "ETA:" %}
+  {% set lbl_products_title  = "Products" %}
+  {% set lbl_col_code        = "CODE" %}
+  {% set lbl_col_item        = "ITEM" %}
+  {% set lbl_col_colis       = "COLIS" %}
+  {% set lbl_col_weight      = "WEIGHT" %}
+  {% set lbl_col_qty         = "QTY" %}
+  {% set lbl_col_unit        = "UNIT" %}
+  {% set lbl_col_price       = "PRICE" %}
+  {% set lbl_col_total       = "TOTAL" %}
+  {% set lbl_unit_case       = "CASE" %}
+  {% set lbl_tax_base        = "TOTAL € TAX BASE" %}
+  {% set lbl_vat             = "TOTAL € VAT" %}
+  {% set lbl_total_amount    = "TOTAL € AMOUNT" %}
+  {% set lbl_price_exw       = "PRICE EX WORK" %}
+  {% set lbl_fob_expenses    = "FOB EXPENSES" %}
+  {% set lbl_total_fob       = "TOTAL FOB" %}
+  {% set lbl_seafreight      = "SEAFREIGHT RATE" %}
+  {% set lbl_total_cfr       = "TOTAL CFR" %}
+  {% set lbl_insurance       = "INSURANCE" %}
+  {% set lbl_total_cif       = "TOTAL CIF" %}
+  {% set lbl_total_colis     = "TOTAL COLIS" %}
+  {% set lbl_net_weight      = "NET WEIGHT KG." %}
+  {% set lbl_gross_weight    = "GROSS WEIGHT KG." %}
+  {% set lbl_vgm             = "VGM KG." %}
+  {% set lbl_container_type  = "CONTAINER TYPE" %}
+  {% set lbl_filled_up_to    = "FILLED UP TO (%)" %}
+  {% set lbl_num_containers  = "Nº OF CONTAINERS" %}
+  {% set lbl_grand_total     = "TOTAL" %}
+  {% set lbl_additional_info = "Additional Information" %}
+  {% set lbl_payment_terms   = "Payment Terms" %}
+  {% set lbl_bank_details    = "Bank Details" %}
+  {% set lbl_client_accept   = "Client Acceptance" %}
+  {% set lbl_aseguradora     = "IMPORTANT: THIS TRANSACTION IS COVERED BY: SOLUNION" %}
+  {% set lbl_page            = "Page" %}
+{% endif %}
+
+{% if _lang_raw == "Español (por defecto)" or _lang_raw == "ES" %}
+  {% set _quote_lang = "es" %}
+{% elif _lang_raw == "Francés" or _lang_raw == "FR" %}
+  {% set _quote_lang = "fr" %}
+{% else %}
+  {% set _quote_lang = "en" %}
+{% endif %}
+
+{% macro format_money(value, currency_symbol="", decimals=2) %}
+  {% if value %}
+    {% set num_value = value|string|trim|float %}
+    {% set raw = num_value|round(decimals)|format_number(decimals) %}
+  {% else %}
+    {% set raw = "0" %}
+  {% endif %}
+  {% set _parts = raw|split(".") %}
+  {% set _int = _parts[0] %}
+  {% set _ns_pad = namespace(dec=_parts[1] if (_parts|length > 1) else "") %}
+  {% for _i in range(decimals) %}
+    {% if _ns_pad.dec|length < decimals %}
+      {% set _ns_pad.dec = _ns_pad.dec ~ "0" %}
+    {% endif %}
+  {% endfor %}
+  {% set raw = _int ~ "." ~ _ns_pad.dec %}
+  {% if _quote_lang == "es" %}
+    {% set raw = raw|replace(",", "§")|replace(".", ",")|replace("§", ".") %}
+  {% elif _quote_lang == "fr" %}
+    {% set raw = raw|replace(",", "§")|replace(".", ",")|replace("§", " ") %}
+  {% endif %}
+  {% if currency_symbol %}
+    {{ raw }} {{ currency_symbol }}
+  {% else %}
+    {{ raw }}
+  {% endif %}
+{% endmacro %}
+
+{# ns_nac y buckets por tasa se calculan tras `ns_tabla.total` (más abajo)
+   para usar el mismo redondeo `(item.price + delta_por_caja)|round(3) × cajas`
+   que la tabla de productos. #}
+
+{# ===================================================== #}
+{# LineItems - usar asociaciones de HubSpot                #}
+{# Reglas unificadas (igual que backend):                   #}
+{#   Contenedores: hs_product_type = container/contenedor   #}
+{#   Artículos:    hs_product_type = inventory/articulo (y tipo_articulo=fabricante si existe) #}
+{#   Servicios:    hs_product_type = service/servicio/flete #}
+{# ===================================================== #}
+{% set all_line_items = associated.line_items if associated else [] %}
+
+{# Pesos totales calculados desde line_items: peso_bruto/neto son por caja #}
+{# Total = sum(quantity × peso_bruto/neto) para todos los artículos         #}
+{% set ns_w = namespace(gross=0.0, net=0.0) %}
+{% for item in all_line_items %}
+  {% set qty = item.quantity|default(0)|string|trim|float %}
+  {% set ns_w.gross = ns_w.gross + qty * (item.peso_bruto|default(0)|string|trim|float) %}
+  {% set ns_w.net   = ns_w.net   + qty * (item.peso_neto|default(0)|string|trim|float) %}
+{% endfor %}
+{% set computed_grossWeightKg = ns_w.gross|round(2) %}
+{% set computed_netWeightKg   = ns_w.net|round(2) %}
+
+{# Total de cajas de artículos (denominador del recargo por caja) #}
+{% set ns_caj = namespace(total=0.0) %}
+{% for item in all_line_items %}
+  {% set pt = (item.hs_product_type|default(""))|lower %}
+  {% set ta = (item.tipo_articulo|default(""))|lower %}
+  {% if (pt == "inventory" or pt == "non_inventory" or pt == "articulo") and (ta == "" or ta == "fabricante") %}
+    {% set ns_caj.total = ns_caj.total + (item.quantity|default(0)|string|trim|float) %}
+  {% endif %}
+{% endfor %}
+{% set total_cajas_articulos = ns_caj.total %}
+
+{# Contenedores: filtrar por hs_product_type container/contenedor #}
+{% set containers = [] %}
+{% for item in all_line_items %}
+  {% set pt = (item.hs_product_type|default(""))|lower %}
+  {% if pt == "container" or pt == "contenedor" %}
+    {% do containers.append(item) %}
+  {% endif %}
+{% endfor %}
+
+{% set num_containers = containers|length %}
+
+{# ===================================================== #}
+{# DESGLOSES REALES (fuente: deal + line items servicios)  #}
+{# Reemplaza precios_fobExpenses/seafreightRate que vienen #}
+{# del payload con errores de redondeo acumulado.          #}
+{# ===================================================== #}
+{# Servicios desde line items. `total` incluye seguro (mismo criterio que
+   pricing.py:total_servicios). `no_seguro` y `seguro` se mantienen porque
+   real_fobExpenses los usa para los totales de exportación. #}
+{% set ns_serv = namespace(total=0.0, no_seguro=0.0, seguro=0.0) %}
+{% for item in all_line_items %}
+  {% set pt = (item.hs_product_type|default(""))|lower %}
+  {% set ta = (item.tipo_articulo|default(""))|lower %}
+  {% if pt == "service" or pt == "servicio" %}
+    {% set price = item.price|default(0)|string|trim|float %}
+    {% if ta != "transitario" and ta != "comisiones" %}
+      {% set ns_serv.total = ns_serv.total + price %}
+      {% if ta == "seguro" %}
+        {% set ns_serv.seguro = ns_serv.seguro + price %}
+      {% else %}
+        {% set ns_serv.no_seguro = ns_serv.no_seguro + price %}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+{% set precio_origen  = deal.precio_ruta_hasta_puerto_de_salida|default(0)|string|trim|float %}
+{% set precio_destino = deal.precio_ruta_hasta_puerto_destino|default(0)|string|trim|float %}
+{% set nc = num_containers if num_containers and num_containers > 0 else 1 %}
+
+{% set real_fobExpenses    = ns_serv.no_seguro + (precio_origen * nc) %}
+{% set real_seafreightRate = precio_destino * nc %}
+{% set real_insurance      = ns_serv.seguro %}
+
+{# Sobrescribir las variables del payload con los valores reales #}
+{% set precios_fobExpenses    = real_fobExpenses %}
+{% set precios_seafreightRate = real_seafreightRate %}
+{% set precios_insurance      = real_insurance %}
+
+{# Componentes por caja — espejo de pricingParams en NegociacionTab #}
+{% set _nc = num_containers if num_containers and num_containers > 0 else 1 %}
+{% set _tc = total_cajas_articulos if total_cajas_articulos > 0 else 1 %}
+
+{% set hasta_puerto_salida            = (precio_origen  * _nc) / _tc %}
+{% set hasta_puerto_destino           = (precio_destino * _nc) / _tc %}
+{% set hasta_localidad_destino        = hasta_puerto_salida %}
+{% set hasta_puerto_destino_localidad = hasta_puerto_destino %}
+{# ns_serv.total/seguro ya suman los line items duplicados por contenedor;
+   precio_origen/destino vienen del deal y se multiplican por nc aparte. #}
+{% set servicios_por_caja             = ns_serv.total  / _tc %}
+{% set seguro_por_caja                = ns_serv.seguro / _tc %}
+
+{# Comisión cliente — replica pricing.py:_comision_por_caja desde deal.
+   HubL expone props enum como label visible ("importe por negocio", "SÍ - Aumenta precio EXW"),
+   no como internal name. Normalizamos para matchear ambos formatos. #}
+{% set _tipo_com = (deal.tipo_comision|default(""))|lower|trim|replace(" ", "_") %}
+{% set _importe_com = deal.importe_comision|default(0)|string|trim|float %}
+{% set _r_first = (deal.repercutir_a_cliente|default(""))|lower|trim|split(" ")|first|trim %}
+{% set _repercutir = _r_first == "si" or _r_first == "sí" or _r_first == "yes" %}
+{% set _tiene_inter = (deal.codigo_intermediario|default("")|trim) != "" %}
+{% set comision_por_caja = 0.0 %}
+{% if _repercutir and _tiene_inter and _importe_com > 0 and _tc > 0 %}
+  {% if _tipo_com == "importe_por_negocio" %}
+    {% set comision_por_caja = _importe_com / _tc %}
+  {% elif _tipo_com == "importe_por_contenedor" %}
+    {% set comision_por_caja = (_importe_com * _nc) / _tc %}
+  {% elif _tipo_com == "importe_por_cajas" %}
+    {% set comision_por_caja = _importe_com %}
+  {% endif %}
+{% endif %}
+
+{% set _term = (terms|default("EXW"))|upper|replace(" ", "_") %}
+{% if _term == "EXW" %}
+  {% set delta_por_caja = comision_por_caja %}
+{% elif _term == "DAP_TERRESTRE" %}
+  {% set delta_por_caja = hasta_localidad_destino + servicios_por_caja + comision_por_caja %}
+{% elif _term == "FOB" %}
+  {% set delta_por_caja = hasta_puerto_salida + servicios_por_caja - seguro_por_caja + comision_por_caja %}
+{% elif _term == "CFR" %}
+  {% set delta_por_caja = hasta_puerto_salida + servicios_por_caja - seguro_por_caja + hasta_puerto_destino + comision_por_caja %}
+{% elif _term == "CIF" %}
+  {% set delta_por_caja = hasta_puerto_salida + servicios_por_caja + hasta_puerto_destino + comision_por_caja %}
+{% elif _term == "DAP_MARITIMO" %}
+  {% set delta_por_caja = hasta_puerto_salida + servicios_por_caja + hasta_puerto_destino + hasta_puerto_destino_localidad + comision_por_caja %}
+{% else %}
+  {% set delta_por_caja = comision_por_caja %}
+{% endif %}
+
+{# ===================================================== #}
+{# LineItems: construir lista a mostrar                    #}
+{# Multi-contenedor: agregar artículos por hs_sku          #}
+{# Single-contenedor: filtrar artículos directo            #}
+{# ===================================================== #}
+{% if num_containers > 1 %}
+  {# Recoger TODOS los artículos de todos los contenedores #}
+  {% set ns_mc = namespace(raw=[]) %}
+  {% for item in all_line_items %}
+    {% set pt = (item.hs_product_type|default(""))|lower %}
+    {% set ta = (item.tipo_articulo|default(""))|lower %}
+    {% if (pt == "inventory" or pt == "non_inventory" or pt == "articulo") and (ta == "" or ta == "fabricante") %}
+      {% do ns_mc.raw.append(item) %}
+    {% endif %}
+  {% endfor %}
+
+  {# Deduplicar por hs_sku: conservar primera ocurrencia por artículo único #}
+  {% set ns_dedup = namespace(seen="") %}
+  {% set line_items = [] %}
+  {% for item in ns_mc.raw %}
+    {% set sku = item.hs_sku|default("") %}
+    {% set marker = "||" ~ sku ~ "||" %}
+    {% if sku and marker not in ns_dedup.seen %}
+      {% set ns_dedup.seen = ns_dedup.seen ~ marker %}
+      {% do line_items.append(item) %}
+    {% endif %}
+  {% endfor %}
+
+  {# Lista completa (con duplicados) para el sumatorio en render #}
+  {% set all_mc_items = ns_mc.raw %}
+
+{% else %}
+  {# 0 o 1 contenedor: filtrar artículos directamente #}
+  {% set articulos = [] %}
+  {% for item in all_line_items %}
+    {% set pt = (item.hs_product_type|default(""))|lower %}
+    {% set ta = (item.tipo_articulo|default(""))|lower %}
+    {% set is_art = (pt == "inventory" or pt == "non_inventory" or pt == "articulo") and (ta == "" or ta == "fabricante") %}
+    {% if is_art %}
+      {% do articulos.append(item) %}
+    {% endif %}
+  {% endfor %}
+
+  {% set line_items = articulos %}
+  {% set all_mc_items = [] %}
+{% endif %}
+
+{# ===================================================== #}
+{# Totales por tipo de venta — anclados a la suma exacta  #}
+{# de la tabla (= TOTAL del incoterm seleccionado).        #}
+{# Ignora precios_totalEXW/CIF del payload (ruido por      #}
+{# redondeo a 3 decimales en item.price guardado en HS).   #}
+{# ===================================================== #}
+{% set ns_tabla = namespace(total=0.0) %}
+{% if num_containers > 1 %}
+  {% set _tabla_items = all_mc_items %}
+{% else %}
+  {% set _tabla_items = line_items %}
+{% endif %}
+{% for item in _tabla_items %}
+  {% set qty = item.quantity|default(0)|string|trim|float %}
+  {% set lp  = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+  {% set ns_tabla.total = ns_tabla.total + (lp * qty) %}
+{% endfor %}
+
+{# ===================================================== #}
+{# Nacional: buckets por (iva%, recargo%) usando el mismo  #}
+{# redondeo que la tabla — Σ round(precio+delta, 3) × cajas#}
+{# ===================================================== #}
+{% set _ns_iva = namespace(rows=[]) %}
+{% if is_nacional %}
+  {% set _ns_iva.rows = hubdb_table_rows('tipo_de_iva_soportado', "categoria__eq=repercutido") %}
+{% endif %}
+
+{% set _residencia = "NACIONAL" %}
+{% if company and company.custom_properties and company.custom_properties.residennum and company.custom_properties.residennum.internal %}
+  {% set _r = company.custom_properties.residennum.internal|upper %}
+  {% if _r == "EUROPA" or _r == "EXTRANJERO" %}{% set _residencia = _r %}{% endif %}
+{% endif %}
+
+{% set _aplica_re = false %}
+{% if company and company.equ is defined and (company.equ|string|lower) == "si" %}
+  {% set _aplica_re = true %}
+{% endif %}
+
+{# Pase 1: claves únicas "iva|rec" en una lista — sólo list.append, sin mutación de dict #}
+{% set ns_keys = namespace(list=[]) %}
+{% if is_nacional %}
+  {% for item in _tabla_items %}
+    {% set raw_code = (item.tipo_iva_repercutido|default(""))|split(" ")|first|upper %}
+    {% set ns_r = namespace(iva=0.0, rec=0.0, found=false) %}
+    {% for r in _ns_iva.rows %}
+      {% set rc = (r.code|default(""))|upper %}
+      {% set rt = (r.tipo_residencia|default(""))|upper %}
+      {% if not ns_r.found and rc == raw_code and rt == _residencia %}
+        {% set ns_r.iva = r.porcentaje_iva|default(0)|float %}
+        {% set ns_r.rec = r.porcentaje_recargo|default(0)|float %}
+        {% set ns_r.found = true %}
+      {% endif %}
+    {% endfor %}
+    {% if not ns_r.found %}
+      {% set _num = raw_code|replace("R","")|replace("S","")|replace("EI","")|replace("EX","")|trim %}
+      {% set ns_r.iva = _num|float(0) %}
+    {% endif %}
+    {% set iva_pct = ns_r.iva %}
+    {% set rec_pct = ns_r.rec if _aplica_re else 0.0 %}
+    {% set key = (iva_pct|string) ~ "|" ~ (rec_pct|string) %}
+    {% if key not in ns_keys.list %}
+      {% do ns_keys.list.append(key) %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{# Pase 2: por cada clave acumular base/imp en escalares, luego materializar como dict en una lista #}
+{% set ns_buck = namespace(items=[]) %}
+{% for key in ns_keys.list %}
+  {% set parts = key|split("|") %}
+  {% set iva_target = parts[0]|float %}
+  {% set rec_target = parts[1]|float %}
+  {% set ns_b = namespace(base=0.0, imp=0.0) %}
+  {% for item in _tabla_items %}
+    {% set raw_code = (item.tipo_iva_repercutido|default(""))|split(" ")|first|upper %}
+    {% set ns_r = namespace(iva=0.0, rec=0.0, found=false) %}
+    {% for r in _ns_iva.rows %}
+      {% set rc = (r.code|default(""))|upper %}
+      {% set rt = (r.tipo_residencia|default(""))|upper %}
+      {% if not ns_r.found and rc == raw_code and rt == _residencia %}
+        {% set ns_r.iva = r.porcentaje_iva|default(0)|float %}
+        {% set ns_r.rec = r.porcentaje_recargo|default(0)|float %}
+        {% set ns_r.found = true %}
+      {% endif %}
+    {% endfor %}
+    {% if not ns_r.found %}
+      {% set _num = raw_code|replace("R","")|replace("S","")|replace("EI","")|replace("EX","")|trim %}
+      {% set ns_r.iva = _num|float(0) %}
+    {% endif %}
+    {% set iva_pct = ns_r.iva %}
+    {% set rec_pct = ns_r.rec if _aplica_re else 0.0 %}
+
+    {% if iva_pct == iva_target and rec_pct == rec_target %}
+      {% set qty = item.quantity|default(0)|string|trim|float %}
+      {% set lp  = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+      {% set subtotal = lp * qty %}
+      {% set efectivo = iva_target + rec_target %}
+      {% set ns_b.base = ns_b.base + subtotal %}
+      {% set ns_b.imp  = ns_b.imp  + subtotal * efectivo / 100.0 %}
+    {% endif %}
+  {% endfor %}
+  {% do ns_buck.items.append({"iva": iva_target, "rec": rec_target, "base": ns_b.base, "imp": ns_b.imp}) %}
+{% endfor %}
+
+{% set ns_nac = namespace(base=0.0, imp=0.0) %}
+{% for b in ns_buck.items %}
+  {% set ns_nac.base = ns_nac.base + b.base %}
+  {% set ns_nac.imp  = ns_nac.imp  + b.imp %}
+{% endfor %}
+{% set nacional_base = ns_nac.base %}
+{% set nacional_impuestos = ns_nac.imp %}
+{% set nacional_total = nacional_base + nacional_impuestos %}
+
+{% set _t = (terms|default(""))|upper|replace(" ", "_") %}
+{% if _t == "CIF" %}
+  {% set precios_totalCIF = ns_tabla.total %}
+  {% set precios_totalCFR = precios_totalCIF - real_insurance %}
+  {% set precios_totalFOB = precios_totalCFR - real_seafreightRate %}
+  {% set precios_totalEXW = precios_totalFOB - real_fobExpenses %}
+{% elif _t == "CFR" %}
+  {% set precios_totalCFR = ns_tabla.total %}
+  {% set precios_totalCIF = precios_totalCFR + real_insurance %}
+  {% set precios_totalFOB = precios_totalCFR - real_seafreightRate %}
+  {% set precios_totalEXW = precios_totalFOB - real_fobExpenses %}
+{% elif _t == "FOB" %}
+  {% set precios_totalFOB = ns_tabla.total %}
+  {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
+  {% set precios_totalCIF = precios_totalCFR + real_insurance %}
+  {% set precios_totalEXW = precios_totalFOB - real_fobExpenses %}
+{% elif _t == "DAP_MARITIMO" or _t == "DAP_MARÍTIMO" %}
+  {% set precios_totalEXW = ns_tabla.total - real_fobExpenses - (2 * real_seafreightRate) %}
+  {% set precios_totalFOB = precios_totalEXW + real_fobExpenses %}
+  {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
+  {% set precios_totalCIF = precios_totalCFR + real_insurance %}
+{% elif _t == "DAP_TERRESTRE" %}
+  {% set precios_totalEXW = ns_tabla.total - real_fobExpenses %}
+  {% set precios_totalFOB = precios_totalEXW + real_fobExpenses %}
+  {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
+  {% set precios_totalCIF = precios_totalCFR + real_insurance %}
+{% else %}
+  {% set precios_totalEXW = ns_tabla.total %}
+  {% set precios_totalFOB = precios_totalEXW + real_fobExpenses %}
+  {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
+  {% set precios_totalCIF = precios_totalCFR + real_insurance %}
+{% endif %}
+
+{# ===================================================== #}
+{# Modo desagregado: una página por contenedor            #}
+{# deal.desagregar_cotizacion = "true" (HubSpot checkbox) #}
+{# ===================================================== #}
+{% set is_desagregado = deal.desagregar_cotizacion == "true" or deal.desagregar_cotizacion == true %}
+
+<body class="hs-quotes hs-quotes--commercial">
+
+{% if not is_desagregado or num_containers <= 1 %}
+  {# ============================================ #}
+  {# MODO NORMAL: Una sola página de productos    #}
+  {# ============================================ #}
+  <div class="page-1">
+    <div class="commercial-header">
+      <div class="header-title">
+        <h1>{{ lbl_invoice_title }} {{ offerNumber }}</h1>
+      </div>
+      <div class="header-logo">
+        {% module "logo" path="../modules/quote_logo" %}
+      </div>
+    </div>
+
+    <section class="ref-section">
+    {% if dealId %}<h3 class="ref-label">{{ lbl_ref }} {{ dealId }}</h3>{% endif %}
+    <div class="ref-grid{% if is_nacional %} ref-grid--no-border{% endif %}">
+
+      {% if is_nacional %}
+        {# ======= HEADER NACIONAL: Date (izq) | Cliente (der) ======= #}
+        <div class="ref-column">
+          <table class="ref-table">
+            {% if header_date %}<tr><td class="label">{{ lbl_date }}</td><td class="value">{{ format_date(header_date) }}</td></tr>{% endif %}
+          </table>
+        </div>
+
+        <div class="ref-column"></div>
+
+        <div class="ref-column customer-info">
+          <p>{{ cliente_nombreEmpresa }}</p>
+          <p>{{ deal.direccion_fiscal if deal and deal.direccion_fiscal else "" }}</p>
+          {% if deal.cif %}<p>{{ deal.cif }}</p>{% endif %}
+          <p>{{ cliente_pais }}</p>
+        </div>
+
+      {% else %}
+        {# ======= HEADER EXPORTACIÓN ======= #}
+        <div class="ref-column">
+          <table class="ref-table">
+            {% if offerNumber %}<tr><td class="label">{{ lbl_number }}</td><td class="value">{{ offerNumber }}</td></tr>{% endif %}
+            {% if destinationPort %}<tr><td class="label">{{ lbl_dest_port }}</td><td class="value">{{ destinationPort }}</td></tr>{% endif %}
+            {% if terms %}<tr><td class="label">{{ lbl_terms }}</td><td class="value">{{ terms }}</td></tr>{% endif %}
+            {% if container %}<tr><td class="label">{{ lbl_container_hdr }}</td><td class="value">{{ container }}</td></tr>{% endif %}
+            {% if etd %}<tr><td class="label">{{ lbl_etd }}</td><td class="value">{{ format_date(etd) }}</td></tr>{% endif %}
+            {% if sealNumber %}<tr><td class="label">{{ lbl_booking }}</td><td class="value">{{ sealNumber }}</td></tr>{% endif %}
+          </table>
+        </div>
+
+        <div class="ref-column">
+          <table class="ref-table">
+            {% if header_date %}<tr><td class="label">{{ lbl_date }}</td><td class="value">{{ format_date(header_date) }}</td></tr>{% endif %}
+            {% if vessel %}<tr><td class="label">{{ lbl_vessel }}</td><td class="value">{{ vessel }}</td></tr>{% endif %}
+            {% if currency %}<tr><td class="label">{{ lbl_currency }}</td><td class="value">{{ currency }}</td></tr>{% endif %}
+            {% if sealNumber %}<tr><td class="label">{{ lbl_seal }}</td><td class="value">{{ sealNumber }}</td></tr>{% endif %}
+            {% if eta %}<tr><td class="label">{{ lbl_eta }}</td><td class="value">{{ format_date(eta) }}</td></tr>{% endif %}
+          </table>
+        </div>
+
+        <div class="ref-column customer-info">
+          <p>{{ cliente_nombreEmpresa }}</p>
+          <p>{{ deal.direccion_fiscal if deal and deal.direccion_fiscal else "" }}</p>
+          {% if deal.cif %}<p>{{ deal.cif }}</p>{% endif %}
+          <p>{{ cliente_pais }}</p>
+        </div>
+      {% endif %}
+
+    </div>
+  </section>
+
+  <section class="products-section">
+    <h2>{{ lbl_products_title }}</h2>
+    <table class="products-table">
+      <thead>
+        <tr>
+          <th class="col-code">{{ lbl_col_code }}</th>
+          <th class="col-item">{{ lbl_col_item }}</th>
+          <th class="col-colis">{{ lbl_col_colis }}</th>
+          <th class="col-weight">{{ lbl_col_weight }}</th>
+          <th class="col-unit">{{ lbl_col_unit }}</th>
+          <th class="col-price">{{ lbl_col_price }}</th>
+          <th class="col-total">{{ lbl_col_total }}</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% if line_items and line_items|length > 0 %}
+          {% for item in line_items %}
+            {# Código y precio/peso unitarios (iguales para todos los contenedores) #}
+            {% set li_code   = item.hs_sku|default("") %}
+            {% set li_price  = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+            {% set li_weight = item.peso_bruto|default(0) %}
+
+            {# Nombre por idioma: ES→description, EN→name_en, FR→name_fr (sin código).
+               Fallback a item.name con strip del prefijo "CONTAINER_NAME - " si vacío. #}
+            {% if _quote_lang == "es" %}
+              {% set li_name_raw = item.description|default("")|trim %}
+            {% elif _quote_lang == "fr" %}
+              {% set li_name_raw = item.name_fr|default("")|trim %}
+            {% else %}
+              {% set li_name_raw = item.name_en|default("")|trim %}
+            {% endif %}
+            {% if not li_name_raw %}
+              {% set ns_n = namespace(result="", skip=true) %}
+              {% for part in item.name|split(" - ") %}
+                {% if ns_n.skip %}
+                  {% set ns_n.skip = false %}
+                {% else %}
+                  {% if ns_n.result %}
+                    {% set ns_n.result = ns_n.result ~ " - " ~ part %}
+                  {% else %}
+                    {% set ns_n.result = part %}
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+              {% set li_name_raw = ns_n.result if (num_containers > 1 and ns_n.result) else item.name|default("") %}
+            {% endif %}
+            {% set li_name = li_name_raw %}
+
+            {# Cantidad y total: agregar entre contenedores si multi #}
+            {% if num_containers > 1 %}
+              {% set ns_agg = namespace(qty=0.0, amount=0.0) %}
+              {% set li_sku = item.hs_sku|default("") %}
+              {% for same in all_mc_items %}
+                {% if (same.hs_sku|default("")) == li_sku %}
+                  {% set ns_agg.qty    = ns_agg.qty    + (same.quantity|default(0)|string|trim|float) %}
+                  {% set ns_agg.amount = ns_agg.amount + (same.amount|default(0)|string|trim|float) %}
+                {% endif %}
+              {% endfor %}
+              {% set li_qty   = ns_agg.qty %}
+              {% set li_total = li_price * ns_agg.qty %}
+            {% else %}
+              {% set li_qty   = item.quantity|default(1.0) %}
+              {% set li_total = li_price * li_qty %}
+            {% endif %}
+
+            {# Unit: traducible #}
+            {% set li_unit = lbl_unit_case %}
+
+            <tr>
+              <td class="code">{{ li_code }}</td>
+              <td class="item">{{ li_name }}</td>
+              <td class="colis">{{ li_qty|round(0)|int }}</td>
+              <td class="weight">{{ li_weight|round(2) }}</td>
+              <td class="unit">{{ li_unit }}</td>
+              <td class="price">{{ format_money(li_price, currency) }}</td>
+              <td class="total">{{ format_money(li_total, currency) }}</td>
+            </tr>
+
+          {% endfor %}
+        {% endif %}
+      </tbody>
+
+    </table>
+  </section>
+
+  {% if company and company.aseguradora %}
+  <div class="aseguradora-notice">
+    <p class="aseguradora-text">{{ lbl_aseguradora }}</p>
+    <img src="{{ get_asset_url('../images/solunion.png') }}"
+         alt="Solunion"
+         width="290"
+         height="155"
+         class="aseguradora-logo" />
+  </div>
+  {% endif %}
+
+  <section class="totals-section">
+
+    {% if is_nacional %}
+    {# ======= FOOTER NACIONAL — desglose por (iva%, recargo%) ======= #}
+    <table class="nacional-totals-table">
+      <thead>
+        <tr>
+          <th>{{ lbl_tax_base }}</th>
+          <th>% {{ lbl_vat }}</th>
+          {% if _aplica_re %}<th>% REC. EQUIV.</th>{% endif %}
+          <th>€ {{ lbl_vat }}</th>
+          <th>{{ lbl_total_amount }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in ns_buck.items %}
+          <tr>
+            <td class="value">{{ format_money(b.base, currency) }}</td>
+            <td class="value">{{ b.iva|round(2) }}%</td>
+            {% if _aplica_re %}<td class="value">{{ b.rec|round(2) }}%</td>{% endif %}
+            <td class="value">{{ format_money(b.imp, currency) }}</td>
+            <td class="value"><strong>{{ format_money(b.base + b.imp, currency) }}</strong></td>
+          </tr>
+        {% endfor %}
+        {% if ns_buck.items|length > 1 %}
+          <tr class="nacional-totals-global">
+            <td class="value"><strong>{{ format_money(nacional_base, currency) }}</strong></td>
+            <td></td>
+            {% if _aplica_re %}<td></td>{% endif %}
+            <td class="value"><strong>{{ format_money(nacional_impuestos, currency) }}</strong></td>
+            <td class="value"><strong>{{ format_money(nacional_total, currency) }}</strong></td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    {% else %}
+    {# ======= FOOTER EXPORTACIÓN ======= #}
+    <div class="totals-grid">
+
+      <div class="totals-breakdown">
+        <table class="breakdown-table">
+          <tr class="subtotal-row"><td class="label">{{ lbl_price_exw }}</td><td class="value">{{ format_money(precios_totalEXW, currency) }}</td></tr>
+          <tr><td class="label">{{ lbl_fob_expenses }}</td><td class="value">{{ format_money(precios_fobExpenses, currency) }}</td></tr>
+          <tr class="subtotal-row"><td class="label"><strong>{{ lbl_total_fob }}</strong></td><td class="value"><strong>{{ format_money(precios_totalFOB, currency) }}</strong></td></tr>
+          <tr><td class="label">{{ lbl_seafreight }}</td><td class="value">{{ format_money(precios_seafreightRate, currency) }}</td></tr>
+          <tr class="subtotal-row"><td class="label"><strong>{{ lbl_total_cfr }}</strong></td><td class="value"><strong>{{ format_money(precios_totalCFR, currency) }}</strong></td></tr>
+          <tr><td class="label">{{ lbl_insurance }}</td><td class="value">{{ format_money(precios_insurance, currency) }}</td></tr>
+          <tr class="final-total-row"><td class="label"><strong>{{ lbl_total_cif }}</strong></td><td class="value"><strong>{{ format_money(precios_totalCIF, currency) }}</strong></td></tr>
+        </table>
+      </div>
+
+      <div class="totals-stats">
+        <table class="stats-table">
+          <tr><td class="label">{{ lbl_total_colis }}</td><td class="value">{{ stats_totalColis|int }}</td></tr>
+          <tr><td class="label">{{ lbl_net_weight }}</td><td class="value">{{ computed_netWeightKg }}</td></tr>
+          <tr><td class="label">{{ lbl_gross_weight }}</td><td class="value">{{ computed_grossWeightKg }}</td></tr>
+        </table>
+
+        <table class="stats-table mt-2">
+          <tr><td class="label">{{ lbl_container_type }}</td><td class="value">{{ stats_containerType }}</td></tr>
+          <tr><td class="label">{{ lbl_filled_up_to }}</td><td class="value">{{ stats_filledUpTo }}%</td></tr>
+          <tr><td class="label">{{ lbl_num_containers }}</td><td class="value">{{ stats_numContainers }}</td></tr>
+        </table>
+
+        <div class="grand-total">
+          <div class="grand-total-label">{{ lbl_grand_total }}</div>
+          <div class="grand-total-value">{{ format_money(stats_totalEuros, currency) }}</div>
+        </div>
+      </div>
+
+    </div>
+    {% endif %}
+
+  </section>
+
+      <div class="page-indicator">{{ lbl_page }} 1</div>
+      <p class="company-footer page-2-footer">
+        <span><strong>PROEX DRINKS GROUP, S.A.</strong> — Avda. Américo Vespucio 5, Edif. Cartuja, bloque A, 2ª planta — 41092 Sevilla (Sevilla) España — C.I.F. A41992975</span><br>
+        <span>Commercial Office.- Proex Building. P.I. Área Logística 03-PEI. PEYSI Guadarranque - 11369 San Roque (Cádiz) Spain/Espagne/España (UE)</span><br>
+        <span>Tel.- +34 856 223 943 / +34 956 223 943 - Email.- customerservice@proexdg.com - www.proexdg.com</span><br>
+        <strong>SGS ISO 9001:2015 CERTIFICATE ES16/20592</strong>
+      </p>
+    </footer>
+  </div>
+
+{% else %}
+  {# ============================================================ #}
+  {# MODO DESAGREGADO: Una página por contenedor                  #}
+  {# Artículos filtrados por prefijo "CONTAINER_NAME - " en name  #}
+  {# Precios divididos proporcionalmente entre contenedores        #}
+  {# ============================================================ #}
+  {% for cont in containers %}
+    {% set cont_name = cont.name|default("")|trim %}
+    {% set cont_prefix = cont_name ~ " - " %}
+
+    {# Artículos de este contenedor #}
+    {# HubL split() elimina el elemento vacío inicial, por lo que cuando el prefijo
+       está al principio el resultado es ["ARTICLE"] (len=1), no ["","ARTICLE"] (len=2).
+       Detección: si split encontró el prefijo, sparts|first != item_name_t #}
+    {% set cont_items = [] %}
+    {% for item in all_line_items %}
+      {% set pt = item.hs_product_type|default("")|lower %}
+      {% set ta = item.tipo_articulo|default("")|lower %}
+      {% if (pt == "inventory" or pt == "non_inventory" or pt == "articulo") and (ta == "" or ta == "fabricante") %}
+        {% set item_name_t = item.name|default("")|trim %}
+        {% if (item_name_t|split(cont_prefix)|first) != item_name_t %}
+          {% do cont_items.append(item) %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+    {# Stats por contenedor #}
+    {% set ns_cs = namespace(gross=0.0, net=0.0, colis=0.0, total=0.0) %}
+    {% for item in cont_items %}
+      {% set qty = item.quantity|default(0)|string|trim|float %}
+      {% set unit_price = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+      {% set line_total = unit_price * qty %}
+
+      {% set ns_cs.colis = ns_cs.colis + qty %}
+      {% set ns_cs.gross = ns_cs.gross + qty * (item.peso_bruto|default(0)|string|trim|float) %}
+      {% set ns_cs.net   = ns_cs.net   + qty * (item.peso_neto|default(0)|string|trim|float) %}
+      {% set ns_cs.total = ns_cs.total + line_total %}
+    {% endfor %}
+
+{# ===================================================== #}
+{# Totales del contenedor — anclados a ns_cs.total (suma  #}
+{# exacta de la tabla = TOTAL del incoterm seleccionado).  #}
+{# Comisiones ya repercutidas vía delta_por_caja.          #}
+{# ===================================================== #}
+{% set cont_fobExpenses    = real_fobExpenses    / nc %}
+{% set cont_seafreightRate = real_seafreightRate / nc %}
+{% set cont_insurance      = real_insurance      / nc %}
+
+{% set _t = (terms|default(""))|upper|replace(" ", "_") %}
+{% if _t == "CIF" %}
+  {% set cont_totalCIF = ns_cs.total %}
+  {% set cont_totalCFR = cont_totalCIF - cont_insurance %}
+  {% set cont_totalFOB = cont_totalCFR - cont_seafreightRate %}
+  {% set cont_totalEXW = cont_totalFOB - cont_fobExpenses %}
+{% elif _t == "CFR" %}
+  {% set cont_totalCFR = ns_cs.total %}
+  {% set cont_totalCIF = cont_totalCFR + cont_insurance %}
+  {% set cont_totalFOB = cont_totalCFR - cont_seafreightRate %}
+  {% set cont_totalEXW = cont_totalFOB - cont_fobExpenses %}
+{% elif _t == "FOB" %}
+  {% set cont_totalFOB = ns_cs.total %}
+  {% set cont_totalCFR = cont_totalFOB + cont_seafreightRate %}
+  {% set cont_totalCIF = cont_totalCFR + cont_insurance %}
+  {% set cont_totalEXW = cont_totalFOB - cont_fobExpenses %}
+{% elif _t == "DAP_MARITIMO" or _t == "DAP_MARÍTIMO" %}
+  {% set cont_totalEXW = ns_cs.total - cont_fobExpenses - (2 * cont_seafreightRate) %}
+  {% set cont_totalFOB = cont_totalEXW + cont_fobExpenses %}
+  {% set cont_totalCFR = cont_totalFOB + cont_seafreightRate %}
+  {% set cont_totalCIF = cont_totalCFR + cont_insurance %}
+{% elif _t == "DAP_TERRESTRE" %}
+  {% set cont_totalEXW = ns_cs.total - cont_fobExpenses %}
+  {% set cont_totalFOB = cont_totalEXW + cont_fobExpenses %}
+  {% set cont_totalCFR = cont_totalFOB + cont_seafreightRate %}
+  {% set cont_totalCIF = cont_totalCFR + cont_insurance %}
+{% else %}
+  {% set cont_totalEXW = ns_cs.total %}
+  {% set cont_totalFOB = cont_totalEXW + cont_fobExpenses %}
+  {% set cont_totalCFR = cont_totalFOB + cont_seafreightRate %}
+  {% set cont_totalCIF = cont_totalCFR + cont_insurance %}
+{% endif %}
+
+    {# Buckets por (iva%, recargo%) para este contenedor — dos pases #}
+    {% set ns_ckeys = namespace(list=[]) %}
+    {% if is_nacional %}
+      {% for item in cont_items %}
+        {% set raw_code = (item.tipo_iva_repercutido|default(""))|split(" ")|first|upper %}
+        {% set ns_r = namespace(iva=0.0, rec=0.0, found=false) %}
+        {% for r in _ns_iva.rows %}
+          {% set rc = (r.code|default(""))|upper %}
+          {% set rt = (r.tipo_residencia|default(""))|upper %}
+          {% if not ns_r.found and rc == raw_code and rt == _residencia %}
+            {% set ns_r.iva = r.porcentaje_iva|default(0)|float %}
+            {% set ns_r.rec = r.porcentaje_recargo|default(0)|float %}
+            {% set ns_r.found = true %}
+          {% endif %}
+        {% endfor %}
+        {% if not ns_r.found %}
+          {% set _num = raw_code|replace("R","")|replace("S","")|replace("EI","")|replace("EX","")|trim %}
+          {% set ns_r.iva = _num|float(0) %}
+        {% endif %}
+        {% set iva_pct = ns_r.iva %}
+        {% set rec_pct = ns_r.rec if _aplica_re else 0.0 %}
+        {% set key = (iva_pct|string) ~ "|" ~ (rec_pct|string) %}
+        {% if key not in ns_ckeys.list %}
+          {% do ns_ckeys.list.append(key) %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    {% set ns_cbuck = namespace(items=[]) %}
+    {% for key in ns_ckeys.list %}
+      {% set parts = key|split("|") %}
+      {% set iva_target = parts[0]|float %}
+      {% set rec_target = parts[1]|float %}
+      {% set ns_b = namespace(base=0.0, imp=0.0) %}
+      {% for item in cont_items %}
+        {% set raw_code = (item.tipo_iva_repercutido|default(""))|split(" ")|first|upper %}
+        {% set ns_r = namespace(iva=0.0, rec=0.0, found=false) %}
+        {% for r in _ns_iva.rows %}
+          {% set rc = (r.code|default(""))|upper %}
+          {% set rt = (r.tipo_residencia|default(""))|upper %}
+          {% if not ns_r.found and rc == raw_code and rt == _residencia %}
+            {% set ns_r.iva = r.porcentaje_iva|default(0)|float %}
+            {% set ns_r.rec = r.porcentaje_recargo|default(0)|float %}
+            {% set ns_r.found = true %}
+          {% endif %}
+        {% endfor %}
+        {% if not ns_r.found %}
+          {% set _num = raw_code|replace("R","")|replace("S","")|replace("EI","")|replace("EX","")|trim %}
+          {% set ns_r.iva = _num|float(0) %}
+        {% endif %}
+        {% set iva_pct = ns_r.iva %}
+        {% set rec_pct = ns_r.rec if _aplica_re else 0.0 %}
+
+        {% if iva_pct == iva_target and rec_pct == rec_target %}
+          {% set qty = item.quantity|default(0)|string|trim|float %}
+          {% set lp  = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+          {% set subtotal = lp * qty %}
+          {% set efectivo = iva_target + rec_target %}
+          {% set ns_b.base = ns_b.base + subtotal %}
+          {% set ns_b.imp  = ns_b.imp  + subtotal * efectivo / 100.0 %}
+        {% endif %}
+      {% endfor %}
+      {% do ns_cbuck.items.append({"iva": iva_target, "rec": rec_target, "base": ns_b.base, "imp": ns_b.imp}) %}
+    {% endfor %}
+
+    {% set ns_cnac = namespace(base=0.0, imp=0.0) %}
+    {% for b in ns_cbuck.items %}
+      {% set ns_cnac.base = ns_cnac.base + b.base %}
+      {% set ns_cnac.imp  = ns_cnac.imp  + b.imp %}
+    {% endfor %}
+
+    <div class="page-{{ loop.index }}">
+      <div class="commercial-header">
+        <div class="header-title">
+          <h1>{{ lbl_invoice_title }} {{ offerNumber }}</h1>
+        </div>
+        <div class="header-logo">
+          {% module "logo" path="../modules/quote_logo" %}
+        </div>
+      </div>
+
+      <section class="ref-section">
+      <h3 class="ref-label">{% if dealId %}{{ lbl_ref }} {{ dealId }} — {% endif %}{{ lbl_container_hdr }} {{ loop.index }}/{{ num_containers }}</h3>
+      <div class="ref-grid{% if is_nacional %} ref-grid--no-border{% endif %}">
+
+        {% if is_nacional %}
+          <div class="ref-column">
+            <table class="ref-table">
+              {% if header_date %}<tr><td class="label">{{ lbl_date }}</td><td class="value">{{ format_date(header_date) }}</td></tr>{% endif %}
+            </table>
+          </div>
+          <div class="ref-column"></div>
+          <div class="ref-column customer-info">
+            <p>{{ cliente_nombreEmpresa }}</p>
+            <p>{{ deal.direccion_fiscal if deal and deal.direccion_fiscal else "" }}</p>
+            {% if deal.cif %}<p>{{ deal.cif }}</p>{% endif %}
+            <p>{{ cliente_pais }}</p>
+          </div>
+        {% else %}
+          <div class="ref-column">
+            <table class="ref-table">
+              {% if offerNumber %}<tr><td class="label">{{ lbl_number }}</td><td class="value">{{ offerNumber }}</td></tr>{% endif %}
+              {% if destinationPort %}<tr><td class="label">{{ lbl_dest_port }}</td><td class="value">{{ destinationPort }}</td></tr>{% endif %}
+              {% if terms %}<tr><td class="label">{{ lbl_terms }}</td><td class="value">{{ terms }}</td></tr>{% endif %}
+              {% if container %}<tr><td class="label">{{ lbl_container_hdr }}</td><td class="value">{{ container }}</td></tr>{% endif %}
+              {% if etd %}<tr><td class="label">{{ lbl_etd }}</td><td class="value">{{ format_date(etd) }}</td></tr>{% endif %}
+              {% if sealNumber %}<tr><td class="label">{{ lbl_booking }}</td><td class="value">{{ sealNumber }}</td></tr>{% endif %}
+            </table>
+          </div>
+          <div class="ref-column">
+            <table class="ref-table">
+              {% if header_date %}<tr><td class="label">{{ lbl_date }}</td><td class="value">{{ format_date(header_date) }}</td></tr>{% endif %}
+              {% if vessel %}<tr><td class="label">{{ lbl_vessel }}</td><td class="value">{{ vessel }}</td></tr>{% endif %}
+              {% if currency %}<tr><td class="label">{{ lbl_currency }}</td><td class="value">{{ currency }}</td></tr>{% endif %}
+              {% if sealNumber %}<tr><td class="label">{{ lbl_seal }}</td><td class="value">{{ sealNumber }}</td></tr>{% endif %}
+              {% if eta %}<tr><td class="label">{{ lbl_eta }}</td><td class="value">{{ format_date(eta) }}</td></tr>{% endif %}
+            </table>
+          </div>
+          <div class="ref-column customer-info">
+            <p>{{ cliente_nombreEmpresa }}</p>
+            <p>{{ deal.direccion_fiscal if deal and deal.direccion_fiscal else "" }}</p>
+            {% if deal.cif %}<p>{{ deal.cif }}</p>{% endif %}
+            <p>{{ cliente_pais }}</p>
+          </div>
+        {% endif %}
+
+      </div>
+      </section>
+
+      <section class="products-section">
+        <h2>{{ lbl_products_title }}</h2>
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th class="col-code">{{ lbl_col_code }}</th>
+              <th class="col-item">{{ lbl_col_item }}</th>
+              <th class="col-colis">{{ lbl_col_colis }}</th>
+              <th class="col-weight">{{ lbl_col_weight }}</th>
+              <th class="col-unit">{{ lbl_col_unit }}</th>
+              <th class="col-price">{{ lbl_col_price }}</th>
+              <th class="col-total">{{ lbl_col_total }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in cont_items %}
+              {% set li_code   = item.hs_sku|default("") %}
+              {% set li_price  = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+              {% set li_weight = item.peso_bruto|default(0) %}
+              {# Nombre por idioma: ES→description, EN→name_en, FR→name_fr (sin código).
+                 Fallback a item.name con strip del prefijo "CONTAINER_NAME - " si vacío. #}
+              {% if _quote_lang == "es" %}
+                {% set li_name_raw = item.description|default("")|trim %}
+              {% elif _quote_lang == "fr" %}
+                {% set li_name_raw = item.name_fr|default("")|trim %}
+              {% else %}
+                {% set li_name_raw = item.name_en|default("")|trim %}
+              {% endif %}
+              {% if not li_name_raw %}
+                {% set ns_n = namespace(result="", skip=true) %}
+                {% for part in item.name|split(" - ") %}
+                  {% if ns_n.skip %}
+                    {% set ns_n.skip = false %}
+                  {% else %}
+                    {% if ns_n.result %}
+                      {% set ns_n.result = ns_n.result ~ " - " ~ part %}
+                    {% else %}
+                      {% set ns_n.result = part %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+                {% set li_name_raw = ns_n.result if ns_n.result else item.name|default("") %}
+              {% endif %}
+              {% set li_name = li_name_raw %}
+              {% set li_qty   = item.quantity|default(1.0) %}
+              {% set li_total = li_price * li_qty %}
+              <tr>
+                <td class="code">{{ li_code }}</td>
+                <td class="item">{{ li_name }}</td>
+                <td class="colis">{{ li_qty|round(0)|int }}</td>
+                <td class="weight">{{ li_weight|round(2) }}</td>
+                <td class="unit">{{ lbl_unit_case }}</td>
+                <td class="price">{{ format_money(li_price, currency) }}</td>
+                <td class="total">{{ format_money(li_total, currency) }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      {% if company and company.aseguradora %}
+      <div class="aseguradora-notice">
+        <p class="aseguradora-text">{{ lbl_aseguradora }}</p>
+        <img src="{{ get_asset_url('../images/solunion.png') }}"
+             alt="Solunion"
+             width="290"
+             height="155"
+             class="aseguradora-logo" />
+      </div>
+      {% endif %}
+
+      <section class="totals-section">
+
+        {% if is_nacional %}
+        <table class="nacional-totals-table">
+          <thead>
+            <tr>
+              <th>{{ lbl_tax_base }}</th>
+              <th>% {{ lbl_vat }}</th>
+              {% if _aplica_re %}<th>% REC. EQUIV.</th>{% endif %}
+              <th>€ {{ lbl_vat }}</th>
+              <th>{{ lbl_total_amount }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in ns_cbuck.items %}
+              <tr>
+                <td class="value">{{ format_money(b.base, currency) }}</td>
+                <td class="value">{{ b.iva|round(2) }}%</td>
+                {% if _aplica_re %}<td class="value">{{ b.rec|round(2) }}%</td>{% endif %}
+                <td class="value">{{ format_money(b.imp, currency) }}</td>
+                <td class="value"><strong>{{ format_money(b.base + b.imp, currency) }}</strong></td>
+              </tr>
+            {% endfor %}
+            {% if ns_cbuck.items|length > 1 %}
+              <tr class="nacional-totals-global">
+                <td class="value"><strong>{{ format_money(ns_cnac.base, currency) }}</strong></td>
+                <td></td>
+                {% if _aplica_re %}<td></td>{% endif %}
+                <td class="value"><strong>{{ format_money(ns_cnac.imp, currency) }}</strong></td>
+                <td class="value"><strong>{{ format_money(ns_cnac.base + ns_cnac.imp, currency) }}</strong></td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="totals-grid">
+          <div class="totals-breakdown">
+            <table class="breakdown-table">
+              <tr class="subtotal-row"><td class="label">{{ lbl_price_exw }}</td><td class="value">{{ format_money(cont_totalEXW, currency) }}</td></tr>
+              <tr><td class="label">{{ lbl_fob_expenses }}</td><td class="value">{{ format_money(cont_fobExpenses, currency) }}</td></tr>
+              <tr class="subtotal-row"><td class="label"><strong>{{ lbl_total_fob }}</strong></td><td class="value"><strong>{{ format_money(cont_totalFOB, currency) }}</strong></td></tr>
+              <tr><td class="label">{{ lbl_seafreight }}</td><td class="value">{{ format_money(cont_seafreightRate, currency) }}</td></tr>
+              <tr class="subtotal-row"><td class="label"><strong>{{ lbl_total_cfr }}</strong></td><td class="value"><strong>{{ format_money(cont_totalCFR, currency) }}</strong></td></tr>
+              <tr><td class="label">{{ lbl_insurance }}</td><td class="value">{{ format_money(cont_insurance, currency) }}</td></tr>
+              <tr class="final-total-row"><td class="label"><strong>{{ lbl_total_cif }}</strong></td><td class="value"><strong>{{ format_money(cont_totalCIF, currency) }}</strong></td></tr>
+            </table>
+          </div>
+          <div class="totals-stats">
+            <table class="stats-table">
+              <tr><td class="label">{{ lbl_total_colis }}</td><td class="value">{{ ns_cs.colis|round(0)|int }}</td></tr>
+              <tr><td class="label">{{ lbl_net_weight }}</td><td class="value">{{ ns_cs.net|round(2) }}</td></tr>
+              <tr><td class="label">{{ lbl_gross_weight }}</td><td class="value">{{ ns_cs.gross|round(2) }}</td></tr>
+            </table>
+            <table class="stats-table mt-2">
+              <tr><td class="label">{{ lbl_container_type }}</td><td class="value">{{ stats_containerType }}</td></tr>
+              <tr><td class="label">{{ lbl_filled_up_to }}</td><td class="value">{{ stats_filledUpTo }}%</td></tr>
+              <tr><td class="label">{{ lbl_num_containers }}</td><td class="value">1</td></tr>
+            </table>
+            <div class="grand-total">
+              <div class="grand-total-label">{{ lbl_grand_total }}</div>
+              <div class="grand-total-value">{{ format_money(ns_cs.total, currency) }}</div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+      </section>
+
+      <div class="page-indicator">{{ lbl_page }} {{ loop.index }}</div>
+      <p class="company-footer page-2-footer">
+        <span><strong>PROEX DRINKS GROUP, S.A.</strong> — Avda. Américo Vespucio 5, Edif. Cartuja, bloque A, 2ª planta — 41092 Sevilla (Sevilla) España — C.I.F. A41992975</span><br>
+        <span>Commercial Office.- Proex Building. P.I. Área Logística 03-PEI. PEYSI Guadarranque - 11369 San Roque (Cádiz) Spain/Espagne/España (UE)</span><br>
+        <span>Tel.- +34 856 223 943 / +34 956 223 943 - Email.- customerservice@proexdg.com - www.proexdg.com</span><br>
+        <strong>SGS ISO 9001:2015 CERTIFICATE ES16/20592</strong>
+      </p>
+      {% if loop.last %}
+    </footer>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+{% endif %}
+
+  {# ============================================ #}
+  {# PÁGINA TEXTOS (última página)               #}
+  {# Solo si NO es cotización rápida Y hay texto #}
+  {# ============================================ #}
+  {% set has_page2_content = (textoBaseOferta and not is_nacional) or textoFormaPago or textoBanco %}
+  {% set texts_page_num = (num_containers + 1) if (is_desagregado and num_containers > 1) else 2 %}
+
+  {% if has_page2_content and deal.cotizacion_rapida != "Yes" %}
+
+  <div class="page-2">
+    {# Header repetido en página de textos #}
+    <div class="commercial-header">
+      <div class="header-title">
+        <h1>{{ lbl_invoice_title }} {{ offerNumber }}</h1>
+      </div>
+      <div class="header-logo">
+        {% module "logo" path="../modules/quote_logo" %}
+      </div>
+    </div>
+
+    {# textoBaseOferta — no aplica en cotizaciones nacionales #}
+    {% if textoBaseOferta and not is_nacional %}
+    <section class="legal-content-section">
+      <h2>{{ lbl_additional_info }}</h2>
+      <div class="legal-text-page2">{{ textoBaseOferta }}</div>
+    </section>
+    {% endif %}
+
+    {# textoFormaPago #}
+    {% if textoFormaPago %}
+    <section class="legal-content-section">
+      <h2>{{ lbl_payment_terms }}</h2>
+      <div class="legal-text-page2">{{ textoFormaPago }}</div>
+    </section>
+    {% endif %}
+
+    {# textoBanco #}
+    {% if textoBanco %}
+    <section class="legal-content-section">
+      <h2>{{ lbl_bank_details }}</h2>
+      <div class="legal-text-page2">{{ textoBanco }}</div>
+    </section>
+    {% endif %}
+
+    <div class="page-indicator">{{ lbl_page }} {{ texts_page_num }}</div>
+    <p class="company-footer page-2-footer">
+      <span><strong>PROEX DRINKS GROUP, S.A.</strong> — Avda. Américo Vespucio 5, Edif. Cartuja, bloque A, 2ª planta — 41092 Sevilla (Sevilla) España — C.I.F. A41992975</span><br>
+      <span>Commercial Office.- Proex Building. P.I. Área Logística 03-PEI. PEYSI Guadarranque - 11369 San Roque (Cádiz) Spain/Espagne/España (UE)</span><br>
+      <span>Tel.- +34 856 223 943 / +34 956 223 943 - Email.- customerservice@proexdg.com - www.proexdg.com</span><br>
+      <strong>SGS ISO 9001:2015 CERTIFICATE ES16/20592</strong>
+    </p>
+  </div>
+  {% endif %}
+
+{% if SHOW_DEBUG %}
+<div class="debug-block" style="margin:40px; padding:20px; border:2px dashed #888; font-family:monospace; font-size:11px; line-height:1.4; background:#fff;">
+  <h2 style="margin-top:0">🔧 DEBUG — Cálculo pricingParams</h2>
+
+  <h3>Contexto deal</h3>
+  <ul>
+    <li>deal_id = {{ deal.hs_object_id }}</li>
+    <li>tipo_de_venta (terms) = {{ terms }} → _term = {{ _term }}</li>
+    <li>is_nacional = {{ is_nacional }}</li>
+    <li>precio_ruta_hasta_puerto_de_salida (precio_origen) = {{ precio_origen }}</li>
+    <li>precio_ruta_hasta_puerto_destino (precio_destino) = {{ precio_destino }}</li>
+    <li>num_containers = {{ num_containers }} (nc usado = {{ _nc }})</li>
+    <li>total_cajas_articulos = {{ total_cajas_articulos }} (tc usado = {{ _tc }})</li>
+  </ul>
+
+  <h3>Servicios sumados (line items)</h3>
+  <ul>
+    <li>ns_serv.no_seguro = {{ ns_serv.no_seguro }}</li>
+    <li>ns_serv.seguro = {{ ns_serv.seguro }}</li>
+  </ul>
+
+  <h3>Comisión (deal)</h3>
+  <ul>
+    <li>tipo_comision = "{{ _tipo_com }}"</li>
+    <li>importe_comision = {{ _importe_com }}</li>
+    <li>repercutir_a_cliente = "{{ deal.repercutir_a_cliente }}" (_repercutir = {{ _repercutir }})</li>
+    <li>codigo_intermediario = "{{ deal.codigo_intermediario }}" (_tiene_inter = {{ _tiene_inter }})</li>
+    <li>comision_por_caja = {{ comision_por_caja }}</li>
+  </ul>
+
+  <h3>Componentes delta</h3>
+  <ul>
+    <li>hasta_puerto_salida = {{ hasta_puerto_salida }}</li>
+    <li>hasta_puerto_destino = {{ hasta_puerto_destino }}</li>
+    <li>hasta_localidad_destino = {{ hasta_localidad_destino }}</li>
+    <li>hasta_puerto_destino_localidad = {{ hasta_puerto_destino_localidad }}</li>
+    <li>servicios_por_caja = {{ servicios_por_caja }}</li>
+    <li>seguro_por_caja = {{ seguro_por_caja }}</li>
+    <li><strong>delta_por_caja = {{ delta_por_caja }}</strong></li>
+  </ul>
+
+  <h3>Line items (todos)</h3>
+  <table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse; font-size:10px;">
+    <thead>
+      <tr>
+        <th>hs_sku</th>
+        <th>hs_product_type</th>
+        <th>tipo_articulo</th>
+        <th>name</th>
+        <th>price</th>
+        <th>quantity</th>
+        <th>amount</th>
+        <th>tipo_iva_repercutido</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for it in all_line_items %}
+      <tr>
+        <td>{{ it.hs_sku }}</td>
+        <td>{{ it.hs_product_type }}</td>
+        <td>{{ it.tipo_articulo }}</td>
+        <td>{{ it.name|truncate(40) }}</td>
+        <td>{{ it.price }}</td>
+        <td>{{ it.quantity }}</td>
+        <td>{{ it.amount }}</td>
+        <td>{{ it.tipo_iva_repercutido }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Totales nacionales</h3>
+  <ul>
+    <li>ns_tabla.total = {{ ns_tabla.total }}</li>
+    <li>nacional_base = {{ nacional_base }}</li>
+    <li>nacional_impuestos = {{ nacional_impuestos }}</li>
+    <li>nacional_total = {{ nacional_total }}</li>
+  </ul>
+</div>
+{% endif %}
+
+</body>
+{% endblock body %}
