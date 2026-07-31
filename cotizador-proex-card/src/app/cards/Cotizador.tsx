@@ -129,6 +129,9 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
 
   // Data state - Negociación (shared pricing state)
   const [preciosEXW, setPreciosEXW] = useState<Record<string, number>>({});
+  // Precio final por caja anclado por line item (bajo el tipo de venta vigente):
+  // queda fijo ante cambios de cajas/gastos y el EXW/margen se derivan de él.
+  const [preciosAnclados, setPreciosAnclados] = useState<Record<string, number>>({});
   const [tiposIVA, setTiposIVA] = useState<Record<string, string>>({});
   const [tiposIVASoportado, setTiposIVASoportado] = useState<Record<string, string>>({});
 
@@ -139,6 +142,7 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
   // Data state - Transitario
   const [transitarioData, setTransitarioData] = useState<TransitarioData>({
     transitarioSeleccionado: null,
+    transitarioTerrestreSeleccionado: null,
     puertoSalida: "",
     puertoDestino: "",
     localidadDestino: "",
@@ -152,6 +156,10 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
     cotizacionRapida: false,
     tipoIVAFletes: "",
     tipoIVAFletesSoportado: "",
+    tipoIVAFleteTerrestre: "",
+    tipoIVAFleteTerrestreSoportado: "",
+    fleteDobleDisponible: false,
+    ivaFletesTerrestreDefaults: null,
   });
 
   // Data state - Servicios
@@ -584,6 +592,8 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
               ivaData={ivaRepercutidoData}
               preciosEXW={preciosEXW}
               setPreciosEXW={setPreciosEXW}
+              preciosAnclados={preciosAnclados}
+              setPreciosAnclados={setPreciosAnclados}
               tiposIVA={tiposIVA}
               setTiposIVA={setTiposIVA}
               tiposIVASoportado={tiposIVASoportado}

@@ -76,6 +76,15 @@ else
   echo "✅ ECR repository already exists"
 fi
 
+# Lifecycle policy: conservar solo las 10 imagenes sin etiqueta mas recientes (nunca toca 'latest')
+echo "🧹 Aplicando lifecycle policy ECR (conservar 10 untagged)..."
+aws ecr put-lifecycle-policy \
+  --repository-name ${ECR_REPO_NAME} \
+  --region ${AWS_REGION} \
+  --profile ${AWS_PROFILE} \
+  --lifecycle-policy-text '{"rules":[{"rulePriority":1,"description":"Conservar las 10 imagenes sin etiqueta mas recientes; expirar el resto. Nunca toca imagenes etiquetadas (latest).","selection":{"tagStatus":"untagged","countType":"imageCountMoreThan","countNumber":10},"action":{"type":"expire"}}]}' \
+  >/dev/null && echo "✅ Lifecycle policy aplicada"
+
 echo "🔐 Setting ECR repository policy..."
 aws ecr set-repository-policy \
   --repository-name ${ECR_REPO_NAME} \
@@ -196,6 +205,7 @@ if ! aws lambda get-function --function-name ${FUNCTION_NAME} --region ${AWS_REG
     --profile ${AWS_PROFILE} \
     --environment "Variables={
       PROEX_ACCESS_TOKEN=${PROEX_ACCESS_TOKEN},
+      PROEX_CARD_SECRET=${PROEX_CARD_SECRET},
       CORS_ORIGINS=\"${CORS_ORIGINS}\",
       JOBS_TABLE_NAME=${JOBS_TABLE_NAME},
       JOBS_QUEUE_URL=${JOBS_QUEUE_URL}
@@ -279,6 +289,7 @@ else
     --function-name ${FUNCTION_NAME} \
     --environment "Variables={
       PROEX_ACCESS_TOKEN=${PROEX_ACCESS_TOKEN},
+      PROEX_CARD_SECRET=${PROEX_CARD_SECRET},
       CORS_ORIGINS=\"${CORS_ORIGINS}\",
       JOBS_TABLE_NAME=${JOBS_TABLE_NAME},
       JOBS_QUEUE_URL=${JOBS_QUEUE_URL}

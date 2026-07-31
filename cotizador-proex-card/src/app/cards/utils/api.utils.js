@@ -16,7 +16,8 @@ export const fetchFromAPI = async (endpoint, options = {}) => {
     const response = await hubspot.fetch(url, {
       method: options.method || "GET",
       timeout: API_CONFIG.timeout,
-      body: options.body
+      body: options.body,
+      headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` }
     });
 
     if (!response.ok) {
@@ -183,5 +184,27 @@ export const fetchTipoIVA = async (tipoResidencia) => {
   } catch (error) {
     console.error("Error al obtener tipos de IVA:", error);
     return empty;
+  }
+};
+
+// Empresas asociadas a la del negocio por la relación "Proveedor-Cliente", con
+// su dirección de entrega. Alimenta el selector de autorrelleno de la
+// "Dirección de Entrega" en DocumentacionTab.
+export const fetchEmpresasAsociadas = async (dealId) => {
+  if (!dealId) return [];
+
+  try {
+    const response = await fetchFromAPI(
+      `/api/v1/deals/${dealId}/empresas-asociadas`
+    );
+
+    return (response.empresas || []).map((e) => ({
+      id: e.id,
+      nombre: e.name || "",
+      direccionEntrega: e.address_entrega || null,
+    }));
+  } catch (error) {
+    console.error("Error al obtener empresas asociadas:", error);
+    return [];
   }
 };

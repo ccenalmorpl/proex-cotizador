@@ -157,7 +157,8 @@ const ArticulosTab = ({
         const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.deals}/${dealId}/articles`;
         console.log("[ArticulosTab] GET articles URL:", url);
         const response = await hubspot.fetch(url, {
-          timeout: API_CONFIG.timeout
+          timeout: API_CONFIG.timeout,
+          headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` }
         });
 
         console.log("[ArticulosTab] Response articles: ok =", response.ok, "status =", response.status);
@@ -202,8 +203,10 @@ const ArticulosTab = ({
               codigoProveedor: art.codigo_proveedor || "",
               proveedor: art.codigo_proveedor || "", // Para consistencia con search results
               nombre: art.name || "",
+              name_es: art.name_es || "",
               name_en: art.name_en || "",
               name_fr: art.name_fr || "",
+              description: art.description || "",
               pesoNeto: art.peso_neto || 0,
               cajas20: 0,
               cajas40: 0,
@@ -318,7 +321,8 @@ const ArticulosTab = ({
         API_CONFIG.endpoints.articles
       }/product/list?query=${encodeURIComponent(query)}&limit=100`;
       const response = await hubspot.fetch(url, {
-        timeout: API_CONFIG.timeout
+        timeout: API_CONFIG.timeout,
+        headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` }
       });
 
       if (!response.ok) {
@@ -333,6 +337,7 @@ const ArticulosTab = ({
       
       // Mapear la respuesta del API a la estructura esperada y filtrar ya seleccionados
       const productosFormateados = data.products
+        .filter((producto) => producto.activo === "Activo")
         .filter(
           // Usar HubSpot product id (siempre único) para excluir ya seleccionados.
           // Antes se usaba hs_sku, lo que causaba que null === null filtrara todo.
@@ -343,6 +348,9 @@ const ArticulosTab = ({
           id: producto.id,        // HubSpot product ID (siempre único)
           hs_sku: producto.hs_sku || "", // SKU separado para el payload al guardar
           nombre: producto.name,
+          name_es: producto.name_es || "",
+          name_en: producto.name_en || "",
+          name_fr: producto.name_fr || "",
           codigoProveedor: producto.codigo_proveedor || "",
           pesoNeto: producto.peso_neto || 0,
           cajas20: 0,
@@ -430,7 +438,8 @@ const ArticulosTab = ({
           const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.articles}/provider/${proveedorCode}`;
           console.log("[AutoSelect] Buscando proveedor en:", url);
           const response = await hubspot.fetch(url, {
-            timeout: API_CONFIG.timeout
+            timeout: API_CONFIG.timeout,
+            headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` }
           });
 
           console.log("[AutoSelect] Respuesta HTTP:", response.status, response.ok);
@@ -518,7 +527,8 @@ const ArticulosTab = ({
         API_CONFIG.endpoints.articles
       }/providers/list?query=${encodeURIComponent(query)}`;
       const response = await hubspot.fetch(url, {
-        timeout: API_CONFIG.timeout
+        timeout: API_CONFIG.timeout,
+        headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` }
       });
       const data = await response.json();
 
@@ -647,7 +657,8 @@ const ArticulosTab = ({
       const response = await hubspot.fetch(url, {
         method: "POST",
         body: payload,
-        timeout: API_CONFIG.timeout
+        timeout: API_CONFIG.timeout,
+        headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` }
       });
 
       if (!response.ok) {

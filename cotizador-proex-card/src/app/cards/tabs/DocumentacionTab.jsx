@@ -24,6 +24,7 @@ import {
   fetchFromAPI,
   fetchTextosCotizacion,
   convertTextToHTML,
+  fetchEmpresasAsociadas,
 } from "../utils/api.utils";
 
 const DEFAULT_SHIPPER = `PROEX DRINKS GROUP, S.A\nAvda. Américo Vespucio 5\nEdif. Cartuja, bloque A, 2ª planta\n41092 Sevilla (Sevilla) España\nC.I.F A41992975`;
@@ -59,6 +60,11 @@ const DocumentacionTab = ({
   const [isLoadingTextoBaseOferta, setIsLoadingTextoBaseOferta] =
     useState(false);
 
+  // Empresas asociadas a la del negocio ("Proveedor-Cliente") para autorrellenar
+  // la dirección de entrega con la de la empresa elegida.
+  const [empresasAsociadas, setEmpresasAsociadas] = useState([]);
+  const [empresaEntregaSel, setEmpresaEntregaSel] = useState("");
+
   // Marcar que el render inicial está completo después de un breve delay
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -67,6 +73,22 @@ const DocumentacionTab = ({
 
     return () => clearTimeout(timer);
   }, []);
+
+  const dealId = context?.crm?.objectId;
+
+  useEffect(() => {
+    if (!dealId) {
+      setEmpresasAsociadas([]);
+      return;
+    }
+    let cancelado = false;
+    fetchEmpresasAsociadas(dealId).then((data) => {
+      if (!cancelado) setEmpresasAsociadas(data);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [dealId]);
 
   // Cargar textos desde HubDB en la carga inicial si hay selectores con valores pero textos vacíos
   useEffect(() => {
@@ -225,6 +247,12 @@ const DocumentacionTab = ({
     });
   };
 
+  const handleSeleccionEmpresaEntrega = (empresaId) => {
+    setEmpresaEntregaSel(empresaId);
+    const empresa = empresasAsociadas.find((e) => e.id === empresaId);
+    updateDocumentacionField("direccionDeEntrega", empresa?.direccionEntrega || "");
+  };
+
   // Genera la descripción de mercancía para el certificado de origen
   const generarDescripcionMercancia = useCallback((idioma) => {
     const { contenedoresDefinidos = [], cantidadesContenedores = {} } = contenedoresData || {};
@@ -244,15 +272,27 @@ const DocumentacionTab = ({
     const lines = articulosSeleccionados
       .filter((art) => cajasPorArticulo[art.id] > 0)
       .map((art) => {
+        // Documento de cliente: nombre limpio. ES sale de `description` (line item
+        // copiado del producto), EN/FR de name_en/name_fr. Nunca el `name` interno
+        // (lleva código/packaging); solo se usa como último recurso si falta todo.
+        const limpio = art.description || art.nombre;
         const nombre =
-          idiomaLower === "en" ? (art.name_en || art.nombre) :
-          idiomaLower === "fr" ? (art.name_fr || art.nombre) :
-          art.nombre;
+          idiomaLower === "en" ? (art.name_en || limpio) :
+          idiomaLower === "fr" ? (art.name_fr || limpio) :
+          limpio;
         return `${cajasPorArticulo[art.id]} ${cajasText} ${(nombre || "").toUpperCase()}`;
       });
 
     return lines.join("\n");
   }, [contenedoresData, articulosSeleccionados]);
+
+  // La descripción de mercancía solo se autocompleta cuando el documento
+  // "Certificado de Origen" está marcado en "Documentos a Generar".
+  const isCertificadoOrigenSeleccionado = (
+    documentacionData.documentosAGenerar?.value || ""
+  )
+    .split(";")
+    .includes("certificado_de_origen");
 
   // Auto-generar descripción de mercancía cuando cambian los contenedores
   const hasMountedContenedoresRef = useRef(false);
@@ -266,10 +306,14 @@ const DocumentacionTab = ({
       if (documentacionData.certificadoOrigenMercancia) return;
     }
 
+    // Sin el certificado de origen seleccionado no se autocompleta nada (se
+    // conserva lo que el usuario tenga escrito).
+    if (!isCertificadoOrigenSeleccionado) return;
+
     const idioma = documentacionData.idiomaCotizacion?.value;
     const text = generarDescripcionMercancia(idioma);
     if (text) updateDocumentacionField("certificadoOrigenMercancia", text);
-  }, [contenedoresData]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [contenedoresData, isCertificadoOrigenSeleccionado]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Al cambiar el idioma, se rellenan los textos
   const handleIdiomaChange = async (value) => {
@@ -360,7 +404,11 @@ const DocumentacionTab = ({
       textoFormaPago: textoFormaPago || documentacionData.textoFormaPago || "",
       textoBaseOferta:
         textoBaseOferta || documentacionData.textoBaseOferta || "",
-      certificadoOrigenMercancia: generarDescripcionMercancia(value) || documentacionData.certificadoOrigenMercancia || "",
+      certificadoOrigenMercancia: isCertificadoOrigenSeleccionado
+        ? generarDescripcionMercancia(value) ||
+          documentacionData.certificadoOrigenMercancia ||
+          ""
+        : documentacionData.certificadoOrigenMercancia || "",
     });
 
     // Desactivar loading
@@ -641,6 +689,21 @@ const DocumentacionTab = ({
       )}
 
       <Flex direction="column" gap="medium">
+        <Box>
+          <Select
+            label="Idioma de la Cotización"
+            name="idioma_cotizacion"
+            description="Selecciónelo primero: define el idioma de la documentación comercial y traduce la descripción de mercancía"
+            placeholder="Seleccionar..."
+            value={documentacionData.idiomaCotizacion?.value || ""}
+            onChange={handleIdiomaChange}
+            options={documentacionData.idiomaCotizacion?.options || []}
+            required={true}
+          />
+        </Box>
+
+        <Divider />
+
         <Flex direction="row" gap="small">
           <Box flex={1}>
             <TextArea
@@ -657,17 +720,36 @@ const DocumentacionTab = ({
             />
           </Box>
           <Box flex={1}>
-            <TextArea
-              label="Dirección de Entrega"
-              name="direccion_de_entrega"
-              description="Dirección donde se entregará la mercancía (si aplica)."
-              placeholder=""
-              rows={3}
-              value={documentacionData.direccionDeEntrega || ""}
-              onChange={(value) =>
-                updateDocumentacionField("direccionDeEntrega", value)
-              }
-            />
+            <Flex direction="column" gap="small">
+              <Select
+                label="Autorrellenar desde empresa asociada"
+                name="empresa_asociada_entrega"
+                description="Autorrellena la dirección con la de la empresa seleccionada."
+                placeholder={
+                  empresasAsociadas.length === 0
+                    ? "Sin empresas asociadas"
+                    : "Seleccionar empresa..."
+                }
+                value={empresaEntregaSel}
+                onChange={handleSeleccionEmpresaEntrega}
+                options={empresasAsociadas.map((e) => ({
+                  label: e.nombre,
+                  value: e.id,
+                }))}
+                readOnly={empresasAsociadas.length === 0}
+              />
+              <TextArea
+                label="Dirección de Entrega"
+                name="direccion_de_entrega"
+                description="Dirección donde se entregará la mercancía (si aplica)."
+                placeholder=""
+                rows={3}
+                value={documentacionData.direccionDeEntrega || ""}
+                onChange={(value) =>
+                  updateDocumentacionField("direccionDeEntrega", value)
+                }
+              />
+            </Flex>
           </Box>
         </Flex>
 
@@ -903,23 +985,9 @@ const DocumentacionTab = ({
         <Box>
           <Heading as="h3">2. Configuración de la Cotización</Heading>
           <Text format={{ fontWeight: "normal" }}>
-            Defina el idioma, condiciones de pago y textos legales de la
-            cotización
+            Defina las condiciones de pago y textos legales de la cotización
           </Text>
           <Flex direction="column" gap="small">
-            <Box>
-              <Select
-                label="Idioma de la Cotización"
-                name="idioma_cotizacion"
-                description="Seleccione el idioma en el que se generará la documentación comercial"
-                placeholder="Seleccionar..."
-                value={documentacionData.idiomaCotizacion?.value || ""}
-                onChange={handleIdiomaChange}
-                options={documentacionData.idiomaCotizacion?.options || []}
-                required={true}
-              />
-            </Box>
-
             <Box>
               <TextArea
                 label="Texto Base de la Oferta Comercial"

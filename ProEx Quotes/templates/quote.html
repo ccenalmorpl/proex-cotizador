@@ -120,6 +120,34 @@
   {% endif %}
 {% endmacro %}
 
+{# Precio final por caja replicando _resolver_precios_linea del backend:
+   promo (EXW 0) → 0; ancla vigente del incoterm de venta → ancla exacta (evita el
+   residuo de recomponer desde el EXW guardado a 3 decimales); sin ancla o con clamp
+   (el ancla no cubre coste+add-ons) → recompuesto EXW + delta_por_caja.
+
+   El recompuesto se redondea a 3 decimales: es la precisión con la que se persiste
+   el precio (round_price del backend), así que el redondeo devuelve el precio
+   negociado en vez del residuo que arrastra el EXW guardado. Sin él, un EXW de
+   6,34 (= 7,00 − 0,6602564) recompone 7,0002564 y el 0,0002564/caja se multiplica
+   por todas las cajas: +1,60 € en 6.240 cajas, tanto en el total de línea como en
+   la escalera de INCOTERMS. Es además el precio que se muestra en la columna
+   PRECIO, de modo que precio × bultos cuadra en el documento. #}
+{% macro precio_caja_final(item, delta, term) %}
+  {%- set exw = item.price|default(0)|string|trim|float -%}
+  {%- if exw == 0 -%}
+0
+  {%- else -%}
+    {%- set recompuesto = exw + delta -%}
+    {%- set ancla = item.precio_negociado_tipo_venta|default(0)|string|trim|float -%}
+    {%- set ancla_ic = (item.incoterm_precio_negociado|default(""))|string|upper|replace(" ", "_")|replace("Í", "I") -%}
+    {%- if ancla > 0 and ancla_ic == term and recompuesto <= ancla + 0.005 -%}
+{{ ancla }}
+    {%- else -%}
+{{ recompuesto|round(3) }}
+    {%- endif -%}
+  {%- endif -%}
+{% endmacro %}
+
 {# ===================================================== #}
 {# Datos HubSpot (asociaciones)                            #}
 {# ===================================================== #}
@@ -163,7 +191,6 @@
 {% set header_date = quote.hs_createdate|default(json_get_str(header_raw, "date", "")) %}
 
 {# Estos 4 normalmente NO están en asociaciones: dejamos payload como fallback #}
-{% set vessel = json_get_str(header_raw, "vessel", "")|trim %}
 {% set sealNumber = json_get_str(header_raw, "sealNumber", "")|trim %}
 {% set etd = json_get_str(header_raw, "etd", "")|trim %}
 {% set eta = json_get_str(header_raw, "eta", "")|trim %}
@@ -205,10 +232,23 @@
 
 {# ===================================================== #}
 {# Tipo de cotización: Nacional vs. Exportación           #}
-{# Nacional si deal.tipo_de_venta == "DAP_TERRESTRE"      #}
+{# Lo decide el tipo de cliente de la Company             #}
+{# (tipo_cliente: nacional | exportacion), NO el          #}
+{# transporte. Vacío/desconocido → exportación.           #}
 {# ===================================================== #}
-{% set quote_type = company.custom_properties.tipo_cliente.internal if company and company.custom_properties else none %}
-{% set is_nacional = (quote_type == "nacional") %}
+{% set _tipo_cliente = "" %}
+{% if company and company.custom_properties and company.custom_properties.tipo_cliente %}
+  {% set _cp_tc = company.custom_properties.tipo_cliente %}
+  {% set _tipo_cliente = (_cp_tc.internal|default(_cp_tc.value|default(_cp_tc.label|default(""))))|lower|trim %}
+{% endif %}
+{% if not _tipo_cliente %}
+  {% set _tipo_cliente = json_get_str(json_get_obj(payload_json, "cliente"), "tipoCliente", "")|lower|trim %}
+{% endif %}
+{% set is_nacional = (_tipo_cliente == "nacional") %}
+
+{# En exportación con carga por palets el tipo de contenedor no es relevante (grupaje): se oculta. #}
+{% set is_carga_palets = deal.carga_por_palets == "true" or deal.carga_por_palets == true %}
+{% set ocultar_tipo_contenedor = is_carga_palets and not is_nacional %}
 
 {# ===================================================== #}
 {# Idioma: Español / Inglés (default) / Francés          #}
@@ -227,7 +267,6 @@
   {% set lbl_container_hdr   = "Contenedor:" %}
   {% set lbl_etd             = "ETD:" %}
   {% set lbl_booking         = "RESERVA:" %}
-  {% set lbl_vessel          = "Buque:" %}
   {% set lbl_currency        = "Moneda:" %}
   {% set lbl_seal            = "Precinto N°:" %}
   {% set lbl_eta             = "ETA:" %}
@@ -245,6 +284,7 @@
   {% set lbl_vat             = "TOTAL € IVA" %}
   {% set lbl_total_amount    = "TOTAL € IMPORTE" %}
   {% set lbl_price_exw       = "PRECIO EXW" %}
+  {% set lbl_price_fca       = "PRECIO FCA" %}
   {% set lbl_fob_expenses    = "GASTOS FOB" %}
   {% set lbl_total_fob       = "TOTAL FOB" %}
   {% set lbl_seafreight      = "FLETE MARÍTIMO" %}
@@ -275,7 +315,6 @@
   {% set lbl_container_hdr   = "Conteneur :" %}
   {% set lbl_etd             = "ETD :" %}
   {% set lbl_booking         = "RÉSERVATION :" %}
-  {% set lbl_vessel          = "Navire :" %}
   {% set lbl_currency        = "Devise :" %}
   {% set lbl_seal            = "Scellé N° :" %}
   {% set lbl_eta             = "ETA :" %}
@@ -293,6 +332,7 @@
   {% set lbl_vat             = "TOTAL € TVA" %}
   {% set lbl_total_amount    = "TOTAL € MONTANT" %}
   {% set lbl_price_exw       = "PRIX EXW" %}
+  {% set lbl_price_fca       = "PRIX FCA" %}
   {% set lbl_fob_expenses    = "FRAIS FOB" %}
   {% set lbl_total_fob       = "TOTAL FOB" %}
   {% set lbl_seafreight      = "FRET MARITIME" %}
@@ -324,7 +364,6 @@
   {% set lbl_container_hdr   = "Container:" %}
   {% set lbl_etd             = "ETD:" %}
   {% set lbl_booking         = "BOOKING:" %}
-  {% set lbl_vessel          = "Vessel:" %}
   {% set lbl_currency        = "Currency:" %}
   {% set lbl_seal            = "Seal N°:" %}
   {% set lbl_eta             = "ETA:" %}
@@ -342,6 +381,7 @@
   {% set lbl_vat             = "TOTAL € VAT" %}
   {% set lbl_total_amount    = "TOTAL € AMOUNT" %}
   {% set lbl_price_exw       = "PRICE EX WORK" %}
+  {% set lbl_price_fca       = "PRICE FCA" %}
   {% set lbl_fob_expenses    = "FOB EXPENSES" %}
   {% set lbl_total_fob       = "TOTAL FOB" %}
   {% set lbl_seafreight      = "SEAFREIGHT RATE" %}
@@ -400,9 +440,10 @@
   {% endif %}
 {% endmacro %}
 
-{# ns_nac y buckets por tasa se calculan tras `ns_tabla.total` (más abajo)
-   para usar el mismo redondeo `(item.price + delta_por_caja)|round(3) × cajas`
-   que la tabla de productos. #}
+{# ns_nac y buckets por tasa se calculan tras `ns_tabla.total` (más abajo) con el
+   mismo criterio que la tabla de productos: `precio_caja_final × cajas`, siempre
+   el precio/caja a 3 decimales (ancla del tipo de venta, o recompuesto redondeado
+   a esa misma precisión), nunca el recompuesto crudo. #}
 
 {# ===================================================== #}
 {# LineItems - usar asociaciones de HubSpot                #}
@@ -516,8 +557,31 @@
   {% endif %}
 {% endif %}
 
-{% set _term = (terms|default("EXW"))|upper|replace(" ", "_") %}
-{% if _term == "EXW" %}
+{# upper + sin espacios + sin acento (el value de HubSpot es "DAP MARÍTIMO") #}
+{% set _term = (terms|default("EXW"))|upper|replace(" ", "_")|replace("Í", "I") %}
+
+{# Nivel de la escalera de incoterms a mostrar en el footer de exportación.
+   La última fila visible es la del tipo de venta de la cotización:
+   EXW/FCA→PRECIO EXW|FCA, FOB→TOTAL FOB, CFR→TOTAL CFR, CIF/DAP→TOTAL CIF.
+   FCA se trata como EXW (nivel 1); solo cambia la etiqueta de esa fila. #}
+{% if _term == "EXW" or _term == "FCA" %}
+  {% set term_level = 1 %}
+{% elif _term == "FOB" %}
+  {% set term_level = 2 %}
+{% elif _term == "CFR" %}
+  {% set term_level = 3 %}
+{% else %}
+  {% set term_level = 4 %}
+{% endif %}
+
+{# Etiqueta de la fila de nivel 1 (precio base): FCA conserva su nombre. #}
+{% if _term == "FCA" %}
+  {% set lbl_price_lvl1 = lbl_price_fca %}
+{% else %}
+  {% set lbl_price_lvl1 = lbl_price_exw %}
+{% endif %}
+
+{% if _term == "EXW" or _term == "FCA" %}
   {% set delta_por_caja = comision_por_caja %}
 {% elif _term == "DAP_TERRESTRE" %}
   {% set delta_por_caja = hasta_localidad_destino + servicios_por_caja + comision_por_caja %}
@@ -538,7 +602,7 @@
 {# Multi-contenedor: agregar artículos por hs_sku          #}
 {# Single-contenedor: filtrar artículos directo            #}
 {# ===================================================== #}
-{% if num_containers > 1 %}
+{% if num_containers > 1 and not is_nacional %}
   {# Recoger TODOS los artículos de todos los contenedores #}
   {% set ns_mc = namespace(raw=[]) %}
   {% for item in all_line_items %}
@@ -587,20 +651,21 @@
 {# redondeo a 3 decimales en item.price guardado en HS).   #}
 {# ===================================================== #}
 {% set ns_tabla = namespace(total=0.0) %}
-{% if num_containers > 1 %}
+{% if num_containers > 1 and not is_nacional %}
   {% set _tabla_items = all_mc_items %}
 {% else %}
   {% set _tabla_items = line_items %}
 {% endif %}
 {% for item in _tabla_items %}
   {% set qty = item.quantity|default(0)|string|trim|float %}
-  {% set lp  = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+  {% set lp = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
   {% set ns_tabla.total = ns_tabla.total + (lp * qty) %}
 {% endfor %}
 
 {# ===================================================== #}
-{# Nacional: buckets por (iva%, recargo%) usando el mismo  #}
-{# redondeo que la tabla — Σ round(precio+delta, 3) × cajas#}
+{# Nacional: buckets por (iva%, recargo%) con el mismo      #}
+{# criterio que la tabla — Σ (precio+delta) × cajas sin      #}
+{# redondear el precio/caja antes de multiplicar.            #}
 {# ===================================================== #}
 {% set _ns_iva = namespace(rows=[]) %}
 {% if is_nacional %}
@@ -674,7 +739,7 @@
 
     {% if iva_pct == iva_target and rec_pct == rec_target %}
       {% set qty = item.quantity|default(0)|string|trim|float %}
-      {% set lp  = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+      {% set lp = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
       {% set subtotal = lp * qty %}
       {% set efectivo = iva_target + rec_target %}
       {% set ns_b.base = ns_b.base + subtotal %}
@@ -693,7 +758,7 @@
 {% set nacional_impuestos = ns_nac.imp %}
 {% set nacional_total = nacional_base + nacional_impuestos %}
 
-{% set _t = (terms|default(""))|upper|replace(" ", "_") %}
+{% set _t = (terms|default(""))|upper|replace(" ", "_")|replace("Í", "I") %}
 {% if _t == "CIF" %}
   {% set precios_totalCIF = ns_tabla.total %}
   {% set precios_totalCFR = precios_totalCIF - real_insurance %}
@@ -709,7 +774,7 @@
   {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
   {% set precios_totalCIF = precios_totalCFR + real_insurance %}
   {% set precios_totalEXW = precios_totalFOB - real_fobExpenses %}
-{% elif _t == "DAP_MARITIMO" or _t == "DAP_MARÍTIMO" %}
+{% elif _t == "DAP_MARITIMO" %}
   {% set precios_totalEXW = ns_tabla.total - real_fobExpenses - (2 * real_seafreightRate) %}
   {% set precios_totalFOB = precios_totalEXW + real_fobExpenses %}
   {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
@@ -785,7 +850,6 @@
         <div class="ref-column">
           <table class="ref-table">
             {% if header_date %}<tr><td class="label">{{ lbl_date }}</td><td class="value">{{ format_date(header_date) }}</td></tr>{% endif %}
-            {% if vessel %}<tr><td class="label">{{ lbl_vessel }}</td><td class="value">{{ vessel }}</td></tr>{% endif %}
             {% if currency %}<tr><td class="label">{{ lbl_currency }}</td><td class="value">{{ currency }}</td></tr>{% endif %}
             {% if sealNumber %}<tr><td class="label">{{ lbl_seal }}</td><td class="value">{{ sealNumber }}</td></tr>{% endif %}
             {% if eta %}<tr><td class="label">{{ lbl_eta }}</td><td class="value">{{ format_date(eta) }}</td></tr>{% endif %}
@@ -823,7 +887,10 @@
           {% for item in line_items %}
             {# Código y precio/peso unitarios (iguales para todos los contenedores) #}
             {% set li_code   = item.hs_sku|default("") %}
-            {% set li_price  = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+            {# Línea promocional (precio 0): regalo, no se le suma flete/servicios → 0 #}
+            {% set _is_promo = (item.price|default(0)|string|trim|float) == 0 %}
+            {% set li_price_full = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
+            {% set li_price  = li_price_full|round(3) %}
             {% set li_weight = item.peso_bruto|default(0) %}
 
             {# Nombre por idioma: ES→description, EN→name_en, FR→name_fr (sin código).
@@ -850,10 +917,10 @@
               {% endfor %}
               {% set li_name_raw = ns_n.result if (num_containers > 1 and ns_n.result) else item.name|default("") %}
             {% endif %}
-            {% set li_name = li_name_raw %}
+            {% set li_name = (li_name_raw ~ " (Promoción)") if _is_promo else li_name_raw %}
 
-            {# Cantidad y total: agregar entre contenedores si multi #}
-            {% if num_containers > 1 %}
+            {# Cantidad y total: agregar entre contenedores si multi (no en nacional) #}
+            {% if num_containers > 1 and not is_nacional %}
               {% set ns_agg = namespace(qty=0.0, amount=0.0) %}
               {% set li_sku = item.hs_sku|default("") %}
               {% for same in all_mc_items %}
@@ -863,10 +930,10 @@
                 {% endif %}
               {% endfor %}
               {% set li_qty   = ns_agg.qty %}
-              {% set li_total = li_price * ns_agg.qty %}
+              {% set li_total = li_price_full * ns_agg.qty %}
             {% else %}
               {% set li_qty   = item.quantity|default(1.0) %}
-              {% set li_total = li_price * li_qty %}
+              {% set li_total = li_price_full * li_qty %}
             {% endif %}
 
             {# Unit: traducible #}
@@ -942,13 +1009,23 @@
 
       <div class="totals-breakdown">
         <table class="breakdown-table">
+          {% if term_level == 1 %}
+          <tr class="final-total-row"><td class="label"><strong>{{ lbl_price_lvl1 }}</strong></td><td class="value"><strong>{{ format_money(precios_totalEXW, currency) }}</strong></td></tr>
+          {% else %}
           <tr class="subtotal-row"><td class="label">{{ lbl_price_exw }}</td><td class="value">{{ format_money(precios_totalEXW, currency) }}</td></tr>
+          {% endif %}
+          {% if term_level >= 2 %}
           <tr><td class="label">{{ lbl_fob_expenses }}</td><td class="value">{{ format_money(precios_fobExpenses, currency) }}</td></tr>
-          <tr class="subtotal-row"><td class="label"><strong>{{ lbl_total_fob }}</strong></td><td class="value"><strong>{{ format_money(precios_totalFOB, currency) }}</strong></td></tr>
+          <tr class="{% if term_level == 2 %}final-total-row{% else %}subtotal-row{% endif %}"><td class="label"><strong>{{ lbl_total_fob }}</strong></td><td class="value"><strong>{{ format_money(precios_totalFOB, currency) }}</strong></td></tr>
+          {% endif %}
+          {% if term_level >= 3 %}
           <tr><td class="label">{{ lbl_seafreight }}</td><td class="value">{{ format_money(precios_seafreightRate, currency) }}</td></tr>
-          <tr class="subtotal-row"><td class="label"><strong>{{ lbl_total_cfr }}</strong></td><td class="value"><strong>{{ format_money(precios_totalCFR, currency) }}</strong></td></tr>
+          <tr class="{% if term_level == 3 %}final-total-row{% else %}subtotal-row{% endif %}"><td class="label"><strong>{{ lbl_total_cfr }}</strong></td><td class="value"><strong>{{ format_money(precios_totalCFR, currency) }}</strong></td></tr>
+          {% endif %}
+          {% if term_level >= 4 %}
           <tr><td class="label">{{ lbl_insurance }}</td><td class="value">{{ format_money(precios_insurance, currency) }}</td></tr>
           <tr class="final-total-row"><td class="label"><strong>{{ lbl_total_cif }}</strong></td><td class="value"><strong>{{ format_money(precios_totalCIF, currency) }}</strong></td></tr>
+          {% endif %}
         </table>
       </div>
 
@@ -960,7 +1037,7 @@
         </table>
 
         <table class="stats-table mt-2">
-          <tr><td class="label">{{ lbl_container_type }}</td><td class="value">{{ stats_containerType }}</td></tr>
+          {% if not ocultar_tipo_contenedor %}<tr><td class="label">{{ lbl_container_type }}</td><td class="value">{{ stats_containerType }}</td></tr>{% endif %}
           <tr><td class="label">{{ lbl_filled_up_to }}</td><td class="value">{{ stats_filledUpTo }}%</td></tr>
           <tr><td class="label">{{ lbl_num_containers }}</td><td class="value">{{ stats_numContainers }}</td></tr>
         </table>
@@ -1016,7 +1093,7 @@
     {% set ns_cs = namespace(gross=0.0, net=0.0, colis=0.0, total=0.0) %}
     {% for item in cont_items %}
       {% set qty = item.quantity|default(0)|string|trim|float %}
-      {% set unit_price = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+      {% set unit_price = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
       {% set line_total = unit_price * qty %}
 
       {% set ns_cs.colis = ns_cs.colis + qty %}
@@ -1034,7 +1111,7 @@
 {% set cont_seafreightRate = real_seafreightRate / nc %}
 {% set cont_insurance      = real_insurance      / nc %}
 
-{% set _t = (terms|default(""))|upper|replace(" ", "_") %}
+{% set _t = (terms|default(""))|upper|replace(" ", "_")|replace("Í", "I") %}
 {% if _t == "CIF" %}
   {% set cont_totalCIF = ns_cs.total %}
   {% set cont_totalCFR = cont_totalCIF - cont_insurance %}
@@ -1050,7 +1127,7 @@
   {% set cont_totalCFR = cont_totalFOB + cont_seafreightRate %}
   {% set cont_totalCIF = cont_totalCFR + cont_insurance %}
   {% set cont_totalEXW = cont_totalFOB - cont_fobExpenses %}
-{% elif _t == "DAP_MARITIMO" or _t == "DAP_MARÍTIMO" %}
+{% elif _t == "DAP_MARITIMO" %}
   {% set cont_totalEXW = ns_cs.total - cont_fobExpenses - (2 * cont_seafreightRate) %}
   {% set cont_totalFOB = cont_totalEXW + cont_fobExpenses %}
   {% set cont_totalCFR = cont_totalFOB + cont_seafreightRate %}
@@ -1122,7 +1199,7 @@
 
         {% if iva_pct == iva_target and rec_pct == rec_target %}
           {% set qty = item.quantity|default(0)|string|trim|float %}
-          {% set lp  = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+          {% set lp = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
           {% set subtotal = lp * qty %}
           {% set efectivo = iva_target + rec_target %}
           {% set ns_b.base = ns_b.base + subtotal %}
@@ -1179,7 +1256,6 @@
           <div class="ref-column">
             <table class="ref-table">
               {% if header_date %}<tr><td class="label">{{ lbl_date }}</td><td class="value">{{ format_date(header_date) }}</td></tr>{% endif %}
-              {% if vessel %}<tr><td class="label">{{ lbl_vessel }}</td><td class="value">{{ vessel }}</td></tr>{% endif %}
               {% if currency %}<tr><td class="label">{{ lbl_currency }}</td><td class="value">{{ currency }}</td></tr>{% endif %}
               {% if sealNumber %}<tr><td class="label">{{ lbl_seal }}</td><td class="value">{{ sealNumber }}</td></tr>{% endif %}
               {% if eta %}<tr><td class="label">{{ lbl_eta }}</td><td class="value">{{ format_date(eta) }}</td></tr>{% endif %}
@@ -1213,7 +1289,9 @@
           <tbody>
             {% for item in cont_items %}
               {% set li_code   = item.hs_sku|default("") %}
-              {% set li_price  = ((item.price|default(0)|string|trim|float) + delta_por_caja)|round(3) %}
+              {% set _is_promo = (item.price|default(0)|string|trim|float) == 0 %}
+              {% set li_price_full = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
+              {% set li_price  = li_price_full|round(3) %}
               {% set li_weight = item.peso_bruto|default(0) %}
               {# Nombre por idioma: ES→description, EN→name_en, FR→name_fr (sin código).
                  Fallback a item.name con strip del prefijo "CONTAINER_NAME - " si vacío. #}
@@ -1239,9 +1317,9 @@
                 {% endfor %}
                 {% set li_name_raw = ns_n.result if ns_n.result else item.name|default("") %}
               {% endif %}
-              {% set li_name = li_name_raw %}
+              {% set li_name = (li_name_raw ~ " (Promoción)") if _is_promo else li_name_raw %}
               {% set li_qty   = item.quantity|default(1.0) %}
-              {% set li_total = li_price * li_qty %}
+              {% set li_total = li_price_full * li_qty %}
               <tr>
                 <td class="code">{{ li_code }}</td>
                 <td class="item">{{ li_name }}</td>
@@ -1305,13 +1383,23 @@
         <div class="totals-grid">
           <div class="totals-breakdown">
             <table class="breakdown-table">
+              {% if term_level == 1 %}
+              <tr class="final-total-row"><td class="label"><strong>{{ lbl_price_lvl1 }}</strong></td><td class="value"><strong>{{ format_money(cont_totalEXW, currency) }}</strong></td></tr>
+              {% else %}
               <tr class="subtotal-row"><td class="label">{{ lbl_price_exw }}</td><td class="value">{{ format_money(cont_totalEXW, currency) }}</td></tr>
+              {% endif %}
+              {% if term_level >= 2 %}
               <tr><td class="label">{{ lbl_fob_expenses }}</td><td class="value">{{ format_money(cont_fobExpenses, currency) }}</td></tr>
-              <tr class="subtotal-row"><td class="label"><strong>{{ lbl_total_fob }}</strong></td><td class="value"><strong>{{ format_money(cont_totalFOB, currency) }}</strong></td></tr>
+              <tr class="{% if term_level == 2 %}final-total-row{% else %}subtotal-row{% endif %}"><td class="label"><strong>{{ lbl_total_fob }}</strong></td><td class="value"><strong>{{ format_money(cont_totalFOB, currency) }}</strong></td></tr>
+              {% endif %}
+              {% if term_level >= 3 %}
               <tr><td class="label">{{ lbl_seafreight }}</td><td class="value">{{ format_money(cont_seafreightRate, currency) }}</td></tr>
-              <tr class="subtotal-row"><td class="label"><strong>{{ lbl_total_cfr }}</strong></td><td class="value"><strong>{{ format_money(cont_totalCFR, currency) }}</strong></td></tr>
+              <tr class="{% if term_level == 3 %}final-total-row{% else %}subtotal-row{% endif %}"><td class="label"><strong>{{ lbl_total_cfr }}</strong></td><td class="value"><strong>{{ format_money(cont_totalCFR, currency) }}</strong></td></tr>
+              {% endif %}
+              {% if term_level >= 4 %}
               <tr><td class="label">{{ lbl_insurance }}</td><td class="value">{{ format_money(cont_insurance, currency) }}</td></tr>
               <tr class="final-total-row"><td class="label"><strong>{{ lbl_total_cif }}</strong></td><td class="value"><strong>{{ format_money(cont_totalCIF, currency) }}</strong></td></tr>
+              {% endif %}
             </table>
           </div>
           <div class="totals-stats">
@@ -1321,7 +1409,7 @@
               <tr><td class="label">{{ lbl_gross_weight }}</td><td class="value">{{ ns_cs.gross|round(2) }}</td></tr>
             </table>
             <table class="stats-table mt-2">
-              <tr><td class="label">{{ lbl_container_type }}</td><td class="value">{{ stats_containerType }}</td></tr>
+              {% if not ocultar_tipo_contenedor %}<tr><td class="label">{{ lbl_container_type }}</td><td class="value">{{ stats_containerType }}</td></tr>{% endif %}
               <tr><td class="label">{{ lbl_filled_up_to }}</td><td class="value">{{ stats_filledUpTo }}%</td></tr>
               <tr><td class="label">{{ lbl_num_containers }}</td><td class="value">1</td></tr>
             </table>
@@ -1454,6 +1542,8 @@
         <th>tipo_articulo</th>
         <th>name</th>
         <th>price</th>
+        <th>precio_negociado_tipo_venta</th>
+        <th>incoterm_precio_negociado</th>
         <th>quantity</th>
         <th>amount</th>
         <th>tipo_iva_repercutido</th>
@@ -1467,6 +1557,8 @@
         <td>{{ it.tipo_articulo }}</td>
         <td>{{ it.name|truncate(40) }}</td>
         <td>{{ it.price }}</td>
+        <td>{{ it.precio_negociado_tipo_venta }}</td>
+        <td>{{ it.incoterm_precio_negociado }}</td>
         <td>{{ it.quantity }}</td>
         <td>{{ it.amount }}</td>
         <td>{{ it.tipo_iva_repercutido }}</td>

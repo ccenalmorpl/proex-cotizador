@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.core.card_auth import verify_card_secret
 from app.models.schemas import HealthResponse
 from app.routes import deals, articles, templates
 from app.shared import hubdb_client
@@ -26,8 +27,9 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.version,
     description="Microservice for Proex quote generation",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if not settings.is_production else None,
+    redoc_url="/redoc" if not settings.is_production else None,
+    openapi_url="/openapi.json" if not settings.is_production else None,
     lifespan=lifespan,
 )
 
@@ -39,16 +41,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(deals.router, prefix="/api/v1/deals", tags=["deals"])
+app.include_router(deals.router, prefix="/api/v1/deals", tags=["deals"], dependencies=[Depends(verify_card_secret)])
 logger.info("Deals router registered at /deals")
 
-app.include_router(articles.router, prefix="/api/v1/articles", tags=["articles"])
+app.include_router(articles.router, prefix="/api/v1/articles", tags=["articles"], dependencies=[Depends(verify_card_secret)])
 logger.info("Articles router registered at /articles")
 
-app.include_router(articles.router, prefix="/api/v1/articles", tags=["articles"])
+app.include_router(articles.router, prefix="/api/v1/articles", tags=["articles"], dependencies=[Depends(verify_card_secret)])
 logger.info("Articles router registered at /articles")
 
-app.include_router(templates.router, prefix="/api/v1/templates", tags=["templates"])
+app.include_router(templates.router, prefix="/api/v1/templates", tags=["templates"], dependencies=[Depends(verify_card_secret)])
 logger.info("Templates router registered at /templates")
 
 @app.get("/health", response_model=HealthResponse)

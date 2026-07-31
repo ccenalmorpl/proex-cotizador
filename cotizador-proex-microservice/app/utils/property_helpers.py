@@ -1,6 +1,8 @@
 import logging
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Optional, Type
 from pydantic import BaseModel
+
+from app.utils.tipologia import es_camion
 
 logger = logging.getLogger(__name__)
 
@@ -180,3 +182,27 @@ def resolve_product_iva(
             return str(product_value).strip()
 
     return compute_default_tipo_iva(residennum, categoria)
+
+# Almacenes SAP (valor interno de la propiedad `almacen`)
+ALMACEN_SAN_ROQUE = "01"
+ALMACEN_EXPORTACION = "10"
+ALMACEN_NACIONAL = "12"
+
+def resolve_almacen_para_elemento(
+    deal_almacen: Any,
+    tipo_articulo: Optional[str],
+    tipo_contenedor: Optional[str],
+) -> Any:
+    """Almacén efectivo de un line item / elemento de pedido o de contenedor.
+
+    Solo los productos (`tipo_articulo == "fabricante"`) se quedan en San Roque (01).
+    El resto (servicio, flete, transitario, comisiones/intermediario, seguro y la
+    propia línea de contenedor) se reubica en el almacén interno por transporte: 12
+    si es camión (trailer), 10 si es contenedor. Para cualquier almacén distinto de
+    San Roque, o para productos, se devuelve `deal_almacen` sin cambios.
+    """
+    if deal_almacen is None or str(deal_almacen).strip() != ALMACEN_SAN_ROQUE:
+        return deal_almacen
+    if (tipo_articulo or "").strip().lower() == "fabricante":
+        return deal_almacen
+    return ALMACEN_NACIONAL if es_camion(tipo_contenedor) else ALMACEN_EXPORTACION

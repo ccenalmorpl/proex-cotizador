@@ -117,6 +117,7 @@ const ClienteTab = ({
         )}`;
         const response = await hubspot.fetch(url, {
           timeout: API_CONFIG.timeout,
+          headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` },
         });
 
         if (!response.ok) {

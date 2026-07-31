@@ -106,6 +106,55 @@ ASSOCIATION_TYPE_ID_CONTENEDOR_TO_COMPANY = 513  # Contenedor → Company
 ASSOCIATION_TYPE_ID_ELEMENTO_TO_CONTACT = 521  # Elemento → Contact
 ASSOCIATION_TYPE_ID_ELEMENTO_TO_COMPANY = 519  # Elemento → Company
 
+# Asociación Empresa↔Empresa con etiqueta "Proveedor-Cliente" (USER_DEFINED).
+# 711 es una de las dos caras del par: al leer las asociadas filtramos por
+# category USER_DEFINED, que captura el par en cualquier sentido y excluye la
+# jerarquía matriz/filial estándar de HubSpot (HUBSPOT_DEFINED).
+ASSOC_TYPE_ID_COMPANY_TO_COMPANY_PROVEEDOR_CLIENTE = 711
+ASSOC_CATEGORY_USER_DEFINED = "USER_DEFINED"
+# Dirección de entrega de la Empresa (Company).
+COMPANY_PROP_ADDRESS_ENTREGA = "address_entrega"
+
+# Objeto personalizado Proveedores
+OBJECT_TYPE_PROVEEDOR = "2-43108800"
+
+# Etiqueta "Transitario terrestre" (par USER_DEFINED análogo a 287/288 del
+# transitario principal). Sentido Proveedor→Deal, el que usa el PUT de
+# asociación de POST /transit (Deal→Proveedor es el 718, lo usa Pedidos).
+PROVEEDOR_ASSOC_TYPE_ID_TRANSITARIO_TERRESTRE = 719  # type: int | None
+
+# Asociaciones Contenedor → Proveedor (réplica de Negocio → Proveedor).
+# Dirección contenedor→proveedor: el contenedor es el "from", igual que el resto
+# de asociaciones del contenedor (deal 489, contacto 511, empresa 513).
+ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_FABRICA = 669
+ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_TRANSITARIO = 671
+ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_INTERMEDIARIO = 673
+ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_SERVICIO = 675
+ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_SEGURO = 677
+
+# tipo_proveedor del objeto Proveedor → typeId de la asociación Contenedor→Proveedor.
+# Mismo criterio que las asociaciones Negocio→Proveedor del cotizador: cualquier
+# proveedor que no sea fabricante/transitario/comisiones/seguro se trata como servicio.
+def contenedor_assoc_type_for_tipo_proveedor(tipo_proveedor: str) -> int:
+    tipo = (tipo_proveedor or "").strip().lower()
+    if tipo == "fabricante":
+        return ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_FABRICA
+    if tipo == "transitario":
+        return ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_TRANSITARIO
+    if tipo == "comisiones":
+        return ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_INTERMEDIARIO
+    if tipo == "seguro":
+        return ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_SEGURO
+    return ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_SERVICIO
+
+CONTENEDOR_PROVEEDOR_ASSOC_TYPE_IDS = {
+    ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_FABRICA,
+    ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_TRANSITARIO,
+    ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_INTERMEDIARIO,
+    ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_SERVICIO,
+    ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PROV_SEGURO,
+}
+
 # Movimiento de tesorería (Pagos) gestionado en pagos-proex-microservice.
 OBJECT_TYPE_PAGO = "2-44408688"
 # Aceptamos ambas direcciones de la etiqueta cobros_to_contenedor: HubSpot
@@ -118,6 +167,12 @@ PAGO_DOCTYPE_CONTENEDOR = "contenedor"
 
 CONTENEDOR_PROP_ACTUALIZACION_PEDIDO = "actualizacion_pedido"
 DEAL_PROP_ACTUALIZACION_PEDIDO = "actualizacion_pedido"
+
+# Objeto personalizado Rutas (fletes cotizados por transitario).
+OBJECT_TYPE_RUTA = "2-53295516"
+# Etiquetas de asociación Negocio → Ruta creadas en HubSpot (dirección deal→ruta).
+ASSOCIATION_TYPE_ID_DEAL_TO_RUTA_TERRESTRE = 714
+ASSOCIATION_TYPE_ID_DEAL_TO_RUTA_MARITIMA = 716
 
 # PROPIEDADES REQUERIDAS
 

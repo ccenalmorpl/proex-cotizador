@@ -21,4 +21,14 @@ def run(deal_id: str, job_id: str) -> dict:
         logger.error(f"[custom_objects_worker.run] job {job_id} terminó con errores: {joined}")
         raise RuntimeError(joined)
 
+    try:
+        from app.services.hubspot_client import hubspot_client
+        from app.services.pedidos_sync import reconciliar_pedidos_si_ganada
+        reconciliar_pedidos_si_ganada(hubspot_client.get_client(), deal_id)
+    except Exception as e:
+        logger.warning(
+            f"[custom_objects_worker.run] reconciliación de pedidos best-effort "
+            f"falló para deal={deal_id}: {e}"
+        )
+
     return stats

@@ -478,6 +478,18 @@ class DealDocumentacionData(BaseModel):
     cif: Optional[str] = Field(None, description="NIF/CIF del cliente para la cotización")
     referencia_cotizacion: Optional[str] = Field(None, description="Referencia de la cotización")
 
+class EmpresaAsociadaItem(BaseModel):
+    """Empresa asociada a la del negocio por la relación "Proveedor-Cliente"."""
+    id: str
+    name: Optional[str] = None
+    address_entrega: Optional[str] = None
+
+
+class EmpresasAsociadasResponse(BaseResponse):
+    """Empresas asociadas para el selector de autorrelleno de dirección de entrega."""
+    empresas: List[EmpresaAsociadaItem] = Field(default_factory=list, description="Empresas asociadas ordenadas por nombre")
+
+
 class DealDocumentacionResponse(BaseResponse):
     """Response model for deal documentacion data endpoint.
 
@@ -649,6 +661,7 @@ class ProductItem(BaseModel):
     hs_price_eur: Optional[float] = Field(None, description="EX-WORKS FABRICA PROVEEDOR price")
     ultimo_precio_compra: Optional[float] = Field(None, description="Last purchase price")
     ultimo_precio_evaluado: Optional[float] = Field(None, description="Last evaluated price")
+    name_es: Optional[str] = Field(None, description="Clean name in Spanish")
     name_en: Optional[str] = Field(None, description="Name in English")
     name_fr: Optional[str] = Field(None, description="Name in French")
     tipo_articulo: Optional[str] = Field(None, description="Article type (fabricante, transitario, servicio, etc.)")
@@ -985,6 +998,10 @@ class ArticleWithProvider(BaseModel):
     hs_sku: Optional[str] = Field(None, description="Product SKU ID")
     codigo_proveedor: Optional[str] = Field(None, description="Supplier product code")
     name: str = Field(..., description="Product name")
+    name_es: Optional[str] = Field(None, description="Clean name in Spanish")
+    name_en: Optional[str] = Field(None, description="Name in English")
+    name_fr: Optional[str] = Field(None, description="Name in French")
+    description: Optional[str] = Field(None, description="Product description (nombre limpio ES para documentos de cliente)")
     provider_cardcode: Optional[str] = Field(None, description="Provider cardcode")
     provider_name: Optional[str] = Field(None, description="Provider name")
     provider_id: Optional[str] = Field(None, description="HubSpot company ID of the provider")
@@ -1139,6 +1156,8 @@ class UniqueContainerArticle(BaseModel):
     margen_unitario: Optional[float] = Field(None, description="Unit margin (decimal 0-1)")
     tipo_iva_repercutido: Optional[str] = Field(None, description="Type of VAT to charge")
     tipo_iva_soportado: Optional[str] = Field(None, description="Type of input VAT")
+    precio_negociado_tipo_venta: Optional[float] = Field(None, description="Anchored per-box price of the selected incoterm")
+    incoterm_precio_negociado: Optional[str] = Field(None, description="tipo_de_venta the anchored price was set under")
 
     class Config:
         """Pydantic configuration."""
@@ -1231,38 +1250,74 @@ class UniqueContainerConfig(BaseModel):
             }
         }
 
-class ContainerLineItemInput(BaseModel):
-    """Container line item input for creating container line items.
+class ContainerArticleEdit(BaseModel):
+    """Article in a container edit payload.
 
-    Attributes:
-        tipo: Container type (D20DR, D40DR, CAMION16P, PALETS, TRAILER80).
-        cantidad: Quantity of containers of this type.
-        container_number: Sequential container number in the quotation.
-        container_config: Detailed container configuration (articles, occupancy, weight).
+    Existing articles carry line_item_id; new articles omit it so the backend
+    creates the line item (and the matching ELEMENTO custom object if any).
     """
-    tipo: str = Field(..., description="Container type SKU value")
-    cantidad: int = Field(..., description="Quantity of containers", ge=1)
-    container_number: int = Field(..., description="Sequential container number", ge=1)
-    container_config: ContainerConfig = Field(..., description="Container configuration")
+    line_item_id: Optional[str] = Field(None, description="Existing HubSpot line item ID (omit for new article)")
+    articuloId: str = Field(..., description="HubSpot product object ID", alias="articuloId")
+    articuloName: Optional[str] = Field(None, description="Article name (without container prefix)", alias="articuloName")
+    nombre: Optional[str] = Field(None, description="Article name (alias for articuloName)")
+    numCajas: int = Field(..., description="Number of boxes/cases", ge=0, alias="numCajas")
+    precio_de_coste: Optional[float] = Field(None, description="Provider cost price")
+    price: Optional[float] = Field(None, description="Sale (EXW) price per unit")
+    margen_unitario: Optional[float] = Field(None, description="Unit margin (decimal 0-1)")
+    tipo_iva_repercutido: Optional[str] = Field(None, description="VAT charged to customer")
+    tipo_iva_soportado: Optional[str] = Field(None, description="Input VAT")
+    precio_negociado_tipo_venta: Optional[float] = Field(None, description="Anchored per-box price of the selected incoterm", ge=0)
+    incoterm_precio_negociado: Optional[str] = Field(None, description="tipo_de_venta the anchored price was set under")
 
     class Config:
-        """Pydantic configuration."""
+        populate_by_name = True
+
+class ContainerConfigEdit(BaseModel):
+    """Container configuration for edit-in-place operations.
+
+    Does not enforce 97-103% occupancy: the modal lets the user save freely
+    and surfaces an inline warning instead of blocking.
+    """
+    articulos: list[ContainerArticleEdit] = Field(default_factory=list)
+    ocupacion: float = Field(..., description="Occupancy percentage", ge=0, le=200)
+    pesoNeto: float = Field(..., description="Net weight in kg", ge=0, alias="pesoNeto")
+    pesoBruto: Optional[float] = Field(None, description="Gross weight in kg", alias="pesoBruto")
+    totalCajas: Optional[int] = Field(None, description="Total boxes in the container", alias="totalCajas")
+
+    class Config:
+        populate_by_name = True
+        extra = "allow"
+
+class ContainerLineItemInput(BaseModel):
+    """One container instance in an incremental merge.
+
+    Each entry is a single container. `line_item_id` present means it already
+    exists (PREVIO, edited in place); absent means it's new (NUEVO). Containers
+    not present in the payload are deleted. `cantidad`/`container_number` are
+    deprecated (kept optional for compatibility) and ignored by the backend.
+    """
+    tipo: str = Field(..., description="Container type SKU value")
+    container_config: ContainerConfigEdit = Field(..., description="Container configuration with per-article ids/prices")
+    line_item_id: Optional[str] = Field(None, description="Existing container line item ID (omit for a new container)")
+    cantidad: Optional[int] = Field(1, description="DEPRECATED — ignored; each entry is one container")
+    container_number: Optional[int] = Field(None, description="DEPRECATED — ignored; numbering is server-assigned")
+
+    class Config:
+        populate_by_name = True
         json_schema_extra = {
             "example": {
                 "tipo": "D20DR",
-                "cantidad": 2,
-                "container_number": 1,
+                "line_item_id": "12345",
                 "container_config": {
                     "articulos": [
                         {
+                            "line_item_id": "67890",
                             "articuloId": "0303005008-00205",
                             "nombre": "Vino Blanco",
-                            "numCajas": 200
-                        },
-                        {
-                            "articuloId": "0303005009-00106",
-                            "nombre": "Vino Tinto",
-                            "numCajas": 400
+                            "numCajas": 200,
+                            "price": 12.5,
+                            "precio_de_coste": 10.0,
+                            "margen_unitario": 0.25
                         }
                     ],
                     "ocupacion": 85.5,
@@ -1289,14 +1344,17 @@ class UpdateContainersRequest(BaseModel):
                 "containers": [
                     {
                         "tipo": "D20DR",
-                        "cantidad": 2,
-                        "container_number": 1,
+                        "line_item_id": "12345",
                         "container_config": {
                             "articulos": [
                                 {
+                                    "line_item_id": "67890",
                                     "articuloId": "0303005008-00205",
                                     "nombre": "Vino Blanco",
-                                    "numCajas": 200
+                                    "numCajas": 200,
+                                    "price": 12.5,
+                                    "precio_de_coste": 10.0,
+                                    "margen_unitario": 0.25
                                 }
                             ],
                             "ocupacion": 75.0,
@@ -1305,8 +1363,6 @@ class UpdateContainersRequest(BaseModel):
                     },
                     {
                         "tipo": "D40DR",
-                        "cantidad": 3,
-                        "container_number": 2,
                         "container_config": {
                             "articulos": [
                                 {
@@ -1323,41 +1379,19 @@ class UpdateContainersRequest(BaseModel):
             }
         }
 
-class ContainerArticleEdit(BaseModel):
-    """Article in a container edit payload.
+class UpdateContainersResponse(BaseResponse):
+    """Response for POST /{deal_id}/containers.
 
-    Existing articles carry line_item_id; new articles omit it so the backend
-    creates the line item (and the matching ELEMENTO custom object if any).
+    `job_id` es el id del job de re-sync de custom objects encolado cuando el
+    deal ya está publicado (el worker recalcula precios/elementos en background).
+    Es None si no había nada que sincronizar (deal sin publicar) — en ese caso
+    el frontend no necesita pollear.
     """
-    line_item_id: Optional[str] = Field(None, description="Existing HubSpot line item ID (omit for new article)")
-    articuloId: str = Field(..., description="HubSpot product object ID", alias="articuloId")
-    articuloName: Optional[str] = Field(None, description="Article name (without container prefix)", alias="articuloName")
-    nombre: Optional[str] = Field(None, description="Article name (alias for articuloName)")
-    numCajas: int = Field(..., description="Number of boxes/cases", ge=0, alias="numCajas")
-    precio_de_coste: Optional[float] = Field(None, description="Provider cost price")
-    price: Optional[float] = Field(None, description="Sale (EXW) price per unit")
-    margen_unitario: Optional[float] = Field(None, description="Unit margin (decimal 0-1)")
-    tipo_iva_repercutido: Optional[str] = Field(None, description="VAT charged to customer")
-    tipo_iva_soportado: Optional[str] = Field(None, description="Input VAT")
+    job_id: Optional[str] = Field(
+        None,
+        description="Job id del re-sync async encolado, o None si no aplica"
+    )
 
-    class Config:
-        populate_by_name = True
-
-class ContainerConfigEdit(BaseModel):
-    """Container configuration for edit-in-place operations.
-
-    Does not enforce 97-103% occupancy: the modal lets the user save freely
-    and surfaces an inline warning instead of blocking.
-    """
-    articulos: list[ContainerArticleEdit] = Field(default_factory=list)
-    ocupacion: float = Field(..., description="Occupancy percentage", ge=0, le=200)
-    pesoNeto: float = Field(..., description="Net weight in kg", ge=0, alias="pesoNeto")
-    pesoBruto: Optional[float] = Field(None, description="Gross weight in kg", alias="pesoBruto")
-    totalCajas: Optional[int] = Field(None, description="Total boxes in the container", alias="totalCajas")
-
-    class Config:
-        populate_by_name = True
-        extra = "allow"
 
 class UpdateSingleContainerRequest(BaseModel):
     """Request body for PATCH /{deal_id}/containers/{container_line_item_id}.
@@ -1366,6 +1400,10 @@ class UpdateSingleContainerRequest(BaseModel):
     against the current state and edits line items + ELEMENTO custom objects in place.
     """
     container_config: ContainerConfigEdit = Field(..., description="Updated container configuration")
+    numero_container: Optional[str] = Field(
+        None,
+        description="numero_container/nombre del contenedor ({deal_id}-NNN). Fallback para resolver el contenedor si el line_item_id de la URL quedó obsoleto (stale).",
+    )
 
     class Config:
         json_schema_extra = {
@@ -1779,6 +1817,14 @@ class DealTransitUpdateRequest(BaseModel):
     tipo_iva_fletes: Optional[str] = Field(None, description="IVA repercutido type for freight line items")
     tipo_iva_fletes_soportado: Optional[str] = Field(None, description="IVA soportado type for freight line items")
     iva_fletes_defaults: Optional[dict] = Field(None, description="Product-resolved IVA defaults for fletes: {repercutido, soportado}")
+    transitario_terrestre: Optional[str] = Field(None, description="Terrestrial freight forwarder cardcode (dual freight mode; empty string clears)")
+    transitario_terrestre_name: Optional[str] = Field(None, description="Terrestrial freight forwarder name (for response purposes only)")
+    tipo_iva_fletes_terrestre: Optional[str] = Field(None, description="IVA repercutido type for terrestrial freight (empty falls back to tipo_iva_fletes)")
+    tipo_iva_fletes_terrestre_soportado: Optional[str] = Field(None, description="IVA soportado type for terrestrial freight")
+    iva_fletes_terrestre_defaults: Optional[dict] = Field(None, description="Product-resolved IVA defaults for terrestrial freight: {repercutido, soportado}")
+    flete_doble_disponible: Optional[bool] = Field(None, description="Whether dual freight (terrestre + marítimo) is available for this deal (camión)")
+    ruta_terrestre_id: Optional[str] = Field(None, description="Selected terrestrial Ruta custom object id to associate with the deal")
+    ruta_maritima_id: Optional[str] = Field(None, description="Selected maritime Ruta custom object id to associate with the deal")
 
     class Config:
         """Pydantic configuration."""
@@ -1839,10 +1885,17 @@ class NegociacionArticleItem(BaseModel):
         tipo_iva_repercutido: VAT type code to be applied.
     """
     line_item_id: str = Field(..., description="HubSpot line item ID")
-    price: float = Field(..., description="Negotiated price per unit", gt=0)
-    margen_unitario: float = Field(..., description="Effective unit margin (0-1 range)", ge=0, le=1)
+    # price 0 y margen negativo permitidos: línea promocional / regalo (descuento 100%).
+    price: float = Field(..., description="Negotiated price per unit (0 = línea promocional)", ge=0)
+    margen_unitario: float = Field(..., description="Effective unit margin (negativo permitido para descuento/promoción; 1 = 100%)", le=1)
     tipo_iva_repercutido: str = Field(..., description="VAT type code")
     tipo_iva_soportado: Optional[str] = Field(None, description="Input VAT type code")
+    # Ancla del precio del tipo de venta: el FINAL por caja tecleado por el comercial
+    # para el incoterm vigente. Al recalcular se mantiene fijo y se derivan price(EXW)
+    # y margen. incoterm_precio_negociado guarda con qué tipo de venta se fijó, para
+    # re-derivar si el deal cambia de incoterm. Opcionales por compat con históricos.
+    precio_negociado_tipo_venta: Optional[float] = Field(None, description="Anchored per-box price of the selected incoterm (0 = promo)", ge=0)
+    incoterm_precio_negociado: Optional[str] = Field(None, description="tipo_de_venta the anchored price was set under")
 
     class Config:
         """Pydantic configuration."""
@@ -2148,6 +2201,10 @@ class QuoteRuta(BaseModel):
     precioDestino: float
     tipoIVAFletes: Optional[str] = None
     tipoIVAFletesSoportado: Optional[str] = None
+    transitarioTerrestre: Optional[str] = None
+    transitarioTerrestreCardcode: Optional[str] = None
+    tipoIVAFleteTerrestre: Optional[str] = None
+    tipoIVAFleteTerrestreSoportado: Optional[str] = None
 
 class QuoteLineItem(BaseModel):
     """Line item in the quote."""

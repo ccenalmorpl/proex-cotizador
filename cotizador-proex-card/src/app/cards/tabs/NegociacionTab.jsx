@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   Box,
   Heading,
@@ -39,6 +39,11 @@ import {
   calcularPrecioPorCajaPorIncoterm,
   calcularPrecioEXWDesdeIncoterm,
   calcularTotalesPorTipoVenta,
+  buildPricingParamsPorContenedor,
+  comisionPorCajaIntra,
+  normalizeIncoterm,
+  bucketIncoterm,
+  esModoDobleFlete,
 } from "../utils/pricing.utils";
 import { getIVAPorcentaje, getPorcentajesIVA, getDefaultIVAByResidencia } from "../utils/iva.utils";
 
@@ -57,8 +62,9 @@ const calcularMargenArticuloEnContenedor = (
       : (clienteData?.margen ?? 12);
 
   const precioEXWFinal =
-    preciosEXW[lineItemId] ||
-    costePorCaja + (costePorCaja * margenInicial) / 100;
+    preciosEXW[lineItemId] != null
+      ? preciosEXW[lineItemId]
+      : costePorCaja + (costePorCaja * margenInicial) / 100;
   const margenEnEuros = precioEXWFinal - costePorCaja;
   const margenActual =
     costePorCaja > 0 ? (margenEnEuros / costePorCaja) * 100 : 0;
@@ -101,6 +107,8 @@ const NegociacionTab = ({
   setContenedoresUnicos, // Setter del estado global de contenedores únicos
   preciosEXW, // Estado compartido de precios EXW
   setPreciosEXW, // Setter para precios EXW
+  preciosAnclados, // Precio final anclado por line item (tipo de venta vigente)
+  setPreciosAnclados, // Setter para precios anclados
   tiposIVA, // Estado compartido de tipos de IVA
   setTiposIVA, // Setter para tipos de IVA
   tiposIVASoportado, // Estado compartido de tipos de IVA soportado
@@ -171,6 +179,10 @@ const NegociacionTab = ({
               tipo_iva_soportado: art.tipo_iva_soportado || null,
               priceEXW: (art.price != null && art.price !== "") ? Number(art.price) : null,
               hasMargenUnitario: art.margen_unitario != null, // Flag: ¿tiene margen_unitario guardado?
+              // Promoción = línea creada como regalo (precio persistido 0). Se mira el
+              // dato guardado, no el precio editable, para no convertir en promo una
+              // línea cuyo precio se borra momentáneamente para reescribirlo.
+              esPromo: art.price != null && art.price !== "" && Number(art.price) === 0,
             });
           }
         });
@@ -196,18 +208,6 @@ const NegociacionTab = ({
     [articulosParaNegociacion]
   );
 
-  // Gastos por tramo por caja (el flete es por contenedor, se multiplica por totalContenedores)
-  const gastosPorTramo = useMemo(
-    () => ({
-      hastaLocalidadDestino: (transitarioData?.precioOrigen || 0) * totalContenedores / totalCajas || 0,
-      hastaPuertoSalida: (transitarioData?.precioOrigen || 0) * totalContenedores / totalCajas || 0,
-      hastaPuertoDestino: (transitarioData?.precioDestino || 0) * totalContenedores / totalCajas || 0,
-      hastaPuertoDestinoLocalidad:
-        (transitarioData?.precioDestino || 0) * totalContenedores / totalCajas || 0,
-    }),
-    [transitarioData, totalCajas, totalContenedores]
-  );
-
   // Servicios totales
   const totalServicios = useMemo(() => {
     if (
@@ -222,37 +222,59 @@ const NegociacionTab = ({
     return 0;
   }, [serviciosData]);
 
-  // Calcular comisión por caja del intermediario
-  const comisionPorCaja = useMemo(() => {
-    // Verificar si hay intermediario configurado
-    if (
-      !clienteData?.codigoIntermediario ||
-      !clienteData?.tipoComision ||
-      !clienteData?.importeComision
-    ) {
-      return 0;
-    }
+  // Importes a nivel de contenedor (sin repartir entre cajas). Es el `base`
+  // que consumen buildPricingParamsPorContenedor y calcularTotalesPorTipoVenta:
+  // cada contenedor reparte estos importes entre SUS propias cajas.
+  const pricingBase = useMemo(() => {
+    const servicios = serviciosData?.serviciosSeleccionados || [];
+    const serviciosImporte = servicios.reduce(
+      (total, s) => total + (Number(s.importe) || 0),
+      0
+    );
+    const seguroImporte = servicios
+      .filter((s) => s.tipoArticulo === "seguro")
+      .reduce((sum, s) => sum + (Number(s.importe) || 0), 0);
 
-    // Extraer valores si son objetos {value, options}
+    const serviciosBuckets = {};
+    const seguroBuckets = {};
+    servicios.forEach((s) => {
+      const code = (s.tipo_iva || "").toString().trim().toUpperCase();
+      const importe = Number(s.importe) || 0;
+      const target = s.tipoArticulo === "seguro" ? seguroBuckets : serviciosBuckets;
+      target[code] = (target[code] || 0) + importe;
+    });
+
     const importeComision =
-      clienteData.importeComision?.value || clienteData.importeComision;
+      clienteData?.importeComision?.value ?? clienteData?.importeComision;
     const tipoComision =
-      clienteData.tipoComision?.value || clienteData.tipoComision;
+      clienteData?.tipoComision?.value ?? clienteData?.tipoComision;
+    const repercutir =
+      (clienteData?.repercutirACliente?.value ??
+        clienteData?.repercutirACliente) === "si";
 
-    if (tipoComision === "importe_por_negocio") {
-      // Comisión total / número total de cajas
-      return totalCajas > 0 ? importeComision / totalCajas : 0;
-    } else if (tipoComision === "importe_por_contenedor") {
-      // (Comisión * número de contenedores) / número total de cajas
-      return totalCajas > 0
-        ? (importeComision * totalContenedores) / totalCajas
-        : 0;
-    } else if (tipoComision === "importe_por_cajas") {
-      // Comisión directa por caja
-      return importeComision;
-    }
-    return 0;
-  }, [clienteData, totalCajas, totalContenedores]);
+    return {
+      precioOrigen: Number(transitarioData?.precioOrigen) || 0,
+      precioDestino: Number(transitarioData?.precioDestino) || 0,
+      serviciosImporte,
+      seguroImporte,
+      serviciosBuckets,
+      seguroBuckets,
+      importeComision,
+      tipoComision,
+      repercutir,
+      tieneIntermediario: !!clienteData?.codigoIntermediario,
+      numContenedores: Array.isArray(contenedoresUnicos)
+        ? contenedoresUnicos.length
+        : 0,
+    };
+  }, [transitarioData, serviciosData, clienteData, contenedoresUnicos]);
+
+  // Modo doble flete (cliente nacional + camión + CIF/CFR): flete terrestre y marítimo con transitario/IVA propios
+  const modoDoble = esModoDobleFlete({
+    fleteDobleDisponible: transitarioData?.fleteDobleDisponible,
+    tipoVenta: clienteData?.tipoVenta,
+    tipoCliente: clienteData?.tipoCliente,
+  });
 
   // ESTADO
 
@@ -291,6 +313,12 @@ const NegociacionTab = ({
       (c) => c.line_item_id === contenedorUnicoSeleccionado
     );
   }, [contenedorUnicoSeleccionado, contenedoresUnicos]);
+
+  // Cajas del contenedor seleccionado (denominador del reparto intra-contenedor)
+  const cajasContenedorSeleccionado = useMemo(() => {
+    const arts = contenedorSeleccionado?.container_config?.articulos || [];
+    return arts.reduce((sum, art) => sum + (art.numCajas || 0), 0);
+  }, [contenedorSeleccionado]);
 
   // Artículos únicos del contenedor seleccionado para la tabla
   const articulosUnicosParaNegociacion = useMemo(() => {
@@ -335,6 +363,10 @@ const NegociacionTab = ({
         tipo_iva_soportado: art.tipo_iva_soportado || null,
         priceEXW,
         hasMargenUnitario, // Flag: ¿tiene margen_unitario guardado?
+        // Promoción = línea creada como regalo (precio persistido 0). Se mira el
+        // dato guardado, no el precio editable, para no convertir en promo una
+        // línea cuyo precio se borra momentáneamente para reescribirlo.
+        esPromo: art.price != null && art.price !== "" && Number(art.price) === 0,
       };
     });
   }, [contenedorSeleccionado, clienteData]);
@@ -419,10 +451,14 @@ const NegociacionTab = ({
           const costePorCaja = art.precio_de_coste || 0;
           const tieneMargenUnitario =
             art.margen_unitario != null && art.margen_unitario > 0;
+          // Un margen negativo (descuento / línea promocional a 0€) también es
+          // un precio negociado: hay que respetar el precio guardado, no recalcularlo.
+          const tienePrecioNegociado =
+            art.margen_unitario != null && art.margen_unitario !== 0;
           const priceEXW =
             art.price != null && art.price !== "" ? Number(art.price) : null;
 
-          if (priceEXW != null && tieneMargenUnitario) {
+          if (priceEXW != null && (tienePrecioNegociado || priceEXW === 0)) {
             newPrecios[lineItemId] = priceEXW;
           } else {
             const margenInicial = tieneMargenUnitario
@@ -471,29 +507,43 @@ const NegociacionTab = ({
 
   // CÁLCULOS
 
-  // Coste de servicios por caja (el servicio es por contenedor, se multiplica por totalContenedores)
-  const serviciosPorCaja = useMemo(
-    () => (totalCajas > 0 ? (totalServicios * totalContenedores) / totalCajas : 0),
-    [totalCajas, totalServicios, totalContenedores]
+  // Parámetros de pricing del contenedor seleccionado: flete/servicios/seguro/
+  // comisión repartidos entre SUS cajas (reparto intra-contenedor).
+  const pricingParams = useMemo(
+    () => buildPricingParamsPorContenedor(pricingBase, cajasContenedorSeleccionado),
+    [pricingBase, cajasContenedorSeleccionado]
   );
 
-  // Coste del seguro por caja (filtrado de serviciosPorCaja para CFR)
-  const seguroPorCaja = useMemo(() => {
-    if (!serviciosData?.serviciosSeleccionados || totalCajas === 0) return 0;
-    const totalSeguro = serviciosData.serviciosSeleccionados
-      .filter((s) => s.tipoArticulo === "seguro")
-      .reduce((sum, s) => sum + (Number(s.importe) || 0), 0);
-    return (totalSeguro * totalContenedores) / totalCajas;
-  }, [serviciosData, totalCajas, totalContenedores]);
+  // Derivados del pricingParams del contenedor seleccionado.
+  const gastosPorTramo = pricingParams.gastosPorTramo;
+  const serviciosPorCaja = pricingParams.serviciosPorCaja;
+  const seguroPorCaja = pricingParams.seguroPorCaja;
+  const serviciosNoSeguroPorIva = pricingParams.serviciosNoSeguroPorIva;
+  const seguroPorIva = pricingParams.seguroPorIva;
+
+  // Comisión por caja del intermediario para el contenedor seleccionado
+  // (reparto intra-contenedor). El gate de repercutir se aplica en los usos.
+  const comisionPorCaja = useMemo(() => {
+    const importeComision =
+      clienteData?.importeComision?.value ?? clienteData?.importeComision;
+    const tipoComision =
+      clienteData?.tipoComision?.value ?? clienteData?.tipoComision;
+    if (!clienteData?.codigoIntermediario) return 0;
+    return comisionPorCajaIntra(
+      tipoComision,
+      importeComision,
+      cajasContenedorSeleccionado,
+      totalContenedores
+    );
+  }, [clienteData, cajasContenedorSeleccionado, totalContenedores]);
 
   // CÁLCULOS DE PRECIO POR TIPO DE VENTA
 
-  // Tipo de venta seleccionado normalizado
-  const tipoVentaSeleccionado = useMemo(() => {
-    const tipoVentaValue =
-      clienteData?.tipoVenta?.value || clienteData?.tipoVenta || "EXW";
-    return tipoVentaValue.toUpperCase().replace(/\s+/g, "_");
-  }, [clienteData]);
+  // Tipo de venta seleccionado normalizado a la clave canónica del incoterm
+  const tipoVentaSeleccionado = useMemo(
+    () => normalizeIncoterm(clienteData?.tipoVenta?.value || clienteData?.tipoVenta),
+    [clienteData]
+  );
 
   // Valor de repercutirACliente normalizado
   const repercutirAClienteValue = useMemo(() => {
@@ -501,17 +551,6 @@ const NegociacionTab = ({
       clienteData?.repercutirACliente?.value || clienteData?.repercutirACliente
     );
   }, [clienteData]);
-
-  // Parámetros compartidos para las funciones de pricing
-  const pricingParams = useMemo(
-    () => ({
-      gastosPorTramo,
-      serviciosPorCaja,
-      seguroPorCaja,
-      comisionCliente: repercutirAClienteValue === "si" ? comisionPorCaja : 0,
-    }),
-    [gastosPorTramo, serviciosPorCaja, seguroPorCaja, comisionPorCaja, repercutirAClienteValue]
-  );
 
   // Convierte EXW → Precio final visible al cliente para el tipo de venta seleccionado.
   const calcularPrecioFinalPorTipoVenta = useCallback(
@@ -527,6 +566,77 @@ const NegociacionTab = ({
     [tipoVentaSeleccionado, pricingParams]
   );
 
+  // ANCLA DEL PRECIO DEL TIPO DE VENTA
+  // El precio final tecleado queda fijo; el EXW/margen se derivan de él.
+  // Las anclas locales valen solo para el incoterm vigente: al cambiar el tipo
+  // de venta se vacían (el EXW manda y el final se re-deriva y re-ancla al guardar).
+  const prevTipoVentaRef = useRef(tipoVentaSeleccionado);
+  useEffect(() => {
+    if (prevTipoVentaRef.current === tipoVentaSeleccionado) return;
+    prevTipoVentaRef.current = tipoVentaSeleccionado;
+    setPreciosAnclados({});
+  }, [tipoVentaSeleccionado, setPreciosAnclados]);
+
+  // Hidratación de anclas persistidas (solo las fijadas bajo el incoterm vigente;
+  // las de otro incoterm las re-ancla el backend en el siguiente recálculo).
+  useEffect(() => {
+    if (!contenedoresUnicos || !Array.isArray(contenedoresUnicos)) return;
+    setPreciosAnclados((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      contenedoresUnicos.forEach((contenedor) => {
+        contenedor.container_config?.articulos?.forEach((art) => {
+          const lid = art.line_item_id;
+          if (next[lid] !== undefined) return;
+          const ancla = Number(art.precio_negociado_tipo_venta);
+          if (!(ancla > 0)) return;
+          if (normalizeIncoterm(art.incoterm_precio_negociado) !== tipoVentaSeleccionado) return;
+          next[lid] = ancla;
+          changed = true;
+        });
+      });
+      return changed ? next : prev;
+    });
+  }, [contenedoresUnicos, tipoVentaSeleccionado, setPreciosAnclados]);
+
+  // Reconciliador: mantiene preciosEXW = inversa(ancla, gastos del momento) con
+  // suelo en el coste (margen 0, nunca bajo coste). Así todos los consumidores
+  // (márgenes, totales, RevisionTab, publish) ven el EXW que absorbe los cambios
+  // de cajas/gastos mientras el precio final anclado permanece fijo.
+  useEffect(() => {
+    if (!contenedoresUnicos || !Array.isArray(contenedoresUnicos)) return;
+    setPreciosEXW((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      contenedoresUnicos.forEach((contenedor) => {
+        const arts = contenedor.container_config?.articulos || [];
+        const cajasCont = arts.reduce((sum, a) => sum + (a.numCajas || 0), 0);
+        const paramsCont = buildPricingParamsPorContenedor(pricingBase, cajasCont);
+        arts.forEach((art) => {
+          const lid = art.line_item_id;
+          const ancla = preciosAnclados[lid];
+          if (ancla == null || ancla <= 0) return;
+          const coste = art.precio_de_coste || 0;
+          const exw = Math.max(
+            coste,
+            calcularPrecioEXWDesdeIncoterm(ancla, tipoVentaSeleccionado, paramsCont)
+          );
+          if (next[lid] !== exw) {
+            next[lid] = exw;
+            changed = true;
+          }
+        });
+      });
+      return changed ? next : prev;
+    });
+  }, [
+    preciosAnclados,
+    pricingBase,
+    contenedoresUnicos,
+    tipoVentaSeleccionado,
+    setPreciosEXW,
+  ]);
+
   // Calcular precio EXW por caja de cada artículo
   const articulosConPrecios = useMemo(() => {
     const articulosBase = contenedorUnicoSeleccionado
@@ -538,7 +648,8 @@ const NegociacionTab = ({
       const precioCaja = art.costePorCaja;
 
       // Precio EXW establecido por el comercial - ESTE ES SIEMPRE EL PRECIO FINAL AL CLIENTE
-      const precioEXWFinal = preciosEXW[art.id] || precioCaja;
+      const precioEXWFinal =
+        preciosEXW[art.id] != null ? preciosEXW[art.id] : precioCaja;
 
       // Calcular el margen bruto en euros (precio - coste)
       const margenEnEuros = precioEXWFinal - precioCaja;
@@ -576,14 +687,38 @@ const NegociacionTab = ({
       const aplicaRE = (clienteData?.equ || "").toString().toLowerCase() === "si";
       const ivaPorcentaje = ivaBase + (aplicaRE ? recargoBase : 0);
 
+      // La condición de promoción es persistida (viene del artículo guardado), no
+      // del precio editable: borrar el precio para reescribirlo deja precioEXWFinal
+      // en 0 transitoriamente y NO debe marcar la línea como promoción.
+      const esPromo = art.esPromo === true;
+
+      // Con ancla vigente, el precio mostrado es el negociado (fijo), salvo que
+      // no cubra coste + gastos: entonces sube al mínimo (margen 0) y se avisa.
+      const anclaFinal = preciosAnclados[art.id];
+      const anclada = !esPromo && anclaFinal != null && anclaFinal > 0;
+      let anclaClamped = false;
+      let precioFinalEditable = esPromo
+        ? 0
+        : Math.round(calcularPrecioFinalPorTipoVenta(precioEXWFinal) * 1000) / 1000;
+      if (anclada) {
+        anclaClamped = calcularPrecioEXWDesdeFinal(anclaFinal) < precioCaja;
+        precioFinalEditable = anclaClamped
+          ? Math.round(calcularPrecioFinalPorTipoVenta(precioCaja) * 1000) / 1000
+          : anclaFinal;
+      }
+
       return {
         ...art,
+        esPromo,
+        anclaClamped,
         margenActual,
         margenEnEuros,
         margenEfectivo,
         margenEfectivoEnEuros,
-        precioPorCaja: calcularPrecioPorCajaPorIncoterm(precioEXWFinal, "EXW", pricingParams),
-        precioFinalEditable: Math.round(calcularPrecioFinalPorTipoVenta(precioEXWFinal) * 1000) / 1000,
+        precioPorCaja: esPromo
+          ? 0
+          : calcularPrecioPorCajaPorIncoterm(precioEXWFinal, "EXW", pricingParams),
+        precioFinalEditable,
         ivaPorcentaje,
       };
     });
@@ -592,11 +727,13 @@ const NegociacionTab = ({
     articulosUnicosParaNegociacion,
     articulosParaNegociacion,
     preciosEXW,
+    preciosAnclados,
     comisionPorCaja,
     clienteData,
     tiposIVA,
     ivaData,
     calcularPrecioFinalPorTipoVenta,
+    calcularPrecioEXWDesdeFinal,
     pricingParams,
   ]);
 
@@ -642,28 +779,34 @@ const NegociacionTab = ({
   // Calcular total con IVA para el contenedor seleccionado reutilizando calcularTotalesPorTipoVenta
   const totalesConIVAContenedorSeleccionado = useMemo(() => {
     if (!contenedorSeleccionado) return {};
-    return calcularTotalesPorTipoVenta([contenedorSeleccionado], preciosEXW, pricingParams, {
+    return calcularTotalesPorTipoVenta([contenedorSeleccionado], preciosEXW, pricingBase, {
       clienteData,
       tiposIVA,
       ivaData,
       getPorcentajesIVA,
       incotermRef: tipoVentaSeleccionado,
+      tipoIVAFletes: transitarioData?.tipoIVAFletes || "",
+      tipoIVAFleteTerrestre: transitarioData?.tipoIVAFleteTerrestre || "",
+      tipoIVAComision: clienteData?.tipoIVAComision || "",
     });
-  }, [contenedorSeleccionado, preciosEXW, pricingParams, clienteData, tiposIVA, ivaData, tipoVentaSeleccionado]);
+  }, [contenedorSeleccionado, preciosEXW, pricingBase, clienteData, tiposIVA, ivaData, tipoVentaSeleccionado, transitarioData]);
 
   // Calcular precios por tipo de venta GLOBALES (sin IVA y con IVA ponderado)
   // IMPORTANTE: Este cálculo SIEMPRE usa todos los artículos de todos los contenedores.
   // Usa calcularTotalesPorTipoVenta (utilidad compartida con RevisionTab).
   const preciosPorTipoVenta = useMemo(
     () =>
-      calcularTotalesPorTipoVenta(contenedoresUnicos, preciosEXW, pricingParams, {
+      calcularTotalesPorTipoVenta(contenedoresUnicos, preciosEXW, pricingBase, {
         clienteData,
         tiposIVA,
         ivaData,
         getPorcentajesIVA,
         incotermRef: tipoVentaSeleccionado,
+        tipoIVAFletes: transitarioData?.tipoIVAFletes || "",
+        tipoIVAFleteTerrestre: transitarioData?.tipoIVAFleteTerrestre || "",
+        tipoIVAComision: clienteData?.tipoIVAComision || "",
       }),
-    [contenedoresUnicos, preciosEXW, pricingParams, clienteData, tiposIVA, ivaData, tipoVentaSeleccionado]
+    [contenedoresUnicos, preciosEXW, pricingBase, clienteData, tiposIVA, ivaData, tipoVentaSeleccionado, transitarioData]
   );
 
   // Calcular márgenes por cada contenedor único
@@ -676,54 +819,70 @@ const NegociacionTab = ({
       return [];
     }
 
+    const importeComision =
+      clienteData?.importeComision?.value ?? clienteData?.importeComision;
+    const tipoComision =
+      clienteData?.tipoComision?.value ?? clienteData?.tipoComision;
+
     return contenedoresUnicos.map((contenedor) => {
       let totalMargenPonderado = 0;
       let totalMargenEnEuros = 0;
       let totalCajasContenedor = 0;
 
-      if (
-        contenedor.container_config?.articulos &&
-        Array.isArray(contenedor.container_config.articulos)
-      ) {
-        contenedor.container_config.articulos.forEach((artContenedor) => {
-          const margenEfectivo = calcularMargenArticuloEnContenedor(
-            artContenedor,
-            preciosEXW,
-            comisionPorCaja,
-            clienteData
-          );
+      const artsContenedor = Array.isArray(
+        contenedor.container_config?.articulos
+      )
+        ? contenedor.container_config.articulos
+        : [];
+      const cajasDeEseContenedor = artsContenedor.reduce(
+        (s, a) => s + (a.numCajas || 0),
+        0
+      );
+      const comisionPorCajaContenedor = clienteData?.codigoIntermediario
+        ? comisionPorCajaIntra(
+            tipoComision,
+            importeComision,
+            cajasDeEseContenedor,
+            totalContenedores
+          )
+        : 0;
 
-          const cajasEnContenedor = artContenedor.numCajas || 0;
-          totalMargenPonderado += margenEfectivo * cajasEnContenedor;
-          totalCajasContenedor += cajasEnContenedor;
+      artsContenedor.forEach((artContenedor) => {
+        const margenEfectivo = calcularMargenArticuloEnContenedor(
+          artContenedor,
+          preciosEXW,
+          comisionPorCajaContenedor,
+          clienteData
+        );
 
-          // Calcular margen en euros por artículo
-          const lineItemId = artContenedor.line_item_id;
-          const costePorCaja = artContenedor.precio_de_coste || 0;
-          const margenInicial =
-            artContenedor.margen_unitario != null &&
-            artContenedor.margen_unitario > 0
-              ? artContenedor.margen_unitario * 100
-              : (clienteData?.margen ?? 12);
+        const cajasEnContenedor = artContenedor.numCajas || 0;
+        totalMargenPonderado += margenEfectivo * cajasEnContenedor;
+        totalCajasContenedor += cajasEnContenedor;
 
-          const precioEXWFinal =
-            preciosEXW[lineItemId] ||
-            costePorCaja + (costePorCaja * margenInicial) / 100;
-          const margenEnEuros = precioEXWFinal - costePorCaja;
+        const lineItemId = artContenedor.line_item_id;
+        const costePorCaja = artContenedor.precio_de_coste || 0;
+        const margenInicial =
+          artContenedor.margen_unitario != null &&
+          artContenedor.margen_unitario > 0
+            ? artContenedor.margen_unitario * 100
+            : (clienteData?.margen ?? 12);
 
-          // Calcular margen efectivo en euros considerando comisión
-          let margenEfectivoEnEuros = margenEnEuros;
-          // Extraer el valor si es un objeto {value, options}
-          const repercutirAClienteValue =
-            clienteData?.repercutirACliente?.value ||
-            clienteData?.repercutirACliente;
-          if (comisionPorCaja > 0 && repercutirAClienteValue === "no") {
-            margenEfectivoEnEuros = margenEnEuros - comisionPorCaja;
-          }
+        const precioEXWFinal =
+          preciosEXW[lineItemId] != null
+            ? preciosEXW[lineItemId]
+            : costePorCaja + (costePorCaja * margenInicial) / 100;
+        const margenEnEuros = precioEXWFinal - costePorCaja;
 
-          totalMargenEnEuros += margenEfectivoEnEuros * cajasEnContenedor;
-        });
-      }
+        let margenEfectivoEnEuros = margenEnEuros;
+        const repercutirAClienteValue =
+          clienteData?.repercutirACliente?.value ||
+          clienteData?.repercutirACliente;
+        if (comisionPorCajaContenedor > 0 && repercutirAClienteValue === "no") {
+          margenEfectivoEnEuros = margenEnEuros - comisionPorCajaContenedor;
+        }
+
+        totalMargenEnEuros += margenEfectivoEnEuros * cajasEnContenedor;
+      });
 
       const margenContenedor =
         totalCajasContenedor > 0
@@ -746,7 +905,7 @@ const NegociacionTab = ({
         cajas: totalCajasContenedor,
       };
     });
-  }, [contenedoresUnicos, preciosEXW, comisionPorCaja, clienteData]);
+  }, [contenedoresUnicos, preciosEXW, clienteData, totalContenedores]);
 
   // Margen del negocio completo (promedio ponderado de todos los contenedores únicos)
   const margenNegocio = useMemo(() => {
@@ -761,28 +920,46 @@ const NegociacionTab = ({
     let totalMargenPonderado = 0;
     let totalCajasNegocio = 0;
 
-    contenedoresUnicos.forEach((contenedor) => {
-      if (
-        contenedor.container_config?.articulos &&
-        Array.isArray(contenedor.container_config.articulos)
-      ) {
-        contenedor.container_config.articulos.forEach((artContenedor) => {
-          const margenEfectivo = calcularMargenArticuloEnContenedor(
-            artContenedor,
-            preciosEXW,
-            comisionPorCaja,
-            clienteData
-          );
+    const importeComision =
+      clienteData?.importeComision?.value ?? clienteData?.importeComision;
+    const tipoComision =
+      clienteData?.tipoComision?.value ?? clienteData?.tipoComision;
 
-          const cajasEnContenedor = artContenedor.numCajas || 0;
-          totalMargenPonderado += margenEfectivo * cajasEnContenedor;
-          totalCajasNegocio += cajasEnContenedor;
-        });
-      }
+    contenedoresUnicos.forEach((contenedor) => {
+      const artsContenedor = Array.isArray(
+        contenedor.container_config?.articulos
+      )
+        ? contenedor.container_config.articulos
+        : [];
+      const cajasDeEseContenedor = artsContenedor.reduce(
+        (s, a) => s + (a.numCajas || 0),
+        0
+      );
+      const comisionPorCajaContenedor = clienteData?.codigoIntermediario
+        ? comisionPorCajaIntra(
+            tipoComision,
+            importeComision,
+            cajasDeEseContenedor,
+            totalContenedores
+          )
+        : 0;
+
+      artsContenedor.forEach((artContenedor) => {
+        const margenEfectivo = calcularMargenArticuloEnContenedor(
+          artContenedor,
+          preciosEXW,
+          comisionPorCajaContenedor,
+          clienteData
+        );
+
+        const cajasEnContenedor = artContenedor.numCajas || 0;
+        totalMargenPonderado += margenEfectivo * cajasEnContenedor;
+        totalCajasNegocio += cajasEnContenedor;
+      });
     });
 
     return totalCajasNegocio > 0 ? totalMargenPonderado / totalCajasNegocio : 0;
-  }, [contenedoresUnicos, preciosEXW, comisionPorCaja, clienteData]);
+  }, [contenedoresUnicos, preciosEXW, clienteData, totalContenedores]);
 
   // Margen del negocio en euros (total y por caja)
   const margenNegocioEnEuros = useMemo(() => {
@@ -797,36 +974,57 @@ const NegociacionTab = ({
     let totalMargenEnEuros = 0;
     let totalCajasNegocio = 0;
 
+    const importeComision =
+      clienteData?.importeComision?.value ?? clienteData?.importeComision;
+    const tipoComision =
+      clienteData?.tipoComision?.value ?? clienteData?.tipoComision;
+
     contenedoresUnicos.forEach((contenedor) => {
-      if (
-        contenedor.container_config?.articulos &&
-        Array.isArray(contenedor.container_config.articulos)
-      ) {
-        contenedor.container_config.articulos.forEach((artContenedor) => {
-          const lineItemId = artContenedor.line_item_id;
-          const costePorCaja = artContenedor.precio_de_coste || 0;
-          const margenInicial =
-            artContenedor.margen_unitario != null &&
-            artContenedor.margen_unitario > 0
-              ? artContenedor.margen_unitario * 100
-              : (clienteData?.margen ?? 12);
+      const artsContenedor = Array.isArray(
+        contenedor.container_config?.articulos
+      )
+        ? contenedor.container_config.articulos
+        : [];
+      const cajasDeEseContenedor = artsContenedor.reduce(
+        (s, a) => s + (a.numCajas || 0),
+        0
+      );
+      const comisionPorCajaContenedor = clienteData?.codigoIntermediario
+        ? comisionPorCajaIntra(
+            tipoComision,
+            importeComision,
+            cajasDeEseContenedor,
+            totalContenedores
+          )
+        : 0;
 
-          const precioEXWFinal =
-            preciosEXW[lineItemId] ||
-            costePorCaja + (costePorCaja * margenInicial) / 100;
-          const margenEnEuros = precioEXWFinal - costePorCaja;
+      artsContenedor.forEach((artContenedor) => {
+        const lineItemId = artContenedor.line_item_id;
+        const costePorCaja = artContenedor.precio_de_coste || 0;
+        const margenInicial =
+          artContenedor.margen_unitario != null &&
+          artContenedor.margen_unitario > 0
+            ? artContenedor.margen_unitario * 100
+            : (clienteData?.margen ?? 12);
 
-          // Calcular margen efectivo en euros considerando comisión
-          let margenEfectivoEnEuros = margenEnEuros;
-          if (comisionPorCaja > 0 && clienteData?.repercutirACliente === "no") {
-            margenEfectivoEnEuros = margenEnEuros - comisionPorCaja;
-          }
+        const precioEXWFinal =
+          preciosEXW[lineItemId] != null
+            ? preciosEXW[lineItemId]
+            : costePorCaja + (costePorCaja * margenInicial) / 100;
+        const margenEnEuros = precioEXWFinal - costePorCaja;
 
-          const cajasEnContenedor = artContenedor.numCajas || 0;
-          totalMargenEnEuros += margenEfectivoEnEuros * cajasEnContenedor;
-          totalCajasNegocio += cajasEnContenedor;
-        });
-      }
+        let margenEfectivoEnEuros = margenEnEuros;
+        if (
+          comisionPorCajaContenedor > 0 &&
+          clienteData?.repercutirACliente === "no"
+        ) {
+          margenEfectivoEnEuros = margenEnEuros - comisionPorCajaContenedor;
+        }
+
+        const cajasEnContenedor = artContenedor.numCajas || 0;
+        totalMargenEnEuros += margenEfectivoEnEuros * cajasEnContenedor;
+        totalCajasNegocio += cajasEnContenedor;
+      });
     });
 
     return {
@@ -834,7 +1032,7 @@ const NegociacionTab = ({
       porCaja:
         totalCajasNegocio > 0 ? totalMargenEnEuros / totalCajasNegocio : 0,
     };
-  }, [contenedoresUnicos, preciosEXW, comisionPorCaja, clienteData]);
+  }, [contenedoresUnicos, preciosEXW, clienteData, totalContenedores]);
 
   // Deshabilitar el botón "Aplicar" si no hay artículos seleccionados o no hay ningún valor nuevo
   const isBatchApplyDisabled = useMemo(() => {
@@ -864,12 +1062,18 @@ const NegociacionTab = ({
     (articuloId, nuevoPrecioFinal) => {
       const valor = parseFloat(nuevoPrecioFinal) || 0;
       const precioEXW = calcularPrecioEXWDesdeFinal(valor);
+      // El final tecleado es el ancla; el reconciliador re-deriva el EXW con
+      // suelo en el coste cuando cambian cajas/gastos.
+      setPreciosAnclados((prev) => ({
+        ...prev,
+        [articuloId]: valor,
+      }));
       setPreciosEXW((prev) => ({
         ...prev,
         [articuloId]: Math.max(0, precioEXW),
       }));
     },
-    [calcularPrecioEXWDesdeFinal, setPreciosEXW]
+    [calcularPrecioEXWDesdeFinal, setPreciosEXW, setPreciosAnclados]
   );
 
   const handleTipoIVAChange = useCallback((articuloId, nuevoTipoIVA) => {
@@ -959,6 +1163,11 @@ const NegociacionTab = ({
 
     if (batchNuevoPrecio !== null && batchNuevoPrecio !== undefined) {
       const precioEXW = Math.max(0, calcularPrecioEXWDesdeFinal(batchNuevoPrecio));
+      setPreciosAnclados((prev) => {
+        const next = { ...prev };
+        lineItemIds.forEach((id) => { next[id] = batchNuevoPrecio; });
+        return next;
+      });
       setPreciosEXW((prev) => {
         const next = { ...prev };
         lineItemIds.forEach((id) => { next[id] = precioEXW; });
@@ -994,6 +1203,7 @@ const NegociacionTab = ({
     batchNuevoIVASoportado,
     calcularPrecioEXWDesdeFinal,
     setPreciosEXW,
+    setPreciosAnclados,
     setTiposIVA,
     setTiposIVASoportado,
   ]);
@@ -1068,9 +1278,13 @@ const NegociacionTab = ({
             contenedor.container_config?.articulos &&
             Array.isArray(contenedor.container_config.articulos)
           ) {
+            const cajasCont = contenedor.container_config.articulos.reduce(
+              (sum, a) => sum + (a.numCajas || 0),
+              0
+            );
+            const paramsCont = buildPricingParamsPorContenedor(pricingBase, cajasCont);
             contenedor.container_config.articulos.forEach((art) => {
               const lineItemId = art.line_item_id;
-              const articuloId = art.articuloId;
               const costePorCaja = art.precio_de_coste || 0;
 
               // Obtener el precio EXW editado o calcular el inicial
@@ -1079,11 +1293,12 @@ const NegociacionTab = ({
                   ? art.margen_unitario * 100
                   : (clienteData?.margen ?? 12);
 
-              // Buscar precio por line_item_id primero, luego por articuloId (vista agregada)
+              // Precio por line_item_id (cada línea es independiente; una línea
+              // a 0€ debe persistir como 0, no recalcularse ni heredar de otra línea).
               const precioEXWFinal =
-                preciosEXW[lineItemId] ||
-                preciosEXW[articuloId] ||
-                costePorCaja + (costePorCaja * margenInicial) / 100;
+                preciosEXW[lineItemId] != null
+                  ? preciosEXW[lineItemId]
+                  : costePorCaja + (costePorCaja * margenInicial) / 100;
               const margenEnEuros = precioEXWFinal - costePorCaja;
               const margenActual =
                 costePorCaja > 0 ? (margenEnEuros / costePorCaja) * 100 : 0;
@@ -1100,6 +1315,26 @@ const NegociacionTab = ({
                 margenEfectivo = margenActual - comisionComoMargen;
               }
 
+              // Ancla del tipo de venta: la tecleada, o el final mostrado (que es
+              // lo que el comercial valida al guardar). Promo o precio 0 → sin
+              // ancla (el backend la limpia).
+              const esPromoLinea =
+                art.price != null && art.price !== "" && Number(art.price) === 0;
+              let anclaPayload = null;
+              if (!esPromoLinea && precioEXWFinal > 0) {
+                const anclaLocal = preciosAnclados[lineItemId];
+                anclaPayload =
+                  anclaLocal != null && anclaLocal > 0
+                    ? anclaLocal
+                    : Math.round(
+                        calcularPrecioPorCajaPorIncoterm(
+                          precioEXWFinal,
+                          tipoVentaSeleccionado,
+                          paramsCont
+                        ) * 1000
+                      ) / 1000;
+              }
+
               // Siempre agregar el artículo (el backend validará si es necesario)
               todosLosArticulos.push({
                 line_item_id: lineItemId,
@@ -1107,14 +1342,15 @@ const NegociacionTab = ({
                 margen_unitario: margenEfectivo / 100,
                 tipo_iva_repercutido:
                   tiposIVA[lineItemId] ||
-                  tiposIVA[articuloId] ||
                   art.tipo_iva_repercutido ||
                   "",
                 tipo_iva_soportado:
                   tiposIVASoportado[lineItemId] ||
-                  tiposIVASoportado[articuloId] ||
                   art.tipo_iva_soportado ||
                   "",
+                precio_negociado_tipo_venta: anclaPayload,
+                incoterm_precio_negociado:
+                  anclaPayload != null ? tipoVentaSeleccionado : null,
               });
             });
           }
@@ -1147,7 +1383,11 @@ const NegociacionTab = ({
     context,
     contenedoresUnicos,
     preciosEXW,
+    preciosAnclados,
+    pricingBase,
+    tipoVentaSeleccionado,
     tiposIVA,
+    tiposIVASoportado,
     comisionPorCaja,
     clienteData,
     onNavigate,
@@ -1174,16 +1414,14 @@ const NegociacionTab = ({
   // Determinar qué tipos de venta deben mostrarse según el tipo seleccionado
   const tiposVentaVisibles = useMemo(() => {
     if (!clienteData || !clienteData.tipoVenta) {
-      // Si no hay tipo de venta seleccionado, mostrar todos
-      return Object.keys(TIPOS_VENTA);
+      // Sin tipo de venta seleccionado: fallback a EXW (igual que el cálculo)
+      return ["EXW"];
     }
 
-    // Extraer el valor si es un objeto {value, options}
-    const tipoVentaValue =
-      clienteData.tipoVenta?.value || clienteData.tipoVenta;
-    const tipoVentaNormalizado = tipoVentaValue
-      .toUpperCase()
-      .replace(/\s+/g, "_");
+    // Clave canónica del incoterm (sin acentos ni espacios)
+    const tipoVentaNormalizado = normalizeIncoterm(
+      clienteData.tipoVenta?.value || clienteData.tipoVenta
+    );
 
     // DAP TERRESTRE: Solo mostrar DAP_TERRESTRE
     if (tipoVentaNormalizado === "DAP_TERRESTRE") {
@@ -1191,10 +1429,7 @@ const NegociacionTab = ({
     }
 
     // DAP Marítimo: Solo mostrar DAP_MARITIMO
-    if (
-      tipoVentaNormalizado === "DAP_MARITIMO" ||
-      tipoVentaNormalizado === "DAP_MARÍTIMO"
-    ) {
+    if (tipoVentaNormalizado === "DAP_MARITIMO") {
       return ["DAP_MARITIMO"];
     }
 
@@ -1210,8 +1445,8 @@ const NegociacionTab = ({
       return jerarquia.slice(0, indiceSeleccionado + 1);
     }
 
-    // Si no se reconoce el tipo, mostrar todos
-    return Object.keys(TIPOS_VENTA);
+    // Tipo fuera de los 6 incoterms conocidos: fallback a EXW
+    return ["EXW"];
   }, [clienteData]);
 
   // RENDER
@@ -1452,7 +1687,12 @@ const NegociacionTab = ({
                           )}
                         </Dropdown>
                       </TableCell>
-                      <TableCell width="auto">{art.nombre}</TableCell>
+                      <TableCell width="auto">
+                        <Flex direction="column" gap="extra-small">
+                          <Text>{art.nombre}</Text>
+                          {art.esPromo && <Tag variant="success">Promoción</Tag>}
+                        </Flex>
+                      </TableCell>
                       <TableCell width="auto">{art.cajas}</TableCell>
                       <TableCell width="auto">{formatCurrency(art.costePorCaja)}</TableCell>
                       <TableCell width="auto">
@@ -1487,23 +1727,38 @@ const NegociacionTab = ({
                         </Flex>
                       </TableCell>
                       <TableCell width="auto">
-                        <Flex direction="column" gap="extra-small">
-                          <StepperInput
-                            name={`precio-${art.id}`}
-                            value={art.precioFinalEditable || 0}
-                            onChange={(value) => handlePrecioChange(art.id, value)}
-                            stepSize={0.001}
-                            min={0}
-                            precision={3}
-                            formatStyle="decimal"
-                            minValueReachedTooltip="El precio no puede ser negativo"
-                          />
-                          {tipoVentaSeleccionado !== "EXW" && (
-                            <Text variant="microcopy">
-                              EXW: {formatCurrency(art.precioPorCaja)}
+                        {art.esPromo ? (
+                          <Flex direction="column" gap="extra-small">
+                            <Text format={{ fontWeight: "bold" }}>
+                              {formatCurrency(0)}
                             </Text>
-                          )}
-                        </Flex>
+                            <Text variant="microcopy">Promoción · no editable</Text>
+                          </Flex>
+                        ) : (
+                          <Flex direction="column" gap="extra-small">
+                            <StepperInput
+                              name={`precio-${art.id}`}
+                              value={art.precioFinalEditable || 0}
+                              onChange={(value) => handlePrecioChange(art.id, value)}
+                              stepSize={0.001}
+                              min={0}
+                              precision={3}
+                              formatStyle="decimal"
+                              minValueReachedTooltip="El precio no puede ser negativo"
+                            />
+                            {!["EXW", "FCA"].includes(tipoVentaSeleccionado) && (
+                              <Text variant="microcopy">
+                                EXW: {formatCurrency(art.precioPorCaja)}
+                              </Text>
+                            )}
+                            {art.anclaClamped && (
+                              <Text variant="microcopy" format={{ fontWeight: "bold" }}>
+                                ⚠️ Precio mínimo aplicado (margen 0): el negociado no
+                                cubre coste + gastos
+                              </Text>
+                            )}
+                          </Flex>
+                        )}
                       </TableCell>
                       <TableCell width="auto">
                         <Flex direction="column" gap="small">
@@ -1565,7 +1820,7 @@ const NegociacionTab = ({
                     </TableCell>
                     <TableCell>
                       <Text format={{ fontWeight: "bold" }}>
-                        {formatCurrency(totalesConIVAContenedorSeleccionado[`${tipoVentaSeleccionado}_IVA`] ?? 0, 2)}
+                        {formatCurrency(totalesConIVAContenedorSeleccionado[`${bucketIncoterm(tipoVentaSeleccionado)}_IVA`] ?? 0, 2)}
                       </Text>
                     </TableCell>
                   </TableRow>
@@ -1655,21 +1910,18 @@ const NegociacionTab = ({
             </>
           )}
         </Box>
-
-        <Divider size="medium" />
-
         {/* ========== DESGLOSE DE COSTES ========== */}
         <Box>
           <Text format={{ fontWeight: "bold" }}>
-            Desglose de Costes Incluidos
+            Desglose de Costes Incluidos del Contenedor
           </Text>
           <Flex direction="row" gap="large">
             <Flex direction="column" gap="extra-small">
-              <Text variant="microcopy">Cajas totales</Text>
-              <Text>{totalCajas}</Text>
+              <Text variant="microcopy">Cajas (contenedor)</Text>
+              <Text>{cajasContenedorSeleccionado}</Text>
             </Flex>
             <Flex direction="column" gap="extra-small">
-              <Text variant="microcopy">Servicios totales</Text>
+              <Text variant="microcopy">Servicios (contenedor)</Text>
               <Text>{formatCurrency(totalServicios, 2)}</Text>
             </Flex>
             <Flex direction="column" gap="extra-small">
@@ -1677,13 +1929,21 @@ const NegociacionTab = ({
               <Text>{formatCurrency(serviciosPorCaja)}</Text>
             </Flex>
             <Flex direction="column" gap="extra-small">
-              <Text variant="microcopy">Hasta puerto salida</Text>
+              <Text variant="microcopy">
+                {modoDoble
+                  ? "Flete terrestre (hasta puerto salida)"
+                  : "Hasta puerto salida"}
+              </Text>
               <Text>
                 {formatCurrency(gastosPorTramo.hastaPuertoSalida)}/caja
               </Text>
             </Flex>
             <Flex direction="column" gap="extra-small">
-              <Text variant="microcopy">Hasta puerto destino</Text>
+              <Text variant="microcopy">
+                {modoDoble
+                  ? "Flete marítimo (hasta puerto destino)"
+                  : "Hasta puerto destino"}
+              </Text>
               <Text>
                 {formatCurrency(gastosPorTramo.hastaPuertoDestino)}/caja
               </Text>

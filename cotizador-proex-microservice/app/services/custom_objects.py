@@ -30,8 +30,14 @@ from app.core.custom_objects_constants import (
     PAGO_DOCTYPE_CONTENEDOR,
     CONTENEDOR_PROP_ACTUALIZACION_PEDIDO,
     DEAL_PROP_ACTUALIZACION_PEDIDO,
+    OBJECT_TYPE_PROVEEDOR,
+    CONTENEDOR_PROVEEDOR_ASSOC_TYPE_IDS,
+    contenedor_assoc_type_for_tipo_proveedor,
+    OBJECT_TYPE_RUTA,
+    ASSOCIATION_TYPE_ID_DEAL_TO_RUTA_TERRESTRE,
+    ASSOCIATION_TYPE_ID_DEAL_TO_RUTA_MARITIMA,
 )
-from app.utils.property_helpers import round_margin, round_price
+from app.utils.property_helpers import round_margin, round_price, resolve_almacen_para_elemento
 
 logger = logging.getLogger(__name__)
 
@@ -831,11 +837,13 @@ def _touch_contenedores_y_deals(contenedor_ids: List[str], ts_ms: int, headers: 
 
 
 def touch_pagos_for_contenedores(client: HubSpot, contenedor_co_ids) -> int:
-    """Marca actualizacion_pedido=now (ms UTC) en los pagos (2-44408688) con
-    doctype='contenedor' asociados a los contenedores indicados via typeId
-    ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PAGO (499). Propaga el mismo timestamp
-    al Contenedor y a los Deals asociados. Best-effort: nunca propaga
-    excepciones.
+    """Disparador SAP de edición de contenido del contenedor.
+
+    Marca actualizacion_pedido=now (ms UTC) SIEMPRE en los contenedores
+    indicados y en sus deals asociados (aunque todavía no tengan cobros), y
+    además en los pagos (2-44408688) con doctype='contenedor' asociados via
+    typeId ASSOCIATION_TYPE_ID_CONTENEDOR_TO_PAGO (499) cuando existan. Mismo
+    timestamp para todo. Best-effort: nunca propaga excepciones.
 
     Devuelve cuántos pagos quedaron efectivamente actualizados.
     """
@@ -852,6 +860,12 @@ def touch_pagos_for_contenedores(client: HubSpot, contenedor_co_ids) -> int:
 
         access_token = client.access_token
         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+        now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+        # Disparador SAP: marca SIEMPRE el contenedor y su deal, haya o no cobros.
+        # La edición de contenido (cajas, precio, IVA, proveedor...) debe propagarse
+        # aunque el contenedor todavía no tenga cobros asociados.
+        _touch_contenedores_y_deals(ids, now_ms, headers)
 
         logger.info(f"[touch_pagos] reading assoc {OBJECT_TYPE_CONTENEDOR} -> {OBJECT_TYPE_PAGO} for {len(ids)} contenedor(es) ids={ids}")
 
@@ -917,7 +931,6 @@ def touch_pagos_for_contenedores(client: HubSpot, contenedor_co_ids) -> int:
             logger.info(f"[touch_pagos] cont={len(ids)} pagos_candidatos={candidatos} pagos_actualizados=0")
             return 0
 
-        now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
         actualizados = 0
         update_url = f"https://api.hubapi.com/crm/v3/objects/{OBJECT_TYPE_PAGO}/batch/update"
         for i in range(0, len(contenedor_pago_ids), 100):
@@ -935,9 +948,6 @@ def touch_pagos_for_contenedores(client: HubSpot, contenedor_co_ids) -> int:
         logger.info(
             f"[touch_pagos] cont={len(ids)} pagos_candidatos={candidatos} pagos_actualizados={actualizados}"
         )
-
-        if contenedor_pago_ids:
-            _touch_contenedores_y_deals(ids, now_ms, headers)
 
         return actualizados
     except Exception as e:
@@ -1336,6 +1346,274 @@ def batch_create_associations_v4(
     return successful, errors
 
 
+def _assoc_http_headers(access_token: str) -> Dict[str, str]:
+    return {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+
+
+def _get_deal_proveedor_ids(access_token: str, deal_id: str) -> List[str]:
+    """IDs de los Proveedores asociados al deal (cualquier etiqueta)."""
+    url = f"https://api.hubapi.com/crm/v4/objects/deals/{deal_id}/associations/{OBJECT_TYPE_PROVEEDOR}"
+    headers = _assoc_http_headers(access_token)
+    ids: List[str] = []
+    after = None
+    try:
+        while True:
+            params = {"limit": 500}
+            if after:
+                params["after"] = after
+            r = requests.get(url, headers=headers, params=params, timeout=20)
+            if not r.ok:
+                logger.error(f"[contenedor-proveedor] no pude leer proveedores del deal {deal_id}: {r.status_code} {r.text}")
+                break
+            data = r.json() or {}
+            for item in data.get("results", []):
+                pid = item.get("toObjectId") or item.get("id")
+                if pid is not None:
+                    ids.append(str(pid))
+            after = ((data.get("paging") or {}).get("next") or {}).get("after")
+            if not after:
+                break
+    except Exception as e:
+        logger.error(f"[contenedor-proveedor] excepción leyendo proveedores del deal {deal_id}: {e}")
+    return ids
+
+
+def _batch_read_proveedor_tipos(access_token: str, provider_ids: List[str]) -> Dict[str, str]:
+    """Devuelve {provider_id: tipo_proveedor} leyendo en lotes de 100."""
+    tipos: Dict[str, str] = {}
+    url = f"https://api.hubapi.com/crm/v3/objects/{OBJECT_TYPE_PROVEEDOR}/batch/read"
+    headers = _assoc_http_headers(access_token)
+    for start in range(0, len(provider_ids), 100):
+        chunk = provider_ids[start:start + 100]
+        payload = {"properties": ["tipo_proveedor"], "inputs": [{"id": str(pid)} for pid in chunk]}
+        try:
+            r = requests.post(url, headers=headers, json=payload, timeout=20)
+            if not r.ok:
+                logger.error(f"[contenedor-proveedor] batch read tipo_proveedor falló: {r.status_code} {r.text}")
+                continue
+            for prov in r.json().get("results", []):
+                pid = str(prov.get("id"))
+                tipos[pid] = (prov.get("properties", {}) or {}).get("tipo_proveedor") or ""
+        except Exception as e:
+            logger.error(f"[contenedor-proveedor] excepción batch read tipo_proveedor: {e}")
+    return tipos
+
+
+def _read_contenedores_proveedor_assocs(access_token: str, contenedor_ids: List[str]) -> Dict[str, set]:
+    """Devuelve {contenedor_id: {(provider_id, type_id), ...}} solo para las
+    etiquetas Contenedor→Proveedor que gestionamos."""
+    result: Dict[str, set] = {str(cid): set() for cid in contenedor_ids}
+    url = f"https://api.hubapi.com/crm/v4/associations/{OBJECT_TYPE_CONTENEDOR}/{OBJECT_TYPE_PROVEEDOR}/batch/read"
+    headers = _assoc_http_headers(access_token)
+    for start in range(0, len(contenedor_ids), 100):
+        chunk = contenedor_ids[start:start + 100]
+        payload = {"inputs": [{"id": str(cid)} for cid in chunk]}
+        try:
+            r = requests.post(url, headers=headers, json=payload, timeout=20)
+            if not r.ok:
+                logger.error(f"[contenedor-proveedor] batch read asociaciones falló: {r.status_code} {r.text}")
+                continue
+            for row in r.json().get("results", []):
+                cid = str((row.get("from") or {}).get("id"))
+                for to_item in row.get("to", []):
+                    pid = to_item.get("toObjectId")
+                    if pid is None:
+                        continue
+                    for at in to_item.get("associationTypes", []):
+                        type_id = at.get("typeId")
+                        if type_id in CONTENEDOR_PROVEEDOR_ASSOC_TYPE_IDS:
+                            result.setdefault(cid, set()).add((str(pid), type_id))
+        except Exception as e:
+            logger.error(f"[contenedor-proveedor] excepción batch read asociaciones: {e}")
+    return result
+
+
+def _batch_archive_association_labels_v4(
+    access_token: str,
+    from_object_type: str,
+    to_object_type: str,
+    triples: List[tuple],
+    chunk_size: int = 100,
+) -> tuple:
+    """Archiva etiquetas concretas (sin tocar otras asociaciones entre los mismos
+    registros). `triples`: [(from_id, to_id, type_id)]. Devuelve (archived, errors)."""
+    if not triples:
+        return 0, []
+    url = f"https://api.hubapi.com/crm/v4/associations/{from_object_type}/{to_object_type}/batch/labels/archive"
+    headers = _assoc_http_headers(access_token)
+    archived = 0
+    errors: List[str] = []
+    for start in range(0, len(triples), chunk_size):
+        chunk = triples[start:start + chunk_size]
+        payload = {
+            "inputs": [
+                {
+                    "from": {"id": str(from_id)},
+                    "to": {"id": str(to_id)},
+                    "types": [{"associationCategory": "USER_DEFINED", "associationTypeId": type_id}],
+                }
+                for from_id, to_id, type_id in chunk
+            ]
+        }
+        try:
+            r = requests.post(url, headers=headers, json=payload, timeout=30)
+        except Exception as e:
+            errors.append(f"labels/archive exception: {e}")
+            continue
+        if r.status_code >= 300:
+            errors.append(f"labels/archive HTTP {r.status_code}: {r.text}")
+            continue
+        archived += len(chunk)
+    return archived, errors
+
+
+def sync_contenedor_proveedor_associations(
+    client: HubSpot,
+    deal_id: str,
+    contenedor_ids: List[str],
+) -> Dict[str, int]:
+    """Asocia cada contenedor a los mismos proveedores que el negocio (espejo del
+    negocio), clasificando por tipo_proveedor → etiqueta Contenedor→Proveedor.
+
+    Reconcilia el estado completo: crea las asociaciones que faltan y archiva las
+    que ya no corresponden cuando cambia un proveedor desde el cotizador — igual
+    que se sincroniza el cardcode de los elementos en cada publish.
+    """
+    contenedor_ids = [str(c) for c in (contenedor_ids or []) if c]
+    if not contenedor_ids:
+        return {"added": 0, "removed": 0}
+
+    access_token = client.access_token
+
+    provider_ids = _get_deal_proveedor_ids(access_token, deal_id)
+    deal_provider_set = {str(pid) for pid in provider_ids}
+    tipo_by_provider = _batch_read_proveedor_tipos(access_token, provider_ids) if provider_ids else {}
+
+    # Conjunto deseado, idéntico para todos los contenedores: (provider_id, type_id).
+    # Solo clasificamos proveedores que el batch read devolvió: un proveedor del
+    # negocio cuyo tipo no pudimos leer (archivado o fallo transitorio) no se asocia
+    # ni se desasocia, para no provocar churn destructivo.
+    desired_pairs = {
+        (pid, contenedor_assoc_type_for_tipo_proveedor(tipo))
+        for pid, tipo in tipo_by_provider.items()
+    }
+
+    existing_by_cont = _read_contenedores_proveedor_assocs(access_token, contenedor_ids)
+
+    to_add_by_type: Dict[int, List[tuple]] = {}
+    to_remove: List[tuple] = []
+    for cid in contenedor_ids:
+        existing = existing_by_cont.get(cid, set())
+        for pid, type_id in (desired_pairs - existing):
+            to_add_by_type.setdefault(type_id, []).append((cid, pid))
+        for pid, type_id in (existing - desired_pairs):
+            # Archivar solo si el proveedor ya no está en el negocio, o si sí está y
+            # conocemos su tipo actual (este (pid, type_id) es de una etiqueta vieja).
+            if pid not in deal_provider_set or pid in tipo_by_provider:
+                to_remove.append((cid, pid, type_id))
+
+    added = 0
+    for type_id, pairs in to_add_by_type.items():
+        ok, errs = batch_create_associations_v4(
+            access_token, OBJECT_TYPE_CONTENEDOR, OBJECT_TYPE_PROVEEDOR, type_id, pairs,
+        )
+        added += ok
+        if errs:
+            logger.warning(f"[contenedor-proveedor] errores creando asociaciones typeId={type_id}: {errs}")
+
+    removed, rem_errs = _batch_archive_association_labels_v4(
+        access_token, OBJECT_TYPE_CONTENEDOR, OBJECT_TYPE_PROVEEDOR, to_remove,
+    )
+    if rem_errs:
+        logger.warning(f"[contenedor-proveedor] errores archivando asociaciones: {rem_errs}")
+
+    logger.info(
+        f"✅ [contenedor-proveedor] deal={deal_id} contenedores={len(contenedor_ids)} "
+        f"proveedores={len(provider_ids)} asociaciones +{added}/-{removed}"
+    )
+    return {"added": added, "removed": removed}
+
+
+def _read_deal_ruta_assocs(access_token: str, deal_id: str) -> Dict[int, set]:
+    """Lee las rutas asociadas al deal agrupadas por associationTypeId (etiqueta).
+
+    Devuelve {type_id: {ruta_id, ...}}. Un fallo de lectura devuelve {} y deja que
+    el llamante cree la asociación sin archivar nada (no destructivo)."""
+    url = f"https://api.hubapi.com/crm/v4/objects/deals/{deal_id}/associations/{OBJECT_TYPE_RUTA}"
+    headers = _assoc_http_headers(access_token)
+    out: Dict[int, set] = {}
+    try:
+        r = requests.get(url, headers=headers, timeout=10)
+    except Exception as e:
+        logger.warning(f"[deal-ruta] excepción leyendo asociaciones deal={deal_id}: {e}")
+        return out
+    if r.status_code >= 300:
+        logger.warning(f"[deal-ruta] HTTP {r.status_code} leyendo asociaciones deal={deal_id}: {r.text}")
+        return out
+    for item in r.json().get("results", []):
+        to_id = str(item.get("toObjectId") or item.get("id") or "")
+        if not to_id:
+            continue
+        for t in item.get("associationTypes", []):
+            type_id = t.get("typeId")
+            if type_id is not None:
+                out.setdefault(int(type_id), set()).add(to_id)
+    return out
+
+
+def sync_deal_ruta_associations(
+    client: HubSpot,
+    deal_id: str,
+    ruta_terrestre_id: Optional[str] = None,
+    ruta_maritima_id: Optional[str] = None,
+) -> Dict[str, int]:
+    """Asocia el negocio a las rutas terrestre/marítima seleccionadas en el cotizador.
+
+    Reconcilia solo las etiquetas cuyo id se proporciona: crea la asociación de la
+    ruta elegida y archiva las de la misma etiqueta que apuntaban a otra ruta (al
+    cambiar de ruta y volver a guardar). Un id `None` no toca su etiqueta —p.ej. EXW
+    sin flete, o reapertura del card sin reseleccionar— para no borrar lo ya asociado.
+    """
+    access_token = client.access_token
+    desired = [
+        (ASSOCIATION_TYPE_ID_DEAL_TO_RUTA_TERRESTRE, str(ruta_terrestre_id) if ruta_terrestre_id else None),
+        (ASSOCIATION_TYPE_ID_DEAL_TO_RUTA_MARITIMA, str(ruta_maritima_id) if ruta_maritima_id else None),
+    ]
+    if all(ruta_id is None for _, ruta_id in desired):
+        return {"added": 0, "removed": 0}
+
+    existing = _read_deal_ruta_assocs(access_token, deal_id)
+
+    to_add: List[tuple] = []      # (type_id, ruta_id)
+    to_remove: List[tuple] = []   # (deal_id, ruta_id, type_id)
+    for type_id, ruta_id in desired:
+        if not ruta_id:
+            continue
+        current = existing.get(type_id, set())
+        if ruta_id not in current:
+            to_add.append((type_id, ruta_id))
+        for stale_id in current - {ruta_id}:
+            to_remove.append((deal_id, stale_id, type_id))
+
+    added = 0
+    for type_id, ruta_id in to_add:
+        ok, errs = batch_create_associations_v4(
+            access_token, "deals", OBJECT_TYPE_RUTA, type_id, [(deal_id, ruta_id)],
+        )
+        added += ok
+        if errs:
+            logger.warning(f"[deal-ruta] errores creando asociación typeId={type_id} deal={deal_id}: {errs}")
+
+    removed, rem_errs = _batch_archive_association_labels_v4(
+        access_token, "deals", OBJECT_TYPE_RUTA, to_remove,
+    )
+    if rem_errs:
+        logger.warning(f"[deal-ruta] errores archivando asociaciones deal={deal_id}: {rem_errs}")
+
+    logger.info(f"✅ [deal-ruta] deal={deal_id} asociaciones +{added}/-{removed}")
+    return {"added": added, "removed": removed}
+
+
 def batch_update_custom_objects(
     client: HubSpot,
     object_type: str,
@@ -1561,9 +1839,18 @@ def _build_elem_update_props(
     nombre_contenedor: str,
     preserved_fields: set,
 ) -> Dict[str, Any]:
+    # En fabricantes el precio_total lo fija recalcular_contenedores (cuadre con el
+    # precio negociado); re-escribir aquí el crudo EXW×cantidad lo revertiría en
+    # cada re-sync (flip-flop + touches a SAP). Servicios/fletes/intermediario sí
+    # se sincronizan (su precio_total = precio de la línea).
+    es_fabricante = (
+        str(target_data.get("tipo_articulo") or "").strip().lower() == "fabricante"
+    )
     update_props = {}
     for field in ELEM_DIFF_FIELDS:
         if field in preserved_fields:
+            continue
+        if field == "precio_total" and es_fabricante:
             continue
         if field == "nombre_contenedor":
             target_val = nombre_contenedor or target_data.get("nombre_contenedor") or ""
@@ -1613,14 +1900,16 @@ def process_deal_custom_objects_from_line_items(
         documentos_a_generar = None
         deal_almacen = None
         deal_transitario = None
+        deal_tipo_contenedor = ""
         try:
             deal_obj = client.crm.deals.basic_api.get_by_id(
                 deal_id=deal_id,
-                properties=["documentos_a_generar", "almacen", "transitario"]
+                properties=["documentos_a_generar", "almacen", "transitario", "tipo_contenedor"]
             )
             documentos_a_generar = deal_obj.properties.get("documentos_a_generar")
             deal_almacen = deal_obj.properties.get("almacen")
             deal_transitario = deal_obj.properties.get("transitario")
+            deal_tipo_contenedor = deal_obj.properties.get("tipo_contenedor") or ""
             logger.info(f"📄 documentos_a_generar for deal {deal_id}: {documentos_a_generar}")
             logger.info(f"🏭 almacen for deal {deal_id}: {deal_almacen}")
             logger.info(f"🚚 transitario for deal {deal_id}: {deal_transitario}")
@@ -1700,6 +1989,7 @@ def process_deal_custom_objects_from_line_items(
 
         elementos_by_lid = {}
         elementos_by_key = {}
+        key_counts = {}
         for el in existing_elementos:
             props = el.get("properties", {}) or {}
             lid = (props.get("line_item_id") or "").strip()
@@ -1709,6 +1999,7 @@ def process_deal_custom_objects_from_line_items(
             if lid:
                 elementos_by_lid[lid] = entry
             if nombre:
+                key_counts[(nc, nombre)] = key_counts.get((nc, nombre), 0) + 1
                 elementos_by_key[(nc, nombre)] = entry
         read_time = time.time() - read_start
         logger.info(
@@ -1723,7 +2014,7 @@ def process_deal_custom_objects_from_line_items(
             try:
                 company_resp = client.crm.companies.basic_api.get_by_id(
                     company_id=company_id,
-                    properties=["equ", "residennum"],
+                    properties=["equ", "residennum", "tipo_cliente"],
                 )
                 company_props = getattr(company_resp, "properties", None) or {}
             except Exception as e:
@@ -1737,6 +2028,7 @@ def process_deal_custom_objects_from_line_items(
             product_price_map=product_price_map,
             company_props=company_props,
             deal_transitario=deal_transitario,
+            deal_tipo_contenedor=deal_tipo_contenedor,
         )
         parse_time = time.time() - parse_start
         logger.info(f"⏱️  [TIMER] Parsed {len(containers_map)} containers and {len(standalone_elements)} standalone elements in {parse_time:.2f}s")
@@ -1826,7 +2118,24 @@ def process_deal_custom_objects_from_line_items(
             target_nombre = (el.get("nombre") or "").strip()
 
             existing_entry = elementos_by_lid.get(target_lid) if target_lid else None
-            if not existing_entry and target_nombre:
+            # lid cruzado (rotación batch previa): si el Elemento resuelto por lid no
+            # corresponde a este artículo (nombre distinto), se descarta para
+            # reemparejar por (nombre_contenedor, nombre) y autocorregir el line_item_id.
+            if (
+                existing_entry
+                and target_nombre
+                and (existing_entry["properties"].get("nombre") or "").strip() != target_nombre
+            ):
+                existing_entry = None
+            # El fallback por nombre solo es seguro si ese nombre es único en el
+            # contenedor. Con duplicados (promo 5+1) emparejaría a ciegas y
+            # colapsaría las dos líneas en un único Elemento; en ese caso lo
+            # tratamos como nuevo (se creará y los obsoletos se borran).
+            if (
+                not existing_entry
+                and target_nombre
+                and key_counts.get((nc, target_nombre), 0) <= 1
+            ):
                 existing_entry = elementos_by_key.get((nc, target_nombre))
 
             cid_for_elem = contenedor_id_by_nombre.get(nc) if nc else None
@@ -1855,6 +2164,18 @@ def process_deal_custom_objects_from_line_items(
 
         _emit("applying_elementos")
         apply_elem_start = time.time()
+
+        # Defensa: nunca repetir el mismo Elemento en el batch update (HubSpot
+        # rechaza IDs duplicados). El gating por nombre ya debería evitarlo.
+        if elem_to_update:
+            _seen_update_ids = set()
+            _deduped_update = []
+            for x in elem_to_update:
+                if x["id"] in _seen_update_ids:
+                    continue
+                _seen_update_ids.add(x["id"])
+                _deduped_update.append(x)
+            elem_to_update = _deduped_update
 
         if elem_to_update:
             for x in elem_to_update:
@@ -1894,6 +2215,17 @@ def process_deal_custom_objects_from_line_items(
             f"created={stats['elementos_created']} deleted={stats['elementos_deleted']} "
             f"in {apply_elem_time:.2f}s"
         )
+
+        # Espejar los proveedores del negocio sobre cada contenedor superviviente.
+        _emit("syncing_proveedores")
+        prov_sync_start = time.time()
+        try:
+            sync_contenedor_proveedor_associations(
+                client, deal_id, list(contenedor_id_by_nombre.values()),
+            )
+        except Exception as e:
+            logger.warning(f"[publish] sync_contenedor_proveedor_associations falló: {e}")
+        logger.info(f"⏱️  [TIMER] sync_contenedor_proveedor_associations: {time.time() - prov_sync_start:.2f}s")
 
         if affected_contenedor_co_ids:
             _emit("post_processing")
@@ -1994,7 +2326,7 @@ def _fetch_all_line_items_for_deal(client: HubSpot, deal_id: str) -> List[Dict[s
             "hs_margin", "hs_product_id",
             "hs_product_type", "tipo_articulo", "tipo_iva_repercutido", "tipo_iva_soportado",
             "precio_de_coste", "margen_unitario", "numero_container", "ocupacion",
-            "peso_neto", "peso_bruto", "codigo_proveedor",
+            "peso_neto", "peso_bruto", "codigo_proveedor", "cardcode",
             "name_en", "name_fr", "description", "formato", "marca_certificado",
         ]
 
@@ -2060,6 +2392,7 @@ def _parse_line_items_to_custom_objects(
     product_price_map: Optional[Dict[str, Optional[float]]] = None,
     company_props: Optional[Dict[str, Any]] = None,
     deal_transitario: Optional[str] = None,
+    deal_tipo_contenedor: Optional[str] = None,
 ) -> tuple:
     """
     Parsea line items y los agrupa por contenedor usando propiedades HubSpot.
@@ -2217,6 +2550,9 @@ def _parse_line_items_to_custom_objects(
         # precio_total = precio_unitario × cantidad, siempre EXW independientemente del tipo de venta.
         # precio_unitario para fabricante = precio_de_coste × (1 + margen); para el resto = price del line item.
         # Ambos son precios EXW: excluyen flete/servicios añadidos por tipoVenta en NegociacionTab.
+        # En fabricantes este valor es solo la SEMILLA del create: recalcular_contenedores lo
+        # corrige después al total que cuadra con el precio negociado (y el diff de updates
+        # lo excluye en _build_elem_update_props para no revertirlo en cada re-sync).
         precio_total_elem = (
             round(precio_unitario * cantidad_elem, 3)
             if precio_unitario is not None
@@ -2229,7 +2565,9 @@ def _parse_line_items_to_custom_objects(
         marca     = (props.get("marca_certificado") or "").strip() or None
 
         if tipo_articulo_elem == "flete":
-            cardcode_val = deal_transitario or props.get("cardcode") or None
+            # El line item lleva el cardcode del transitario de SU tramo (doble
+            # flete); deal.transitario solo como fallback de líneas legadas.
+            cardcode_val = props.get("cardcode") or deal_transitario or None
         else:
             cardcode_val = props.get("cardcode") or props.get("codigo_proveedor") or None
 
@@ -2249,7 +2587,9 @@ def _parse_line_items_to_custom_objects(
             "peso_neto_unitario": float(props["peso_neto"]) if props.get("peso_neto") else None,
             "peso_bruto_unitario": float(props["peso_bruto"]) if props.get("peso_bruto") else None,
             "cardcode": cardcode_val,
-            "almacen": deal_almacen,
+            "almacen": resolve_almacen_para_elemento(
+                deal_almacen, tipo_articulo_elem, deal_tipo_contenedor
+            ),
             "nombre_es": nombre_es,
             "nombre_en": nombre_en,
             "nombre_fr": nombre_fr,

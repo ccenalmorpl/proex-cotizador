@@ -29,6 +29,29 @@ class Settings(BaseSettings):
     ecr_repo_name: Optional[str] = Field(default=None)
     function_name: Optional[str] = Field(default=None)
 
+    pedidos_webhook_url: Optional[str] = Field(
+        default=None,
+        description=(
+            "URL completa del webhook de pedidos 'cotizacion-ganada'. Si una "
+            "cotización ya ganada recibe un nuevo contenedor al re-publicar, se "
+            "llama aquí para crear su Negocio Pedido (idempotente en pedidos)."
+        ),
+    )
+    hubspot_webhook_secret: Optional[str] = Field(
+        default=None,
+        description="Secreto compartido X-Webhook-Token para autenticar contra el microservicio de pedidos.",
+    )
+    proex_card_secret: Optional[str] = Field(
+        default=None,
+        description=(
+            "Secreto compartido que la card manda en el header Authorization "
+            "como 'Bearer <secreto>'. hubspot.fetch() descarta cualquier otro "
+            "header custom, por eso viaja como Authorization. Solo se exige "
+            "si is_production=True; si falta, los endpoints de negocio "
+            "responden 503."
+        ),
+    )
+
     log_level: str = Field(
         default="INFO",
         description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"

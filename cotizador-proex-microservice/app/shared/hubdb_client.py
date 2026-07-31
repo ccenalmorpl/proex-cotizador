@@ -19,6 +19,16 @@ logger = logging.getLogger(__name__)
 
 HUBDB_TABLE_TIPO_IVA = "tipo_de_iva_soportado"
 CATEGORIAS_VALIDAS = ("repercutido", "soportado")
+RESIDENCIAS_CONOCIDAS = ("NACIONAL", "EUROPA", "EXTRANJERO")
+
+# Códigos exentos que deben ofrecerse en todos los flujos aunque la tabla HubDB
+# no tenga fila para esa residencia (la tabla solo los define para algunas).
+# Se sintetizan a 0% de IVA sin recargo; el name de respaldo solo se usa si el
+# código no existe en NINGUNA residencia de su categoría.
+SIEMPRE_DISPONIBLES = {
+    "repercutido": {"EX": "Exportaciones Bebidas"},
+    "soportado": {"SEXN": "Sujeto Exento Motivo Exento Art.22 Navieras"},
+}
 
 
 class IvaEntry:
@@ -70,6 +80,28 @@ def _to_float(raw) -> Optional[float]:
         return None
 
 
+def _ensure_siempre_disponibles(cache: Dict[str, CacheBucket]) -> None:
+    """Garantiza los códigos de SIEMPRE_DISPONIBLES en toda residencia conocida.
+
+    Las filas reales de HubDB tienen prioridad; solo se sintetiza la entrada
+    (0% IVA, 0% recargo) para las residencias donde falta, reutilizando el name
+    de una fila existente del mismo código para que la etiqueta sea idéntica."""
+    for categoria, codes in SIEMPRE_DISPONIBLES.items():
+        bucket = cache[categoria]
+        for code, default_name in codes.items():
+            name = next((e.name for e in bucket.values() if e.code == code), default_name)
+            for residencia in RESIDENCIAS_CONOCIDAS:
+                if (code, residencia) not in bucket:
+                    bucket[(code, residencia)] = IvaEntry(
+                        code=code,
+                        name=name,
+                        categoria=categoria,
+                        tipo_residencia=residencia,
+                        porcentaje_iva=0.0,
+                        porcentaje_recargo=0.0,
+                    )
+
+
 def _build_cache_from_rows(rows) -> Tuple[Dict[str, CacheBucket], int]:
     cache: Dict[str, CacheBucket] = {cat: {} for cat in CATEGORIAS_VALIDAS}
     descartadas = 0
@@ -100,6 +132,7 @@ def _build_cache_from_rows(rows) -> Tuple[Dict[str, CacheBucket], int]:
             porcentaje_recargo=porcentaje_recargo,
         )
         cache[categoria][(entry.code, entry.tipo_residencia)] = entry
+    _ensure_siempre_disponibles(cache)
     return cache, descartadas
 
 
@@ -134,11 +167,12 @@ async def preload_iva_table() -> None:
         try:
             rows = await asyncio.to_thread(_fetch_all_rows_sync)
         except Exception as e:
+            # Se deja None a propósito: un cache vacío no-None cortocircuitaría
+            # los guards y esta instancia nunca reintentaría la carga.
             logger.error(
                 "[hubdb_iva] fallo cargando tabla %r: %s",
                 HUBDB_TABLE_TIPO_IVA, e, exc_info=True,
             )
-            _iva_cache = {cat: {} for cat in CATEGORIAS_VALIDAS}
             return
         cache, descartadas = _build_cache_from_rows(rows)
         _iva_cache = cache
@@ -172,14 +206,15 @@ def _get_porcentajes(
                         descartadas,
                     )
                 except Exception as e:
+                    # Sin asignar cache vacío: el siguiente uso reintenta la carga.
                     logger.error(
                         "[hubdb_iva] fallo lazy-load sync tabla %r: %s",
                         HUBDB_TABLE_TIPO_IVA, e, exc_info=True,
                     )
-                    _iva_cache = {cat: {} for cat in CATEGORIAS_VALIDAS}
-    if not code or not tipo_residencia:
+    cache = _iva_cache
+    if cache is None or not code or not tipo_residencia:
         return (None, None)
-    bucket = _iva_cache.get(categoria, {})
+    bucket = cache.get(categoria, {})
     entry = bucket.get((code.strip().upper(), tipo_residencia.strip().upper()))
     if entry is None:
         return (None, None)

@@ -164,7 +164,9 @@ if ! aws lambda get-function --function-name ${WORKER_FUNCTION_NAME} --region ${
     --environment "Variables={
       PROEX_ACCESS_TOKEN=${PROEX_ACCESS_TOKEN},
       JOBS_TABLE_NAME=${JOBS_TABLE_NAME},
-      JOBS_QUEUE_URL=${JOBS_QUEUE_URL}
+      JOBS_QUEUE_URL=${JOBS_QUEUE_URL},
+      PEDIDOS_WEBHOOK_URL=${PEDIDOS_WEBHOOK_URL},
+      HUBSPOT_WEBHOOK_SECRET=${HUBSPOT_WEBHOOK_SECRET}
     }"
   echo "✅ Lambda worker creada"
 else
@@ -188,7 +190,9 @@ else
     --environment "Variables={
       PROEX_ACCESS_TOKEN=${PROEX_ACCESS_TOKEN},
       JOBS_TABLE_NAME=${JOBS_TABLE_NAME},
-      JOBS_QUEUE_URL=${JOBS_QUEUE_URL}
+      JOBS_QUEUE_URL=${JOBS_QUEUE_URL},
+      PEDIDOS_WEBHOOK_URL=${PEDIDOS_WEBHOOK_URL},
+      HUBSPOT_WEBHOOK_SECRET=${HUBSPOT_WEBHOOK_SECRET}
     }" \
     --region ${AWS_REGION} \
     --profile ${AWS_PROFILE}

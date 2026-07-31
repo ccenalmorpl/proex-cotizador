@@ -22,6 +22,7 @@ import {
 import { hubspot } from "@hubspot/ui-extensions";
 import { API_CONFIG } from "../config";
 import { resolveIVA } from "../utils/iva.utils";
+import { normalizeIncoterm, esModoDobleFlete } from "../utils/pricing.utils";
 
 const TransitarioTab = ({
   context,
@@ -61,6 +62,11 @@ const TransitarioTab = ({
   const [transitariosBuscados, setTransitariosBuscados] = useState([]);
   const [loadingTransitarios, setLoadingTransitarios] = useState(false);
 
+  // Transitario terrestre search state (modo doble flete)
+  const [searchTransitarioTerrestre, setSearchTransitarioTerrestre] = useState("");
+  const [transitariosTerrestresBuscados, setTransitariosTerrestresBuscados] = useState([]);
+  const [loadingTransitariosTerrestres, setLoadingTransitariosTerrestres] = useState(false);
+
   // Rutas state
   const [rutasTerrestres, setRutasTerrestres] = useState([]);
   const [rutasMaritimas, setRutasMaritimas] = useState([]);
@@ -73,6 +79,7 @@ const TransitarioTab = ({
   // Use shared state from parent
   const {
     transitarioSeleccionado,
+    transitarioTerrestreSeleccionado,
     puertoSalida,
     puertoDestino,
     localidadDestino,
@@ -85,31 +92,37 @@ const TransitarioTab = ({
     rutaMaritimaSeleccionada,
     tipoIVAFletes,
     tipoIVAFletesSoportado,
+    tipoIVAFleteTerrestre,
+    tipoIVAFleteTerrestreSoportado,
+    fleteDobleDisponible,
+    ivaFletesTerrestreDefaults,
   } = transitarioData;
 
-  // Determinar campos requeridos según tipo de venta
-  const tipoVenta = clienteData?.tipoVenta || "";
-  const isEXW = tipoVenta?.toUpperCase().replace(/\s+/g, "_") === "EXW";
-  const isDAPTerrestre = ["DAP TERRESTRE", "DAP_TERRESTRE"].includes(tipoVenta);
-  const requiresPuertoSalida = [
-    "FOB",
-    "CFR",
-    "CIF",
-    "DAP MARÍTIMO",
-    "DAP_MARITIMO",
-  ].includes(tipoVenta);
-  const requiresPuertoDestino = [
-    "CFR",
-    "CIF",
-    "DAP MARÍTIMO",
-    "DAP_MARITIMO",
-  ].includes(tipoVenta);
+  // Determinar campos requeridos según tipo de venta (clave canónica del incoterm)
+  const tipoVenta = normalizeIncoterm(clienteData?.tipoVenta);
+  // FCA se trata como equivalente a EXW: el comprador gestiona el transporte,
+  // el transitario es opcional.
+  const isEXW = tipoVenta === "EXW" || tipoVenta === "FCA";
+  const isDAPTerrestre = tipoVenta === "DAP_TERRESTRE";
+  const requiresPuertoSalida = ["FOB", "CFR", "CIF", "DAP_MARITIMO"].includes(
+    tipoVenta
+  );
+  const requiresPuertoDestino = ["CFR", "CIF", "DAP_MARITIMO"].includes(
+    tipoVenta
+  );
   const requiresLocalidadDestino = [
-    "DAP TERRESTRE",
     "DAP_TERRESTRE",
-    "DAP MARÍTIMO",
     "DAP_MARITIMO",
   ].includes(tipoVenta);
+  // Modo doble flete: cliente nacional + camión + incoterm CIF/CFR.
+  const modoDoble = esModoDobleFlete({
+    fleteDobleDisponible,
+    tipoVenta: clienteData?.tipoVenta,
+    tipoCliente: clienteData?.tipoCliente,
+  });
+  const seleccionCompleta = modoDoble
+    ? !!(transitarioSeleccionado && transitarioTerrestreSeleccionado)
+    : !!transitarioSeleccionado;
 
   // Determinar step names y current step para el StepIndicator
   const getRouteSteps = () => {
@@ -219,6 +232,35 @@ const TransitarioTab = ({
     }
   }, [ivaFletesDefaults, clienteData?.tipoResidente, tipoIVAOptions, tipoIVASoportadoOptions, tipoIVAFletes, tipoIVAFletesSoportado]);
 
+  // Auto-default del IVA del flete terrestre (solo en modo doble; nunca pisa lo persistido)
+  useEffect(() => {
+    if (!modoDoble || !ivaFletesTerrestreDefaults || !clienteData?.tipoResidente) return;
+
+    if (!tipoIVAFleteTerrestre && tipoIVAOptions.length > 0) {
+      const resolved = resolveIVA({
+        currentValue: tipoIVAFleteTerrestre,
+        productResolvedValue: ivaFletesTerrestreDefaults.repercutido,
+        product: null,
+        tipoResidente: clienteData.tipoResidente,
+        categoria: "repercutido",
+        options: tipoIVAOptions,
+      });
+      if (resolved) updateTransitarioField("tipoIVAFleteTerrestre", resolved);
+    }
+
+    if (!tipoIVAFleteTerrestreSoportado && tipoIVASoportadoOptions.length > 0) {
+      const resolved = resolveIVA({
+        currentValue: tipoIVAFleteTerrestreSoportado,
+        productResolvedValue: ivaFletesTerrestreDefaults.soportado,
+        product: null,
+        tipoResidente: clienteData.tipoResidente,
+        categoria: "soportado",
+        options: tipoIVASoportadoOptions,
+      });
+      if (resolved) updateTransitarioField("tipoIVAFleteTerrestreSoportado", resolved);
+    }
+  }, [modoDoble, ivaFletesTerrestreDefaults, clienteData?.tipoResidente, tipoIVAOptions, tipoIVASoportadoOptions, tipoIVAFleteTerrestre, tipoIVAFleteTerrestreSoportado]);
+
   // Helper para actualizar campos select con estructura {value, options}
   const updateSelectField = useCallback(
     (field, value, options) => {
@@ -250,6 +292,7 @@ const TransitarioTab = ({
         const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.deals}/${dealId}/transit`;
         const response = await hubspot.fetch(url, {
           timeout: API_CONFIG.timeout,
+          headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` },
         });
 
         if (!response.ok) {
@@ -286,6 +329,21 @@ const TransitarioTab = ({
             });
           } else {
             updateTransitarioField("transitarioSeleccionado", null);
+          }
+
+          // Doble flete (camión): flag y transitario terrestre
+          updateTransitarioField(
+            "fleteDobleDisponible",
+            !!data.flete_doble_disponible
+          );
+          if (data.transitario_terrestre) {
+            updateTransitarioField("transitarioTerrestreSeleccionado", {
+              id: data.transitario_terrestre,
+              cardcode: data.transitario_terrestre,
+              name: data.transitario_terrestre_name || data.transitario_terrestre,
+            });
+          } else {
+            updateTransitarioField("transitarioTerrestreSeleccionado", null);
           }
 
           // Precios
@@ -356,16 +414,27 @@ const TransitarioTab = ({
           if (data.tipo_iva_fletes_soportado) {
             updateTransitarioField("tipoIVAFletesSoportado", data.tipo_iva_fletes_soportado);
           }
+          if (data.tipo_iva_fletes_terrestre) {
+            updateTransitarioField("tipoIVAFleteTerrestre", data.tipo_iva_fletes_terrestre);
+          }
+          if (data.tipo_iva_fletes_terrestre_soportado) {
+            updateTransitarioField("tipoIVAFleteTerrestreSoportado", data.tipo_iva_fletes_terrestre_soportado);
+          }
 
           // Store product-resolved IVA defaults (Fase 4E)
           if (data.iva_fletes_defaults && setIvaFletesDefaults) {
             setIvaFletesDefaults(data.iva_fletes_defaults);
           }
+          if (data.iva_fletes_terrestre_defaults) {
+            updateTransitarioField("ivaFletesTerrestreDefaults", data.iva_fletes_terrestre_defaults);
+          }
         }
 
         // Load options separately (keeping old logic for now)
         const optionsUrl = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.deals}/${dealId}/transit-options`;
-        const optionsResponse = await hubspot.fetch(optionsUrl);
+        const optionsResponse = await hubspot.fetch(optionsUrl, {
+          headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` },
+        });
 
         if (optionsResponse.ok) {
           const optionsData = await optionsResponse.json();
@@ -427,12 +496,12 @@ const TransitarioTab = ({
 
   useEffect(() => {
     const fetchRutas = async () => {
-      if (transitarioSeleccionado) return;
+      if (seleccionCompleta) return;
 
       const dealId = context?.crm?.objectId;
       if (!dealId) return;
 
-      if (!tipoVenta) return;
+      if (!clienteData?.tipoVenta) return;
 
       if (isDAPTerrestre) {
         const localidadDestinoValue = readSelectValue(localidadDestino);
@@ -467,7 +536,10 @@ const TransitarioTab = ({
         setLoadingRutas(true);
         setRutasError(null);
 
-        const response = await hubspot.fetch(url, { timeout: API_CONFIG.timeout });
+        const response = await hubspot.fetch(url, {
+          timeout: API_CONFIG.timeout,
+          headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` },
+        });
         if (requestId !== rutasRequestIdRef.current) return;
 
         if (!response.ok) {
@@ -496,6 +568,8 @@ const TransitarioTab = ({
   }, [
     context,
     transitarioSeleccionado,
+    transitarioTerrestreSeleccionado,
+    seleccionCompleta,
     cotizacionRapida,
     puertoSalida,
     puertoDestino,
@@ -531,6 +605,7 @@ const TransitarioTab = ({
         )}`;
         const response = await hubspot.fetch(url, {
           timeout: API_CONFIG.timeout,
+          headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` },
         });
 
         if (!response.ok) {
@@ -556,6 +631,52 @@ const TransitarioTab = ({
 
     return () => clearTimeout(timeoutId);
   }, [searchTransitario]);
+
+  /**
+   * Search for transitarios terrestres with debounce (modo doble flete)
+   */
+  useEffect(() => {
+    const searchTransitariosTerrestres = async () => {
+      if (!searchTransitarioTerrestre) {
+        setTransitariosTerrestresBuscados([]);
+        return;
+      }
+
+      try {
+        setLoadingTransitariosTerrestres(true);
+        const url = `${
+          API_CONFIG.baseURL
+        }/api/v1/deals/transitarios/search?q=${encodeURIComponent(
+          searchTransitarioTerrestre
+        )}`;
+        const response = await hubspot.fetch(url, {
+          timeout: API_CONFIG.timeout,
+          headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          setTransitariosTerrestresBuscados(data.transitarios || []);
+        }
+      } catch (err) {
+        console.error("Error searching transitarios terrestres:", err);
+        setTransitariosTerrestresBuscados([]);
+      } finally {
+        setLoadingTransitariosTerrestres(false);
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      searchTransitariosTerrestres();
+    }, 300); // Debounce 300ms
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTransitarioTerrestre]);
 
   const transitariosFiltrados = transitariosBuscados;
 
@@ -585,6 +706,12 @@ const TransitarioTab = ({
     setTransitariosBuscados([]);
   };
 
+  const handleSeleccionarTransitarioTerrestre = (transitario) => {
+    updateTransitarioField("transitarioTerrestreSeleccionado", transitario);
+    setSearchTransitarioTerrestre("");
+    setTransitariosTerrestresBuscados([]);
+  };
+
   /**
    * Handle selecting a route (terrestrial or maritime)
    * This automatically selects the transitario and sets the price
@@ -604,6 +731,19 @@ const TransitarioTab = ({
     setPrecioDestino(null);
 
     // The useEffect will automatically reload routes when transitarioSeleccionado becomes null
+  };
+
+  // Modo doble: "Cambiar" limpia solo el tramo indicado
+  const handleCambiarTramo = (tramo) => {
+    if (tramo === "terrestre") {
+      updateTransitarioField("transitarioTerrestreSeleccionado", null);
+      updateTransitarioField("rutaTerrestreSeleccionada", null);
+      setPrecioOrigen(null);
+    } else {
+      updateTransitarioField("transitarioSeleccionado", null);
+      updateTransitarioField("rutaMaritimaSeleccionada", null);
+      setPrecioDestino(null);
+    }
   };
 
   /**
@@ -633,7 +773,12 @@ const TransitarioTab = ({
       cardcode: ruta.transitario_cardcode,
       name: ruta.transitario || ruta.transitario_cardcode, // Fallback to cardcode if name not found
     };
-    updateTransitarioField("transitarioSeleccionado", transitario);
+    // Modo doble: la ruta terrestre fija el transitario terrestre, la marítima el principal
+    if (modoDoble && ruta.tipo_tramo === "terrestre") {
+      updateTransitarioField("transitarioTerrestreSeleccionado", transitario);
+    } else {
+      updateTransitarioField("transitarioSeleccionado", transitario);
+    }
 
     // Enrich route with human-readable labels
     const enrichedRuta = {
@@ -657,10 +802,12 @@ const TransitarioTab = ({
         return;
       }
 
-      // Auto-select maritime route if same transitario has one
-      const rutaMaritimaDelMismoTransitario = rutasMaritimas.find(
-        (r) => r.transitario_cardcode === ruta.transitario_cardcode
-      );
+      // Auto-select maritime route if same transitario has one (no en modo doble)
+      const rutaMaritimaDelMismoTransitario = modoDoble
+        ? null
+        : rutasMaritimas.find(
+            (r) => r.transitario_cardcode === ruta.transitario_cardcode
+          );
       if (rutaMaritimaDelMismoTransitario) {
         setPrecioDestino(rutaMaritimaDelMismoTransitario.importe);
 
@@ -701,10 +848,12 @@ const TransitarioTab = ({
         updateTransitarioField("naviera", ruta.naviera);
       }
 
-      // Auto-select terrestrial route if same transitario has one
-      const rutaTerrestreDelMismoTransitario = rutasTerrestres.find(
-        (r) => r.transitario_cardcode === ruta.transitario_cardcode
-      );
+      // Auto-select terrestrial route if same transitario has one (no en modo doble)
+      const rutaTerrestreDelMismoTransitario = modoDoble
+        ? null
+        : rutasTerrestres.find(
+            (r) => r.transitario_cardcode === ruta.transitario_cardcode
+          );
       if (rutaTerrestreDelMismoTransitario) {
         setPrecioOrigen(rutaTerrestreDelMismoTransitario.importe);
 
@@ -734,7 +883,7 @@ const TransitarioTab = ({
         setFechaCaducidadSalida(fechaSalida);
         updateTransitarioField("fechaCaducidadFleteSalida", fechaSalida);
       }
-      if (!isDAPTerrestre) {
+      if (!isDAPTerrestre && !modoDoble) {
         const maritima = rutasMaritimas.find(
           (r) => r.transitario_cardcode === ruta.transitario_cardcode
         );
@@ -752,9 +901,11 @@ const TransitarioTab = ({
         setFechaCaducidadDestino(fechaDestino);
         updateTransitarioField("fechaCaducidadFleteDestino", fechaDestino);
       }
-      const terrestre = rutasTerrestres.find(
-        (r) => r.transitario_cardcode === ruta.transitario_cardcode
-      );
+      const terrestre = modoDoble
+        ? null
+        : rutasTerrestres.find(
+            (r) => r.transitario_cardcode === ruta.transitario_cardcode
+          );
       if (terrestre) {
         const fechaSalida = parseRutaFecha(terrestre.fecha_caducidad);
         if (fechaSalida) {
@@ -853,6 +1004,22 @@ const TransitarioTab = ({
         almacen: almacen?.value || almacen || null,
         tipo_iva_fletes: tipoIVAFletes?.value || tipoIVAFletes || null,
         tipo_iva_fletes_soportado: tipoIVAFletesSoportado?.value || tipoIVAFletesSoportado || null,
+        ruta_terrestre_id: rutaTerrestreSeleccionada?.id || null,
+        ruta_maritima_id: rutaMaritimaSeleccionada?.id || null,
+        // Solo con flag camión: "" limpia el modo doble; ausente = no escribir props
+        ...(fleteDobleDisponible
+          ? {
+              transitario_terrestre: modoDoble
+                ? transitarioTerrestreSeleccionado?.cardcode || ""
+                : "",
+              tipo_iva_fletes_terrestre: modoDoble
+                ? tipoIVAFleteTerrestre?.value || tipoIVAFleteTerrestre || ""
+                : "",
+              tipo_iva_fletes_terrestre_soportado: modoDoble
+                ? tipoIVAFleteTerrestreSoportado?.value || tipoIVAFleteTerrestreSoportado || ""
+                : "",
+            }
+          : {}),
       };
 
       const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.deals}/${dealId}/transit`;
@@ -860,6 +1027,7 @@ const TransitarioTab = ({
         method: "POST",
         body: payload,
         timeout: API_CONFIG.timeout,
+        headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` },
       });
 
       if (!response.ok) {
@@ -876,6 +1044,14 @@ const TransitarioTab = ({
       setTransitarioData({
         ...transitarioData,
         cotizacion_rapida: cotizacionRapida ? "true" : "false",
+        // Espejo del POST: fuera de modo doble se limpian las props terrestres
+        ...(fleteDobleDisponible && !modoDoble
+          ? {
+              transitarioTerrestreSeleccionado: null,
+              tipoIVAFleteTerrestre: "",
+              tipoIVAFleteTerrestreSoportado: "",
+            }
+          : {}),
       });
 
       // Navigate to next tab
@@ -1073,11 +1249,13 @@ const TransitarioTab = ({
         </Box>
 
         {/* SI NO HAY TRANSITARIO SELECCIONADO: Mostrar rutas disponibles */}
-        {!transitarioSeleccionado && (
+        {!seleccionCompleta && (
           <>
             <Alert variant="info" title="Selección de Transitario">
               {isEXW
-                ? "En ventas EXW el transitario es opcional (el comprador gestiona el transporte)."
+                ? "En ventas EXW/FCA el transitario es opcional (el comprador gestiona el transporte)."
+                : modoDoble
+                ? "Este envío requiere DOS transitarios: uno para el flete terrestre y otro para el flete marítimo. Seleccione una ruta de cada tramo o búsquelos manualmente más abajo."
                 : "Seleccione una ruta para asignar transitario y precio automáticamente, o búsquelo manualmente más abajo."}
             </Alert>
 
@@ -1164,7 +1342,9 @@ const TransitarioTab = ({
             )}
 
             {/* Solo cargar y mostrar si la ruta actual tiene "lugar de carga > puerto salida" como campos obligatorios */}
-            {requiresPuertoSalida && !isDAPTerrestre ? (
+            {requiresPuertoSalida &&
+            !isDAPTerrestre &&
+            !(modoDoble && transitarioTerrestreSeleccionado) ? (
               <>
                 <Box>
                   <Text format={{ fontWeight: "bold" }}>
@@ -1257,7 +1437,9 @@ const TransitarioTab = ({
 
             {/* RUTAS MARÍTIMAS */}
             {/* Solo cargar y mostrar si la ruta actual tiene "puerto salida > puerto destino" como campos obligatorios */}
-            {requiresPuertoDestino && !isDAPTerrestre ? (
+            {requiresPuertoDestino &&
+            !isDAPTerrestre &&
+            !(modoDoble && transitarioSeleccionado) ? (
               <>
                 <Box>
                   <Text format={{ fontWeight: "bold" }}>
@@ -1370,93 +1552,207 @@ const TransitarioTab = ({
 
             <Text>O buscar transitario manualmente:</Text>
 
-            <SearchInput
-              name="buscar-transitario"
-              label="Buscar Transitario"
-              placeholder=""
-              value={searchTransitario}
-              onChange={(value) => setSearchTransitario(value)}
-              description="Busque y seleccione el transitario"
-            />
+            {!(modoDoble && transitarioSeleccionado) && (
+              <>
+                <SearchInput
+                  name="buscar-transitario"
+                  label={modoDoble ? "Buscar Transitario Marítimo" : "Buscar Transitario"}
+                  placeholder=""
+                  value={searchTransitario}
+                  onChange={(value) => setSearchTransitario(value)}
+                  description={
+                    modoDoble
+                      ? "Busque y seleccione el transitario del flete marítimo"
+                      : "Busque y seleccione el transitario"
+                  }
+                />
 
-            {loadingTransitarios && searchTransitario && (
-              <Flex direction="row" align="center" gap="small">
-                <LoadingSpinner size="xs" />
-                <Text>Buscando transitarios...</Text>
-              </Flex>
+                {loadingTransitarios && searchTransitario && (
+                  <Flex direction="row" align="center" gap="small">
+                    <LoadingSpinner size="xs" />
+                    <Text>Buscando transitarios...</Text>
+                  </Flex>
+                )}
+
+                {/* Mostrar resultados de búsqueda de transitarios */}
+                {!loadingTransitarios &&
+                  searchTransitario &&
+                  transitariosFiltrados.length > 0 && (
+                    <Box>
+                      <Text format={{ fontWeight: "bold" }}>
+                        Resultados de búsqueda:
+                      </Text>
+                      {transitariosFiltrados.map((transitario) => (
+                        <Flex
+                          key={transitario.id}
+                          direction="row"
+                          justify="space-between"
+                          align="center"
+                          gap="small"
+                        >
+                          <Text>
+                            {transitario.cardcode}
+                            {transitario.name && ` - ${transitario.name}`}
+                          </Text>
+                          <Button
+                            size="xs"
+                            variant="secondary"
+                            onClick={() =>
+                              handleSeleccionarTransitario(transitario)
+                            }
+                          >
+                            Seleccionar
+                          </Button>
+                        </Flex>
+                      ))}
+                    </Box>
+                  )}
+
+                {!loadingTransitarios &&
+                  searchTransitario &&
+                  transitariosFiltrados.length === 0 && (
+                    <Text>
+                      No se encontraron transitarios que coincidan con "
+                      {searchTransitario}"
+                    </Text>
+                  )}
+              </>
             )}
 
-            {/* Mostrar resultados de búsqueda de transitarios */}
-            {!loadingTransitarios &&
-              searchTransitario &&
-              transitariosFiltrados.length > 0 && (
-                <Box>
-                  <Text format={{ fontWeight: "bold" }}>
-                    Resultados de búsqueda:
-                  </Text>
-                  {transitariosFiltrados.map((transitario) => (
-                    <Flex
-                      key={transitario.id}
-                      direction="row"
-                      justify="space-between"
-                      align="center"
-                      gap="small"
-                    >
-                      <Text>
-                        {transitario.cardcode}
-                        {transitario.name && ` - ${transitario.name}`}
-                      </Text>
-                      <Button
-                        size="xs"
-                        variant="secondary"
-                        onClick={() =>
-                          handleSeleccionarTransitario(transitario)
-                        }
-                      >
-                        Seleccionar
-                      </Button>
-                    </Flex>
-                  ))}
-                </Box>
-              )}
+            {/* Buscador del transitario terrestre (solo modo doble) */}
+            {modoDoble && !transitarioTerrestreSeleccionado && (
+              <>
+                <SearchInput
+                  name="buscar-transitario-terrestre"
+                  label="Buscar Transitario Terrestre"
+                  placeholder=""
+                  value={searchTransitarioTerrestre}
+                  onChange={(value) => setSearchTransitarioTerrestre(value)}
+                  description="Busque y seleccione el transitario del flete terrestre"
+                />
 
-            {!loadingTransitarios &&
-              searchTransitario &&
-              transitariosFiltrados.length === 0 && (
-                <Text>
-                  No se encontraron transitarios que coincidan con "
-                  {searchTransitario}"
-                </Text>
-              )}
+                {loadingTransitariosTerrestres && searchTransitarioTerrestre && (
+                  <Flex direction="row" align="center" gap="small">
+                    <LoadingSpinner size="xs" />
+                    <Text>Buscando transitarios...</Text>
+                  </Flex>
+                )}
+
+                {!loadingTransitariosTerrestres &&
+                  searchTransitarioTerrestre &&
+                  transitariosTerrestresBuscados.length > 0 && (
+                    <Box>
+                      <Text format={{ fontWeight: "bold" }}>
+                        Resultados de búsqueda:
+                      </Text>
+                      {transitariosTerrestresBuscados.map((transitario) => (
+                        <Flex
+                          key={transitario.id}
+                          direction="row"
+                          justify="space-between"
+                          align="center"
+                          gap="small"
+                        >
+                          <Text>
+                            {transitario.cardcode}
+                            {transitario.name && ` - ${transitario.name}`}
+                          </Text>
+                          <Button
+                            size="xs"
+                            variant="secondary"
+                            onClick={() =>
+                              handleSeleccionarTransitarioTerrestre(transitario)
+                            }
+                          >
+                            Seleccionar
+                          </Button>
+                        </Flex>
+                      ))}
+                    </Box>
+                  )}
+
+                {!loadingTransitariosTerrestres &&
+                  searchTransitarioTerrestre &&
+                  transitariosTerrestresBuscados.length === 0 && (
+                    <Text>
+                      No se encontraron transitarios que coincidan con "
+                      {searchTransitarioTerrestre}"
+                    </Text>
+                  )}
+              </>
+            )}
           </>
         )}
 
         {/* SI HAY TRANSITARIO SELECCIONADO: Mostrar info y precios */}
-        {transitarioSeleccionado && (
+        {(transitarioSeleccionado ||
+          (modoDoble && transitarioTerrestreSeleccionado)) && (
           <>
-            <Flex
-              direction="row"
-              justify="space-between"
-              align="center"
-              gap="medium"
-            >
-              <Alert variant="success" title="Transitario Seleccionado">
-                <Text format={{ fontWeight: "bold" }}>
-                  {transitarioSeleccionado.cardcode}
-                  {transitarioSeleccionado.name &&
-                    transitarioSeleccionado.cardcode !==
-                      transitarioSeleccionado.name &&
-                    ` - ${transitarioSeleccionado.name}`}
-                </Text>
-              </Alert>
-              <Button
-                size="xs"
-                variant="secondary"
-                onClick={handleCambiarRutas}
+            {transitarioSeleccionado && (
+              <Flex
+                direction="row"
+                justify="space-between"
+                align="center"
+                gap="medium"
               >
-                Cambiar
-              </Button>
-            </Flex>
+                <Alert
+                  variant="success"
+                  title={
+                    modoDoble
+                      ? "Transitario Marítimo Seleccionado"
+                      : "Transitario Seleccionado"
+                  }
+                >
+                  <Text format={{ fontWeight: "bold" }}>
+                    {transitarioSeleccionado.cardcode}
+                    {transitarioSeleccionado.name &&
+                      transitarioSeleccionado.cardcode !==
+                        transitarioSeleccionado.name &&
+                      ` - ${transitarioSeleccionado.name}`}
+                  </Text>
+                </Alert>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={
+                    modoDoble
+                      ? () => handleCambiarTramo("maritima")
+                      : handleCambiarRutas
+                  }
+                >
+                  Cambiar
+                </Button>
+              </Flex>
+            )}
+
+            {modoDoble && transitarioTerrestreSeleccionado && (
+              <Flex
+                direction="row"
+                justify="space-between"
+                align="center"
+                gap="medium"
+              >
+                <Alert
+                  variant="success"
+                  title="Transitario Terrestre Seleccionado"
+                >
+                  <Text format={{ fontWeight: "bold" }}>
+                    {transitarioTerrestreSeleccionado.cardcode}
+                    {transitarioTerrestreSeleccionado.name &&
+                      transitarioTerrestreSeleccionado.cardcode !==
+                        transitarioTerrestreSeleccionado.name &&
+                      ` - ${transitarioTerrestreSeleccionado.name}`}
+                  </Text>
+                </Alert>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => handleCambiarTramo("terrestre")}
+                >
+                  Cambiar
+                </Button>
+              </Flex>
+            )}
 
             {/* Mostrar rutas seleccionadas según restricciones del tipo de venta */}
             {(rutaTerrestreSeleccionada || rutaMaritimaSeleccionada) && (
@@ -1533,7 +1829,11 @@ const TransitarioTab = ({
                     <Button
                       size="xs"
                       variant="secondary"
-                      onClick={handleCambiarRutas}
+                      onClick={
+                        modoDoble
+                          ? () => handleCambiarTramo("terrestre")
+                          : handleCambiarRutas
+                      }
                     >
                       Cambiar
                     </Button>
@@ -1572,7 +1872,11 @@ const TransitarioTab = ({
                     <Button
                       size="xs"
                       variant="secondary"
-                      onClick={handleCambiarRutas}
+                      onClick={
+                        modoDoble
+                          ? () => handleCambiarTramo("maritima")
+                          : handleCambiarRutas
+                      }
                     >
                       Cambiar
                     </Button>
@@ -1588,37 +1892,159 @@ const TransitarioTab = ({
         {/* Sección: Precios de Transporte */}
         <Heading>Precios de Transporte</Heading>
         <Text>
-          {isDAPTerrestre
+          {modoDoble
+            ? "Configure los precios de flete por tramo (terrestre y marítimo):"
+            : isDAPTerrestre
             ? "Configure el precio del transporte directo hasta la localidad de destino:"
             : "Configure los precios de transporte marítimo:"}
         </Text>
 
-        {isDAPTerrestre ? (
-          <Flex direction="row" gap="medium">
-            <NumberInput
-              label="Precio Ruta hasta Localidad Destino"
-              name="precio-origen"
-              description="Coste del transporte directo hasta la localidad de destino (EUR)"
-              placeholder=""
-              value={precioOrigen}
-              onChange={(value) => setPrecioOrigen(value)}
-              min={0}
-              formatStyle="currency"
-              currencyCode="EUR"
-              required={true}
-              tooltip="Coste del transporte desde la fábrica hasta la localidad de destino del cliente"
+        {modoDoble ? (
+          <>
+            <Text format={{ fontWeight: "bold" }}>Flete terrestre</Text>
+            <Flex direction="row" gap="medium">
+              <NumberInput
+                label="Precio Flete Terrestre"
+                name="precio-origen"
+                description="Coste del transporte terrestre hasta el puerto de salida (EUR)"
+                placeholder=""
+                value={precioOrigen}
+                onChange={(value) => setPrecioOrigen(value)}
+                min={0}
+                formatStyle="currency"
+                currencyCode="EUR"
+                required={requiresPuertoSalida}
+                tooltip="Coste del transporte desde la fábrica hasta el puerto de salida"
+              />
+              <DateInput
+                label="Fecha Caducidad Flete Terrestre"
+                name="fecha-caducidad-flete-salida"
+                description="Fecha hasta la cual es válido el precio del tramo terrestre"
+                value={fechaCaducidadSalida}
+                onChange={(value) => { setFechaCaducidadSalida(value); updateTransitarioField("fechaCaducidadFleteSalida", value); }}
+                format="ll"
+                required={requiresPuertoSalida}
+                tooltip="Fecha límite de validez del precio de flete hasta el puerto de salida"
+              />
+              <Select
+                label="IVA Repercutido Terrestre"
+                name="tipo-iva-flete-terrestre"
+                description="Tipo de IVA repercutido a aplicar al flete terrestre"
+                placeholder="Seleccionar..."
+                value={tipoIVAFleteTerrestre?.value || tipoIVAFleteTerrestre}
+                onChange={(value) => updateTransitarioField("tipoIVAFleteTerrestre", value)}
+                options={tipoIVAOptions}
+                tooltip="Define el tipo de IVA repercutido que se aplicará al line item de FLETE TERRESTRE"
+              />
+              <Select
+                label="IVA Soportado Terrestre"
+                name="tipo-iva-flete-terrestre-soportado"
+                description="Tipo de IVA soportado a aplicar al flete terrestre"
+                placeholder="Seleccionar..."
+                value={tipoIVAFleteTerrestreSoportado?.value || tipoIVAFleteTerrestreSoportado}
+                onChange={(value) => updateTransitarioField("tipoIVAFleteTerrestreSoportado", value)}
+                options={tipoIVASoportadoOptions}
+                tooltip="Define el tipo de IVA soportado que se aplicará al line item de FLETE TERRESTRE"
+              />
+            </Flex>
+
+            <Divider size="medium" />
+
+            <Text format={{ fontWeight: "bold" }}>Flete marítimo</Text>
+            <Flex direction="row" gap="medium">
+              <NumberInput
+                label="Precio Flete Marítimo"
+                name="precio-destino"
+                description="Coste del transporte marítimo hasta el puerto de destino (EUR)"
+                placeholder=""
+                value={precioDestino}
+                onChange={(value) => setPrecioDestino(value)}
+                min={0}
+                formatStyle="currency"
+                currencyCode="EUR"
+                required={requiresPuertoDestino}
+                tooltip="Coste del transporte marítimo desde puerto salida hasta puerto destino"
+              />
+              <DateInput
+                label="Fecha Caducidad Flete Marítimo"
+                name="fecha-caducidad-flete-destino"
+                description="Fecha hasta la cual es válido el precio del tramo marítimo"
+                value={fechaCaducidadDestino}
+                onChange={(value) => { setFechaCaducidadDestino(value); updateTransitarioField("fechaCaducidadFleteDestino", value); }}
+                format="ll"
+                required={requiresPuertoDestino}
+                tooltip="Fecha límite de validez del precio de flete hasta el puerto de destino"
+              />
+              <Select
+                label="IVA Repercutido Marítimo"
+                name="tipo-iva-fletes"
+                description="Tipo de IVA repercutido a aplicar al flete marítimo"
+                placeholder="Seleccionar..."
+                value={tipoIVAFletes?.value || tipoIVAFletes}
+                onChange={(value) => updateTransitarioField("tipoIVAFletes", value)}
+                options={tipoIVAOptions}
+                tooltip="Define el tipo de IVA repercutido que se aplicará al line item de FLETE MARITIMO"
+              />
+              <Select
+                label="IVA Soportado Marítimo"
+                name="tipo-iva-fletes-soportado"
+                description="Tipo de IVA soportado a aplicar al flete marítimo"
+                placeholder="Seleccionar..."
+                value={tipoIVAFletesSoportado?.value || tipoIVAFletesSoportado}
+                onChange={(value) => updateTransitarioField("tipoIVAFletesSoportado", value)}
+                options={tipoIVASoportadoOptions}
+                tooltip="Define el tipo de IVA soportado que se aplicará al line item de FLETE MARITIMO"
+              />
+            </Flex>
+          </>
+        ) : isDAPTerrestre ? (
+          <>
+            <Flex direction="row" gap="medium">
+              <NumberInput
+                label="Precio Ruta hasta Localidad Destino"
+                name="precio-origen"
+                description="Coste del transporte directo hasta la localidad de destino (EUR)"
+                placeholder=""
+                value={precioOrigen}
+                onChange={(value) => setPrecioOrigen(value)}
+                min={0}
+                formatStyle="currency"
+                currencyCode="EUR"
+                required={true}
+                tooltip="Coste del transporte desde la fábrica hasta la localidad de destino del cliente"
+              />
+              <DateInput
+                label="Fecha caducidad flete"
+                name="fecha-caducidad-flete-salida"
+                description="Fecha hasta la cual es válido el precio del flete"
+                value={fechaCaducidadSalida}
+                onChange={(value) => { setFechaCaducidadSalida(value); updateTransitarioField("fechaCaducidadFleteSalida", value); }}
+                format="ll"
+                required={true}
+                tooltip="Fecha límite de validez del precio de flete negociado con el transitario"
+              />
+            </Flex>
+            <Select
+              label="Tipo IVA Fletes (Repercutido)"
+              name="tipo-iva-fletes"
+              description="Tipo de IVA repercutido a aplicar a los fletes"
+              placeholder="Seleccionar..."
+              value={tipoIVAFletes?.value || tipoIVAFletes}
+              onChange={(value) => updateTransitarioField("tipoIVAFletes", value)}
+              options={tipoIVAOptions}
+              tooltip="Define el tipo de IVA repercutido que se aplicará a los line items de FLETES"
             />
-            <DateInput
-              label="Fecha caducidad flete"
-              name="fecha-caducidad-flete-salida"
-              description="Fecha hasta la cual es válido el precio del flete"
-              value={fechaCaducidadSalida}
-              onChange={(value) => { setFechaCaducidadSalida(value); updateTransitarioField("fechaCaducidadFleteSalida", value); }}
-              format="ll"
-              required={true}
-              tooltip="Fecha límite de validez del precio de flete negociado con el transitario"
+            <Select
+              label="Tipo IVA Fletes (Soportado)"
+              name="tipo-iva-fletes-soportado"
+              description="Tipo de IVA soportado a aplicar a los fletes"
+              placeholder="Seleccionar..."
+              value={tipoIVAFletesSoportado?.value || tipoIVAFletesSoportado}
+              onChange={(value) => updateTransitarioField("tipoIVAFletesSoportado", value)}
+              options={tipoIVASoportadoOptions}
+              tooltip="Define el tipo de IVA soportado que se aplicará a los line items de FLETES"
             />
-          </Flex>
+          </>
         ) : (
           <>
             <Flex direction="row" gap="medium">
@@ -1672,30 +2098,29 @@ const TransitarioTab = ({
                 tooltip="Fecha límite de validez del precio de flete hasta el puerto de destino"
               />
             </Flex>
+
+            <Select
+              label="Tipo IVA Fletes (Repercutido)"
+              name="tipo-iva-fletes"
+              description="Tipo de IVA repercutido a aplicar a los fletes"
+              placeholder="Seleccionar..."
+              value={tipoIVAFletes?.value || tipoIVAFletes}
+              onChange={(value) => updateTransitarioField("tipoIVAFletes", value)}
+              options={tipoIVAOptions}
+              tooltip="Define el tipo de IVA repercutido que se aplicará a los line items de FLETES"
+            />
+            <Select
+              label="Tipo IVA Fletes (Soportado)"
+              name="tipo-iva-fletes-soportado"
+              description="Tipo de IVA soportado a aplicar a los fletes"
+              placeholder="Seleccionar..."
+              value={tipoIVAFletesSoportado?.value || tipoIVAFletesSoportado}
+              onChange={(value) => updateTransitarioField("tipoIVAFletesSoportado", value)}
+              options={tipoIVASoportadoOptions}
+              tooltip="Define el tipo de IVA soportado que se aplicará a los line items de FLETES"
+            />
           </>
         )}
-
-        <Select
-          label="Tipo IVA Fletes (Repercutido)"
-          name="tipo-iva-fletes"
-          description="Tipo de IVA repercutido a aplicar a los fletes"
-          placeholder="Seleccionar..."
-          value={tipoIVAFletes?.value || tipoIVAFletes}
-          onChange={(value) => updateTransitarioField("tipoIVAFletes", value)}
-          options={tipoIVAOptions}
-          tooltip="Define el tipo de IVA repercutido que se aplicará a los line items de FLETES"
-        />
-
-        <Select
-          label="Tipo IVA Fletes (Soportado)"
-          name="tipo-iva-fletes-soportado"
-          description="Tipo de IVA soportado a aplicar a los fletes"
-          placeholder="Seleccionar..."
-          value={tipoIVAFletesSoportado?.value || tipoIVAFletesSoportado}
-          onChange={(value) => updateTransitarioField("tipoIVAFletesSoportado", value)}
-          options={tipoIVASoportadoOptions}
-          tooltip="Define el tipo de IVA soportado que se aplicará a los line items de FLETES"
-        />
 
         {saveError && (
           <Alert variant="error" title="Error al guardar">
@@ -1728,7 +2153,9 @@ const TransitarioTab = ({
                 !(localidadDestino?.value || localidadDestino)) ||
               (isDAPTerrestre && !precioOrigen) ||
               (!isDAPTerrestre && requiresPuertoSalida && !precioOrigen) ||
-              (!isDAPTerrestre && requiresPuertoDestino && !precioDestino)
+              (!isDAPTerrestre && requiresPuertoDestino && !precioDestino) ||
+              (modoDoble &&
+                (!transitarioSeleccionado || !transitarioTerrestreSeleccionado))
             }
           >
             {saving ? "Guardando..." : "Siguiente"}

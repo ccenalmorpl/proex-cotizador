@@ -12,7 +12,7 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
-from app.core.custom_objects_constants import OBJECT_TYPE_CONTENEDOR
+from app.core.custom_objects_constants import OBJECT_TYPE_CONTENEDOR, OBJECT_TYPE_ELEMENTO
 from app.services.custom_objects import (
     batch_update_custom_objects,
     get_elementos_by_deal,
@@ -21,10 +21,18 @@ from app.services.custom_objects import (
 from app.shared import hubdb_client
 from app.utils.pricing import (
     PricingParams,
-    _fetch_pricing_params_for_deal,
+    _normalize_incoterm,
+    _pricing_kwargs,
+    build_deal_pricing_context,
     calcular_precio_por_caja_por_incoterm,
+    derivar_exw_desde_final_anclado,
 )
-from app.utils.property_helpers import _normalize_residennum
+from app.utils.property_helpers import (
+    _normalize_residennum,
+    enforce_line_item_price_rounding,
+    round_margin,
+    round_price,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,51 +49,136 @@ def resolver_tipo_residencia(company_props: Optional[Dict]) -> str:
     return _normalize_residennum(company_props.get("residennum"))
 
 
+# Componentes incluidos en el precio por incoterm (espejo de
+# calcular_precio_por_caja_por_incoterm). Se usan como gates para repercutir el
+# IVA de cada concepto solo cuando forma parte de la base. El seguro NO entra en
+# FOB/CFR (la fórmula lo resta); la comisión va en todos los incoterms.
+_INCLUYE_FLETE_ORIGEN = {"DAP_TERRESTRE", "FOB", "CFR", "CIF", "DAP_MARITIMO"}
+_INCLUYE_FLETE_DESTINO = {"CFR", "CIF", "DAP_MARITIMO"}
+_INCLUYE_FLETE_DESTINO_LOCALIDAD = {"DAP_MARITIMO"}
+_INCLUYE_SERVICIOS = {"DAP_TERRESTRE", "FOB", "CFR", "CIF", "DAP_MARITIMO"}
+_INCLUYE_SEGURO = {"DAP_TERRESTRE", "CIF", "DAP_MARITIMO"}
+
+
+def _to_float(value) -> float:
+    try:
+        return float(value) if value not in (None, "") else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _ancla_vigente(li: Dict, incoterm: str):
+    """Precio final anclado de la línea si aplica al incoterm vigente, si no None.
+    Ancla 0/vacía no cuenta (promo o línea sin negociar)."""
+    ancla = _to_float(li.get("precio_negociado_tipo_venta"))
+    if ancla <= 0:
+        return None
+    if _normalize_incoterm(li.get("incoterm_precio_negociado")) != incoterm:
+        return None
+    return ancla
+
+
+def _resolver_precios_linea(li: Dict, pp: PricingParams) -> Dict[str, Any]:
+    """Precios efectivos de una línea fabricante honrando el ancla del tipo de
+    venta. Con ancla vigente el final por caja es el negociado (fijo) y el EXW
+    se deriva restando los add-ons del momento, con suelo margen 0; sin ancla
+    (histórico) o con ancla de otro incoterm, manda el EXW persistido y el
+    final se deriva como siempre.
+
+    Devuelve {"exw", "final", "anclada", "clamped"}."""
+    ancla = _ancla_vigente(li, pp.incoterm)
+    if ancla is not None:
+        derived = derivar_exw_desde_final_anclado(ancla, li.get("precio_de_coste"), pp)
+        return {
+            "exw": derived["exw"],
+            "final": derived["final_efectivo"],
+            "anclada": True,
+            "clamped": derived["clamped"],
+        }
+    precio_exw = _to_float(li.get("price"))
+    final = calcular_precio_por_caja_por_incoterm(
+        precio_exw,
+        pp.incoterm,
+        hasta_localidad_destino=pp.hasta_localidad_destino,
+        hasta_puerto_salida=pp.hasta_puerto_salida,
+        hasta_puerto_destino=pp.hasta_puerto_destino,
+        hasta_puerto_destino_localidad=pp.hasta_puerto_destino_localidad,
+        servicios_por_caja=pp.servicios_por_caja,
+        seguro_por_caja=pp.seguro_por_caja,
+        comision_cliente=pp.comision_cliente,
+    )
+    return {"exw": precio_exw, "final": final, "anclada": False, "clamped": False}
+
+
 def _compute_price_from_fabricantes(
     fabricantes: List[Dict],
     company_props: Optional[Dict],
     pricing_params: PricingParams,
 ) -> float:
     """Calcula el precio del contenedor con IVA desde una lista ya filtrada de
-    line items fabricante. Función pura (sin I/O). Replica la fórmula de
-    `pricing.utils.js`: un único redondeo combinado por línea antes de multiplicar
-    por cantidad."""
+    line items fabricante. Función pura (sin I/O salvo el cache HubDB de IVA).
+
+    La base (sin IVA) replica `pricing.utils.js`: precio combinado por caja SIN
+    redondear multiplicado por las cajas (el redondeo se aplica solo al total, a 2
+    decimales), para que la suma cuadre con SAP. El IVA se descompone por concepto
+    —cada uno con su propio tipo (producto, flete, servicios, seguro, comisión)—
+    en vez de gravar todo el precio combinado con el IVA del producto."""
     residencia = resolver_tipo_residencia(company_props)
     aplica_re = aplica_recargo_equivalencia(company_props)
+    pp = pricing_params
+    ic = pp.incoterm
 
-    total = 0.0
+    _pct_cache: Dict[str, float] = {}
+
+    def pct_efectivo(code: Optional[str]) -> float:
+        code = (code or "").strip().upper()
+        if code in _pct_cache:
+            return _pct_cache[code]
+        iva_pct, rec_pct = hubdb_client.get_porcentajes_iva_repercutido(code, residencia)
+        val = (iva_pct or 0.0) + ((rec_pct or 0.0) if aplica_re else 0.0)
+        _pct_cache[code] = val
+        return val
+
+    # IVA por caja de los conceptos compartidos del deal (constante por caja,
+    # gateado por el incoterm). Se multiplica luego por las cajas de cada línea.
+    flete_origen_por_caja = (
+        pp.hasta_localidad_destino if ic == "DAP_TERRESTRE" else pp.hasta_puerto_salida
+    )
+    # Tramo terrestre/origen con su propio IVA (doble flete); vacío → el del
+    # flete marítimo, nunca el default por residencia. Destino y localidad de
+    # destino salen de precioDestino → IVA marítimo.
+    tipo_iva_flete_origen = pp.tipo_iva_fletes_terrestre or pp.tipo_iva_fletes
+    iva_conceptos_por_caja = pp.comision_cliente * pct_efectivo(pp.tipo_iva_comision) / 100.0
+    if ic in _INCLUYE_FLETE_ORIGEN:
+        iva_conceptos_por_caja += flete_origen_por_caja * pct_efectivo(tipo_iva_flete_origen) / 100.0
+    if ic in _INCLUYE_FLETE_DESTINO:
+        iva_conceptos_por_caja += pp.hasta_puerto_destino * pct_efectivo(pp.tipo_iva_fletes) / 100.0
+    if ic in _INCLUYE_FLETE_DESTINO_LOCALIDAD:
+        iva_conceptos_por_caja += pp.hasta_puerto_destino_localidad * pct_efectivo(pp.tipo_iva_fletes) / 100.0
+    if ic in _INCLUYE_SERVICIOS:
+        for code, importe in pp.servicios_no_seguro_por_iva_por_caja.items():
+            iva_conceptos_por_caja += importe * pct_efectivo(code) / 100.0
+    if ic in _INCLUYE_SEGURO:
+        for code, importe in pp.seguro_por_iva_por_caja.items():
+            iva_conceptos_por_caja += importe * pct_efectivo(code) / 100.0
+
+    total_base = 0.0
+    total_iva = 0.0
     for li in fabricantes:
-        try:
-            precio_exw = float(li.get("price") or 0)
-        except (TypeError, ValueError):
-            precio_exw = 0.0
-        try:
-            cajas = float(li.get("quantity") or 0)
-        except (TypeError, ValueError):
-            cajas = 0.0
+        cajas = _to_float(li.get("quantity"))
         if cajas <= 0:
             continue
+        # Línea promocional (EXW 0 sin ancla): regalo, no repercute nada.
+        if _to_float(li.get("price")) == 0 and _ancla_vigente(li, ic) is None:
+            continue
 
-        precio_caja_inc = calcular_precio_por_caja_por_incoterm(
-            precio_exw,
-            pricing_params.incoterm,
-            hasta_localidad_destino=pricing_params.hasta_localidad_destino,
-            hasta_puerto_salida=pricing_params.hasta_puerto_salida,
-            hasta_puerto_destino=pricing_params.hasta_puerto_destino,
-            hasta_puerto_destino_localidad=pricing_params.hasta_puerto_destino_localidad,
-            servicios_por_caja=pricing_params.servicios_por_caja,
-            seguro_por_caja=pricing_params.seguro_por_caja,
-            comision_cliente=pricing_params.comision_cliente,
-        )
-        precio_caja_redondeado = round(precio_caja_inc, 3)
-        subtotal = precio_caja_redondeado * cajas
+        resuelto = _resolver_precios_linea(li, pp)
+        total_base += resuelto["final"] * cajas
 
-        iva_code = (li.get("tipo_iva_repercutido") or "").strip().upper()
-        iva_pct, rec_pct = hubdb_client.get_porcentajes_iva_repercutido(iva_code, residencia)
-        iva_pct = iva_pct or 0.0
-        rec_pct = (rec_pct or 0.0) if aplica_re else 0.0
-        total += subtotal * (1.0 + (iva_pct + rec_pct) / 100.0)
-    return round(total, 2)
+        iva_producto_por_caja = resuelto["exw"] * pct_efectivo(li.get("tipo_iva_repercutido")) / 100.0
+        total_iva += (iva_producto_por_caja + iva_conceptos_por_caja) * cajas
+
+    return round(total_base + total_iva, 2)
 
 
 def _compute_peso_from_elementos(elementos: List[Dict]) -> Dict[str, float]:
@@ -166,6 +259,8 @@ def _batch_read_line_items_superset(client, line_item_ids: List[str]) -> List[Di
     properties = [
         "hs_product_type", "tipo_articulo", "price", "quantity",
         "numero_container", "tipo_iva_repercutido",
+        "name", "precio_de_coste", "margen_unitario",
+        "precio_negociado_tipo_venta", "incoterm_precio_negociado",
     ]
     items: List[Dict] = []
     for i in range(0, len(line_item_ids), 100):
@@ -178,7 +273,9 @@ def _batch_read_line_items_superset(client, line_item_ids: List[str]) -> List[Di
                 },
             )
             for li in (resp.results or []):
-                items.append(li.properties or {})
+                props = li.properties or {}
+                props["hs_object_id"] = str(li.id)
+                items.append(props)
         except Exception as e:
             logger.warning(f"[recalcular] batch read line items chunk [{i}:{i+len(chunk)}] falló: {e}")
     return items
@@ -209,6 +306,184 @@ def _index_elementos_by_container(elementos: List[Dict]) -> Dict[str, List[Dict]
             continue
         index.setdefault(nc, []).append(el)
     return index
+
+
+def _index_elementos_by_lid(elementos: List[Dict]) -> Dict[str, Dict]:
+    index: Dict[str, Dict] = {}
+    for el in elementos:
+        props = el.get("properties") or {}
+        lid = str(props.get("line_item_id") or "").strip()
+        if lid:
+            index[lid] = el
+    return index
+
+
+def _derivar_writebacks_lineas(
+    fabricantes: List[Dict],
+    pp: PricingParams,
+    elem_by_lid: Dict[str, Dict],
+):
+    """Write-backs derivados del ancla para las líneas fabricante de un contenedor.
+
+    Ancla vigente (mismo incoterm): el final negociado queda fijo y se re-derivan
+    `price` (EXW) y `margen_unitario` del line item y de su Elemento espejo, con
+    suelo de margen 0 (nunca por debajo del coste). Ancla de otro incoterm: el
+    deal cambió de tipo de venta, así que manda el EXW persistido y se re-ancla
+    el final del nuevo incoterm como precio negociado. Líneas sin ancla
+    (históricas) no se tocan. Solo emite updates cuando el valor difiere."""
+    li_updates: List[Dict[str, Any]] = []
+    elem_updates: List[Dict[str, Any]] = []
+
+    for li in fabricantes:
+        lid = str(li.get("hs_object_id") or "").strip()
+        if not lid:
+            continue
+        ancla = _to_float(li.get("precio_negociado_tipo_venta"))
+        if ancla <= 0:
+            continue
+
+        if _normalize_incoterm(li.get("incoterm_precio_negociado")) != pp.incoterm:
+            resuelto = _resolver_precios_linea(li, pp)
+            nuevo_final = round_price(resuelto["final"])
+            if nuevo_final is None:
+                continue
+            li_updates.append({"id": lid, "properties": {
+                "precio_negociado_tipo_venta": str(nuevo_final),
+                "incoterm_precio_negociado": pp.incoterm,
+            }})
+            logger.info(
+                f"[recalcular] re-ancla line item {lid}: incoterm "
+                f"{li.get('incoterm_precio_negociado')!r} → {pp.incoterm} "
+                f"final={nuevo_final}"
+            )
+            continue
+
+        derived = derivar_exw_desde_final_anclado(ancla, li.get("precio_de_coste"), pp)
+        nuevo_exw = round_price(max(0.0, derived["exw"]))
+        coste = _to_float(li.get("precio_de_coste"))
+        nuevo_margen = (
+            round_margin((derived["exw"] - coste) / coste) if coste > 0 else None
+        )
+        if derived["clamped"]:
+            logger.warning(
+                f"[recalcular] line item {lid}: ancla {ancla} no cubre coste+add-ons; "
+                f"EXW clampado al coste ({coste}), final efectivo "
+                f"{round(derived['final_efectivo'], 3)}"
+            )
+
+        props: Dict[str, str] = {}
+        if nuevo_exw is not None and round_price(li.get("price")) != nuevo_exw:
+            props["price"] = str(nuevo_exw)
+        if nuevo_margen is not None and round_margin(li.get("margen_unitario")) != nuevo_margen:
+            props["margen_unitario"] = str(nuevo_margen)
+        if not props:
+            continue
+        li_updates.append({"id": lid, "properties": props})
+
+        elem = elem_by_lid.get(lid)
+        if not elem:
+            continue
+        elem_props = elem.get("properties") or {}
+        nombre_li = (li.get("name") or "").strip()
+        nombre_elem = (elem_props.get("nombre") or "").strip()
+        # lid cruzado (rotación batch heredada): no sincronizar a un Elemento ajeno.
+        if nombre_li and nombre_elem and nombre_li != nombre_elem:
+            logger.warning(
+                f"[recalcular] elemento {elem.get('id')} lid={lid} nombre "
+                f"{nombre_elem!r} ≠ line item {nombre_li!r}; salto sync"
+            )
+            continue
+        # precio_total NO se escribe aquí: lo fija _derivar_precio_total_fabricantes
+        # a nivel de contenedor (cuadre con el precio negociado, todas las líneas).
+        target = {"precio_unitario": nuevo_exw}
+        if nuevo_margen is not None:
+            target["margen_unitario"] = nuevo_margen
+        elem_diff = {
+            k: str(v) for k, v in target.items()
+            if v is not None and _to_float(elem_props.get(k)) != _to_float(v)
+        }
+        if elem_diff:
+            elem_updates.append({"id": elem.get("id"), "properties": elem_diff})
+
+    return li_updates, elem_updates
+
+
+def _derivar_precio_total_fabricantes(
+    fabricantes: List[Dict],
+    pp: PricingParams,
+    elems_contenedor: List[Dict],
+    elem_by_lid: Dict[str, Dict],
+) -> Dict[str, str]:
+    """precio_total corregido de los Elementos fabricante de un contenedor, tal que
+    Σ precio_total(fabricantes) + Σ precio_total(resto de líneas del contenedor)
+    = Σ final×cajas (el total real sin IVA, el mismo que ancla contenedor.price).
+
+    El EXW por caja se persiste a 3 decimales, así que EXW×cajas arrastra el
+    residuo del redondeo (+0,40 € en 1.660 cajas) y SAP, que suma los precio_total
+    de las líneas, descuadraba frente al precio negociado. Aquí cada línea vale su
+    EXW exacto (final − gastos/caja) × cajas a céntimos, y el residuo restante se
+    asigna a la línea con más cajas para clavar la suma. Las promos van a 0 (regalo)
+    y no absorben residuo. Devuelve {elemento_id: valor} solo de los que cambian."""
+    gastos_pc = calcular_precio_por_caja_por_incoterm(0.0, pp.incoterm, **_pricing_kwargs(pp))
+
+    filas = []  # [elem_id, precio_total_persistido, cajas, base, valor]
+    total_base = 0.0
+    for li in fabricantes:
+        lid = str(li.get("hs_object_id") or "").strip()
+        elem = elem_by_lid.get(lid) if lid else None
+        if not elem:
+            continue
+        elem_props = elem.get("properties") or {}
+        nombre_li = (li.get("name") or "").strip()
+        nombre_elem = (elem_props.get("nombre") or "").strip()
+        # lid cruzado (rotación batch heredada): mismo guard que el writeback del ancla.
+        if nombre_li and nombre_elem and nombre_li != nombre_elem:
+            continue
+        cajas = _to_float(li.get("quantity"))
+        if cajas <= 0:
+            continue
+        persistido = _to_float(elem_props.get("precio_total"))
+        if _to_float(li.get("price")) == 0 and _ancla_vigente(li, pp.incoterm) is None:
+            filas.append([str(elem.get("id")), persistido, cajas, 0.0, 0.0])
+            continue
+        resuelto = _resolver_precios_linea(li, pp)
+        base = resuelto["final"] * cajas
+        total_base += base
+        filas.append([str(elem.get("id")), persistido, cajas, base, round(base - gastos_pc * cajas, 2)])
+
+    if not filas:
+        return {}
+
+    otras = sum(
+        _to_float((el.get("properties") or {}).get("precio_total"))
+        for el in elems_contenedor
+        if ((el.get("properties") or {}).get("tipo_articulo") or "").strip().lower() != "fabricante"
+    )
+    target = round(round(total_base, 2) - otras, 2)
+    residuo = round(target - sum(f[4] for f in filas), 2)
+    con_importe = [f for f in filas if f[3] > 0]
+    if abs(residuo) >= 0.01:
+        if not con_importe:
+            logger.warning(
+                f"[recalcular] precio_total fabricantes: residuo {residuo} sin línea "
+                f"que lo absorba (todas promo); la suma no cuadrará con el target {target}"
+            )
+        else:
+            if abs(residuo) > 0.05:
+                # Más que céntimos de redondeo: algún add-on del incoterm no tiene
+                # línea de Elemento propia (p.ej. tramo localidad DAP marítimo legacy).
+                logger.warning(
+                    f"[recalcular] precio_total fabricantes: residuo {residuo} "
+                    f"(gastos sin línea de Elemento); se reparte igual para cuadrar"
+                )
+            ajuste = max(con_importe, key=lambda f: (f[2], f[0]))
+            ajuste[4] = round(ajuste[4] + residuo, 2)
+
+    return {
+        elem_id: str(valor)
+        for elem_id, persistido, _cajas, _base, valor in filas
+        if persistido != valor
+    }
 
 
 def recalcular_contenedores(
@@ -246,7 +521,7 @@ def recalcular_contenedores(
         line_item_ids = []
 
     line_items_all = _batch_read_line_items_superset(client, line_item_ids)
-    pricing_params = _fetch_pricing_params_for_deal(client, deal_id, line_items_precached=line_items_all)
+    pricing_ctx = build_deal_pricing_context(client, deal_id, line_items_precached=line_items_all)
     fabricantes_by_container = _index_fabricantes_by_container(line_items_all)
 
     contenedores_by_id = _batch_read_contenedores_props(client, contenedor_co_ids)
@@ -259,12 +534,15 @@ def recalcular_contenedores(
                 "tipo_articulo", "cantidad",
                 "peso_neto_unitario", "peso_bruto_unitario",
                 "nombre_contenedor",
+                "line_item_id", "nombre",
+                "precio_unitario", "precio_total", "margen_unitario",
             ],
         )
     except Exception as e:
         logger.warning(f"[recalcular] no pude listar elementos del deal {deal_id}: {e}")
         elementos_all = []
     elementos_by_container = _index_elementos_by_container(elementos_all)
+    elem_by_lid = _index_elementos_by_lid(elementos_all)
 
     logger.info(
         f"⏱️  [TIMER] recalcular fetch_phase: {time.time() - fetch_start:.2f}s "
@@ -274,6 +552,8 @@ def recalcular_contenedores(
 
     compute_start = time.time()
     updates: List[Dict[str, Any]] = []
+    line_item_updates: List[Dict[str, Any]] = []
+    elemento_updates: List[Dict[str, Any]] = []
     resultados: Dict[str, Optional[Dict[str, Any]]] = {}
 
     for cid in contenedor_co_ids:
@@ -288,7 +568,33 @@ def recalcular_contenedores(
         nuevo_pendiente = None
         try:
             fabricantes = fabricantes_by_container.get(container_name, [])
-            new_price = _compute_price_from_fabricantes(fabricantes, company_props, pricing_params)
+            cajas_contenedor = 0.0
+            for f in fabricantes:
+                try:
+                    cajas_contenedor += float(f.get("quantity") or 0)
+                except (TypeError, ValueError):
+                    continue
+            pp_contenedor = pricing_ctx.for_container(container_name, cajas_contenedor)
+            li_upd, el_upd = _derivar_writebacks_lineas(
+                fabricantes, pp_contenedor, elem_by_lid
+            )
+            line_item_updates.extend(li_upd)
+            # Merge por Elemento: el writeback del ancla y el precio_total corregido
+            # pueden tocar el mismo Elemento y el batch no admite ids duplicados.
+            el_by_id = {str(u["id"]): u for u in el_upd}
+            pt_upd = _derivar_precio_total_fabricantes(
+                fabricantes,
+                pp_contenedor,
+                elementos_by_container.get(container_name, []),
+                elem_by_lid,
+            )
+            for eid, valor in pt_upd.items():
+                if eid in el_by_id:
+                    el_by_id[eid]["properties"]["precio_total"] = valor
+                else:
+                    el_by_id[eid] = {"id": eid, "properties": {"precio_total": valor}}
+            elemento_updates.extend(el_by_id.values())
+            new_price = _compute_price_from_fabricantes(fabricantes, company_props, pp_contenedor)
             cobrado_raw = cont_props.get("importe_total_cobrado")
             try:
                 cobrado = float(cobrado_raw) if cobrado_raw not in (None, "") else 0.0
@@ -337,6 +643,32 @@ def recalcular_contenedores(
         logger.info(f"⏱️  [TIMER] recalcular update_phase: {time.time() - update_start:.2f}s")
     else:
         logger.info("⏱️  [TIMER] recalcular update_phase: 0.00s (sin updates)")
+
+    if line_item_updates:
+        for upd in line_item_updates:
+            enforce_line_item_price_rounding(upd.get("properties", {}))
+        for i in range(0, len(line_item_updates), 100):
+            chunk = line_item_updates[i:i + 100]
+            try:
+                client.crm.line_items.batch_api.update(
+                    batch_input_simple_public_object_batch_input={"inputs": chunk}
+                )
+            except Exception as e:
+                logger.warning(
+                    f"[recalcular] batch update line items [{i}:{i+len(chunk)}] falló: {e}"
+                )
+        logger.info(
+            f"[recalcular] write-back ancla: {len(line_item_updates)} line items"
+        )
+
+    if elemento_updates:
+        try:
+            batch_update_custom_objects(client, OBJECT_TYPE_ELEMENTO, elemento_updates)
+        except Exception as e:
+            logger.warning(f"[recalcular] batch update elementos falló: {e}")
+        logger.info(
+            f"[recalcular] write-back ancla: {len(elemento_updates)} elementos"
+        )
 
     logger.info(
         f"⏱️  [TIMER] recalcular_contenedores TOTAL: {time.time() - overall_start:.2f}s "

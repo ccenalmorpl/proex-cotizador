@@ -48,6 +48,7 @@ export interface ArticuloItem {
   name: string;
   cantidad: number;
   precio: number;
+  name_es?: string;
   name_en?: string;
   name_fr?: string;
   margen_unitario?: number;
@@ -113,6 +114,8 @@ export interface TransitarioSeleccionado {
 
 export interface TransitarioData {
   transitarioSeleccionado: TransitarioSeleccionado | null;
+  // Modo doble flete (camión DAP MARÍTIMO): segundo transitario del tramo terrestre
+  transitarioTerrestreSeleccionado: TransitarioSeleccionado | null;
   puertoSalida: string;
   puertoDestino: string;
   localidadDestino: string;
@@ -126,6 +129,10 @@ export interface TransitarioData {
   cotizacionRapida: boolean;
   tipoIVAFletes: string;
   tipoIVAFletesSoportado: string;
+  tipoIVAFleteTerrestre: string;
+  tipoIVAFleteTerrestreSoportado: string;
+  fleteDobleDisponible: boolean;
+  ivaFletesTerrestreDefaults: { repercutido?: string; soportado?: string } | null;
 }
 
 export interface ServicioItem {

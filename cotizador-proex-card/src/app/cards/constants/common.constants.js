@@ -41,4 +41,5 @@ export const LOADING_MESSAGES = {
   LOADING_NEGOCIACION: "Cargando datos de la negociación...",
   LOADING_DOCUMENTACION: "Cargando documentación...",
   SAVING: "Guardando...",
+  SYNCING_PRICES: "Sincronizando precios de contenedor...",
 };

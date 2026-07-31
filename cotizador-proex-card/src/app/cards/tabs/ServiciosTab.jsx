@@ -26,6 +26,7 @@ import {
 import { fetchFromAPI } from "../utils/api.utils";
 import { API_CONFIG } from "../config";
 import { resolveIVA } from "../utils/iva.utils";
+import { normalizeIncoterm } from "../utils/pricing.utils";
 import {
   ERROR_MESSAGES,
   LOADING_MESSAGES,
@@ -74,15 +75,18 @@ const ServiciosTab = ({
   const [saveError, setSaveError] = useState(null);
 
   // Auto-precarga de seguro: aplica a CIF, DAP marítimo y DAP terrestre
-  const tipoVentaNorm = (clienteData?.tipoVenta || "")
-    .toString()
-    .toUpperCase()
-    .replace(/\s+/g, "_");
+  const tipoVentaNorm = normalizeIncoterm(clienteData?.tipoVenta);
   const isCIF = tipoVentaNorm === "CIF";
-  const isDAPMaritimo =
-    tipoVentaNorm === "DAP_MARITIMO" || tipoVentaNorm === "DAP_MARÍTIMO";
+  const isDAPMaritimo = tipoVentaNorm === "DAP_MARITIMO";
   const isDAPTerrestre = tipoVentaNorm === "DAP_TERRESTRE";
   const requiereSeguroAuto = isCIF || isDAPMaritimo || isDAPTerrestre;
+  // Negocio de exportación según el "Tipo de cliente" de ClienteTab. Determina el
+  // IVA del seguro auto-añadido (exportación → repercutido EX / soportado NS).
+  const tipoClienteNorm = String(
+    clienteData?.tipoCliente?.value ?? clienteData?.tipoCliente ?? ""
+  ).toUpperCase();
+  const esExportacion =
+    tipoClienteNorm === "EXPORTACION" || tipoClienteNorm === "EXPORTACIÓN";
   const [seguroEliminadoAviso, setSeguroEliminadoAviso] = useState(false);
   const seguroAutoAddedRef = useRef(false);
 
@@ -292,22 +296,28 @@ const ServiciosTab = ({
           return nuevos;
         });
 
-        // IVA resolved from insurance product (Fase 4E)
-        const defaultIVA = resolveIVA({
-          currentValue: undefined,
-          product: seguroProducto,
-          tipoResidente: clienteData?.tipoResidente,
-          categoria: "repercutido",
-          options: tipoIVAOptions,
-        }) || "R21";
+        // IVA del seguro. En exportación el seguro de mercancía va exento:
+        // repercutido EX / soportado NS. En nacional se resuelve como hasta ahora
+        // (por producto/residencia, con fallback 21%).
+        const defaultIVA = esExportacion
+          ? "EX"
+          : resolveIVA({
+              currentValue: undefined,
+              product: seguroProducto,
+              tipoResidente: clienteData?.tipoResidente,
+              categoria: "repercutido",
+              options: tipoIVAOptions,
+            }) || "R21";
         setTiposIVAServicios((prev) => ({ ...prev, [nuevoSeguro.id]: defaultIVA }));
-        const defaultIVASop = resolveIVA({
-          currentValue: undefined,
-          product: seguroProducto,
-          tipoResidente: clienteData?.tipoResidente,
-          categoria: "soportado",
-          options: tipoIVASoportadoOptions,
-        }) || "S21";
+        const defaultIVASop = esExportacion
+          ? "NS"
+          : resolveIVA({
+              currentValue: undefined,
+              product: seguroProducto,
+              tipoResidente: clienteData?.tipoResidente,
+              categoria: "soportado",
+              options: tipoIVASoportadoOptions,
+            }) || "S21";
         setTiposIVAServiciosSoportado((prev) => ({ ...prev, [nuevoSeguro.id]: defaultIVASop }));
       } catch (e) {
         console.error("[ServiciosTab] Error precargando seguro:", e);
@@ -321,8 +331,23 @@ const ServiciosTab = ({
     requiereSeguroAuto,
     serviciosDisponibles,
     clienteData?.tipoResidente,
+    clienteData?.tipoCliente,
+    esExportacion,
     setServiciosData,
   ]);
+
+  // El estado compartido lleva el tipo_iva de cada servicio (vive aparte en
+  // tiposIVAServicios) para que Negociación/Revisión calculen el IVA por
+  // servicio. Reescribe enriquecido tras cualquier cambio de servicios o IVA.
+  useEffect(() => {
+    if (!setServiciosData) return;
+    setServiciosData({
+      serviciosSeleccionados: serviciosAgregados.map((s) => ({
+        ...s,
+        tipo_iva: tiposIVAServicios[s.id] || s.tipo_iva || null,
+      })),
+    });
+  }, [serviciosAgregados, tiposIVAServicios, setServiciosData]);
 
   /**
    * Handler cuando cambia el artículo seleccionado

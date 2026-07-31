@@ -20,7 +20,8 @@ import {
   Heading,
   ModalBody,
   ModalFooter,
-  Box
+  Box,
+  Tag
 } from "@hubspot/ui-extensions";
 import { hubspot } from "@hubspot/ui-extensions";
 import { fetchFromAPI } from "../utils/api.utils";
@@ -92,8 +93,20 @@ const EditarContenedorModal = ({
   const initialOcupacion = contenedor?.container_config?.ocupacion ?? 0;
   const initialPesoNeto = contenedor?.container_config?.pesoNeto ?? 0;
 
+  // En flujo nacional se permite repetir el mismo artículo en un contenedor
+  // (promociones tipo 5+1). La identidad de cada fila es _uid, no articuloId.
+  const tipoClienteValue =
+    clienteData?.tipoCliente?.value ?? clienteData?.tipoCliente ?? "";
+  const esNacional = String(tipoClienteValue).toLowerCase() === "nacional";
+
+  const uidRef = useRef(0);
+  const nextUid = () => `new-${++uidRef.current}`;
+
   const [articulos, setArticulos] = useState(() =>
-    (contenedor?.container_config?.articulos || []).map((art) => ({
+    (contenedor?.container_config?.articulos || []).map((art, idx) => ({
+      _uid: art.line_item_id ? String(art.line_item_id) : `init-${idx}`,
+      // Promoción = precio EXW guardado a 0 (regalo, no se repercute nada).
+      _esPromo: art.price != null && art.price !== "" && Number(art.price) === 0,
       line_item_id: art.line_item_id || null,
       articuloId: art.articuloId,
       articuloName: art.articuloName || `${containerName} - ${art.nombre}`,
@@ -123,8 +136,23 @@ const EditarContenedorModal = ({
     return map;
   });
 
+  // En nacional no excluimos del buscador los productos ya presentes,
+  // para poder añadir el mismo artículo otra vez (línea promocional).
   const articuloIdsActuales = useMemo(
-    () => new Set(articulos.map((a) => String(a.articuloId))),
+    () =>
+      esNacional
+        ? new Set()
+        : new Set(articulos.map((a) => String(a.articuloId))),
+    [articulos, esNacional],
+  );
+
+  // articuloIds que ya tienen una línea promocional en este contenedor:
+  // se usa para bloquear el botón de promoción y no duplicar la promo del mismo artículo.
+  const promoArticuloIds = useMemo(
+    () =>
+      new Set(
+        articulos.filter((a) => a._esPromo).map((a) => String(a.articuloId)),
+      ),
     [articulos],
   );
 
@@ -156,6 +184,7 @@ const EditarContenedorModal = ({
         const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.articles}/product/list?query=${encodeURIComponent(searchValue)}&limit=50`;
         const response = await hubspot.fetch(url, {
           timeout: API_CONFIG.timeout,
+          headers: { Authorization: `Bearer ${API_CONFIG.cardSecret}` },
         });
         if (!response.ok) {
           throw new Error(`Error ${response.status}`);
@@ -165,7 +194,7 @@ const EditarContenedorModal = ({
           throw new Error(data.error || "Error al buscar productos");
         }
         const filtrados = (data.products || []).filter(
-          (p) => !articuloIdsActuales.has(String(p.id)),
+          (p) => p.activo === "Activo" && !articuloIdsActuales.has(String(p.id)),
         );
         setProductosFiltrados(filtrados);
       } catch (err) {
@@ -257,7 +286,7 @@ const EditarContenedorModal = ({
     return 0;
   }, [clienteData, totalCajasGlobal, totalContenedoresGlobal]);
 
-  const handleAddArticulo = (producto) => {
+  const handleAddArticulo = (producto, esPromo = false) => {
     const articuloId = String(producto.id);
     const costeRaw =
       producto.hs_price_eur != null && producto.hs_price_eur !== ""
@@ -266,6 +295,8 @@ const EditarContenedorModal = ({
           ? producto.price
           : null;
     const nuevo = {
+      _uid: nextUid(),
+      _esPromo: esPromo,
       line_item_id: null,
       articuloId,
       articuloName: `${containerName} - ${producto.name}`,
@@ -278,25 +309,38 @@ const EditarContenedorModal = ({
       ...prev,
       [articuloId]: buildPhysicalEntry(producto, containerType),
     }));
-    setProductosFiltrados((prev) =>
-      prev.filter((p) => String(p.id) !== articuloId),
-    );
+    if (!esNacional) {
+      setProductosFiltrados((prev) =>
+        prev.filter((p) => String(p.id) !== articuloId),
+      );
+    }
   };
 
-  const handleRemoveArticulo = (articuloId) => {
-    setArticulos((prev) =>
-      prev.filter((a) => String(a.articuloId) !== String(articuloId)),
-    );
+  // Añade una línea promocional (regalo) del mismo artículo: se guardará a precio 0.
+  const handleAddPromo = (base) => {
+    setArticulos((prev) => [
+      ...prev,
+      {
+        _uid: nextUid(),
+        _esPromo: true,
+        line_item_id: null,
+        articuloId: base.articuloId,
+        articuloName: base.articuloName,
+        nombre: base.nombre,
+        numCajas: 0,
+        precio_de_coste: base.precio_de_coste,
+      },
+    ]);
   };
 
-  const handleNumCajasChange = (articuloId, value) => {
+  const handleRemoveArticulo = (uid) => {
+    setArticulos((prev) => prev.filter((a) => a._uid !== uid));
+  };
+
+  const handleNumCajasChange = (uid, value) => {
     const safe = Math.max(0, Number(value) || 0);
     setArticulos((prev) =>
-      prev.map((a) =>
-        String(a.articuloId) === String(articuloId)
-          ? { ...a, numCajas: safe }
-          : a,
-      ),
+      prev.map((a) => (a._uid === uid ? { ...a, numCajas: safe } : a)),
     );
   };
 
@@ -317,6 +361,9 @@ const EditarContenedorModal = ({
 
     try {
       const payload = {
+        // Fallback para que el backend resuelva el contenedor por numero_container
+        // si el line_item_id de la URL quedó obsoleto (stale).
+        numero_container: containerName || null,
         container_config: {
           articulos: articulos.map((a) => ({
             line_item_id: a.line_item_id || null,
@@ -324,6 +371,8 @@ const EditarContenedorModal = ({
             articuloName: a.articuloName,
             nombre: a.nombre,
             numCajas: Number(a.numCajas) || 0,
+            // Línea promocional: se persiste a precio 0 (regalo, EXW 0 / margen -100%).
+            ...(a._esPromo ? { price: 0, margen_unitario: -1 } : {}),
           })),
           ocupacion: Number(ocupacionParaMostrar) || 0,
           pesoNeto: Number(pesoNetoParaMostrar) || 0,
@@ -439,13 +488,25 @@ const EditarContenedorModal = ({
                         {coste != null ? formatCurrency(coste, 3) : "-"}
                       </TableCell>
                       <TableCell width="min">
-                        <Button
-                          size="xs"
-                          variant="secondary"
-                          onClick={() => handleAddArticulo(p)}
-                        >
-                          Añadir
-                        </Button>
+                        <Flex direction="column" gap="extra-small">
+                          <Button
+                            size="xs"
+                            variant="secondary"
+                            onClick={() => handleAddArticulo(p)}
+                          >
+                            Añadir
+                          </Button>
+                          {esNacional && (
+                            <Button
+                              size="xs"
+                              variant="secondary"
+                              onClick={() => handleAddArticulo(p, true)}
+                              disabled={promoArticuloIds.has(String(p.id))}
+                            >
+                              Promoción
+                            </Button>
+                          )}
+                        </Flex>
                       </TableCell>
                     </TableRow>
                   );
@@ -475,19 +536,34 @@ const EditarContenedorModal = ({
                 {articulos.map((a) => {
                   const fisico = datosFisicos[String(a.articuloId)];
                   return (
-                  <TableRow key={a.articuloId}>
+                  <TableRow key={a._uid}>
                     <TableCell width={300}>
                       <Flex direction="column" gap="extra-small">
-                        
                         <Text format={{ fontWeight: "demibold" }}>{a.nombre}</Text>
-                        {!a.line_item_id && (
+                        {a._esPromo && <Tag variant="success">Promoción</Tag>}
+                        {!a.line_item_id && !a._esPromo && (
                           <Text format={{ fontSize: "small" }}>(nuevo)</Text>
+                        )}
+                        {esNacional && !a._esPromo && (
+                          <Box>
+                            <Button
+                              size="xs"
+                              variant="secondary"
+                              onClick={() => handleAddPromo(a)}
+                              disabled={
+                                submitting ||
+                                promoArticuloIds.has(String(a.articuloId))
+                              }
+                            >
+                              + Promoción
+                            </Button>
+                          </Box>
                         )}
                         <Box>
                           <Button
                             size="xs"
                             variant="destructive"
-                            onClick={() => handleRemoveArticulo(a.articuloId)}
+                            onClick={() => handleRemoveArticulo(a._uid)}
                             disabled={submitting}
                           >
                             Eliminar
@@ -497,10 +573,10 @@ const EditarContenedorModal = ({
                     </TableCell>
                     <TableCell align="center" width={150}>
                       <NumberInput
-                        name={`cajas-${a.articuloId}`}
+                        name={`cajas-${a._uid}`}
                         value={a.numCajas}
                         onChange={(value) =>
-                          handleNumCajasChange(a.articuloId, value)
+                          handleNumCajasChange(a._uid, value)
                         }
                         min={0}
                         precision={0}

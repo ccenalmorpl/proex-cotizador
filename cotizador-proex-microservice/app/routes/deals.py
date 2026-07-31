@@ -27,6 +27,8 @@ from app.models.schemas import (
     UpdateDocumentacionData,
     DealDocumentacionResponse,
     DealDocumentacionData,
+    EmpresaAsociadaItem,
+    EmpresasAsociadasResponse,
     BaseResponse,
     UpdateArticlesRequest,
     UpdateServicesRequest,
@@ -36,6 +38,8 @@ from app.models.schemas import (
     DealArticlesResponse,
     ArticleWithProvider,
     UpdateContainersRequest,
+    UpdateContainersResponse,
+    ContainerLineItemInput,
     UpdateSingleContainerRequest,
     UpdateSingleContainerResponse,
     ContainerConfigEdit,
@@ -65,7 +69,12 @@ from app.services.hubspot_client import hubspot_client
 from app.services.jobs_store import create_job, update_job, get_latest_job_by_deal
 from app.services.jobs_queue import enqueue_job
 from app.shared import hubdb_client
-from app.core.custom_objects_constants import OBJECT_TYPE_CONTENEDOR
+from app.core.custom_objects_constants import (
+    OBJECT_TYPE_CONTENEDOR,
+    PROVEEDOR_ASSOC_TYPE_ID_TRANSITARIO_TERRESTRE,
+    ASSOC_CATEGORY_USER_DEFINED,
+    COMPANY_PROP_ADDRESS_ENTREGA,
+)
 from app.services.quote_helpers import (
     build_association,
     create_quote_via_api,
@@ -85,11 +94,24 @@ from app.services.custom_objects import (
     batch_create_elementos_with_associations,
     batch_update_custom_objects,
     touch_pagos_for_contenedores,
+    sync_contenedor_proveedor_associations,
+    sync_deal_ruta_associations,
+    process_deal_custom_objects_from_line_items,
     _normalize_for_diff,
 )
 from app.core.constants import AssociationType
-from app.utils.iva_helpers import recalcular_contenedor, recalcular_contenedores
-from app.utils.property_helpers import safe_convert, build_update_properties, parse_hubspot_properties, compute_tipo_iva_repercutido, compute_default_tipo_iva, resolve_product_iva, round_price, round_margin, enforce_line_item_price_rounding
+from app.utils.fletes import (
+    FLETE_SUFIJO_MARITIMO,
+    FLETE_SUFIJO_TERRESTRE,
+    TRAMO_LEGACY,
+    TRAMO_MARITIMO,
+    TRAMO_TERRESTRE,
+    clasificar_tramo_flete,
+)
+from app.utils.iva_helpers import recalcular_contenedores
+from app.utils.pricing import _normalize_incoterm
+from app.utils.tipologia import es_camion
+from app.utils.property_helpers import safe_convert, build_update_properties, parse_hubspot_properties, compute_tipo_iva_repercutido, compute_default_tipo_iva, resolve_product_iva, round_price, round_margin, enforce_line_item_price_rounding, resolve_almacen_para_elemento
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -395,6 +417,128 @@ def _line_item_is_container(props: dict) -> bool:
     pt = _normalize_hs_product_type((props.get("hs_product_type") or ""))
     ta = (props.get("tipo_articulo") or "").strip().lower()
     return pt in HS_PRODUCT_TYPE_CONTAINER and ta == "transitario"
+
+def _catalogo_huerfano_ids(line_items: list, container_names) -> list:
+    """Ids de line items de catálogo huérfanos: artículo fabricante sin numero_container
+    y sin prefijo '{contenedor} - ' en el name. Los crea update_deal_articles al guardar
+    ArticlesTab; con contenedores configurados son redundantes (el catálogo se reconstruye
+    desde las líneas per-contenedor) y contaminan la cotización publicada.
+
+    La exclusión por prefijo protege las líneas per-contenedor regeneradas por HubSpot
+    que pierden numero_container pero conservan el name '{contenedor} - {artículo}'."""
+    prefixes = tuple(f"{str(n).strip()} - " for n in container_names if n and str(n).strip())
+    ids = []
+    for li in line_items:
+        props = li.get("properties", {}) or {}
+        if (props.get("numero_container") or "").strip():
+            continue
+        if not _line_item_is_article(props):
+            continue
+        name = (props.get("name") or "").strip()
+        if prefixes and name.startswith(prefixes):
+            continue
+        ids.append(str(li.get("id")))
+    return ids
+
+_CLONE_TIPO_ARTICULO = {"servicio", "seguro", "transitario"}
+_CLONE_HS_PRODUCT_TYPE = {"servicio", "flete"}
+_CLONE_PROPS = [
+    "name", "price", "cardcode", "numero_container", "tipo_articulo", "hs_product_type",
+    "tipo_iva_repercutido", "tipo_iva_soportado", "almacen", "hs_product_id", "hs_sku",
+    "quantity", "hs_currency", "precio_de_coste",
+]
+
+def _line_item_is_clonable_service(props: dict) -> bool:
+    """True si la línea es servicio/flete/seguro clonable (excluye fabricante, comisiones y el propio contenedor)."""
+    ta = (props.get("tipo_articulo") or "").strip().lower()
+    pt = (props.get("hs_product_type") or "").strip().lower()
+    if _is_container_product_type(props.get("hs_product_type") or ""):
+        return False
+    if ta in {"fabricante", "comisiones"}:
+        return False
+    return ta in _CLONE_TIPO_ARTICULO or pt in _CLONE_HS_PRODUCT_TYPE
+
+def _remap_clone_name(plantilla_name: str, nuevo_name: str) -> str:
+    """Reemplaza el prefijo del contenedor en el name de la plantilla: '{plantilla} - SUFIJO' -> '{nuevo} - SUFIJO'."""
+    name = (plantilla_name or "").strip()
+    if " - " in name:
+        sufijo = name.split(" - ", 1)[1]
+        return f"{nuevo_name} - {sufijo}"
+    return f"{nuevo_name} - {name}" if name else nuevo_name
+
+def _clone_template_lines_for_new_containers(
+    *,
+    nuevos_container_names: List[str],
+    previos: list,
+    existing_containers_by_lid: dict,
+    line_items_by_numero: dict,
+    deal_id: str,
+    headers: dict,
+    batch_size: int = 100,
+) -> list:
+    """Blindaje: clona las líneas de servicio/flete/seguro de un contenedor previo (plantilla) hacia los contenedores nuevos.
+
+    La plantilla es el contenedor previo con menor numero_container. Solo LEE las líneas de la plantilla
+    para copiarlas; nunca actualiza ni archiva las de los previos. Las líneas clonadas conservan
+    (hs_product_id, numero_container) coherentes con /services y /transit, de modo que un paso posterior
+    por esos tabs hace upsert en vez de duplicar.
+    """
+    if not nuevos_container_names or not previos:
+        return []
+
+    def _numero_key(lid: str) -> tuple:
+        numero = existing_containers_by_lid.get(lid, {}).get("numero_container") or ""
+        try:
+            return (0, int(str(numero).split("-")[-1]))
+        except (ValueError, IndexError):
+            return (1, str(numero))
+
+    plantilla_lid = min((lid for lid, _ in previos), key=_numero_key)
+    plantilla_numero = existing_containers_by_lid.get(plantilla_lid, {}).get("numero_container") or ""
+
+    plantilla_line_ids = [
+        li["id"]
+        for li in line_items_by_numero.get(plantilla_numero, [])
+        if _line_item_is_clonable_service(li.get("properties", {}) or {})
+    ]
+    if not plantilla_line_ids:
+        logger.warning(f"[clone] plantilla {plantilla_numero} sin líneas de servicio/flete/seguro; nada que clonar")
+        return []
+
+    batch_read_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
+    plantilla_lines = []
+    for i in range(0, len(plantilla_line_ids), batch_size):
+        chunk = plantilla_line_ids[i:i + batch_size]
+        payload = {"properties": _CLONE_PROPS, "inputs": [{"id": str(x)} for x in chunk]}
+        try:
+            resp = requests.post(batch_read_url, headers=headers, json=payload, timeout=30)
+            if resp.ok:
+                plantilla_lines.extend(resp.json().get("results", []))
+            else:
+                logger.error(f"[clone] batch read plantilla lines failed: {resp.status_code} - {resp.text}")
+        except Exception as e:
+            logger.error(f"[clone] error batch reading plantilla lines: {e}")
+
+    cloned = []
+    for cname in nuevos_container_names:
+        for li in plantilla_lines:
+            src = li.get("properties", {}) or {}
+            new_props = {k: v for k, v in src.items() if v is not None and k in _CLONE_PROPS}
+            new_props["numero_container"] = cname
+            new_props["name"] = _remap_clone_name(src.get("name") or "", cname)
+            cloned.append({
+                "properties": new_props,
+                "associations": [{
+                    "to": {"id": deal_id},
+                    "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}],
+                }],
+            })
+
+    logger.warning(
+        f"[clone] plantilla={plantilla_numero}: {len(plantilla_lines)} líneas x "
+        f"{len(nuevos_container_names)} contenedores nuevos = {len(cloned)} líneas clonadas"
+    )
+    return cloned
 
 # Valores exactos que HubSpot acepta al escribir (enums). No usar "Service" ni "ex" minúscula.
 def _hs_product_type_for_hubspot(value: Any) -> str:
@@ -1493,6 +1637,97 @@ async def update_deal_client_data(
         logger.error(f"Error in update_deal_client_data: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+def _get_empresas_asociadas_ids(company_id: str) -> List[str]:
+    """IDs de empresas asociadas a `company_id` por una asociación USER_DEFINED
+    empresa↔empresa (etiqueta "Proveedor-Cliente", typeId 711, en cualquier
+    sentido). Filtra por category USER_DEFINED para excluir la jerarquía
+    matriz/filial estándar de HubSpot (HUBSPOT_DEFINED). Pagina."""
+    client = hubspot_client.get_client()
+    ids: List[str] = []
+    seen = set()
+    after = None
+    page = 0
+
+    while True:
+        page += 1
+        kwargs = {
+            "object_type": "companies",
+            "object_id": company_id,
+            "to_object_type": "companies",
+            "limit": 100,
+        }
+        if after:
+            kwargs["after"] = after
+
+        try:
+            resp = client.crm.associations.v4.basic_api.get_page(**kwargs)
+        except Exception as e:
+            logger.warning(f"[empresas_asociadas] error company={company_id} página={page}: {e}")
+            break
+
+        for assoc in (resp.results or []):
+            cid = str(assoc.to_object_id)
+            if cid in seen:
+                continue
+            es_user_defined = any(
+                getattr(at, "category", None) == ASSOC_CATEGORY_USER_DEFINED
+                for at in (assoc.association_types or [])
+            )
+            if es_user_defined:
+                seen.add(cid)
+                ids.append(cid)
+
+        if resp.paging and resp.paging.next:
+            after = resp.paging.next.after
+        else:
+            break
+
+    return ids
+
+
+@router.get("/{deal_id}/empresas-asociadas", response_model=EmpresasAsociadasResponse)
+async def get_deal_empresas_asociadas(
+    deal_id: str = Path(..., description="HubSpot deal ID", example="46298478914")
+):
+    """Empresas asociadas a la empresa del negocio por la relación "Proveedor-Cliente",
+    con su dirección de entrega. Alimenta el selector de autorrelleno de la
+    "Dirección de Entrega" en DocumentacionTab."""
+    try:
+        client = hubspot_client.get_client()
+
+        company_ids = get_associated_companies(deal_id)
+        if not company_ids:
+            return EmpresasAsociadasResponse(success=True, empresas=[])
+
+        ids = _get_empresas_asociadas_ids(company_ids[0])
+        if not ids:
+            return EmpresasAsociadasResponse(success=True, empresas=[])
+
+        empresas = []
+        for i in range(0, len(ids), 100):
+            chunk = ids[i:i + 100]
+            batch_response = client.crm.companies.batch_api.read(
+                batch_read_input_simple_public_object_id={
+                    "properties": ["name", COMPANY_PROP_ADDRESS_ENTREGA],
+                    "inputs": [{"id": cid} for cid in chunk],
+                }
+            )
+            for result in (batch_response.results or []):
+                props = result.properties or {}
+                empresas.append(EmpresaAsociadaItem(
+                    id=str(result.id),
+                    name=props.get("name") or None,
+                    address_entrega=props.get(COMPANY_PROP_ADDRESS_ENTREGA) or None,
+                ))
+
+        empresas.sort(key=lambda e: (e.name or "").lower())
+        return EmpresasAsociadasResponse(success=True, empresas=empresas)
+
+    except Exception as e:
+        logger.error(f"Error in get_deal_empresas_asociadas: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/{deal_id}/documentacion", response_model=DealDocumentacionResponse)
 async def get_deal_documentacion_data(
     deal_id: str = Path(
@@ -1562,8 +1797,10 @@ async def get_deal_documentacion_data(
                     logger.error(f"Error fetching options for {prop_name}: {e}")
                     property_options_cache[prop_name] = []
 
-        # Get company for direccion_fiscal, cif fallback y langcode (idioma fallback).
+        # Get company for direccion_fiscal, direccion_de_entrega, cif fallback y
+        # langcode (idioma fallback).
         company_address = None
+        company_address_entrega = None
         company_cif = None
         company_langcode = None
         try:
@@ -1572,9 +1809,10 @@ async def get_deal_documentacion_data(
                 company_id = company_ids[0]
                 company = client.crm.companies.basic_api.get_by_id(
                     company_id,
-                    properties=['address', 'cif', 'langcode']
+                    properties=['address', 'cif', 'langcode', COMPANY_PROP_ADDRESS_ENTREGA]
                 )
                 company_address = company.properties.get('address')
+                company_address_entrega = company.properties.get(COMPANY_PROP_ADDRESS_ENTREGA)
                 company_cif = company.properties.get('cif')
                 company_langcode = company.properties.get('langcode')
         except Exception as e:
@@ -1598,6 +1836,10 @@ async def get_deal_documentacion_data(
         if not direccion_fiscal_value and company_address:
             direccion_fiscal_value = company_address
 
+        # Precarga: si el deal no tiene dirección de entrega propia, se muestra la
+        # de la empresa de la cotización (se persiste al guardar el tab).
+        direccion_entrega_value = deal.properties.get('direccion_de_entrega') or company_address_entrega or None
+
         cif_value = deal.properties.get('cif') or company_cif or None
 
         resolved_preprints_language = determine_preprints_language(
@@ -1615,7 +1857,7 @@ async def get_deal_documentacion_data(
             ) if property_options_cache.get('preprints_language') else None,
             # Documentación
             direccion_fiscal=direccion_fiscal_value,
-            direccion_de_entrega=deal.properties.get('direccion_de_entrega'),
+            direccion_de_entrega=direccion_entrega_value,
             # Documentación Logística
             desagregar_cotizacion=safe_convert(deal.properties.get('desagregar_cotizacion'), bool),
             documentos_a_generar=PropertyWithOptions(
@@ -1836,7 +2078,8 @@ async def get_deal_articles(
 
                 batch_payload = {
                     "properties": [
-                        "name", "hs_sku", "cardcode", "codigo_proveedor", "peso_neto",
+                        "name", "name_es", "name_en", "name_fr", "description",
+                        "hs_sku", "cardcode", "codigo_proveedor", "peso_neto",
                         # Price fields for negotiation
                         "hs_price_eur", "ultimo_precio_compra", "ultimo_precio_evaluado", "margen_unitario",
                         # VAT types
@@ -2542,12 +2785,14 @@ async def update_deal_services(
             data = UpdateServicesRequest(**data)
 
         deal_almacen = None
+        tipo_contenedor = ""
         try:
             deal_basic = client.crm.deals.basic_api.get_by_id(
                 deal_id=deal_id,
-                properties=["almacen"]
+                properties=["almacen", "tipo_contenedor"]
             )
             deal_almacen = deal_basic.properties.get("almacen")
+            tipo_contenedor = deal_basic.properties.get("tipo_contenedor") or ""
         except Exception as e:
             logger.warning(f"[services] Could not fetch deal almacen: {e}")
 
@@ -2607,6 +2852,7 @@ async def update_deal_services(
 
         residennum = ""
         equ = ""
+        tipo_cliente = ""
         try:
             company_ids = get_associated_companies(deal_id)
             if company_ids:
@@ -2614,12 +2860,13 @@ async def update_deal_services(
                 company_url = f"https://api.hubapi.com/crm/v3/objects/companies/{company_id}"
                 company_response = requests.get(
                     company_url, headers=headers,
-                    params={"properties": "residennum,equ"}, timeout=10,
+                    params={"properties": "residennum,equ,tipo_cliente"}, timeout=10,
                 )
                 if company_response.ok:
                     company_props = company_response.json().get("properties", {}) or {}
                     residennum = company_props.get("residennum") or ""
                     equ = company_props.get("equ") or ""
+                    tipo_cliente = company_props.get("tipo_cliente") or ""
         except Exception as e:
             logger.error(f"[services] error fetching company residence: {e}")
 
@@ -2692,8 +2939,9 @@ async def update_deal_services(
                     "tipo_articulo": service_tipo,
                     "hs_product_type": service_hs_type,
                 }
-                if deal_almacen:
-                    props_target["almacen"] = str(deal_almacen)
+                almacen_servicio = resolve_almacen_para_elemento(deal_almacen, service_tipo, tipo_contenedor)
+                if almacen_servicio:
+                    props_target["almacen"] = str(almacen_servicio)
 
                 target_specs[key] = {
                     "service": service,
@@ -2771,11 +3019,23 @@ async def update_deal_services(
                 try:
                     resp = requests.post(cr_url, headers=headers, json=payload, timeout=60)
                     if resp.ok:
-                        for x, created in zip(chunk, resp.json().get("results", [])):
+                        # HubSpot no garantiza que los results salgan en el orden de los
+                        # inputs: correlacionamos por (hs_sku, numero_container) —que es el
+                        # propio _target_key— leído de la respuesta, no por posición.
+                        key_by_ident = {
+                            (x["properties"].get("hs_sku"), (x["properties"].get("numero_container") or "").strip()): x["_target_key"]
+                            for x in chunk
+                        }
+                        for created in resp.json().get("results", []):
                             new_id = created.get("id")
-                            if new_id:
-                                created_ids_by_key[x["_target_key"]] = new_id
-                                persisted_by_key[x["_target_key"]] = new_id
+                            cprops = created.get("properties") or {}
+                            ident = (cprops.get("hs_sku"), (cprops.get("numero_container") or "").strip())
+                            tk = key_by_ident.get(ident)
+                            if new_id and tk is not None:
+                                created_ids_by_key[tk] = new_id
+                                persisted_by_key[tk] = new_id
+                            elif new_id:
+                                logger.error(f"[services] line item creado id={new_id} no casa con ningún input ident={ident}")
                     else:
                         logger.error(f"[services] batch create failed: {resp.status_code} - {resp.text}")
                 except Exception as e:
@@ -2922,6 +3182,8 @@ async def update_deal_services(
                 elem_data[0]["tipo_iva_repercutido"] = spec["props_target"]["tipo_iva_repercutido"]
             if spec["props_target"]["tipo_iva_soportado"]:
                 elem_data[0]["tipo_iva_soportado"] = spec["props_target"]["tipo_iva_soportado"]
+            if spec["props_target"].get("almacen"):
+                elem_data[0]["almacen"] = spec["props_target"]["almacen"]
             try:
                 created = batch_create_elementos_with_associations(
                     client=client,
@@ -3051,6 +3313,8 @@ async def update_deal_services(
                     elementos_data[0]["tipo_iva_repercutido"] = spec["props_target"]["tipo_iva_repercutido"]
                 if spec["props_target"]["tipo_iva_soportado"]:
                     elementos_data[0]["tipo_iva_soportado"] = spec["props_target"]["tipo_iva_soportado"]
+                if spec["props_target"].get("almacen"):
+                    elementos_data[0]["almacen"] = spec["props_target"]["almacen"]
                 created = batch_create_elementos_with_associations(
                     client=client,
                     elementos_data=elementos_data,
@@ -3112,6 +3376,24 @@ async def update_deal_services(
         logger.error(f"Error in update_deal_services: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+def _take_article_entry(candidates, num_cajas):
+    """Devuelve la primera entrada de line item no consumida (preferentemente la
+    de igual numCajas) y la marca como consumida. Permite que dos líneas del mismo
+    artículo en un contenedor (promo 5+1) conserven cada una su line_item_id en vez
+    de colapsar. Devuelve {} si no hay candidatos disponibles."""
+    if not candidates:
+        return {}
+    disponibles = [e for e in candidates if not e.get("_consumed")]
+    if not disponibles:
+        return {}
+    elegido = next(
+        (e for e in disponibles if e.get("quantity") == num_cajas),
+        disponibles[0],
+    )
+    elegido["_consumed"] = True
+    return elegido
+
+
 @router.get("/{deal_id}/containers", response_model=DealContainersResponse)
 async def get_deal_containers(
     deal_id: str = Path(
@@ -3169,7 +3451,9 @@ async def get_deal_containers(
                         "precio_de_coste",
                         "margen_unitario",
                         "tipo_iva_repercutido",
-                        "tipo_iva_soportado"
+                        "tipo_iva_soportado",
+                        "precio_negociado_tipo_venta",
+                        "incoterm_precio_negociado"
                     ],
                     "inputs": [{"id": str(lid)} for lid in batch_ids]
                 }
@@ -3380,6 +3664,9 @@ async def get_deal_containers(
         containers.sort(key=lambda c: c.container_number)
 
         # We already have article line items from the batch request above
+        # Indexado por nombre como LISTA: en nacional un contenedor puede tener
+        # varias líneas del mismo artículo (promo 5+1) que comparten nombre. Cada
+        # line item conserva su propia entrada para no colapsar su line_item_id.
         article_data_map = {}
         for line_item in article_line_items:
             try:
@@ -3389,29 +3676,35 @@ async def get_deal_containers(
                 # Use the name property as unique key (contains container name + article name)
                 unique_name = props.get("name", "")
                 if unique_name:
-                    article_data_map[unique_name] = {
+                    article_data_map.setdefault(unique_name, []).append({
                         "line_item_id": line_item_id,
                         "hs_sku": props.get("hs_sku", ""),
                         "hs_product_id": props.get("hs_product_id"),
                         "tipo_articulo": (props.get("tipo_articulo") or "").strip().lower(),
+                        "quantity": float(props.get("quantity")) if props.get("quantity") else None,
                         "price": float(props.get("price", 0)) if props.get("price") else None,
                         "precio_de_coste": float(props.get("precio_de_coste", 0)) if props.get("precio_de_coste") else None,
                         "margen_unitario": float(props.get("margen_unitario", 0)) if props.get("margen_unitario") else None,
                         "tipo_iva_repercutido": props.get("tipo_iva_repercutido", None),
-                        "tipo_iva_soportado": props.get("tipo_iva_soportado", None)
-                    }
+                        "tipo_iva_soportado": props.get("tipo_iva_soportado", None),
+                        "precio_negociado_tipo_venta": float(props.get("precio_negociado_tipo_venta", 0)) if props.get("precio_negociado_tipo_venta") else None,
+                        "incoterm_precio_negociado": props.get("incoterm_precio_negociado") or None,
+                        "_consumed": False,
+                    })
                     logger.warning(f"Mapped article line item {line_item_id}: name='{unique_name}'")
             except Exception as e:
                 logger.error(f"Error mapping article line item: {e}")
 
-        logger.warning(f"Mapped data for {len(article_data_map)} article line items (by unique name)")
+        total_mapped = sum(len(v) for v in article_data_map.values())
+        logger.warning(f"Mapped data for {total_mapped} article line items ({len(article_data_map)} unique names)")
 
         # When HubSpot publishes a quote and syncs line items back to the deal, it may
         # create new deal line items from standard properties only, losing custom props
         # like precio_de_coste and margen_unitario. Detect and restore from product catalog.
         articles_needing_repair = [
             (name, data)
-            for name, data in article_data_map.items()
+            for name, entries in article_data_map.items()
+            for data in entries
             if data.get("tipo_articulo") == "fabricante"
             and data.get("precio_de_coste") is None
             and data.get("hs_product_id") is not None
@@ -3458,13 +3751,13 @@ async def get_deal_containers(
                         logger.warning(f"[containers] Auto-repair: no hs_price_eur for product {prod_id}, skipping")
                         continue
 
-                    article_data_map[name]["precio_de_coste"] = hs_price_eur
+                    data["precio_de_coste"] = hs_price_eur
 
                     price_exw = data.get("price")
                     if price_exw is not None and hs_price_eur > 0:
                         margen = round_margin((price_exw - hs_price_eur) / hs_price_eur)
                         if margen is not None:
-                            article_data_map[name]["margen_unitario"] = margen
+                            data["margen_unitario"] = margen
                             line_item_updates.append({
                                 "id": data["line_item_id"],
                                 "properties": {"margen_unitario": str(margen)}
@@ -3494,28 +3787,32 @@ async def get_deal_containers(
             for articulo in container_data["container_config"].articulos:
                 articulo_name = f"{container_name} - {articulo.nombre}"
 
-                # Get additional article data from map using unique name
-                # This ensures each article in each container gets its own line_item_id
-                article_extra_data = article_data_map.get(articulo_name, {})
+                # Cada línea del JSON consume su propio line item de la lista.
+                # Con duplicados (mismo nombre) hay varias entradas y elegimos una
+                # no consumida (preferentemente la de igual numCajas) para que cada
+                # línea conserve su line_item_id en vez de colapsar.
+                candidates = article_data_map.get(articulo_name)
 
                 # Fallback: if not found by exact name, try normalizing quotes
-                if not article_extra_data:
+                if not candidates:
                     # Normalize quotes: replace '' with "" to match HubSpot's storage
                     normalized_name = articulo_name.replace("''", '""')
-                    article_extra_data = article_data_map.get(normalized_name, {})
-
-                    if article_extra_data:
+                    candidates = article_data_map.get(normalized_name)
+                    if candidates:
                         logger.warning(f"Article found after normalizing quotes: '{normalized_name}'")
 
                 # Second fallback: if still not found, try by SKU (backwards compatibility)
-                if not article_extra_data:
+                if not candidates:
                     logger.warning(f"Article not found by unique name '{articulo_name}', trying SKU '{articulo.articuloId}'")
-                    # Look for any article with matching SKU and same container
-                    for name, data in article_data_map.items():
-                        if data.get("hs_sku") == articulo.articuloId and name.startswith(container_name):
-                            article_extra_data = data
+                    for name, entries in article_data_map.items():
+                        if name.startswith(container_name) and any(
+                            e.get("hs_sku") == articulo.articuloId for e in entries
+                        ):
+                            candidates = entries
                             logger.warning(f"Found article by SKU in same container: {name}")
                             break
+
+                article_extra_data = _take_article_entry(candidates, articulo.numCajas)
 
                 unique_article = UniqueContainerArticle(
                     articuloId=articulo.articuloId,
@@ -3527,7 +3824,9 @@ async def get_deal_containers(
                     precio_de_coste=article_extra_data.get("precio_de_coste"),
                     margen_unitario=article_extra_data.get("margen_unitario"),
                     tipo_iva_repercutido=article_extra_data.get("tipo_iva_repercutido"),
-                    tipo_iva_soportado=article_extra_data.get("tipo_iva_soportado")
+                    tipo_iva_soportado=article_extra_data.get("tipo_iva_soportado"),
+                    precio_negociado_tipo_venta=article_extra_data.get("precio_negociado_tipo_venta"),
+                    incoterm_precio_negociado=article_extra_data.get("incoterm_precio_negociado")
                 )
                 unique_articles.append(unique_article)
 
@@ -3578,11 +3877,12 @@ def _fetch_deal_container_context(deal_id: str, client) -> dict:
     callers that need to edit several containers in one request reuse the
     same lookups.
     """
-    ctx = {"deal_almacen": None, "residennum": None, "equ": None, "fabricante_cardcode": None}
+    ctx = {"deal_almacen": None, "residennum": None, "equ": None, "tipo_cliente": "", "tipo_contenedor": "", "fabricante_cardcode": None}
 
     try:
-        deal_basic = client.crm.deals.basic_api.get_by_id(deal_id=deal_id, properties=["almacen"])
+        deal_basic = client.crm.deals.basic_api.get_by_id(deal_id=deal_id, properties=["almacen", "tipo_contenedor"])
         ctx["deal_almacen"] = deal_basic.properties.get("almacen") or None
+        ctx["tipo_contenedor"] = deal_basic.properties.get("tipo_contenedor") or ""
     except Exception as e:
         logger.warning(f"[edit_container] could not fetch deal almacen: {e}")
 
@@ -3590,10 +3890,11 @@ def _fetch_deal_container_context(deal_id: str, client) -> dict:
         company_ids = get_associated_companies(deal_id)
         if company_ids:
             company = client.crm.companies.basic_api.get_by_id(
-                company_ids[0], properties=["residennum", "equ"]
+                company_ids[0], properties=["residennum", "equ", "tipo_cliente"]
             )
             ctx["residennum"] = company.properties.get("residennum") or ""
             ctx["equ"] = company.properties.get("equ") or ""
+            ctx["tipo_cliente"] = company.properties.get("tipo_cliente") or ""
     except Exception as e:
         logger.warning(f"[edit_container] could not fetch company residennum/equ: {e}")
 
@@ -3750,6 +4051,9 @@ def _edit_container_in_place(
     headers: Optional[dict] = None,
     ctx: Optional[dict] = None,
     intermediario_ctx: Optional[dict] = None,
+    cont_map: Optional[dict] = None,
+    num_contenedores_total: Optional[int] = None,
+    defer_custom_objects: bool = False,
 ) -> dict:
     """Apply edit-in-place modifications to a single container.
 
@@ -3769,6 +4073,7 @@ def _edit_container_in_place(
 
     deal_almacen = ctx.get("deal_almacen")
     residennum = ctx.get("residennum")
+    tipo_contenedor = ctx.get("tipo_contenedor") or ""
     fabricante_cardcode = ctx.get("fabricante_cardcode")
 
     container_li = requests.get(
@@ -3926,6 +4231,18 @@ def _edit_container_in_place(
             props["tipo_iva_repercutido"] = art.tipo_iva_repercutido
         if art.tipo_iva_soportado:
             props["tipo_iva_soportado"] = art.tipo_iva_soportado
+        # Ancla del tipo de venta: si el payload no la trae se preserva la
+        # persistida (el recálculo posterior re-deriva price desde ella); 0 la
+        # limpia explícitamente (línea convertida a promo).
+        ancla_edit = round_price(art.precio_negociado_tipo_venta)
+        if ancla_edit is not None:
+            ancla_ic_edit = _normalize_incoterm(art.incoterm_precio_negociado) if art.incoterm_precio_negociado else ""
+            if ancla_edit > 0 and ancla_ic_edit:
+                props["precio_negociado_tipo_venta"] = str(ancla_edit)
+                props["incoterm_precio_negociado"] = ancla_ic_edit
+            elif ancla_edit == 0:
+                props["precio_negociado_tipo_venta"] = ""
+                props["incoterm_precio_negociado"] = ""
         update_inputs.append({"id": art.line_item_id, "properties": props})
 
     if update_inputs:
@@ -3985,8 +4302,10 @@ def _edit_container_in_place(
             val = product_props.get(src)
             if val is not None and str(val).strip() != "":
                 properties[dst] = str(val)
-        if deal_almacen:
-            properties["almacen"] = str(deal_almacen)
+        # Producto (fabricante): conserva el almacén del deal (San Roque incluido)
+        almacen_articulo = resolve_almacen_para_elemento(deal_almacen, "fabricante", tipo_contenedor)
+        if almacen_articulo:
+            properties["almacen"] = str(almacen_articulo)
 
         create_inputs.append({
             "properties": properties,
@@ -4006,22 +4325,21 @@ def _edit_container_in_place(
             "cardcode": cardcode,
         })
 
-    created_ids = []
     if create_inputs:
-        cr_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/create"
-        for i in range(0, len(create_inputs), 100):
-            chunk = create_inputs[i:i + 100]
-            for x in chunk:
-                enforce_line_item_price_rounding(x.get("properties", {}))
-            resp = requests.post(cr_url, headers=headers, json={"inputs": chunk}, timeout=60)
+        # Create de uno en uno: con la promo 5+1 el mismo artículo se repite en el
+        # contenedor (sku, nombre y numero_container idénticos), así que ninguna
+        # propiedad distingue las líneas dentro de un batch. El create individual
+        # devuelve el id exacto de cada input —correlación 1:1 con new_articles_resolved,
+        # construidos en el mismo orden— y evita que un line_item_id quede colgado
+        # del artículo equivocado si HubSpot reordena los results del batch.
+        cr_url = "https://api.hubapi.com/crm/v3/objects/line_items"
+        for resolved, inp in zip(new_articles_resolved, create_inputs):
+            enforce_line_item_price_rounding(inp.get("properties", {}))
+            resp = requests.post(cr_url, headers=headers, json=inp, timeout=60)
             if not resp.ok:
-                logger.error(f"[edit_container] batch create failed: {resp.status_code} {resp.text}")
+                logger.error(f"[edit_container] create failed: {resp.status_code} {resp.text}")
                 raise HTTPException(status_code=500, detail=f"Failed to create articles: {resp.text}")
-            for created in resp.json().get("results", []):
-                created_ids.append(created.get("id"))
-
-    for resolved, new_id in zip(new_articles_resolved, created_ids):
-        resolved["new_line_item_id"] = new_id
+            resolved["new_line_item_id"] = resp.json().get("id")
 
     if to_delete_ids:
         del_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/archive"
@@ -4081,8 +4399,10 @@ def _edit_container_in_place(
         "container_config": json.dumps(container_config_serializable),
         "ocupacion": str(new_config.ocupacion),
     }
-    if deal_almacen:
-        container_update_props["almacen"] = str(deal_almacen)
+    # La línea de contenedor no es producto: se reubica fuera de San Roque (10/12)
+    almacen_contenedor = resolve_almacen_para_elemento(deal_almacen, None, tipo_contenedor)
+    if almacen_contenedor:
+        container_update_props["almacen"] = str(almacen_contenedor)
     try:
         client.crm.line_items.basic_api.update(
             line_item_id=container_line_item_id,
@@ -4099,7 +4419,8 @@ def _edit_container_in_place(
     elementos_synced = False
     contenedor_co_id = None
     numero_container = (container_props.get("numero_container") or "").strip() or container_name
-    cont_map = _resolve_contenedor_co_by_numero(client, deal_id)
+    if cont_map is None:
+        cont_map = _resolve_contenedor_co_by_numero(client, deal_id)
     co = (
         cont_map.get(numero_container)
         or cont_map.get(container_name)
@@ -4134,7 +4455,14 @@ def _edit_container_in_place(
         tipo_com = intermediario_ctx.get("tipo_comision") or ""
         importe_com = float(intermediario_ctx.get("importe_comision") or 0)
         if tipo_com == "importe_por_negocio":
-            num_total = max(len(cont_map) or 0, 1)
+            # Reparte la comisión entre TODOS los contenedores del negocio. El caller
+            # pasa el total final (previos + nuevos); si no, se cuentan los COs
+            # distintos (cont_map indexa cada contenedor bajo varias claves, así que
+            # len(cont_map) no sirve como recuento).
+            if num_contenedores_total:
+                num_total = max(num_contenedores_total, 1)
+            else:
+                num_total = max(len({e.get("id") for e in cont_map.values() if e.get("id")}), 1)
             intermediario_price_for_create = round_price(importe_com / num_total)
         elif tipo_com == "importe_por_cajas":
             intermediario_price_for_create = round_price(importe_com * total_cajas_new)
@@ -4169,8 +4497,10 @@ def _edit_container_in_place(
             intermediario_props["tipo_iva_repercutido"] = intermediario_ctx["iva_repercutido"]
         if intermediario_ctx.get("iva_soportado"):
             intermediario_props["tipo_iva_soportado"] = intermediario_ctx["iva_soportado"]
-        if deal_almacen:
-            intermediario_props["almacen"] = str(deal_almacen)
+        # Comisiones/intermediario: no es producto → se reubica fuera de San Roque (10/12)
+        almacen_intermediario = resolve_almacen_para_elemento(deal_almacen, "comisiones", tipo_contenedor)
+        if almacen_intermediario:
+            intermediario_props["almacen"] = str(almacen_intermediario)
         enforce_line_item_price_rounding(intermediario_props)
         create_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/create"
         payload = {"inputs": [{
@@ -4200,7 +4530,10 @@ def _edit_container_in_place(
         except Exception as e:
             logger.error(f"[edit_container] failed archiving intermediario line item: {e}")
 
-    if contenedor_co_id:
+    # defer_custom_objects: el CRUD de line items (arriba) es síncrono; el trabajo
+    # derivado (Elemento/Contenedor CO, proveedores, y aguas abajo recalcular precios
+    # y touch_pagos SAP) lo reconstruye el worker de re-sync desde los line items.
+    if contenedor_co_id and not defer_custom_objects:
         elementos_synced = _sync_elementos_for_container(
             client=client,
             deal_id=deal_id,
@@ -4217,6 +4550,8 @@ def _edit_container_in_place(
             new_intermediario_lid=new_intermediario_lid,
             intermediario_price_for_create=intermediario_price_for_create,
             total_cajas_new=total_cajas_new,
+            deal_almacen=deal_almacen,
+            tipo_contenedor=tipo_contenedor,
         )
 
         try:
@@ -4228,20 +4563,9 @@ def _edit_container_in_place(
         except Exception as e:
             logger.warning(f"[edit_container] could not update CONTENEDOR custom object: {e}")
 
-        try:
-            recalcular_contenedor(
-                client,
-                deal_id,
-                contenedor_co_id,
-                {"equ": ctx.get("equ") or "", "residennum": ctx.get("residennum") or ""},
-            )
-        except Exception as e:
-            logger.warning(f"[edit_container] could not recompute contenedor price: {e}")
-
-        touch_pagos_for_contenedores(client, [contenedor_co_id])
-
     return {
         "line_item_id": container_line_item_id,
+        "contenedor_co_id": contenedor_co_id,
         "container_name": container_name,
         "container_type": container_type,
         "container_number": container_number,
@@ -4283,6 +4607,8 @@ def _sync_elementos_for_container(
     current_intermediario: Optional[dict],
     intermediario_recalculated: bool,
     total_cajas_new: int,
+    deal_almacen: Optional[str] = None,
+    tipo_contenedor: str = "",
     intermediario_state_change: Optional[str] = None,
     new_intermediario_lid: Optional[str] = None,
     intermediario_price_for_create: Optional[float] = None,
@@ -4302,6 +4628,7 @@ def _sync_elementos_for_container(
 
     elementos_by_lid = {}
     elementos_by_nombre = {}
+    nombre_counts = {}
     intermediario_elemento = None
     for el in elementos:
         props = el.get("properties", {}) or {}
@@ -4312,6 +4639,7 @@ def _sync_elementos_for_container(
         if lid:
             elementos_by_lid[str(lid).strip()] = entry
         if nombre:
+            nombre_counts[nombre.strip()] = nombre_counts.get(nombre.strip(), 0) + 1
             elementos_by_nombre[nombre.strip()] = entry
         if tipo_art in ("comisiones", "intermediario"):
             if current_intermediario and str(lid) == str(current_intermediario.get("id")):
@@ -4338,13 +4666,28 @@ def _sync_elementos_for_container(
     orphan_created = 0
     for art in payload_with_id:
         target_lid = str(art.line_item_id).strip()
+        li_name_actual = (
+            (current_by_id.get(art.line_item_id, {}).get("properties", {}) or {}).get("name") or ""
+        ).strip()
         elem = elementos_by_lid.get(target_lid)
+        # lid cruzado (rotación batch previa): el Elemento resuelto por lid no es el
+        # de este line item. Se descarta para reemparejar por contenido y, más abajo,
+        # autocorregir el line_item_id.
+        if elem and li_name_actual and (elem["properties"].get("nombre") or "").strip() != li_name_actual:
+            elem = None
         if not elem:
             cur_props = current_by_id.get(art.line_item_id, {}).get("properties", {}) or {}
             li_name = (cur_props.get("name") or "").strip()
-            if li_name:
+            # Solo emparejar por nombre si es único en el contenedor; con líneas
+            # duplicadas (promo 5+1) el nombre es ambiguo y crearíamos/borraríamos
+            # el Elemento equivocado, así que dejamos que se cree por su line_item_id.
+            if li_name and nombre_counts.get(li_name, 0) <= 1:
                 elem = elementos_by_nombre.get(li_name)
-            if not elem and art.articuloName:
+            if (
+                not elem
+                and art.articuloName
+                and nombre_counts.get(str(art.articuloName).strip(), 0) <= 1
+            ):
                 elem = elementos_by_nombre.get(str(art.articuloName).strip())
         if not elem:
             cur_props = current_by_id.get(art.line_item_id, {}).get("properties", {}) or {}
@@ -4373,11 +4716,15 @@ def _sync_elementos_for_container(
                 "tipo_iva_repercutido": art.tipo_iva_repercutido or cur_props.get("tipo_iva_repercutido"),
                 "tipo_iva_soportado": art.tipo_iva_soportado or cur_props.get("tipo_iva_soportado"),
                 "line_item_id": target_lid,
+                "nombre_es": cur_props.get("description"),
                 "nombre_en": cur_props.get("name_en"),
                 "nombre_fr": cur_props.get("name_fr"),
                 "formato": cur_props.get("formato"),
                 "marca": cur_props.get("marca_certificado"),
             }]
+            almacen_orphan = resolve_almacen_para_elemento(deal_almacen, "fabricante", tipo_contenedor)
+            if almacen_orphan:
+                orphan_data[0]["almacen"] = str(almacen_orphan)
             try:
                 created = batch_create_elementos_with_associations(
                     client=client,
@@ -4413,10 +4760,10 @@ def _sync_elementos_for_container(
             _safe_float(elem["properties"].get("precio_unitario"))
         )
         precio_unit_round = round_price(precio_unit)
-        precio_total = round((precio_unit_round or 0) * (art.numCajas or 0), 3)
+        # precio_total no se toca: lo fija recalcular_contenedores tras la edición
+        # (cuadre con el precio negociado a nivel de contenedor).
         update_props = {
             "cantidad": art.numCajas,
-            "precio_total": precio_total,
         }
         if precio_unit_round is not None:
             update_props["precio_unitario"] = precio_unit_round
@@ -4460,7 +4807,7 @@ def _sync_elementos_for_container(
         art = resolved["edit"]
         product_props = resolved["product_props"]
         precio_unit = round_price(art.price) if art.price is not None else None
-        precio_total = (precio_unit or 0) * (art.numCajas or 0) if precio_unit is not None else None
+        precio_total = round((precio_unit or 0) * (art.numCajas or 0), 3) if precio_unit is not None else None
         peso_neto_unit = _safe_float(product_props.get("peso_neto"))
         peso_bruto_unit = _safe_float(product_props.get("peso_bruto"))
         new_elementos_data.append({
@@ -4479,11 +4826,15 @@ def _sync_elementos_for_container(
             "tipo_iva_repercutido": resolved["iva_rep"],
             "tipo_iva_soportado": resolved["iva_sop"],
             "line_item_id": resolved.get("new_line_item_id"),
+            "nombre_es": product_props.get("description"),
             "nombre_en": product_props.get("name_en"),
             "nombre_fr": product_props.get("name_fr"),
             "formato": product_props.get("formato"),
             "marca": product_props.get("marca_certificado"),
         })
+        almacen_nuevo = resolve_almacen_para_elemento(deal_almacen, "fabricante", tipo_contenedor)
+        if almacen_nuevo:
+            new_elementos_data[-1]["almacen"] = str(almacen_nuevo)
     if new_elementos_data:
         batch_create_elementos_with_associations(
             client=client,
@@ -4525,6 +4876,10 @@ def _sync_elementos_for_container(
             elem_data[0]["tipo_iva_repercutido"] = intermediario_ctx["iva_repercutido"]
         if intermediario_ctx.get("iva_soportado"):
             elem_data[0]["tipo_iva_soportado"] = intermediario_ctx["iva_soportado"]
+        # Intermediario: no es producto → se reubica fuera de San Roque (10/12)
+        almacen_int_elem = resolve_almacen_para_elemento(deal_almacen, "intermediario", tipo_contenedor)
+        if almacen_int_elem:
+            elem_data[0]["almacen"] = str(almacen_int_elem)
         try:
             batch_create_elementos_with_associations(
                 client=client,
@@ -4542,6 +4897,11 @@ def _sync_elementos_for_container(
         except Exception as e:
             logger.warning(f"[sync_elementos] failed deleting intermediario elemento: {e}")
 
+    try:
+        sync_contenedor_proveedor_associations(client, deal_id, [contenedor_co_id])
+    except Exception as e:
+        logger.warning(f"[sync_elementos] sync_contenedor_proveedor_associations falló: {e}")
+
     return True
 
 def _safe_float(value: Any) -> Optional[float]:
@@ -4552,6 +4912,70 @@ def _safe_float(value: Any) -> Optional[float]:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+def _resolve_container_line_item_id(
+    deal_id: str,
+    container_line_item_id: str,
+    numero_container: Optional[str],
+    *,
+    client,
+    headers: Optional[dict] = None,
+) -> str:
+    """Devuelve el line_item_id del contenedor a editar. Si el id recibido ya no
+    existe (stale tras una recreación previa) y se conoce su `numero_container`/
+    nombre, lo resuelve buscando el line item de contenedor del deal con ese
+    numero_container. Si no se puede resolver, devuelve el id original (el caller
+    fallará con 404, comportamiento previo)."""
+    if headers is None:
+        access_token = client.access_token
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+
+    try:
+        resp = requests.get(
+            f"https://api.hubapi.com/crm/v3/objects/line_items/{container_line_item_id}",
+            headers=headers, params={"properties": "hs_product_type"}, timeout=15,
+        )
+        if resp.ok:
+            return container_line_item_id
+    except Exception as e:
+        logger.warning(f"[resolve_container] GET {container_line_item_id} falló: {e}")
+
+    numero = (numero_container or "").strip()
+    if not numero:
+        return container_line_item_id
+
+    try:
+        line_item_ids = _get_associated_ids(deal_id, "line_items") or []
+    except Exception as e:
+        logger.warning(f"[resolve_container] no pude listar line items de {deal_id}: {e}")
+        return container_line_item_id
+
+    batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
+    for i in range(0, len(line_item_ids), 100):
+        chunk = line_item_ids[i:i + 100]
+        try:
+            r = requests.post(batch_url, headers=headers, json={
+                "properties": ["hs_product_type", "numero_container", "name"],
+                "inputs": [{"id": str(x)} for x in chunk],
+            }, timeout=30)
+            if not r.ok:
+                continue
+            for li in r.json().get("results", []):
+                p = li.get("properties", {}) or {}
+                if not _is_container_product_type(p.get("hs_product_type") or ""):
+                    continue
+                if (p.get("numero_container") or "").strip() == numero or (p.get("name") or "").strip() == numero:
+                    resolved = str(li.get("id"))
+                    logger.warning(
+                        f"[resolve_container] line_item_id stale {container_line_item_id} → "
+                        f"resuelto {resolved} por numero_container={numero!r}"
+                    )
+                    return resolved
+        except Exception as e:
+            logger.warning(f"[resolve_container] batch read falló: {e}")
+
+    logger.warning(f"[resolve_container] no se resolvió numero_container={numero!r}; se usa id original {container_line_item_id}")
+    return container_line_item_id
 
 @router.patch("/{deal_id}/containers/{container_line_item_id}", response_model=UpdateSingleContainerResponse)
 async def edit_single_container(
@@ -4576,12 +5000,35 @@ async def edit_single_container(
             f"articulos_count={len(data.container_config.articulos)}"
         )
 
-        result = _edit_container_in_place(
-            deal_id=deal_id,
-            container_line_item_id=container_line_item_id,
-            new_config=data.container_config,
+        effective_lid = _resolve_container_line_item_id(
+            deal_id,
+            container_line_item_id,
+            getattr(data, "numero_container", None),
             client=client,
         )
+
+        ctx = _fetch_deal_container_context(deal_id, client)
+        result = _edit_container_in_place(
+            deal_id=deal_id,
+            container_line_item_id=effective_lid,
+            new_config=data.container_config,
+            client=client,
+            ctx=ctx,
+        )
+
+        co_id = result.get("contenedor_co_id")
+        if co_id:
+            try:
+                await hubdb_client.preload_iva_table()
+                recalcular_contenedores(
+                    client,
+                    deal_id,
+                    [co_id],
+                    {"equ": ctx.get("equ") or "", "residennum": ctx.get("residennum") or ""},
+                )
+            except Exception as e:
+                logger.warning(f"[edit_single_container] recalcular_contenedores falló: {e}")
+            touch_pagos_for_contenedores(client, [co_id])
 
         unique_articles = [
             UniqueContainerArticle(
@@ -4626,7 +5073,153 @@ async def edit_single_container(
         logger.error(f"[edit_single_container] error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/{deal_id}/containers", response_model=BaseResponse)
+def _enqueue_custom_objects_resync_if_published(client, deal_id: str) -> Optional[str]:
+    """Re-sincroniza Contenedor/Elemento del deal con sus line items actuales, pero
+    SOLO si el deal ya fue publicado (ya tiene Contenedor custom objects). Como el
+    CRUD de line items corrió con defer_custom_objects=True, sin este re-sync los
+    Elemento quedarían apuntando a line items muertos (STALE). Antes de la primera
+    publicación no hay custom objects y no hay nada que sincronizar.
+
+    Devuelve el job_id encolado (para que el frontend lo pollee) o None si el deal no
+    está publicado. Si el deal SÍ está publicado pero el encolado falla (SQS/DynamoDB
+    caídos, o entorno local sin credenciales AWS), hace fallback a un re-sync SÍNCRONO
+    inline para no dejar los COs stale, y devuelve None."""
+    try:
+        contenedores = get_contenedores_by_deal(client, deal_id, properties=["nombre"])
+    except Exception as e:
+        logger.warning(f"[containers] no pude comprobar si el deal {deal_id} está publicado: {e}")
+        return None
+    if not contenedores:
+        return None
+
+    job_id = f"{CUSTOM_OBJECTS_JOB_TYPE}_{deal_id}_{int(time.time() * 1000)}"
+    payload = {"deal_id": deal_id}
+    try:
+        create_job(deal_id=deal_id, job_type=CUSTOM_OBJECTS_JOB_TYPE, job_id=job_id, payload=payload)
+        enqueue_job(job_id=job_id, job_type=CUSTOM_OBJECTS_JOB_TYPE, payload=payload)
+        logger.info(f"[containers] re-sync custom objects encolado job_id={job_id} deal={deal_id} (deal ya publicado)")
+        return job_id
+    except Exception as e:
+        logger.warning(f"[containers] enqueue de re-sync falló para deal {deal_id}; fallback síncrono inline: {e}")
+        try:
+            update_job(job_id, status="failed", error=f"enqueue_failed: {e}", completed_at=int(time.time()))
+        except Exception:
+            pass
+        try:
+            process_deal_custom_objects_from_line_items(deal_id)
+        except Exception as e2:
+            logger.error(f"[containers] fallback síncrono de re-sync también falló para deal {deal_id}: {e2}")
+        return None
+
+def _create_container_with_articles(
+    *,
+    deal_id: str,
+    container_name: str,
+    container_input: ContainerLineItemInput,
+    product_info: dict,
+    article_sku_to_product: dict,
+    fabricante_cardcode: Optional[str],
+    residennum: Optional[str],
+    deal_almacen: Optional[str],
+    tipo_contenedor: str,
+    headers: dict,
+) -> tuple[list, list]:
+    """Build the line item create payloads (container + fabricante articles) for
+    one brand-new container. New articles use catalogue price (hs_price_eur).
+    Returns (container_inputs, article_inputs) ready for batch create."""
+    container_config_dict = container_input.container_config.model_dump(by_alias=True)
+
+    container_properties = {
+        "hs_product_id": product_info["id"],
+        "hs_sku": product_info["sku"],
+        "name": container_name,
+        "price": product_info["price"],
+        "quantity": "1",
+        "hs_product_type": "container",
+        "hs_currency": "EUR",
+        "numero_container": container_name,
+        "container_config": json.dumps(container_config_dict),
+        "ocupacion": str(container_input.container_config.ocupacion),
+    }
+    almacen_contenedor = resolve_almacen_para_elemento(deal_almacen, None, tipo_contenedor)
+    if almacen_contenedor:
+        container_properties["almacen"] = str(almacen_contenedor)
+
+    container_inputs = [{
+        "properties": container_properties,
+        "associations": [{
+            "to": {"id": deal_id},
+            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
+        }]
+    }]
+
+    article_inputs = []
+    for articulo in container_input.container_config.articulos:
+        article_sku = str(articulo.articuloId) if articulo.articuloId is not None else None
+        if not article_sku:
+            continue
+        num_cajas = articulo.numCajas or 0
+        if num_cajas <= 0:
+            continue
+
+        article_product_info = article_sku_to_product.get(article_sku)
+        if not article_product_info:
+            logger.warning(f"Article product with SKU '{article_sku}' not found in batch read, skipping")
+            continue
+
+        article_name = article_product_info["name"]
+        unique_article_name = f"{container_name} - {article_name}"
+        article_cardcode = fabricante_cardcode or article_product_info.get("cardcode", "")
+
+        product_props = article_product_info.get("_product_properties", {})
+        iva_rep = resolve_product_iva(product_props, residennum, "repercutido")
+        iva_sop = resolve_product_iva(product_props, residennum, "soportado")
+
+        hs_price_eur = round_price(article_product_info.get("hs_price_eur"))
+        if hs_price_eur is None:
+            logger.warning(
+                f"[cotizacion] producto sku={article_sku} sin hs_price_eur — "
+                f"precio_de_coste y hs_price_eur quedarán vacíos en line item"
+            )
+
+        article_line_item_properties = {
+            "hs_product_id": article_product_info["id"],
+            "hs_sku": article_sku,
+            "name": unique_article_name,
+            "price": str(hs_price_eur) if hs_price_eur is not None else "",
+            "quantity": str(num_cajas),
+            "cardcode": article_cardcode,
+            "tipo_articulo": "fabricante",
+            "hs_product_type": "Articulo",
+            "numero_container": container_name,
+            "tipo_iva_repercutido": iva_rep,
+            "tipo_iva_soportado": iva_sop,
+            "hs_currency": "EUR"
+        }
+
+        for src, dst in [("peso_neto", "peso_neto"), ("peso_bruto", "peso_bruto"),
+                         ("name_en", "name_en"), ("name_fr", "name_fr"),
+                         ("description", "description"), ("formato", "formato"),
+                         ("marca", "marca_certificado")]:
+            val = article_product_info.get(src)
+            if val is not None and str(val).strip() != "":
+                article_line_item_properties[dst] = str(val)
+
+        almacen_articulo = resolve_almacen_para_elemento(deal_almacen, "fabricante", tipo_contenedor)
+        if almacen_articulo:
+            article_line_item_properties["almacen"] = str(almacen_articulo)
+
+        article_inputs.append({
+            "properties": article_line_item_properties,
+            "associations": [{
+                "to": {"id": deal_id},
+                "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
+            }]
+        })
+
+    return container_inputs, article_inputs
+
+@router.post("/{deal_id}/containers", response_model=UpdateContainersResponse)
 async def update_deal_containers(
     data: UpdateContainersRequest,
     deal_id: str = Path(
@@ -4635,7 +5228,7 @@ async def update_deal_containers(
         example="46298478914"
     )
 ):
-    """Sustituye contenedores y artículos de fabricante del deal con los recibidos desde ContenedoresTab (clear-and-replace). El IVA repercutido se deriva de residennum (NACIONAL→R21, EUROPA→EI21, EXTRANJERO→EX)."""
+    """Merge incremental de contenedores: edita en sitio los previos (preservando precios negociados), archiva los eliminados y crea los nuevos con precio de catálogo. NO toca los line items ni Elementos de contenedores previos no afectados. El IVA repercutido se deriva de residennum (NACIONAL→R21, EUROPA→EI21, EXTRANJERO→EX)."""
     try:
         client = hubspot_client.get_client()
 
@@ -4646,12 +5239,14 @@ async def update_deal_containers(
         logger.warning(f"Processing {len(data.containers)} container configurations for deal {deal_id}")
 
         deal_almacen = None
+        tipo_contenedor = ""
         try:
             deal_basic = client.crm.deals.basic_api.get_by_id(
                 deal_id=deal_id,
-                properties=["almacen"]
+                properties=["almacen", "tipo_contenedor"]
             )
             deal_almacen = deal_basic.properties.get("almacen")
+            tipo_contenedor = deal_basic.properties.get("tipo_contenedor") or ""
             if deal_almacen:
                 logger.warning(f"[containers] Deal almacen: {deal_almacen}")
         except Exception as e:
@@ -4722,15 +5317,17 @@ async def update_deal_containers(
                 raise HTTPException(status_code=500, detail=f"Error finding container product: {str(e)}")
 
         residennum = None
+        tipo_cliente = ""
         try:
             company_ids = get_associated_companies(deal_id)
             if company_ids:
                 company_id = company_ids[0]
                 company = client.crm.companies.basic_api.get_by_id(
                     company_id,
-                    properties=['residennum']
+                    properties=['residennum', 'tipo_cliente']
                 )
                 residennum = company.properties.get('residennum', '')
+                tipo_cliente = company.properties.get('tipo_cliente') or ""
                 logger.warning(f"Company residence is {residennum or 'NACIONAL'}")
             else:
                 logger.warning("No company associated with deal, using default IVA")
@@ -4783,88 +5380,125 @@ async def update_deal_containers(
             "Content-Type": "application/json"
         }
 
-        containers_to_delete = []
-        articles_to_delete = []
-        intermediarios_to_delete = []
+        batch_size = 100
+        batch_read_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
+        batch_archive_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/archive"
 
+        all_line_items = []
         if existing_line_item_ids:
-            batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
-
-            # Split into batches of 100 (HubSpot limit)
-            batch_size = 100
-            all_line_items = []
-
             for i in range(0, len(existing_line_item_ids), batch_size):
                 batch_ids = existing_line_item_ids[i:i + batch_size]
-
                 batch_payload = {
-                    "properties": ["hs_product_type", "tipo_articulo"],
+                    "properties": ["hs_product_type", "tipo_articulo", "numero_container", "name", "hs_product_id"],
                     "inputs": [{"id": str(lid)} for lid in batch_ids]
                 }
-
                 try:
-                    batch_response = requests.post(batch_url, headers=headers, json=batch_payload, timeout=30)
+                    batch_response = requests.post(batch_read_url, headers=headers, json=batch_payload, timeout=30)
                     if batch_response.ok:
-                        batch_data = batch_response.json()
-                        all_line_items.extend(batch_data.get("results", []))
+                        all_line_items.extend(batch_response.json().get("results", []))
                     else:
                         logger.error(f"Batch read line items failed: {batch_response.status_code} - {batch_response.text}")
                 except Exception as e:
                     logger.error(f"Error in batch read line items: {e}")
 
-            logger.warning(f"Batch fetched {len(all_line_items)} line items for deletion check")
+        existing_containers_by_lid = {}
+        line_items_by_numero = {}
+        max_numero = 0
+        for li in all_line_items:
+            lid = li.get("id")
+            props = li.get("properties", {}) or {}
+            numero_container = (props.get("numero_container") or "").strip()
+            if numero_container:
+                line_items_by_numero.setdefault(numero_container, []).append({"id": lid, "properties": props})
+            if _is_container_product_type(props.get("hs_product_type") or ""):
+                name = (props.get("name") or numero_container or "").strip()
+                existing_containers_by_lid[str(lid)] = {
+                    "id": str(lid),
+                    "numero_container": numero_container or name,
+                    "name": name,
+                }
+                try:
+                    n = int(str(name or numero_container).split("-")[-1])
+                    max_numero = max(max_numero, n)
+                except (ValueError, IndexError):
+                    pass
 
-            # Identify which line items to delete
-            for line_item in all_line_items:
-                line_item_id = line_item.get("id")
-                props = line_item.get("properties", {})
-                product_type = props.get("hs_product_type", "")
-                tipo_articulo = (props.get("tipo_articulo") or "").strip().lower()
+        previos = []
+        nuevos = []
+        payload_lids = set()
+        for entry in data.containers:
+            lid = str(entry.line_item_id).strip() if entry.line_item_id else ""
+            if lid and lid in existing_containers_by_lid:
+                previos.append((lid, entry))
+                payload_lids.add(lid)
+            else:
+                nuevos.append(entry)
 
-                # Delete if it's a container OR if it's a fabricante article OR if it's a comisiones (intermediario)
-                if _is_container_product_type(product_type):
-                    containers_to_delete.append(line_item_id)
-                    logger.warning(f"Marked container line item {line_item_id} for deletion")
-                elif tipo_articulo == "fabricante":
-                    articles_to_delete.append(line_item_id)
-                    logger.warning(f"Marked fabricante article line item {line_item_id} for deletion")
-                elif tipo_articulo == "comisiones":
-                    intermediarios_to_delete.append(line_item_id)
-                    logger.warning(f"Marked intermediario line item {line_item_id} for deletion")
+        eliminados = [
+            info for lid, info in existing_containers_by_lid.items()
+            if lid not in payload_lids
+        ]
 
-            logger.warning(f"Identified {len(containers_to_delete)} containers, {len(articles_to_delete)} articles, and {len(intermediarios_to_delete)} intermediarios to delete")
+        logger.warning(
+            f"[containers] merge incremental deal={deal_id}: "
+            f"{len(previos)} previos, {len(nuevos)} nuevos, {len(eliminados)} eliminados (max_numero={max_numero})"
+        )
 
-            all_to_delete = containers_to_delete + articles_to_delete + intermediarios_to_delete
+        ctx = _fetch_deal_container_context(deal_id, client)
+        intermediario_ctx = _fetch_intermediario_context(deal_id, client, residennum)
 
-            if all_to_delete:
-                batch_delete_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/archive"
+        for info in eliminados:
+            numero = info["numero_container"]
+            to_archive = []
+            for li in line_items_by_numero.get(numero, []):
+                props = li.get("properties", {}) or {}
+                if _is_container_product_type(props.get("hs_product_type") or ""):
+                    to_archive.append(li["id"])
+                    continue
+                tipo_art = (props.get("tipo_articulo") or "").strip().lower()
+                if tipo_art in ("fabricante", "comisiones", "servicio", "transitario", "seguro"):
+                    to_archive.append(li["id"])
+            if to_archive:
+                payload = {"inputs": [{"id": str(x)} for x in to_archive]}
+                try:
+                    resp = requests.post(batch_archive_url, headers=headers, json=payload, timeout=30)
+                    if not resp.ok:
+                        logger.error(f"[containers] archive of removed container {numero} failed: {resp.status_code} - {resp.text}")
+                    else:
+                        logger.warning(f"[containers] archived removed container {numero} ({len(to_archive)} line items)")
+                except Exception as e:
+                    logger.error(f"[containers] error archiving removed container {numero}: {e}")
 
-                for i in range(0, len(all_to_delete), batch_size):
-                    batch_ids = all_to_delete[i:i + batch_size]
-
-                    batch_payload = {
-                        "inputs": [{"id": str(lid)} for lid in batch_ids]
-                    }
-
-                    try:
-                        batch_response = requests.post(batch_delete_url, headers=headers, json=batch_payload, timeout=30)
-                        if batch_response.ok:
-                            logger.warning(f"Batch deleted {len(batch_ids)} line items")
-                        else:
-                            logger.error(f"Batch delete failed: {batch_response.status_code} - {batch_response.text}")
-                    except Exception as e:
-                        logger.error(f"Error in batch delete: {e}")
-
-            logger.warning(f"Deleted {len(containers_to_delete)} container line items, {len(articles_to_delete)} article line items, and {len(intermediarios_to_delete)} intermediario line items")
+        # Solo el CRUD de line items es síncrono. El trabajo derivado (Elemento/
+        # Contenedor CO, recalcular precios, touch_pagos SAP) lo hace el worker de
+        # re-sync que se encola al final, reconstruyéndolo desde los line items.
+        # cont_map es igual para todos los previos → se resuelve una vez y se comparte.
+        previos_cont_map = _resolve_contenedor_co_by_numero(client, deal_id) if previos else {}
+        # Total de contenedores del negocio tras el merge (para repartir la comisión
+        # importe_por_negocio igual que el resto del endpoint).
+        num_contenedores_total = len(previos) + len(nuevos)
+        for lid, entry in previos:
+            _edit_container_in_place(
+                deal_id=deal_id,
+                container_line_item_id=lid,
+                new_config=entry.container_config,
+                client=client,
+                headers=headers,
+                ctx=ctx,
+                intermediario_ctx=intermediario_ctx,
+                cont_map=previos_cont_map,
+                num_contenedores_total=num_contenedores_total,
+                defer_custom_objects=True,
+            )
 
         unique_article_skus = set()
-        for container_input in data.containers:
+        for container_input in nuevos:
             for articulo in container_input.container_config.articulos:
                 article_sku = str(articulo.articuloId) if articulo.articuloId is not None else None
                 if article_sku and (articulo.numCajas or 0) > 0:
                     unique_article_skus.add(article_sku)
 
-        logger.warning(f"Identified {len(unique_article_skus)} unique article SKUs to search")
+        logger.warning(f"Identified {len(unique_article_skus)} unique article SKUs to search (nuevos)")
 
         # articuloId contiene el hs_object_id del producto (hs_sku está vacío en productos nuevos)
         article_sku_to_product = {}
@@ -4912,135 +5546,39 @@ async def update_deal_containers(
                     )
 
             except Exception as e:
+                # Sin este raise, un fallo transitorio creaba contenedores VACÍOS
+                # (los artículos se saltan al faltar en article_sku_to_product) y
+                # el endpoint respondía success — con pérdida de líneas de artículo.
                 logger.error(f"Error in batch read for articles: {e}")
+                raise HTTPException(status_code=502, detail=f"Error leyendo productos de artículos en HubSpot: {e}")
 
         container_line_items_to_create = []
         article_line_items_to_create = []
-        container_number = 1  # Sequential container numbering
+        nuevos_container_names = []
+        next_numero = max_numero
 
-        for container_input in data.containers:
+        for container_input in nuevos:
             try:
                 product_info = tipo_to_product_id[container_input.tipo]
+                next_numero += 1
+                container_name = f"{deal_id}-{next_numero:03d}"
+                nuevos_container_names.append(container_name)
 
-                # Convert container_config to dict for JSON serialization
-                container_config_dict = container_input.container_config.model_dump(by_alias=True)
-
-                # Create individual line items for each container (quantity=1 each)
-                for _ in range(container_input.cantidad):
-                    # Build container line item data
-                    container_name = f"{deal_id}-{container_number:03d}"
-
-                    container_properties = {
-                        "hs_product_id": product_info["id"],
-                        "hs_sku": product_info["sku"],
-                        "name": container_name,
-                        "price": product_info["price"],
-                        "quantity": "1",
-                        "hs_product_type": "container",
-                        "hs_currency": "EUR",
-                        "numero_container": container_name,
-                        "container_config": json.dumps(container_config_dict),
-                        "ocupacion": str(container_input.container_config.ocupacion),
-                    }
-
-                    # Add almacen if available
-                    if deal_almacen:
-                        container_properties["almacen"] = str(deal_almacen)
-
-                    container_line_item_data = {
-                        "properties": container_properties,
-                        "associations": [{
-                            "to": {"id": deal_id},
-                            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
-                        }]
-                    }
-
-                    container_line_items_to_create.append(container_line_item_data)
-                    logger.warning(f"Prepared container #{container_number}: {container_name} ({container_input.tipo})")
-
-                    # Build article line items for this container
-                    for articulo in container_input.container_config.articulos:
-                        article_sku = str(articulo.articuloId) if articulo.articuloId is not None else None
-
-                        if not article_sku:
-                            logger.warning(f"Skipping article with no SKU in container #{container_number}")
-                            continue
-
-                        num_cajas = articulo.numCajas or 0
-                        if num_cajas <= 0:
-                            logger.warning(f"Skipping article {article_sku} with 0 boxes in container #{container_number}")
-                            continue
-
-                        # Get product info from our batch search results
-                        article_product_info = article_sku_to_product.get(article_sku)
-
-                        if article_product_info:
-                            article_name = article_product_info["name"]
-                            unique_article_name = f"{container_name} - {article_name}"
-
-                            # Determine cardcode: First try fabricante from deal, fallback to product's cardcode
-                            article_cardcode = fabricante_cardcode or article_product_info.get("cardcode", "")
-                            cardcode_source = "fabricante del deal" if fabricante_cardcode else "proveedor habitual del producto"
-
-                            product_props = article_product_info.get("_product_properties", {})
-                            iva_rep = resolve_product_iva(product_props, residennum, "repercutido")
-                            iva_sop = resolve_product_iva(product_props, residennum, "soportado")
-
-                            hs_price_eur = round_price(article_product_info.get("hs_price_eur"))
-                            if hs_price_eur is None:
-                                logger.warning(
-                                    f"[cotizacion] producto sku={article_sku} sin hs_price_eur — "
-                                    f"precio_de_coste y hs_price_eur quedarán vacíos en line item"
-                                )
-
-                            article_line_item_properties = {
-                                "hs_product_id": article_product_info["id"],
-                                "hs_sku": article_sku,
-                                "name": unique_article_name,
-                                "price": str(hs_price_eur) if hs_price_eur is not None else "",
-                                "quantity": str(num_cajas),
-                                "cardcode": article_cardcode,
-                                "tipo_articulo": "fabricante",
-                                "hs_product_type": "Articulo",
-                                "numero_container": container_name,
-                                "tipo_iva_repercutido": iva_rep,
-                                "tipo_iva_soportado": iva_sop,
-                                "hs_currency": "EUR"
-                            }
-
-                            if article_product_info.get("peso_neto") is not None:
-                                article_line_item_properties["peso_neto"] = str(article_product_info["peso_neto"])
-                            if article_product_info.get("peso_bruto") is not None:
-                                article_line_item_properties["peso_bruto"] = str(article_product_info["peso_bruto"])
-                            if article_product_info.get("name_en") is not None:
-                                article_line_item_properties["name_en"] = str(article_product_info["name_en"])
-                            if article_product_info.get("name_fr") is not None:
-                                article_line_item_properties["name_fr"] = str(article_product_info["name_fr"])
-                            if article_product_info.get("description") is not None:
-                                article_line_item_properties["description"] = str(article_product_info["description"])
-                            if article_product_info.get("formato") is not None:
-                                article_line_item_properties["formato"] = str(article_product_info["formato"])
-                            if article_product_info.get("marca") is not None:
-                                article_line_item_properties["marca_certificado"] = str(article_product_info["marca"])
-
-                            # Add almacen if available
-                            if deal_almacen:
-                                article_line_item_properties["almacen"] = str(deal_almacen)
-
-                            article_line_item_data = {
-                                "properties": article_line_item_properties,
-                                "associations": [{
-                                    "to": {"id": deal_id},
-                                    "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
-                                }]
-                            }
-
-                            article_line_items_to_create.append(article_line_item_data)
-                            logger.warning(f"Prepared article line item for {article_name} (x{num_cajas}) in container #{container_number} with IVA rep={iva_rep}, sop={iva_sop}, cardcode: {article_cardcode} (from {cardcode_source})")
-                        else:
-                            logger.warning(f"Article product with SKU '{article_sku}' not found in batch search, skipping")
-
-                    container_number += 1
+                cont_inputs, art_inputs = _create_container_with_articles(
+                    deal_id=deal_id,
+                    container_name=container_name,
+                    container_input=container_input,
+                    product_info=product_info,
+                    article_sku_to_product=article_sku_to_product,
+                    fabricante_cardcode=fabricante_cardcode,
+                    residennum=residennum,
+                    deal_almacen=deal_almacen,
+                    tipo_contenedor=tipo_contenedor,
+                    headers=headers,
+                )
+                container_line_items_to_create.extend(cont_inputs)
+                article_line_items_to_create.extend(art_inputs)
+                logger.warning(f"Prepared NUEVO container {container_name} ({container_input.tipo}) with {len(art_inputs)} articles")
 
             except Exception as e:
                 logger.error(f"Error preparing line items for tipo {container_input.tipo}: {e}")
@@ -5050,9 +5588,9 @@ async def update_deal_containers(
                 )
 
         intermediario_line_items_to_create = []
+        intermediario_updates = []
 
         try:
-            # Fetch deal properties for intermediario (including user-selected IVA)
             deal = client.crm.deals.basic_api.get_by_id(
                 deal_id,
                 properties=["repercutir_a_cliente", "tipo_comision", "importe_comision", "codigo_intermediario", "tipo_iva_comision", "tipo_iva_comision_soportado"]
@@ -5065,169 +5603,136 @@ async def update_deal_containers(
 
             logger.info(f"[intermediario] repercutir_a_cliente: {repercutir_a_cliente}, tipo_comision: {tipo_comision}, importe: {importe_comision}, codigo_intermediario: {codigo_intermediario}")
 
-            # Only create intermediario line items if repercutir_a_cliente is "si" and importe > 0
             if repercutir_a_cliente == "si" and importe_comision > 0:
-                logger.info(f"[intermediario] Creating intermediario line items")
+                intermediario_product = _find_intermediario_product(client)
 
-                try:
-                    intermediario_product = _find_intermediario_product(client)
+                if intermediario_product:
+                    intermediario_product_id = intermediario_product["id"]
+                    intermediario_name = intermediario_product["name"]
 
-                    if intermediario_product:
-                        intermediario_product_id = intermediario_product["id"]
-                        intermediario_sku = intermediario_product["sku"]
-                        intermediario_name = intermediario_product["name"]
+                    deal_iva_comision = (deal.properties.get("tipo_iva_comision") or "").strip() or None
+                    deal_iva_comision_sop = (deal.properties.get("tipo_iva_comision_soportado") or "").strip() or None
+                    intermediario_iva_rep = resolve_product_iva(intermediario_product["properties"], residennum, "repercutido", deal_iva_comision)
+                    intermediario_iva_sop = resolve_product_iva(intermediario_product["properties"], residennum, "soportado", deal_iva_comision_sop)
 
-                        deal_iva_comision = (deal.properties.get("tipo_iva_comision") or "").strip() or None
-                        deal_iva_comision_sop = (deal.properties.get("tipo_iva_comision_soportado") or "").strip() or None
-                        intermediario_iva_rep = resolve_product_iva(intermediario_product["properties"], residennum, "repercutido", deal_iva_comision)
-                        intermediario_iva_sop = resolve_product_iva(intermediario_product["properties"], residennum, "soportado", deal_iva_comision_sop)
-                        logger.info(f"[intermediario] Found product: ID={intermediario_product_id}, name={intermediario_name}, IVA rep={intermediario_iva_rep}, IVA sop={intermediario_iva_sop}")
+                    # Conjunto final de contenedores tras el merge: previos (su numero_container)
+                    # + nuevos (numero_container monótono recién asignado).
+                    previo_names = [existing_containers_by_lid[lid]["numero_container"] for lid, _ in previos]
+                    final_container_names = previo_names + nuevos_container_names
+                    num_final = max(len(final_container_names), 1)
 
-                        num_contenedores = len(container_line_items_to_create)
+                    cajas_por_container = {}
+                    for lid, entry in previos:
+                        cajas_por_container[existing_containers_by_lid[lid]["numero_container"]] = sum(
+                            a.numCajas or 0 for a in entry.container_config.articulos
+                        )
+                    for entry, cname in zip(nuevos, nuevos_container_names):
+                        cajas_por_container[cname] = sum(a.numCajas or 0 for a in entry.container_config.articulos)
 
-                        # Calculate commission per container based on tipo_comision
+                    def _price_for(cname: str) -> Optional[float]:
                         if tipo_comision == "importe_por_negocio":
-                            comision_por_contenedor = round_price(importe_comision / num_contenedores)
-                            logger.info(f"[intermediario] Importe por negocio: {importe_comision} / {num_contenedores} = {comision_por_contenedor}€/container")
+                            return round_price(importe_comision / num_final)
+                        if tipo_comision == "importe_por_contenedor":
+                            return round_price(importe_comision)
+                        if tipo_comision == "importe_por_cajas":
+                            return round_price(importe_comision * cajas_por_container.get(cname, 0))
+                        logger.warning(f"[intermediario] Unknown tipo_comision: {tipo_comision}")
+                        return None
 
-                            container_idx = 0
-                            for container_input in data.containers:
-                                for _ in range(container_input.cantidad):
-                                    container_name = f"{deal_id}-{container_idx + 1:03d}"
+                    almacen_intermediario = resolve_almacen_para_elemento(deal_almacen, "comisiones", tipo_contenedor)
 
-                                    intermediario_properties = {
-                                        "hs_product_id": intermediario_product_id,
-                                        "hs_sku": intermediario_product_id,
-                                        "name": f"{container_name} - {intermediario_name}",
-                                        "price": str(comision_por_contenedor),
-                                        "quantity": "1",
-                                        "cardcode": codigo_intermediario or "",
-                                        "numero_container": container_name,
-                                        "tipo_iva_repercutido": intermediario_iva_rep,
-                                        "tipo_iva_soportado": intermediario_iva_sop,
-                                        "tipo_articulo": "comisiones",
-                                        "hs_product_type": "Servicio"
-                                    }
+                    # NUEVOS: crear su línea de comisión.
+                    for cname in nuevos_container_names:
+                        price = _price_for(cname)
+                        if price is None:
+                            continue
+                        intermediario_properties = {
+                            "hs_product_id": intermediario_product_id,
+                            "hs_sku": intermediario_product_id,
+                            "name": f"{cname} - {intermediario_name}",
+                            "price": str(price),
+                            "quantity": "1",
+                            "cardcode": codigo_intermediario or "",
+                            "numero_container": cname,
+                            "tipo_iva_repercutido": intermediario_iva_rep,
+                            "tipo_iva_soportado": intermediario_iva_sop,
+                            "tipo_articulo": "comisiones",
+                            "hs_product_type": "Servicio"
+                        }
+                        if almacen_intermediario:
+                            intermediario_properties["almacen"] = str(almacen_intermediario)
+                        intermediario_line_items_to_create.append({
+                            "properties": intermediario_properties,
+                            "associations": [{
+                                "to": {"id": deal_id},
+                                "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
+                            }]
+                        })
 
-                                    # Add almacen if available
-                                    if deal_almacen:
-                                        intermediario_properties["almacen"] = str(deal_almacen)
+                    # PREVIOS: en modos dependientes del nº de contenedores el precio por
+                    # contenedor cambia al añadir/eliminar. _edit_container_in_place solo
+                    # recalcula importe_por_cajas, así que aquí actualizamos el resto.
+                    if tipo_comision in ("importe_por_negocio", "importe_por_contenedor"):
+                        for lid, _entry in previos:
+                            cname = existing_containers_by_lid[lid]["numero_container"]
+                            new_price = _price_for(cname)
+                            if new_price is None:
+                                continue
+                            com_li = next(
+                                (li for li in line_items_by_numero.get(cname, [])
+                                 if (li.get("properties", {}).get("tipo_articulo") or "").strip().lower() == "comisiones"),
+                                None
+                            )
+                            if com_li:
+                                intermediario_updates.append({"id": com_li["id"], "properties": {"price": str(new_price)}})
 
-                                    intermediario_line_item_data = {
-                                        "properties": intermediario_properties,
-                                        "associations": [{
-                                            "to": {"id": deal_id},
-                                            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
-                                        }]
-                                    }
-
-                                    intermediario_line_items_to_create.append(intermediario_line_item_data)
-                                    container_idx += 1
-
-                        elif tipo_comision == "importe_por_contenedor":
-                            comision_por_contenedor = round_price(importe_comision)
-                            logger.info(f"[intermediario] Importe por contenedor: {comision_por_contenedor}€/container")
-
-                            container_idx = 0
-                            for container_input in data.containers:
-                                for _ in range(container_input.cantidad):
-                                    container_name = f"{deal_id}-{container_idx + 1:03d}"
-
-                                    intermediario_properties = {
-                                        "hs_product_id": intermediario_product_id,
-                                        "hs_sku": intermediario_product_id,
-                                        "name": f"{container_name} - {intermediario_name}",
-                                        "price": str(comision_por_contenedor),
-                                        "quantity": "1",
-                                        "cardcode": codigo_intermediario or "",
-                                        "numero_container": container_name,
-                                        "tipo_iva_repercutido": intermediario_iva_rep,
-                                        "tipo_iva_soportado": intermediario_iva_sop,
-                                        "tipo_articulo": "comisiones",
-                                        "hs_product_type": "Servicio"
-                                    }
-
-                                    # Add almacen if available
-                                    if deal_almacen:
-                                        intermediario_properties["almacen"] = str(deal_almacen)
-
-                                    intermediario_line_item_data = {
-                                        "properties": intermediario_properties,
-                                        "associations": [{
-                                            "to": {"id": deal_id},
-                                            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
-                                        }]
-                                    }
-
-                                    intermediario_line_items_to_create.append(intermediario_line_item_data)
-                                    container_idx += 1
-
-                        elif tipo_comision == "importe_por_cajas":
-                            # Calculate based on total boxes per container (from container_config)
-                            logger.info(f"[intermediario] Importe por cajas: {importe_comision}€/caja")
-
-                            container_idx = 0
-                            for container_input in data.containers:
-                                for _ in range(container_input.cantidad):
-                                    # Calculate total boxes in this container
-                                    total_cajas = sum(
-                                        articulo.numCajas or 0
-                                        for articulo in container_input.container_config.articulos
-                                    )
-
-                                    comision_por_contenedor = round_price(importe_comision * total_cajas)
-                                    container_name = f"{deal_id}-{container_idx + 1:03d}"
-
-                                    intermediario_properties = {
-                                        "hs_product_id": intermediario_product_id,
-                                        "hs_sku": intermediario_product_id,
-                                        "name": f"{container_name} - {intermediario_name}",
-                                        "price": str(comision_por_contenedor),
-                                        "quantity": "1",
-                                        "cardcode": codigo_intermediario or "",
-                                        "numero_container": container_name,
-                                        "tipo_iva_repercutido": intermediario_iva_rep,
-                                        "tipo_iva_soportado": intermediario_iva_sop,
-                                        "tipo_articulo": "comisiones",
-                                        "hs_product_type": "Servicio"
-                                    }
-
-                                    # Add almacen if available
-                                    if deal_almacen:
-                                        intermediario_properties["almacen"] = str(deal_almacen)
-
-                                    intermediario_line_item_data = {
-                                        "properties": intermediario_properties,
-                                        "associations": [{
-                                            "to": {"id": deal_id},
-                                            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
-                                        }]
-                                    }
-
-                                    intermediario_line_items_to_create.append(intermediario_line_item_data)
-                                    logger.info(f"[intermediario] Container {container_name}: {total_cajas} cajas × {importe_comision}€ = {comision_por_contenedor}€")
-
-                                    container_idx += 1
-
-                        else:
-                            logger.warning(f"[intermediario] Unknown tipo_comision: {tipo_comision}")
-
-                        logger.info(f"[intermediario] Prepared {len(intermediario_line_items_to_create)} intermediario line items")
-
-                    else:
-                        logger.warning("[intermediario] No product found with tipo_articulo='comisiones'. Please create one in HubSpot.")
-
-                except Exception as e:
-                    logger.error(f"[intermediario] Error searching for intermediario product: {e}")
-
+                    logger.info(
+                        f"[intermediario] {len(intermediario_line_items_to_create)} nuevas comisiones, "
+                        f"{len(intermediario_updates)} comisiones de previos actualizadas (num_final={num_final})"
+                    )
+                else:
+                    logger.warning("[intermediario] No product found with tipo_articulo='comisiones'. Please create one in HubSpot.")
             else:
                 logger.info(f"[intermediario] Skipping - repercutir_a_cliente={repercutir_a_cliente}, importe={importe_comision}")
 
         except Exception as e:
-            logger.error(f"[intermediario] Error creating intermediario line items: {e}")
+            logger.error(f"[intermediario] Error preparing intermediario line items: {e}")
 
-        all_line_items_to_create = container_line_items_to_create + article_line_items_to_create + intermediario_line_items_to_create
-        logger.warning(f"Prepared {len(container_line_items_to_create)} container line items, {len(article_line_items_to_create)} article line items, and {len(intermediario_line_items_to_create)} intermediario line items")
+        if intermediario_updates:
+            upd_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/update"
+            for i in range(0, len(intermediario_updates), batch_size):
+                chunk = intermediario_updates[i:i + batch_size]
+                for x in chunk:
+                    enforce_line_item_price_rounding(x.get("properties", {}))
+                try:
+                    resp = requests.post(upd_url, headers=headers, json={"inputs": chunk}, timeout=60)
+                    if not resp.ok:
+                        logger.error(f"[intermediario] batch update of previos commissions failed: {resp.status_code} - {resp.text}")
+                except Exception as e:
+                    logger.error(f"[intermediario] error updating previos commissions: {e}")
+
+        cloned_line_items_to_create = _clone_template_lines_for_new_containers(
+            nuevos_container_names=nuevos_container_names,
+            previos=previos,
+            existing_containers_by_lid=existing_containers_by_lid,
+            line_items_by_numero=line_items_by_numero,
+            deal_id=deal_id,
+            headers=headers,
+            batch_size=batch_size,
+        )
+
+        all_line_items_to_create = (
+            container_line_items_to_create
+            + article_line_items_to_create
+            + intermediario_line_items_to_create
+            + cloned_line_items_to_create
+        )
+        logger.warning(
+            f"Prepared {len(container_line_items_to_create)} container line items, "
+            f"{len(article_line_items_to_create)} article line items, "
+            f"{len(intermediario_line_items_to_create)} intermediario line items, and "
+            f"{len(cloned_line_items_to_create)} cloned service/flete/seguro line items"
+        )
 
         container_line_items_created = []
         article_line_items_created = []
@@ -5273,9 +5778,64 @@ async def update_deal_containers(
 
         logger.warning(f"Created {len(container_line_items_created)} container line items and {len(article_line_items_created)} article line items")
 
-        return BaseResponse(
+        # Con contenedores en el deal, las líneas de catálogo (fabricante sin
+        # numero_container, creadas por update_deal_articles) quedan obsoletas:
+        # si no se archivan aparecen como línea extra en la cotización. Solo tras
+        # completar el merge con éxito y si el conjunto final no queda vacío.
+        if previos or nuevos_container_names:
+            # numero_container Y name: en contenedores legacy numero_container es el
+            # entero ("1") pero las líneas per-contenedor llevan el prefijo del name.
+            known_container_names = {
+                v
+                for info in existing_containers_by_lid.values()
+                for v in (info["numero_container"], info["name"])
+                if v
+            }
+            known_container_names.update(nuevos_container_names)
+
+            # Solo se archivan huérfanos cuyo producto quedó colocado en el conjunto
+            # final: la línea de catálogo de un artículo sin colocar es su única
+            # persistencia (GET /articles reconstruye la selección desde ella).
+            placed_product_ids = set()
+            for _lid, entry in previos:
+                for articulo in entry.container_config.articulos:
+                    if (articulo.numCajas or 0) > 0 and str(articulo.articuloId or "").strip():
+                        placed_product_ids.add(str(articulo.articuloId))
+            for li in article_line_items_to_create:
+                pid = (li.get("properties") or {}).get("hs_product_id")
+                if pid:
+                    placed_product_ids.add(str(pid))
+
+            hsid_by_lid = {
+                str(li.get("id")): str((li.get("properties") or {}).get("hs_product_id") or "")
+                for li in all_line_items
+            }
+            catalogo_huerfanos = [
+                lid for lid in _catalogo_huerfano_ids(all_line_items, known_container_names)
+                if hsid_by_lid.get(lid) in placed_product_ids
+            ]
+            for i in range(0, len(catalogo_huerfanos), batch_size):
+                chunk = catalogo_huerfanos[i:i + batch_size]
+                payload = {"inputs": [{"id": x} for x in chunk]}
+                try:
+                    resp = requests.post(batch_archive_url, headers=headers, json=payload, timeout=30)
+                    if not resp.ok:
+                        logger.error(f"[containers] archive de líneas de catálogo falló: {resp.status_code} - {resp.text}")
+                    else:
+                        logger.warning(f"[containers] archivadas {len(chunk)} líneas de catálogo sin contenedor")
+                except Exception as e:
+                    logger.error(f"[containers] error archivando líneas de catálogo: {e}")
+
+        # Merge incremental: previos editados en sitio (ids estables), nuevos creados,
+        # eliminados archivados. Si el deal ya estaba publicado, re-sincronizamos los
+        # custom objects en background; el worker es incremental y no toca los Elemento
+        # de previos no afectados mientras nombre/line_item_id se mantengan estables.
+        resync_job_id = _enqueue_custom_objects_resync_if_published(client, deal_id)
+
+        return UpdateContainersResponse(
             success=True,
-            error=None
+            error=None,
+            job_id=resync_job_id,
         )
 
     except HTTPException:
@@ -5524,7 +6084,11 @@ async def get_deal_transit(
             "cotizacion_rapida",
             "almacen",
             "tipo_iva_fletes",
-            "tipo_iva_fletes_soportado"
+            "tipo_iva_fletes_soportado",
+            "transitario_terrestre",
+            "tipo_iva_fletes_terrestre",
+            "tipo_iva_fletes_terrestre_soportado",
+            "tipo_contenedor"
         ]
 
         deal = client.crm.deals.basic_api.get_by_id(
@@ -5570,8 +6134,40 @@ async def get_deal_transit(
             except Exception as e:
                 logger.warning(f"Error searching for transitario {transitario_cardcode}: {e}")
 
+        # Transitario del tramo terrestre (doble flete): mismo lookup por cardcode
+        transitario_terrestre_cardcode = props.get("transitario_terrestre") or None
+        transitario_terrestre_name = None
+
+        if transitario_terrestre_cardcode:
+            try:
+                access_token = client.access_token
+                headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+
+                terrestre_search_url = "https://api.hubapi.com/crm/v3/objects/2-43108800/search"
+                terrestre_search_payload = {
+                    "filterGroups": [{
+                        "filters": [
+                            {"propertyName": "cardcode", "operator": "EQ", "value": transitario_terrestre_cardcode},
+                            {"propertyName": "tipo_proveedor", "operator": "EQ", "value": "transitario"}
+                        ]
+                    }],
+                    "properties": ["name", "cardcode"],
+                    "limit": 1
+                }
+
+                terrestre_response = requests.post(terrestre_search_url, headers=headers, json=terrestre_search_payload, timeout=10)
+                if terrestre_response.ok:
+                    terrestre_data = terrestre_response.json()
+                    if terrestre_data.get("results"):
+                        transitario_terrestre_name = terrestre_data["results"][0]["properties"].get("name", "")
+            except Exception as e:
+                logger.warning(f"Error searching for transitario terrestre {transitario_terrestre_cardcode}: {e}")
+
+        flete_doble_disponible = es_camion(props.get("tipo_contenedor"))
+
         # Resolve IVA defaults from fletes product (Fase 4E)
         iva_fletes_defaults = None
+        iva_fletes_terrestre_defaults = None
         try:
             # Get company residennum
             residennum = None
@@ -5601,6 +6197,11 @@ async def get_deal_transit(
                     "soportado": resolve_product_iva(fletes_props, residennum, "soportado")
                 }
                 logger.info(f"[transit] iva_fletes_defaults resolved: {iva_fletes_defaults}")
+
+            # Tramo terrestre (doble flete): mismo producto que el marítimo, así
+            # que reutiliza sus defaults de IVA.
+            if flete_doble_disponible:
+                iva_fletes_terrestre_defaults = iva_fletes_defaults
         except Exception as e:
             logger.warning(f"[transit] Error resolving iva_fletes_defaults: {e}")
 
@@ -5621,7 +6222,13 @@ async def get_deal_transit(
             almacen=props.get("almacen") or None,
             tipo_iva_fletes=props.get("tipo_iva_fletes") or None,
             tipo_iva_fletes_soportado=props.get("tipo_iva_fletes_soportado") or None,
-            iva_fletes_defaults=iva_fletes_defaults
+            iva_fletes_defaults=iva_fletes_defaults,
+            transitario_terrestre=transitario_terrestre_cardcode,
+            transitario_terrestre_name=transitario_terrestre_name,
+            tipo_iva_fletes_terrestre=props.get("tipo_iva_fletes_terrestre") or None,
+            tipo_iva_fletes_terrestre_soportado=props.get("tipo_iva_fletes_terrestre_soportado") or None,
+            iva_fletes_terrestre_defaults=iva_fletes_terrestre_defaults,
+            flete_doble_disponible=flete_doble_disponible
         )
 
         # Add transitario details to response
@@ -5952,6 +6559,110 @@ def _crear_ruta(
         logger.error(f"[rutas] Error creando ruta {tipo_ruta}: {e}")
         return None
 
+def _indexar_fletes_existentes(line_items: list) -> dict:
+    """Indexa todas las líneas de flete del deal por (numero_container, tramo).
+
+    Entran legacy y líneas de tramo en ambos modos: las que queden fuera de los
+    targets del plan se archivan al normalizar (la legacy al pasar a modo doble,
+    las de tramo al volver a modo simple)."""
+    index = {}
+    for item in line_items:
+        props = item.get("properties", {}) or {}
+        tramo = clasificar_tramo_flete(props.get("name"))
+        if not tramo:
+            continue
+        # Los sufijos de tramo coinciden con nombres reales de producto del
+        # catálogo: una línea de SERVICIO homónima no debe entrar al índice
+        # (acabaría archivada). Las legacy '- FLETES' se indexan solo por
+        # nombre, como siempre.
+        if tramo != TRAMO_LEGACY and (props.get("tipo_articulo") or "").strip().lower() != "transitario":
+            continue
+        key = (props.get("numero_container") or "").strip()
+        index[(key, tramo)] = {"id": item.get("id"), "properties": props}
+    return index
+
+def _plan_fletes_upsert(
+    fletes_existentes: dict,
+    target_keys,
+    tramo_specs: list,
+    container_by_key: dict,
+    flete_almacen,
+    deal_id: str,
+) -> tuple:
+    """Plan de upsert de las líneas de flete por (numero_container, tramo).
+
+    Cada spec de tramo aporta sufijo de nombre, precio, cardcode del transitario,
+    IVAs y producto. Devuelve (to_update, to_create, to_delete_ids,
+    persisted_by_key); las líneas indexadas fuera de los targets (contenedor
+    eliminado o legacy al pasar a modo doble) se archivan."""
+    to_update = []
+    to_create = []
+    to_delete_ids = []
+    persisted_by_key = {}
+    target_flete_keys = set()
+
+    for spec in tramo_specs:
+        for key in target_keys:
+            fkey = (key, spec["tramo"])
+            target_flete_keys.add(fkey)
+            existing = fletes_existentes.get(fkey)
+            if existing:
+                cur = existing["properties"]
+                update_props = {}
+                if _safe_float(cur.get("price")) != spec["precio"]:
+                    update_props["price"] = str(spec["precio"])
+                if (cur.get("cardcode") or "") != spec["cardcode"]:
+                    update_props["cardcode"] = spec["cardcode"]
+                if spec["tipo_iva_repercutido"] and cur.get("tipo_iva_repercutido") != spec["tipo_iva_repercutido"]:
+                    update_props["tipo_iva_repercutido"] = spec["tipo_iva_repercutido"]
+                if spec["tipo_iva_soportado"] and cur.get("tipo_iva_soportado") != spec["tipo_iva_soportado"]:
+                    update_props["tipo_iva_soportado"] = spec["tipo_iva_soportado"]
+                if flete_almacen and (cur.get("almacen") or "") != str(flete_almacen):
+                    update_props["almacen"] = str(flete_almacen)
+                if update_props:
+                    to_update.append({"id": existing["id"], "properties": update_props})
+                persisted_by_key[fkey] = existing["id"]
+            else:
+                if not spec["product_id"]:
+                    logger.warning(
+                        f"[transit] cannot create flete {spec['tramo']} for key={key!r}: product_id missing"
+                    )
+                    continue
+                container_name = container_by_key.get(key, {}).get("name") or ""
+                nombre_flete = f"{container_name} - {spec['sufijo']}" if container_name else spec["sufijo"]
+                new_props = {
+                    "hs_product_id": spec["product_id"],
+                    "hs_sku": spec["product_id"],
+                    "name": nombre_flete,
+                    "price": str(spec["precio"]),
+                    "quantity": "1",
+                    "cardcode": spec["cardcode"],
+                    "numero_container": key,
+                    "tipo_articulo": "transitario",
+                    "hs_product_type": "Flete",
+                    "hs_currency": "EUR",
+                }
+                if spec["tipo_iva_repercutido"]:
+                    new_props["tipo_iva_repercutido"] = spec["tipo_iva_repercutido"]
+                if spec["tipo_iva_soportado"]:
+                    new_props["tipo_iva_soportado"] = spec["tipo_iva_soportado"]
+                if flete_almacen:
+                    new_props["almacen"] = str(flete_almacen)
+                to_create.append({
+                    "properties": new_props,
+                    "associations": [{
+                        "to": {"id": deal_id},
+                        "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}],
+                    }],
+                    "_target_key": fkey,
+                })
+
+    for fkey, existing in fletes_existentes.items():
+        if fkey not in target_flete_keys:
+            to_delete_ids.append(existing["id"])
+
+    return to_update, to_create, to_delete_ids, persisted_by_key
+
 @router.post("/{deal_id}/transit", response_model=BaseResponse)
 async def update_deal_transit(
     deal_id: str = Path(
@@ -5963,7 +6674,7 @@ async def update_deal_transit(
 ):
     """Actualiza los datos de tránsito del deal (puertos, naviera, transitario, precios y caducidades de rutas).
 
-    Si los precios están informados, además recrea los line items FLETES (uno por contenedor) con `precio = (precioOrigen + precioDestino) / num_containers` y el `tipo_iva_repercutido` derivado de la residencia de la empresa.
+    Si los precios están informados, hace upsert incremental de los line items FLETES (uno por contenedor) con `precio = precioOrigen + precioDestino` (ABSOLUTO por contenedor, no se divide por nº de contenedores: cada contenedor lleva su flete; el reparto por caja es intra-contenedor) y el `tipo_iva_repercutido` derivado de la residencia de la empresa. No toca los fletes de contenedores que no cambian.
     """
     try:
         client = hubspot_client.get_client()
@@ -5979,7 +6690,10 @@ async def update_deal_transit(
         deal_almacen = deal.properties.get("almacen")
         deal_transitario_actual = deal.properties.get("transitario") or ""
 
-        logger.info(f"[rutas] Deal tipo_contenedor: {tipo_contenedor}, lugar_carga: {lugar_carga}")
+        # Modo doble flete (camión + tramo marítimo): el card manda transitario_terrestre no vacío
+        modo_doble = bool((transit_data.transitario_terrestre or "").strip())
+
+        logger.info(f"[rutas] Deal tipo_contenedor: {tipo_contenedor}, lugar_carga: {lugar_carga}, modo_doble: {modo_doble}")
 
         # Ensure deal has EUR as currency so all line items inherit it
         try:
@@ -6059,6 +6773,25 @@ async def update_deal_transit(
         else:
             logger.warning(f"No properties to update for deal {deal_id}")
 
+        # Props del tramo terrestre: solo si el card las envía (los cards viejos no
+        # las mandan y pueden no existir aún en el portal); "" limpia. Update aparte
+        # para no tumbar el resto de props si aún no están creadas.
+        props_terrestre = {}
+        if transit_data.transitario_terrestre is not None:
+            props_terrestre["transitario_terrestre"] = transit_data.transitario_terrestre
+        if transit_data.tipo_iva_fletes_terrestre is not None:
+            props_terrestre["tipo_iva_fletes_terrestre"] = transit_data.tipo_iva_fletes_terrestre
+        if transit_data.tipo_iva_fletes_terrestre_soportado is not None:
+            props_terrestre["tipo_iva_fletes_terrestre_soportado"] = transit_data.tipo_iva_fletes_terrestre_soportado
+        if props_terrestre:
+            try:
+                client.crm.deals.basic_api.update(
+                    deal_id=deal_id,
+                    simple_public_object_input={"properties": props_terrestre}
+                )
+            except Exception as e:
+                logger.warning(f"[transit] no pude escribir props del flete terrestre (¿existen en el portal?): {e}")
+
         # Manage transitario provider association
         if transit_data.transitario is not None:
             transitario_cardcode = transit_data.transitario.strip()
@@ -6067,6 +6800,10 @@ async def update_deal_transit(
                 CUSTOM_OBJECT_PROVEEDORES = "2-43108800"
                 access_token = client.access_token
                 headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+                # Proveedor del tramo marítimo/principal: si el terrestre es el
+                # mismo, el PUT v4 reemplaza etiquetas, así que hay que enviar las
+                # dos juntas para no borrar la marítima (288).
+                maritimo_provider_id = None
 
                 if transitario_cardcode:
                     # Search for provider with tipo_proveedor="transitario" and matching cardcode
@@ -6092,6 +6829,7 @@ async def update_deal_transit(
                             provider = search_data["results"][0]
                             provider_id = provider["id"]
                             provider_name = provider["properties"].get("name", "")
+                            maritimo_provider_id = provider_id
 
                             logger.info(f"[transit] Found transitario provider: id={provider_id}, name={provider_name}")
 
@@ -6160,6 +6898,44 @@ async def update_deal_transit(
                         except Exception as e:
                             logger.error(f"[transit] Error removing transitario providers: {e}")
 
+                # Segundo transitario (modo doble): asociación con etiqueta propia.
+                # El borrado de arriba ya limpió todas las de tipo transitario.
+                if modo_doble:
+                    if PROVEEDOR_ASSOC_TYPE_ID_TRANSITARIO_TERRESTRE is None:
+                        logger.warning(
+                            "[transit] etiqueta 'Transitario terrestre' sin associationTypeId configurado; "
+                            "no se asocia el proveedor del tramo terrestre"
+                        )
+                    else:
+                        terrestre_cardcode = transit_data.transitario_terrestre.strip()
+                        terrestre_search_url = f"https://api.hubapi.com/crm/v3/objects/{CUSTOM_OBJECT_PROVEEDORES}/search"
+                        terrestre_search_payload = {
+                            "filterGroups": [{
+                                "filters": [
+                                    {"propertyName": "cardcode", "operator": "EQ", "value": terrestre_cardcode},
+                                    {"propertyName": "tipo_proveedor", "operator": "EQ", "value": "transitario"}
+                                ]
+                            }],
+                            "properties": ["name", "cardcode", "tipo_proveedor"],
+                            "limit": 1
+                        }
+                        terrestre_response = requests.post(terrestre_search_url, headers=headers, json=terrestre_search_payload, timeout=10)
+                        if terrestre_response.ok and terrestre_response.json().get("results"):
+                            terrestre_provider_id = terrestre_response.json()["results"][0]["id"]
+                            assoc_url = f"https://api.hubapi.com/crm/v4/objects/{CUSTOM_OBJECT_PROVEEDORES}/{terrestre_provider_id}/associations/deals/{deal_id}"
+                            assoc_payload = [{"associationCategory": "USER_DEFINED", "associationTypeId": PROVEEDOR_ASSOC_TYPE_ID_TRANSITARIO_TERRESTRE}]
+                            # Mismo proveedor en ambos tramos: el PUT reemplaza, así
+                            # que reincluimos la etiqueta marítima (288) para conservarla.
+                            if terrestre_provider_id == maritimo_provider_id:
+                                assoc_payload.append({"associationCategory": "USER_DEFINED", "associationTypeId": 288})
+                            assoc_response = requests.put(assoc_url, headers=headers, json=assoc_payload, timeout=10)
+                            if assoc_response.ok:
+                                logger.info(f"[transit] Associated transitario terrestre {terrestre_provider_id} with deal {deal_id}")
+                            else:
+                                logger.error(f"[transit] Failed to associate transitario terrestre: {assoc_response.status_code} - {assoc_response.text}")
+                        else:
+                            logger.warning(f"[transit] No transitario terrestre provider found with cardcode={terrestre_cardcode}")
+
             except Exception as e:
                 logger.error(f"[transit] Error managing transitario provider association: {e}")
 
@@ -6182,7 +6958,7 @@ async def update_deal_transit(
             batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
             batch_size = 100
 
-            fletes_existentes_by_numero = {}
+            line_items_leidos = []
             container_line_items = []
 
             if existing_line_item_ids:
@@ -6201,14 +6977,8 @@ async def update_deal_transit(
                         if batch_response.ok:
                             for item in batch_response.json().get("results", []):
                                 props = item.get("properties", {}) or {}
-                                line_item_name = (props.get("name") or "").strip()
                                 product_type = (props.get("hs_product_type") or "").strip().lower()
-                                if line_item_name.endswith("- FLETES") or line_item_name == "FLETES":
-                                    key = (props.get("numero_container") or "").strip()
-                                    fletes_existentes_by_numero[key] = {
-                                        "id": item.get("id"),
-                                        "properties": props,
-                                    }
+                                line_items_leidos.append({"id": item.get("id"), "properties": props})
                                 if _is_container_product_type(product_type):
                                     container_line_items.append({
                                         "id": item.get("id"),
@@ -6220,8 +6990,11 @@ async def update_deal_transit(
                     except Exception as e:
                         logger.error(f"[transit] error in batch read line items: {e}")
 
+            fletes_existentes_by_tramo = _indexar_fletes_existentes(line_items_leidos)
+
             residennum = None
             equ = ""
+            tipo_cliente = ""
             try:
                 company_ids = get_associated_companies(deal_id)
                 if company_ids:
@@ -6229,14 +7002,18 @@ async def update_deal_transit(
                     company_url = f"https://api.hubapi.com/crm/v3/objects/companies/{company_id}"
                     company_response = requests.get(
                         company_url, headers=headers,
-                        params={"properties": "residennum,equ"}, timeout=10,
+                        params={"properties": "residennum,equ,tipo_cliente"}, timeout=10,
                     )
                     if company_response.ok:
                         company_props_iva = company_response.json().get("properties", {}) or {}
                         residennum = company_props_iva.get("residennum") or ""
                         equ = company_props_iva.get("equ") or ""
+                        tipo_cliente = company_props_iva.get("tipo_cliente") or ""
             except Exception as e:
                 logger.error(f"[transit] error fetching company residence: {e}")
+
+            # FLETES no son producto → se reubican fuera de San Roque (10/12)
+            flete_almacen = resolve_almacen_para_elemento(effective_almacen, "flete", tipo_contenedor)
 
             tipo_iva_repercutido = transit_data.tipo_iva_fletes or None
             tipo_iva_soportado = transit_data.tipo_iva_fletes_soportado or None
@@ -6269,70 +7046,56 @@ async def update_deal_transit(
             except Exception as e:
                 logger.error(f"[transit] error searching FLETES product: {e}", exc_info=True)
 
+            # Tramo terrestre (modo doble): mismo producto que el marítimo; IVA con
+            # fallback al marítimo si viene vacío (nunca al default por residencia)
+            flete_terrestre_product_id = None
+            tipo_iva_terrestre_rep = None
+            tipo_iva_terrestre_sop = None
+            if modo_doble:
+                flete_terrestre_product_id = fletes_product_id
+                tipo_iva_terrestre_rep = transit_data.tipo_iva_fletes_terrestre or tipo_iva_repercutido
+                tipo_iva_terrestre_sop = transit_data.tipo_iva_fletes_terrestre_soportado or tipo_iva_soportado
+
             container_by_key = {c["numero_container"]: c for c in container_line_items}
             target_keys = set(container_by_key.keys()) if container_line_items else {""}
 
-            to_update = []
-            to_create = []
-            to_delete_ids = []
-            persisted_by_key = {}
-
-            for key in target_keys:
-                existing = fletes_existentes_by_numero.get(key)
-                if existing:
-                    cur = existing["properties"]
-                    update_props = {}
-                    if _safe_float(cur.get("price")) != precio_total_fletes:
-                        update_props["price"] = str(precio_total_fletes)
-                    if (cur.get("cardcode") or "") != target_cardcode:
-                        update_props["cardcode"] = target_cardcode
-                    if tipo_iva_repercutido and cur.get("tipo_iva_repercutido") != tipo_iva_repercutido:
-                        update_props["tipo_iva_repercutido"] = tipo_iva_repercutido
-                    if tipo_iva_soportado and cur.get("tipo_iva_soportado") != tipo_iva_soportado:
-                        update_props["tipo_iva_soportado"] = tipo_iva_soportado
-                    if effective_almacen and (cur.get("almacen") or "") != str(effective_almacen):
-                        update_props["almacen"] = str(effective_almacen)
-                    if update_props:
-                        to_update.append({"id": existing["id"], "properties": update_props})
-                    persisted_by_key[key] = existing["id"]
-                else:
-                    if not fletes_product_id:
-                        logger.warning(
-                            f"[transit] cannot create flete for key={key!r}: fletes_product_id missing"
-                        )
-                        continue
-                    container_name = container_by_key.get(key, {}).get("name") or ""
-                    nombre_flete = f"{container_name} - FLETES" if container_name else "FLETES"
-                    new_props = {
-                        "hs_product_id": fletes_product_id,
-                        "hs_sku": fletes_product_id,
-                        "name": nombre_flete,
-                        "price": str(precio_total_fletes),
-                        "quantity": "1",
+            if modo_doble:
+                tramo_specs = [
+                    {
+                        "tramo": TRAMO_MARITIMO,
+                        "sufijo": FLETE_SUFIJO_MARITIMO,
+                        "precio": round_price(precio_destino),
                         "cardcode": target_cardcode,
-                        "numero_container": key,
-                        "tipo_articulo": "transitario",
-                        "hs_product_type": "Flete",
-                        "hs_currency": "EUR",
-                    }
-                    if tipo_iva_repercutido:
-                        new_props["tipo_iva_repercutido"] = tipo_iva_repercutido
-                    if tipo_iva_soportado:
-                        new_props["tipo_iva_soportado"] = tipo_iva_soportado
-                    if effective_almacen:
-                        new_props["almacen"] = str(effective_almacen)
-                    to_create.append({
-                        "properties": new_props,
-                        "associations": [{
-                            "to": {"id": deal_id},
-                            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}],
-                        }],
-                        "_target_key": key,
-                    })
+                        "tipo_iva_repercutido": tipo_iva_repercutido,
+                        "tipo_iva_soportado": tipo_iva_soportado,
+                        "product_id": fletes_product_id,
+                    },
+                    {
+                        "tramo": TRAMO_TERRESTRE,
+                        "sufijo": FLETE_SUFIJO_TERRESTRE,
+                        "precio": round_price(precio_origen),
+                        "cardcode": (transit_data.transitario_terrestre or "").strip(),
+                        "tipo_iva_repercutido": tipo_iva_terrestre_rep,
+                        "tipo_iva_soportado": tipo_iva_terrestre_sop,
+                        "product_id": flete_terrestre_product_id,
+                    },
+                ]
+            else:
+                tramo_specs = [{
+                    "tramo": TRAMO_LEGACY,
+                    "sufijo": "FLETES",
+                    "precio": precio_total_fletes,
+                    "cardcode": target_cardcode,
+                    "tipo_iva_repercutido": tipo_iva_repercutido,
+                    "tipo_iva_soportado": tipo_iva_soportado,
+                    "product_id": fletes_product_id,
+                }]
+            spec_by_tramo = {s["tramo"]: s for s in tramo_specs}
 
-            for key, existing in fletes_existentes_by_numero.items():
-                if key not in target_keys:
-                    to_delete_ids.append(existing["id"])
+            to_update, to_create, to_delete_ids, persisted_by_key = _plan_fletes_upsert(
+                fletes_existentes_by_tramo, target_keys, tramo_specs,
+                container_by_key, flete_almacen, deal_id,
+            )
 
             if to_update:
                 upd_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/update"
@@ -6358,11 +7121,29 @@ async def update_deal_transit(
                     try:
                         resp = requests.post(cr_url, headers=headers, json=payload, timeout=60)
                         if resp.ok:
-                            for x, created in zip(chunk, resp.json().get("results", [])):
+                            # HubSpot no garantiza el orden de los results: cada flete se
+                            # correlaciona por (numero_container, tramo) —su _target_key—
+                            # leído de la respuesta, no por posición.
+                            key_by_ident = {
+                                (
+                                    (x["properties"].get("numero_container") or "").strip(),
+                                    clasificar_tramo_flete(x["properties"].get("name")),
+                                ): x["_target_key"]
+                                for x in chunk
+                            }
+                            for created in resp.json().get("results", []):
                                 new_id = created.get("id")
-                                if new_id:
-                                    created_ids_by_key[x["_target_key"]] = new_id
-                                    persisted_by_key[x["_target_key"]] = new_id
+                                cprops = created.get("properties") or {}
+                                ident = (
+                                    (cprops.get("numero_container") or "").strip(),
+                                    clasificar_tramo_flete(cprops.get("name")),
+                                )
+                                tk = key_by_ident.get(ident)
+                                if new_id and tk is not None:
+                                    created_ids_by_key[tk] = new_id
+                                    persisted_by_key[tk] = new_id
+                                elif new_id:
+                                    logger.error(f"[transit] flete creado id={new_id} no casa con ningún input (numero_container, tramo)={ident!r}")
                         else:
                             logger.error(f"[transit] batch create FLETES failed: {resp.status_code} - {resp.text}")
                     except Exception as e:
@@ -6412,7 +7193,13 @@ async def update_deal_transit(
             elementos_orphan_created = 0
             new_lids_set = set(created_ids_by_key.values())
             cont_map_for_orphan = None
-            for key, lid in persisted_by_key.items():
+            for fkey, lid in persisted_by_key.items():
+                key, tramo_flete = fkey
+                spec = spec_by_tramo[tramo_flete]
+                precio_flete_tramo = spec["precio"]
+                cardcode_tramo = spec["cardcode"]
+                iva_rep_tramo = spec["tipo_iva_repercutido"]
+                iva_sop_tramo = spec["tipo_iva_soportado"]
                 target_lid = str(lid).strip()
                 if target_lid in {str(x) for x in new_lids_set}:
                     continue
@@ -6420,7 +7207,7 @@ async def update_deal_transit(
                 elem = elementos_flete_by_lid.get(target_lid)
                 match_via = "line_item_id" if elem else None
                 if not elem:
-                    existing = fletes_existentes_by_numero.get(key)
+                    existing = fletes_existentes_by_tramo.get(fkey)
                     nombre_flete = (existing["properties"].get("name") or "").strip() if existing else ""
                     if nombre_flete:
                         elem = elementos_flete_by_nombre.get(nombre_flete)
@@ -6439,30 +7226,30 @@ async def update_deal_transit(
                     )
                     if not co:
                         logger.warning(
-                            f"[transit] orphan flete: no CONTENEDOR CO for line_item_id={target_lid} key={key!r}"
+                            f"[transit] orphan flete: no CONTENEDOR CO for line_item_id={target_lid} key={fkey!r}"
                         )
                         continue
-                    existing = fletes_existentes_by_numero.get(key)
+                    existing = fletes_existentes_by_tramo.get(fkey)
                     nombre_flete = (
                         (existing["properties"].get("name") or "").strip() if existing else ""
-                    ) or (f"{container_name} - FLETES" if container_name else "FLETES")
+                    ) or (f"{container_name} - {spec['sufijo']}" if container_name else spec["sufijo"])
                     orphan_data = [{
                         "nombre": nombre_flete,
                         "nombre_contenedor": container_name,
                         "tipo_articulo": "flete",
                         "cantidad": 1,
-                        "precio_unitario": precio_total_fletes,
-                        "precio_de_coste": precio_total_fletes,
-                        "precio_total": precio_total_fletes,
-                        "cardcode": target_cardcode,
+                        "precio_unitario": precio_flete_tramo,
+                        "precio_de_coste": precio_flete_tramo,
+                        "precio_total": precio_flete_tramo,
+                        "cardcode": cardcode_tramo,
                         "line_item_id": target_lid,
                     }]
-                    if tipo_iva_repercutido:
-                        orphan_data[0]["tipo_iva_repercutido"] = tipo_iva_repercutido
-                    if tipo_iva_soportado:
-                        orphan_data[0]["tipo_iva_soportado"] = tipo_iva_soportado
-                    if effective_almacen:
-                        orphan_data[0]["almacen"] = str(effective_almacen)
+                    if iva_rep_tramo:
+                        orphan_data[0]["tipo_iva_repercutido"] = iva_rep_tramo
+                    if iva_sop_tramo:
+                        orphan_data[0]["tipo_iva_soportado"] = iva_sop_tramo
+                    if flete_almacen:
+                        orphan_data[0]["almacen"] = str(flete_almacen)
                     try:
                         contact_id_o = (get_associated_contacts(deal_id) or [None])[0]
                         company_id_o = (get_associated_companies(deal_id) or [None])[0]
@@ -6485,20 +7272,20 @@ async def update_deal_transit(
 
                 cur_props = elem["properties"]
                 elem_update_props = {}
-                if _safe_float(cur_props.get("precio_unitario")) != precio_total_fletes:
-                    elem_update_props["precio_unitario"] = precio_total_fletes
-                if _safe_float(cur_props.get("precio_total")) != precio_total_fletes:
-                    elem_update_props["precio_total"] = precio_total_fletes
-                if (cur_props.get("cardcode") or "") != target_cardcode:
-                    elem_update_props["cardcode"] = target_cardcode
-                if tipo_iva_repercutido and cur_props.get("tipo_iva_repercutido") != tipo_iva_repercutido:
-                    elem_update_props["tipo_iva_repercutido"] = tipo_iva_repercutido
-                if tipo_iva_soportado and cur_props.get("tipo_iva_soportado") != tipo_iva_soportado:
-                    elem_update_props["tipo_iva_soportado"] = tipo_iva_soportado
+                if _safe_float(cur_props.get("precio_unitario")) != precio_flete_tramo:
+                    elem_update_props["precio_unitario"] = precio_flete_tramo
+                if _safe_float(cur_props.get("precio_total")) != precio_flete_tramo:
+                    elem_update_props["precio_total"] = precio_flete_tramo
+                if (cur_props.get("cardcode") or "") != cardcode_tramo:
+                    elem_update_props["cardcode"] = cardcode_tramo
+                if iva_rep_tramo and cur_props.get("tipo_iva_repercutido") != iva_rep_tramo:
+                    elem_update_props["tipo_iva_repercutido"] = iva_rep_tramo
+                if iva_sop_tramo and cur_props.get("tipo_iva_soportado") != iva_sop_tramo:
+                    elem_update_props["tipo_iva_soportado"] = iva_sop_tramo
                 if str(cur_props.get("line_item_id") or "") != target_lid:
                     elem_update_props["line_item_id"] = target_lid
-                if effective_almacen and (cur_props.get("almacen") or "") != str(effective_almacen):
-                    elem_update_props["almacen"] = str(effective_almacen)
+                if flete_almacen and (cur_props.get("almacen") or "") != str(flete_almacen):
+                    elem_update_props["almacen"] = str(flete_almacen)
 
                 if not elem_update_props:
                     continue
@@ -6521,8 +7308,10 @@ async def update_deal_transit(
                 company_id = (get_associated_companies(deal_id) or [None])[0]
 
                 for x in to_create:
-                    key = x["_target_key"]
-                    new_lid = created_ids_by_key.get(key)
+                    fkey = x["_target_key"]
+                    key, tramo_flete = fkey
+                    spec = spec_by_tramo[tramo_flete]
+                    new_lid = created_ids_by_key.get(fkey)
                     if not new_lid:
                         continue
                     container_info = container_by_key.get(key, {})
@@ -6535,7 +7324,7 @@ async def update_deal_transit(
                     )
                     if not co:
                         logger.warning(
-                            f"[transit] no CONTENEDOR CO matched for key={key!r} "
+                            f"[transit] no CONTENEDOR CO matched for key={fkey!r} "
                             f"name={container_name!r}; available keys={list(contenedores_co_by_numero.keys())}"
                         )
                         continue
@@ -6545,18 +7334,18 @@ async def update_deal_transit(
                         "nombre_contenedor": container_name,
                         "tipo_articulo": "flete",
                         "cantidad": 1,
-                        "precio_unitario": precio_total_fletes,
-                        "precio_de_coste": precio_total_fletes,
-                        "precio_total": precio_total_fletes,
-                        "cardcode": target_cardcode,
+                        "precio_unitario": spec["precio"],
+                        "precio_de_coste": spec["precio"],
+                        "precio_total": spec["precio"],
+                        "cardcode": spec["cardcode"],
                         "line_item_id": str(new_lid),
                     }]
-                    if tipo_iva_repercutido:
-                        elementos_data[0]["tipo_iva_repercutido"] = tipo_iva_repercutido
-                    if tipo_iva_soportado:
-                        elementos_data[0]["tipo_iva_soportado"] = tipo_iva_soportado
-                    if effective_almacen:
-                        elementos_data[0]["almacen"] = str(effective_almacen)
+                    if spec["tipo_iva_repercutido"]:
+                        elementos_data[0]["tipo_iva_repercutido"] = spec["tipo_iva_repercutido"]
+                    if spec["tipo_iva_soportado"]:
+                        elementos_data[0]["tipo_iva_soportado"] = spec["tipo_iva_soportado"]
+                    if flete_almacen:
+                        elementos_data[0]["almacen"] = str(flete_almacen)
                     created = batch_create_elementos_with_associations(
                         client=client,
                         elementos_data=elementos_data,
@@ -6593,6 +7382,15 @@ async def update_deal_transit(
         ruta_terrestre_creada = False
         ruta_maritima_creada = False
 
+        # Ids de las rutas (custom object) a asociar al negocio. Autoritativos: los
+        # que resuelve el upsert de abajo. Si el card mandó una selección la usamos
+        # como fallback (p.ej. DAP terrestre, donde el upsert no aplica).
+        assoc_ruta_terrestre_id = transit_data.ruta_terrestre_id
+        assoc_ruta_maritima_id = transit_data.ruta_maritima_id
+
+        # La ruta terrestre lleva el transitario de su tramo (fallback al principal = hoy)
+        transitario_ruta_terrestre = (transit_data.transitario_terrestre or "").strip() or transit_data.transitario
+
         try:
             # Only process routes if we have the necessary data
             if transit_data.transitario:
@@ -6605,7 +7403,7 @@ async def update_deal_transit(
                     ruta_id_terrestre = _find_ruta(
                         client=client,
                         tipo_ruta="terrestre",
-                        transitario=transit_data.transitario,
+                        transitario=transitario_ruta_terrestre,
                         lugar_carga=lugar_carga,
                         puerto_salida=transit_data.puerto_salida,
                         tipo_contenedor=tipo_contenedor
@@ -6619,12 +7417,13 @@ async def update_deal_transit(
                             importe=transit_data.precio_ruta_hasta_puerto_de_salida,
                             fecha_caducidad=transit_data.fecha_caducidad_flete_salida
                         )
+                        assoc_ruta_terrestre_id = ruta_id_terrestre
                     else:
                         logger.info(f"[rutas] Ruta terrestre NO existe, creando...")
                         ruta_id = _crear_ruta(
                             client=client,
                             tipo_ruta="terrestre",
-                            transitario=transit_data.transitario,
+                            transitario=transitario_ruta_terrestre,
                             tipo_contenedor=tipo_contenedor,
                             importe=transit_data.precio_ruta_hasta_puerto_de_salida,
                             fecha_caducidad=transit_data.fecha_caducidad_flete_salida,
@@ -6634,6 +7433,7 @@ async def update_deal_transit(
                         )
                         if ruta_id:
                             ruta_terrestre_creada = True
+                            assoc_ruta_terrestre_id = ruta_id
                             logger.info(f"[rutas] Ruta terrestre creada: {ruta_id}")
 
                 # RUTA MARÍTIMA: puerto_salida + puerto_destino
@@ -6660,6 +7460,7 @@ async def update_deal_transit(
                             importe=transit_data.precio_ruta_hasta_puerto_destino,
                             fecha_caducidad=transit_data.fecha_caducidad_flete_destino
                         )
+                        assoc_ruta_maritima_id = ruta_id_maritima
                     else:
                         logger.info(f"[rutas] Ruta marítima NO existe, creando...")
                         ruta_id = _crear_ruta(
@@ -6676,11 +7477,24 @@ async def update_deal_transit(
                         )
                         if ruta_id:
                             ruta_maritima_creada = True
+                            assoc_ruta_maritima_id = ruta_id
                             logger.info(f"[rutas] Ruta marítima creada: {ruta_id}")
 
         except Exception as e:
             logger.error(f"[rutas] Error processing routes: {e}", exc_info=True)
             # Don't fail the entire request if route creation fails
+
+        # Asociar el negocio a las rutas (custom object) resueltas arriba.
+        try:
+            ruta_sync = sync_deal_ruta_associations(
+                client,
+                deal_id,
+                ruta_terrestre_id=assoc_ruta_terrestre_id,
+                ruta_maritima_id=assoc_ruta_maritima_id,
+            )
+            logger.info(f"[transit] rutas asociadas al deal {deal_id}: {ruta_sync}")
+        except Exception as e:
+            logger.error(f"[transit] Error asociando rutas al deal {deal_id}: {e}", exc_info=True)
 
         try:
             if affected_contenedor_co_ids:
@@ -7265,6 +8079,23 @@ async def update_deal_negociacion(
                 properties_to_update["price"] = str(price_rounded) if price_rounded is not None else "0"
                 logger.warning(f"[negociacion] Line item {line_item_id}: Setting price={price_rounded} (negotiated price from frontend)")
 
+                # El ancla del tipo de venta viaja SIEMPRE con el price: o se fija
+                # la negociada o se limpia (promo / payload sin ancla), para que un
+                # ancla obsoleta no mande sobre un precio recién negociado.
+                ancla = round_price(articulo.precio_negociado_tipo_venta)
+                ancla_ic = _normalize_incoterm(articulo.incoterm_precio_negociado) if articulo.incoterm_precio_negociado else ""
+                if ancla and ancla > 0 and ancla_ic:
+                    properties_to_update["precio_negociado_tipo_venta"] = str(ancla)
+                    properties_to_update["incoterm_precio_negociado"] = ancla_ic
+                else:
+                    if ancla and ancla > 0 and not ancla_ic:
+                        logger.warning(
+                            f"[negociacion] Line item {line_item_id}: ancla {ancla} "
+                            f"sin incoterm_precio_negociado; se descarta"
+                        )
+                    properties_to_update["precio_negociado_tipo_venta"] = ""
+                    properties_to_update["incoterm_precio_negociado"] = ""
+
             # Add line item to batch update
             batch_updates.append({
                 "id": line_item_id,
@@ -7302,7 +8133,7 @@ async def update_deal_negociacion(
             elementos = get_elementos_by_deal(
                 client, deal_id,
                 properties=[
-                    "nombre", "tipo_articulo", "cantidad", "precio_unitario",
+                    "nombre", "nombre_contenedor", "tipo_articulo", "cantidad", "precio_unitario",
                     "precio_de_coste", "precio_total", "margen_unitario",
                     "tipo_iva_repercutido", "tipo_iva_soportado", "line_item_id",
                 ],
@@ -7311,17 +8142,25 @@ async def update_deal_negociacion(
             logger.warning(f"[negociacion] could not load ELEMENTOS for deal {deal_id}: {e}")
             elementos = []
 
+        # El line_item_id guardado en el Elemento puede venir cruzado de una creación
+        # previa (rotación por orden de batch no garantizado). Por eso el match por lid
+        # se verifica contra el contenido real del line item (numero_container + name);
+        # si no coincide, se reempareja por (nombre_contenedor, nombre) cuando ese par es
+        # único en el contenedor y el line_item_id se reescribe para autocorregir el dato.
         elementos_by_lid = {}
-        elementos_by_nombre = {}
+        elementos_by_key = {}
+        key_counts = {}
         for el in elementos:
             props = el.get("properties", {}) or {}
             lid = props.get("line_item_id")
-            nombre = props.get("nombre")
+            nc = (props.get("nombre_contenedor") or "").strip()
+            nombre = (props.get("nombre") or "").strip()
             entry = {"id": el.get("id"), "properties": props}
             if lid:
                 elementos_by_lid[str(lid).strip()] = entry
             if nombre:
-                elementos_by_nombre[nombre.strip()] = entry
+                key_counts[(nc, nombre)] = key_counts.get((nc, nombre), 0) + 1
+                elementos_by_key[(nc, nombre)] = entry
 
         cont_map_neg = _resolve_contenedor_co_by_numero(client, deal_id)
         affected_contenedor_co_ids = set()
@@ -7330,26 +8169,38 @@ async def update_deal_negociacion(
             target_lid = str(articulo.line_item_id).strip()
             cur_li = line_items_data.get(articulo.line_item_id, {})
             li_name = (cur_li.get("name") or "").strip()
+            numero_cont = (cur_li.get("numero_container") or "").strip()
             cantidad = _safe_float(cur_li.get("quantity")) or 0
 
             elem = elementos_by_lid.get(target_lid)
-            if not elem and li_name:
-                elem = elementos_by_nombre.get(li_name)
+            # lid cruzado: el Elemento resuelto por lid no es el de este line item.
+            if elem and li_name and (elem["properties"].get("nombre") or "").strip() != li_name:
+                elem = None
+            # Reemparejar por contenido solo si (contenedor, nombre) es único: con
+            # líneas duplicadas (promo 5+1) el nombre es ambiguo y el lid es el único
+            # discriminador, así que no se fuerza el fallback.
+            if not elem and li_name and key_counts.get((numero_cont, li_name), 0) == 1:
+                elem = elementos_by_key.get((numero_cont, li_name))
             if not elem:
                 continue
 
             precio_unitario_round = round_price(articulo.price)
-            precio_total = round((precio_unitario_round or 0) * cantidad, 3)
             margen_round = round_margin(articulo.margen_unitario)
 
+            # precio_total no se sincroniza aquí: lo fija recalcular_contenedores a
+            # nivel de contenedor (cuadre con el precio negociado). El contenedor se
+            # marca afectado siempre para que ese recálculo corra en cada guardado.
             target_props = {
                 "precio_unitario": precio_unitario_round,
-                "precio_total": precio_total,
                 "margen_unitario": margen_round,
                 "tipo_iva_repercutido": articulo.tipo_iva_repercutido,
             }
             if articulo.tipo_iva_soportado is not None:
                 target_props["tipo_iva_soportado"] = articulo.tipo_iva_soportado
+
+            co = cont_map_neg.get(numero_cont) if numero_cont else None
+            if co:
+                affected_contenedor_co_ids.add(co.get("id"))
 
             cur_elem_props = elem["properties"]
             update_props = {}
@@ -7366,10 +8217,6 @@ async def update_deal_negociacion(
                 continue
             if update_elemento(client, elem["id"], update_props):
                 elementos_synced += 1
-                numero_cont = (cur_li.get("numero_container") or "").strip()
-                co = cont_map_neg.get(numero_cont) if numero_cont else None
-                if co:
-                    affected_contenedor_co_ids.add(co.get("id"))
 
         if elementos:
             logger.info(
@@ -7688,18 +8535,23 @@ async def publish_quote(
             logger.warning(f"[publish] Could not count existing quotes: {e}")
 
         company_aseguradora = False
+        company_tipo_cliente = None
         try:
             company_ids = get_associated_companies(deal_id)
             if company_ids:
                 company_resp = client.crm.companies.basic_api.get_by_id(
                     company_id=company_ids[0],
-                    properties=["aseguradora"]
+                    properties=["aseguradora", "tipo_cliente"]
                 )
                 raw_aseguradora = company_resp.properties.get("aseguradora")
                 company_aseguradora = bool(raw_aseguradora and str(raw_aseguradora).strip())
-                logger.info(f"[publish] Company aseguradora={raw_aseguradora!r}")
+                company_tipo_cliente = company_resp.properties.get("tipo_cliente")
+                logger.info(
+                    f"[publish] Company aseguradora={raw_aseguradora!r} "
+                    f"tipo_cliente={company_tipo_cliente!r}"
+                )
         except Exception as e:
-            logger.warning(f"[publish] Could not fetch company aseguradora: {e}")
+            logger.warning(f"[publish] Could not fetch company aseguradora/tipo_cliente: {e}")
 
         deal_update_properties = {
             "quote_data_payload": json.dumps(
@@ -7737,8 +8589,12 @@ async def publish_quote(
 
         quote_number = existing_quote_count + 1
         version_suffix = "" if quote_number == 1 else f"-v{quote_number}"
-        tipo_cliente_raw = (getattr(data.cliente, "tipoCliente", None) or "").lower()
-        nac_exp = "NAC" if tipo_cliente_raw == "nacional" else "EXP"
+        tipo_cliente_titulo = (
+            company_tipo_cliente
+            or getattr(data.cliente, "tipoCliente", "")
+            or ""
+        ).strip().lower()
+        nac_exp = "NAC" if tipo_cliente_titulo == "nacional" else "EXP"
         asegurada_segment = "ASG_" if company_aseguradora else ""
         lang = hs_language.upper()
         date_suffix = datetime.today().strftime("%d/%m/%y")
@@ -7807,6 +8663,7 @@ async def publish_quote(
                         "name_en", "name_fr",
                         "cardcode", "almacen", "precio_de_coste",
                         "margen_unitario", "tipo_iva_repercutido", "tipo_iva_soportado",
+                        "precio_negociado_tipo_venta", "incoterm_precio_negociado",
                     ],
                     "inputs": [{"id": str(lid)} for lid in li_ids]
                 }
@@ -7819,6 +8676,28 @@ async def publish_quote(
         except Exception as _e:
             logger.warning(f"[publish] Could not fetch deal line items: {_e}")
 
+        # Backstop para deals con huérfanos de catálogo previos al fix de
+        # update_deal_containers: si hay contenedores, esas líneas no van al quote.
+        nombres_contenedor = set()
+        for _li in deal_line_items_raw:
+            _props = _li.get("properties", {}) or {}
+            if _is_container_product_type(_props.get("hs_product_type") or ""):
+                # numero_container Y name: en legacy numero_container es el entero
+                # ("1") y el prefijo de las líneas per-contenedor sale del name.
+                for _nc in ((_props.get("numero_container") or "").strip(), (_props.get("name") or "").strip()):
+                    if _nc:
+                        nombres_contenedor.add(_nc)
+        if nombres_contenedor:
+            _huerfanos = set(_catalogo_huerfano_ids(deal_line_items_raw, nombres_contenedor))
+            if _huerfanos:
+                logger.warning(f"[publish] Excluyendo {len(_huerfanos)} líneas de catálogo sin contenedor de la copia al quote")
+                deal_line_items_raw = [li for li in deal_line_items_raw if str(li.get("id")) not in _huerfanos]
+
+        # El ancla (precio_negociado_tipo_venta + incoterm_precio_negociado) tiene que
+        # viajar al line item del quote: `quote.html` la usa para imprimir el precio
+        # negociado exacto en vez de recomponer EXW + delta, que arrastra el residuo
+        # del EXW guardado a 3 decimales. Sin copiarla, esa rama del macro es código
+        # muerto y el PDF depende de redondear el recompuesto.
         _copy_fields = [
             "name", "hs_sku", "hs_product_id", "hs_product_type",
             "tipo_articulo", "quantity", "price",
@@ -7827,6 +8706,7 @@ async def publish_quote(
             "name_en", "name_fr",
             "cardcode", "almacen", "precio_de_coste",
             "margen_unitario", "tipo_iva_repercutido", "tipo_iva_soportado",
+            "precio_negociado_tipo_venta", "incoterm_precio_negociado",
         ]
 
         items_payload: List[dict] = []

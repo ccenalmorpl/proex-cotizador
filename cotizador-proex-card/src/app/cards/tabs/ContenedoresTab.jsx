@@ -27,6 +27,7 @@ import {
 
 // Utils and Constants
 import { fetchFromAPI } from "../utils/api.utils";
+import { useCustomObjectsSync } from "../hooks/useCustomObjectsSync";
 import {
   ERROR_MESSAGES,
   LOADING_MESSAGES,
@@ -90,6 +91,11 @@ const ContenedoresTab = ({
   const [cantidadesContenedores, setCantidadesContenedores] = useState(
     contenedoresData?.cantidadesContenedores || {}
   );
+  // Instancias reales por grupo (fuente de identidad para preservar line_item_id
+  // de contenedor y de cada artículo al expandir cantidad → instancias al guardar)
+  const [instanciasPorGrupo, setInstanciasPorGrupo] = useState(
+    contenedoresData?.instanciasPorGrupo || {}
+  );
 
   // Estados de carga / error inicial (UX igual a ClienteTab)
   const [isLoadingInitial, setIsLoadingInitial] = useState(false);
@@ -104,6 +110,10 @@ const ContenedoresTab = ({
   // Gestión de guardado
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorSave, setErrorSave] = useState(null);
+
+  // Sincronización async de precios de contenedor (worker en background)
+  const { status: syncStatus, data: syncData, waitForCompletion: waitForSync } =
+    useCustomObjectsSync(context?.crm?.objectId);
 
   // Track previous parent state to detect when ArticulosTab clears containers
   const prevParentLengthRef = useRef(null);
@@ -145,6 +155,7 @@ const ContenedoresTab = ({
       // Parent has cleared containers (ArticulosTab action), sync local state
       setContenedoresDefinidos([]);
       setCantidadesContenedores({});
+      setInstanciasPorGrupo({});
       setContenedoresUnicos({ contenedoresUnicos: [] });
     }
 
@@ -191,29 +202,80 @@ const ContenedoresTab = ({
         console.log("[ContenedoresTab] lista.length =", lista.length, "cancelado =", cancelado);
 
         if (!cancelado && lista.length > 0) {
-          // Mapear a tu modelo local
-          const defin = lista.map((c) => ({
-            id: c.line_item_id || `loaded-${c.container_number}`,
-            tipo: c.container_type,
-            articulos: (c.container_config?.articulos || []).map((a) => ({
+          const unicos = Array.isArray(data.unique_containers)
+            ? data.unique_containers
+            : [];
+
+          // Indexar las instancias reales por clave de composición para
+          // asociarlas a su grupo/definición y conservar identidad
+          // (line_item_id de contenedor y de cada artículo).
+          const instanciasPorClave = {};
+          unicos.forEach((u) => {
+            const articulosUnico = u.container_config?.articulos || [];
+            const clave = grupoKey(u.container_type, articulosUnico);
+            if (!instanciasPorClave[clave]) instanciasPorClave[clave] = [];
+            instanciasPorClave[clave].push({
+              line_item_id: u.line_item_id,
+              numero_container: u.container_number,
+              articulos: articulosUnico.map((a) => ({
+                line_item_id: a.line_item_id,
+                articuloId: a.articuloId,
+                nombre: a.nombre,
+                numCajas: a.numCajas,
+              })),
+            });
+          });
+          Object.values(instanciasPorClave).forEach((arr) =>
+            arr.sort((x, y) => (x.numero_container || 0) - (y.numero_container || 0))
+          );
+
+          // Mapear a tu modelo local, conservando line_item_id de contenedor y
+          // de cada artículo (de unique_containers, o del propio grouped si lo trae).
+          const defin = lista.map((c) => {
+            const articulos = (c.container_config?.articulos || []).map((a) => ({
               articuloId: a.articuloId,
               nombre: a.nombre,
               numCajas: a.numCajas,
-            })),
-            ocupacion: c.container_config?.ocupacion ?? 0,
-            pesoNeto: c.container_config?.pesoNeto ?? 0,
-          }));
-
-          const cantidades = {};
-          lista.forEach((c) => {
-            const id = c.line_item_id || `loaded-${c.container_number}`;
-            cantidades[id] = c.cantidad ?? 1;
+              line_item_id: a.line_item_id, // suele venir solo en unique_containers
+            }));
+            const clave = grupoKey(c.container_type, articulos);
+            const instancias = instanciasPorClave[clave] || [];
+            // Completar line_item_id de artículo desde la 1ª instancia (mismo orden por composición)
+            const primera = instancias[0];
+            if (primera) {
+              articulos.forEach((art) => {
+                if (art.line_item_id) return;
+                const match = primera.articulos.find(
+                  (ia) => ia.articuloId === art.articuloId && ia.numCajas === art.numCajas
+                );
+                if (match) art.line_item_id = match.line_item_id;
+              });
+            }
+            return {
+              id: c.line_item_id || `loaded-${c.container_number}`,
+              tipo: c.container_type,
+              numero_container: c.container_number,
+              line_item_id: c.line_item_id || null,
+              clave,
+              articulos,
+              ocupacion: c.container_config?.ocupacion ?? 0,
+              pesoNeto: c.container_config?.pesoNeto ?? 0,
+            };
           });
 
-          console.log("[ContenedoresTab] Estado actualizado: defin count =", defin.length, "unique_containers =", (data.unique_containers || []).length);
+          const cantidades = {};
+          const instanciasGrupo = {};
+          defin.forEach((d, idx) => {
+            const c = lista[idx];
+            cantidades[d.id] = c.cantidad ?? 1;
+            instanciasGrupo[d.id] = instanciasPorClave[d.clave] || [];
+          });
+
+          console.log("[ContenedoresTab] Estado actualizado: defin count =", defin.length, "unique_containers =", unicos.length);
           setContenedoresDefinidos(defin);
           setCantidadesContenedores(cantidades);
-          setContenedoresUnicos({ contenedoresUnicos: data.unique_containers || [] });
+          setInstanciasPorGrupo(instanciasGrupo);
+          setContenedoresUnicos({ contenedoresUnicos: unicos });
         } else {
           console.log("[ContenedoresTab] No se actualiza estado: lista vacía o cancelado");
         }
@@ -240,10 +302,23 @@ const ContenedoresTab = ({
     setContenedoresData({
       contenedoresDefinidos,
       cantidadesContenedores,
+      instanciasPorGrupo,
       totales,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contenedoresDefinidos, cantidadesContenedores]);
+  }, [contenedoresDefinidos, cantidadesContenedores, instanciasPorGrupo]);
+
+  // Clave de composición que replica el agrupamiento del backend
+  // (container_type + artículos por articuloId/numCajas). Sirve para asociar
+  // un grupo/definición de contenedoresDefinidos con sus instancias reales en
+  // unique_containers.
+  const grupoKey = (tipo, articulos) => {
+    const arts = (articulos || [])
+      .map((a) => `${a.articuloId}:${a.numCajas}`)
+      .sort()
+      .join("|");
+    return `${tipo}::${arts}`;
+  };
 
   const getCapacidadMaxima = (articulo, tipoContenedor) => {
     const containerFieldMap = {
@@ -413,6 +488,9 @@ const ContenedoresTab = ({
     const newCantidades = { ...cantidadesContenedores };
     delete newCantidades[contenedorId];
     setCantidadesContenedores(newCantidades);
+    const newInstancias = { ...instanciasPorGrupo };
+    delete newInstancias[contenedorId];
+    setInstanciasPorGrupo(newInstancias);
   };
 
   /**
@@ -439,30 +517,58 @@ const ContenedoresTab = ({
         return;
       }
 
+      // Expandir cantidad → instancias: una entrada de payload = UN contenedor.
+      // Con line_item_id = instancia existente a preservar; sin él = contenedor nuevo.
+      // Reducir cantidad NO envía las instancias de mayor container_number → "se
+      // elimina el último". El backend hace MERGE INCREMENTAL por instancia.
       const containers = [];
-      contenedoresDefinidos.forEach((contenedor, index) => {
+      contenedoresDefinidos.forEach((contenedor) => {
         const cantidad = cantidadesContenedores[contenedor.id] || 0;
-        if (cantidad > 0) {
-          containers.push({
+        if (cantidad <= 0) return;
+
+        // Instancias reales del grupo, ordenadas por container_number ASC.
+        const instancias = [...(instanciasPorGrupo[contenedor.id] || [])].sort(
+          (a, b) => (a.numero_container || 0) - (b.numero_container || 0)
+        );
+
+        // Articulos de la instancia preservada: line_item_id de la propia
+        // instancia para que el backend preserve precios negociados (_edit_container_in_place).
+        const buildArticulos = (instancia) =>
+          contenedor.articulos.map((art) => {
+            const articuloCompleto = ARTICULOS_DISPONIBLES.find((a) => a.id === art.articuloId);
+            const articuloInstancia = instancia
+              ? (instancia.articulos || []).find(
+                  (ia) => ia.articuloId === art.articuloId && ia.numCajas === art.numCajas
+                )
+              : null;
+            const lineItemArticulo =
+              articuloInstancia?.line_item_id || art.line_item_id || undefined;
+            const entrada = {
+              articuloId: art.articuloId,
+              nombre: art.nombre,
+              numCajas: art.numCajas,
+              pesoNeto: articuloCompleto?.pesoCaja || 0,
+              price: articuloCompleto?.precio || 0,
+              margen_unitario: articuloCompleto?.margen_unitario,
+            };
+            if (lineItemArticulo) entrada.line_item_id = lineItemArticulo;
+            return entrada;
+          });
+
+        for (let i = 0; i < cantidad; i++) {
+          // Las primeras `instancias.length` entradas preservan instancias
+          // existentes (menor container_number primero); el resto son nuevas.
+          const instancia = i < instancias.length ? instancias[i] : null;
+          const entrada = {
             tipo: contenedor.tipo,
-            cantidad: cantidad,
-            container_number: index + 1,
             container_config: {
-              articulos: contenedor.articulos.map((art) => {
-                const articuloCompleto = ARTICULOS_DISPONIBLES.find((a) => a.id === art.articuloId);
-                return {
-                  articuloId: art.articuloId,
-                  nombre: art.nombre,
-                  numCajas: art.numCajas,
-                  pesoNeto: articuloCompleto?.pesoCaja || 0,
-                  price: articuloCompleto?.precio || 0,
-                  margen_unitario: articuloCompleto?.margen_unitario,
-                };
-              }),
+              articulos: buildArticulos(instancia),
               ocupacion: cargaPorPalets ? 100 : contenedor.ocupacion,
               pesoNeto: contenedor.pesoNeto,
             },
-          });
+          };
+          if (instancia?.line_item_id) entrada.line_item_id = instancia.line_item_id;
+          containers.push(entrada);
         }
       });
 
@@ -486,6 +592,22 @@ const ContenedoresTab = ({
         throw new Error(
           data?.error || ERROR_MESSAGES.SAVE_ERROR
         );
+      }
+
+      // Si el deal ya está publicado, el backend encola un worker que recalcula
+      // precios y sincroniza Contenedor/Elemento en background (igual que publicar
+      // cotización). Esperamos a que termine antes de pasar a transitario para que
+      // el siguiente paso vea los precios ya actualizados.
+      if (data.job_id) {
+        try {
+          await waitForSync(data.job_id);
+        } catch (syncError) {
+          console.error("La sincronización de precios no completó:", syncError);
+          setErrorSave(
+            "Los contenedores se guardaron, pero la sincronización de precios no se completó. Espera unos segundos y vuelve a pulsar Siguiente."
+          );
+          return;
+        }
       }
 
       // Backend doesn't return unique_containers in POST response
@@ -820,10 +942,23 @@ const ContenedoresTab = ({
                 </>
               )}
 
+              {(syncStatus === "pending" || syncStatus === "processing") && (
+                <Flex direction="row" align="center" gap="small">
+                  <LoadingSpinner size="xs" />
+                  <Text>
+                    {LOADING_MESSAGES.SYNCING_PRICES}
+                    {syncData.contenedores || syncData.elementos
+                      ? ` (${syncData.contenedores} contenedores · ${syncData.elementos} líneas)`
+                      : ""}
+                  </Text>
+                </Flex>
+              )}
+
               <ButtonRow>
                 <Button
                   variant="secondary"
                   onClick={() => onNavigate("articulos")}
+                  disabled={isSubmitting}
                 >
                   Anterior
                 </Button>
@@ -837,7 +972,11 @@ const ContenedoresTab = ({
                   }
                   loading={isSubmitting}
                 >
-                  {isSubmitting ? LOADING_MESSAGES.SAVING : "Siguiente"}
+                  {isSubmitting
+                    ? syncStatus === "pending" || syncStatus === "processing"
+                      ? LOADING_MESSAGES.SYNCING_PRICES
+                      : LOADING_MESSAGES.SAVING
+                    : "Siguiente"}
                 </Button>
               </ButtonRow>
             </>

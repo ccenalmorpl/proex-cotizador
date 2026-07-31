@@ -32,8 +32,12 @@ import { API_CONFIG } from "../config";
 import {
   calcularPrecioPorCajaPorIncoterm,
   calcularTotalesPorTipoVenta,
+  buildPricingParamsPorContenedor,
+  normalizeIncoterm,
+  bucketIncoterm,
+  esModoDobleFlete,
 } from "../utils/pricing.utils";
-import { getIVAEfectivo } from "../utils/iva.utils";
+import { getPorcentajesIVA } from "../utils/iva.utils";
 
 // Resuelve el label legible de un campo: acepta string o {value, options}
 const getSelectLabel = (field) => {
@@ -540,6 +544,89 @@ const RevisionTab = ({
     [gastosPorTramo, serviciosPorCaja, seguroPorCaja, comisionCliente]
   );
 
+  // Importes a nivel de contenedor (sin repartir). Cada contenedor los reparte
+  // entre SUS propias cajas vía buildPricingParamsPorContenedor.
+  const pricingBase = useMemo(() => {
+    const servicios = serviciosData?.serviciosSeleccionados || [];
+    let serviciosImporte = 0;
+    let seguroImporte = 0;
+    const serviciosBuckets = {};
+    const seguroBuckets = {};
+    servicios.forEach((s) => {
+      const importe = Number(s.importe) || 0;
+      const code = (s.tipo_iva || "").toString().trim().toUpperCase();
+      serviciosImporte += importe;
+      if (s.tipoArticulo === "seguro") {
+        seguroImporte += importe;
+        seguroBuckets[code] = (seguroBuckets[code] || 0) + importe;
+      } else {
+        serviciosBuckets[code] = (serviciosBuckets[code] || 0) + importe;
+      }
+    });
+    return {
+      precioOrigen: Number(transitarioData?.precioOrigen) || 0,
+      precioDestino: Number(transitarioData?.precioDestino) || 0,
+      serviciosImporte,
+      seguroImporte,
+      serviciosBuckets,
+      seguroBuckets,
+      importeComision: clienteData?.importeComision?.value ?? clienteData?.importeComision,
+      tipoComision: clienteData?.tipoComision?.value ?? clienteData?.tipoComision,
+      repercutir: (clienteData?.repercutirACliente?.value ?? clienteData?.repercutirACliente) === "si",
+      tieneIntermediario: !!clienteData?.codigoIntermediario,
+      numContenedores: contenedoresUnicos.length,
+    };
+  }, [serviciosData, transitarioData, clienteData, contenedoresUnicos]);
+
+  // Buckets {code_iva: importe/caja} de servicios y seguro, para gravar cada
+  // servicio con su propio tipo. Mismo factor que serviciosPorCaja/seguroPorCaja.
+  const { serviciosNoSeguroPorIva, seguroPorIva } = useMemo(() => {
+    const noSeguro = {};
+    const seguro = {};
+    if (serviciosData?.serviciosSeleccionados && totalCajas > 0) {
+      const factor = contenedoresUnicos.length / totalCajas;
+      serviciosData.serviciosSeleccionados.forEach((s) => {
+        const code = (s.tipo_iva || "").toString().trim().toUpperCase();
+        const importePorCaja = (Number(s.importe) || 0) * factor;
+        const target = s.tipoArticulo === "seguro" ? seguro : noSeguro;
+        target[code] = (target[code] || 0) + importePorCaja;
+      });
+    }
+    return { serviciosNoSeguroPorIva: noSeguro, seguroPorIva: seguro };
+  }, [serviciosData, totalCajas, contenedoresUnicos]);
+
+  // Modo doble flete (cliente nacional + camión + CIF/CFR): dos transitarios/IVAs por tramo
+  const modoDoble = esModoDobleFlete({
+    fleteDobleDisponible: transitarioData?.fleteDobleDisponible,
+    tipoVenta: clienteData?.tipoVenta,
+    tipoCliente: clienteData?.tipoCliente,
+  });
+
+  // Total del pedido (sin IVA y con IVA por concepto) para el tipo de venta
+  // elegido. Reusa la utilidad compartida en vez de recalcular inline.
+  const totalesRevision = useMemo(() => {
+    // bucketIncoterm mapea FCA→EXW: FCA no tiene bucket propio en los totales.
+    const key = bucketIncoterm(clienteData?.tipoVenta?.value || clienteData?.tipoVenta);
+    const t = calcularTotalesPorTipoVenta(contenedoresUnicos, preciosEXW, pricingBase, {
+      clienteData,
+      tiposIVA,
+      ivaData,
+      getPorcentajesIVA,
+      tipoIVAFletes: transitarioData?.tipoIVAFletes || "",
+      tipoIVAFleteTerrestre: transitarioData?.tipoIVAFleteTerrestre || "",
+      tipoIVAComision: clienteData?.tipoIVAComision || "",
+    });
+    return { totalSinIVA: t[key] || 0, totalConIVA: t[`${key}_IVA`] || 0 };
+  }, [
+    contenedoresUnicos,
+    preciosEXW,
+    pricingBase,
+    clienteData,
+    tiposIVA,
+    ivaData,
+    transitarioData,
+  ]);
+
   // Validar campos requeridos
   const validarCamposRequeridos = () => {
     const errores = [];
@@ -652,10 +739,9 @@ const RevisionTab = ({
       });
     }
 
-    const tipoVentaValue =
-      clienteData.tipoVenta?.value || clienteData.tipoVenta;
-    const tipoVenta =
-      tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") || "EXW";
+    const tipoVenta = normalizeIncoterm(
+      clienteData.tipoVenta?.value || clienteData.tipoVenta
+    );
 
     const almacenValue =
       transitarioData.almacen?.value || transitarioData.almacen;
@@ -678,7 +764,10 @@ const RevisionTab = ({
       });
     }
     
-    if (tipoVenta.trim() !== "EXW" && !transitarioData.transitarioSeleccionado) {
+    if (
+      !["EXW", "FCA"].includes(tipoVenta.trim()) &&
+      !transitarioData.transitarioSeleccionado
+    ) {
       errores.push({
         seccion: "Ruta y Transporte",
         campo: "Transitario",
@@ -686,7 +775,37 @@ const RevisionTab = ({
       });
     }
 
-    if (!transitarioData.fechaCaducidadFleteSalida) {
+    // Modo doble flete: transitario e IVA propios del tramo terrestre
+    if (modoDoble) {
+      if (!transitarioData.transitarioTerrestreSeleccionado) {
+        errores.push({
+          seccion: "Ruta y Transporte",
+          campo: "Transitario terrestre",
+          mensaje: "Debe seleccionar el transitario del flete terrestre",
+        });
+      }
+
+      if (!transitarioData.tipoIVAFleteTerrestre) {
+        errores.push({
+          seccion: "Ruta y Transporte",
+          campo: "IVA Flete Terrestre",
+          mensaje: "Debe especificar el tipo de IVA del flete terrestre",
+        });
+      }
+
+      if (!transitarioData.tipoIVAFletes) {
+        errores.push({
+          seccion: "Ruta y Transporte",
+          campo: "IVA Flete Marítimo",
+          mensaje: "Debe especificar el tipo de IVA del flete marítimo",
+        });
+      }
+    }
+
+    if (
+      ["FOB", "CFR", "CIF", "DAP_MARITIMO", "DAP_TERRESTRE"].includes(tipoVenta) &&
+      !transitarioData.fechaCaducidadFleteSalida
+    ) {
       errores.push({
         seccion: "Ruta y Transporte",
         campo: "Fecha caducidad flete salida",
@@ -694,7 +813,10 @@ const RevisionTab = ({
       });
     }
 
-    if (!["EXW", "DAP_TERRESTRE"].includes(tipoVenta) && !transitarioData.fechaCaducidadFleteDestino) {
+    if (
+      ["CFR", "CIF", "DAP_MARITIMO"].includes(tipoVenta) &&
+      !transitarioData.fechaCaducidadFleteDestino
+    ) {
       errores.push({
         seccion: "Ruta y Transporte",
         campo: "Fecha caducidad flete destino",
@@ -713,7 +835,7 @@ const RevisionTab = ({
 
     // Validar puerto de salida si es requerido
     if (
-      ["FOB", "CFR", "CIF", "DAP_MARITIMO", "DAP_MARÍTIMO"].includes(tipoVenta)
+      ["FOB", "CFR", "CIF", "DAP_MARITIMO"].includes(tipoVenta)
     ) {
       const puertoSalidaValue =
         transitarioData.puertoSalida?.value || transitarioData.puertoSalida;
@@ -739,7 +861,7 @@ const RevisionTab = ({
     }
 
     // Validar puerto de destino si es requerido
-    if (["CFR", "CIF", "DAP_MARITIMO", "DAP_MARÍTIMO"].includes(tipoVenta)) {
+    if (["CFR", "CIF", "DAP_MARITIMO"].includes(tipoVenta)) {
       const puertoDestinoValue =
         transitarioData.puertoDestino?.value || transitarioData.puertoDestino;
       if (!puertoDestinoValue) {
@@ -765,7 +887,7 @@ const RevisionTab = ({
     }
 
     // Validar localidad de destino si es requerida
-    if (["DAP_TERRESTRE", "DAP_MARITIMO", "DAP_MARÍTIMO"].includes(tipoVenta)) {
+    if (["DAP_TERRESTRE", "DAP_MARITIMO"].includes(tipoVenta)) {
       const localidadDestinoValue =
         transitarioData.localidadDestino?.value ||
         transitarioData.localidadDestino;
@@ -885,33 +1007,33 @@ const RevisionTab = ({
 
       // Los servicios y fletes son por contenedor: multiplicar por nº de contenedores
       const numContenedores = contenedoresUnicos.length;
-      const serviciosPorCaja = totalCajas > 0 ? (totalServicios * numContenedores) / totalCajas : 0;
 
-      const gastosPorTramo = {
-        hastaPuertoSalida: (transitarioData?.precioOrigen || 0) * numContenedores / totalCajas || 0,
-        hastaPuertoDestino: (transitarioData?.precioDestino || 0) * numContenedores / totalCajas || 0,
-        hastaLocalidadDestino: (transitarioData?.precioOrigen || 0) * numContenedores / totalCajas || 0,
-        hastaPuertoDestinoLocalidad: (transitarioData?.precioDestino || 0) * numContenedores / totalCajas || 0,
-      };
-
-      // Comisión por caja (igual que NegociacionTab)
-      const importeComisionFn = clienteData.importeComision?.value || clienteData.importeComision || 0;
-      const tipoComisionFn = clienteData.tipoComision?.value || clienteData.tipoComision;
-      let comisionPorCajaFn = 0;
-      if (clienteData?.codigoIntermediario && tipoComisionFn && importeComisionFn) {
-        if (tipoComisionFn === "importe_por_negocio") comisionPorCajaFn = totalCajas > 0 ? importeComisionFn / totalCajas : 0;
-        else if (tipoComisionFn === "importe_por_contenedor") comisionPorCajaFn = totalCajas > 0 ? (importeComisionFn * numContenedores) / totalCajas : 0;
-        else if (tipoComisionFn === "importe_por_cajas") comisionPorCajaFn = importeComisionFn;
-      }
-      const repercutirFn = clienteData?.repercutirACliente?.value || clienteData?.repercutirACliente;
-      const comisionClienteFn = repercutirFn === "si" ? comisionPorCajaFn : 0;
-
-      // Parámetros compartidos para funciones de pricing
-      const pricingParamsFn = {
-        gastosPorTramo,
-        serviciosPorCaja,
-        seguroPorCaja,
-        comisionCliente: comisionClienteFn,
+      // Importes a nivel de contenedor; cada contenedor los reparte entre SUS cajas.
+      const serviciosBucketsFn = {};
+      const seguroBucketsFn = {};
+      let seguroImporteFn = 0;
+      (serviciosData?.serviciosSeleccionados || []).forEach((s) => {
+        const importe = Number(s.importe) || 0;
+        const code = (s.tipo_iva || "").toString().trim().toUpperCase();
+        if (s.tipoArticulo === "seguro") {
+          seguroImporteFn += importe;
+          seguroBucketsFn[code] = (seguroBucketsFn[code] || 0) + importe;
+        } else {
+          serviciosBucketsFn[code] = (serviciosBucketsFn[code] || 0) + importe;
+        }
+      });
+      const baseFn = {
+        precioOrigen: Number(transitarioData?.precioOrigen) || 0,
+        precioDestino: Number(transitarioData?.precioDestino) || 0,
+        serviciosImporte: totalServicios,
+        seguroImporte: seguroImporteFn,
+        serviciosBuckets: serviciosBucketsFn,
+        seguroBuckets: seguroBucketsFn,
+        importeComision: clienteData?.importeComision?.value ?? clienteData?.importeComision,
+        tipoComision: clienteData?.tipoComision?.value ?? clienteData?.tipoComision,
+        repercutir: (clienteData?.repercutirACliente?.value ?? clienteData?.repercutirACliente) === "si",
+        tieneIntermediario: !!clienteData?.codigoIntermediario,
+        numContenedores,
       };
 
       // 2. CONSTRUIR LINE ITEMS (Servicios, Contenedores, Artículos, Fletes)
@@ -938,6 +1060,12 @@ const RevisionTab = ({
       // 2.2. CONTENEDORES Y ARTÍCULOS
       contenedoresUnicos.forEach((cont, contIndex) => {
         const containerName = cont.container_name || `${dealId}-${String(contIndex + 1).padStart(3, '0')}`;
+
+        const cajasContenedor = cont.container_config?.articulos?.reduce(
+          (sum, a) => sum + (a.numCajas || 0),
+          0
+        ) || 0;
+        const pricingParamsContenedor = buildPricingParamsPorContenedor(baseFn, cajasContenedor);
 
         // Línea de contenedor (agrupador)
         lineItems.push({
@@ -967,13 +1095,12 @@ const RevisionTab = ({
             ? art.margen_unitario * 100
             : clienteData.margen || 12;
 
-          const precioEXW = preciosEXW[lineItemId] ||
+          const precioEXW = preciosEXW[lineItemId] != null ? preciosEXW[lineItemId] :
                             (precioCoste + (precioCoste * margenInicial / 100));
 
           // Calcular precio según tipo de venta (utilidad compartida con NegociacionTab)
-          const tipoVentaValue = clienteData.tipoVenta?.value || clienteData.tipoVenta;
-          const tipoVenta = tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") || "EXW";
-          const precioFinalRaw = calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVenta, pricingParamsFn);
+          const tipoVenta = normalizeIncoterm(clienteData.tipoVenta?.value || clienteData.tipoVenta);
+          const precioFinalRaw = precioEXW === 0 ? 0 : calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVenta, pricingParamsContenedor);
           const precioFinal = Math.round(precioFinalRaw * 1000) / 1000;
 
           lineItems.push({
@@ -996,10 +1123,9 @@ const RevisionTab = ({
       });
 
       // 2.3. FLETES (si aplica según Incoterm)
-      const tipoVentaValue = clienteData.tipoVenta?.value || clienteData.tipoVenta;
-      const tipoVenta = tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") || "EXW";
+      const tipoVenta = normalizeIncoterm(clienteData.tipoVenta?.value || clienteData.tipoVenta);
 
-      if (["FOB", "CFR", "CIF", "DAP_MARITIMO", "DAP_MARÍTIMO"].includes(tipoVenta)) {
+      if (["FOB", "CFR", "CIF", "DAP_MARITIMO"].includes(tipoVenta)) {
         const totalFletes = ((transitarioData?.precioOrigen || 0) + (transitarioData?.precioDestino || 0)) * numContenedores;
         lineItems.push({
           type: "flete",
@@ -1017,7 +1143,7 @@ const RevisionTab = ({
       // 3. CALCULAR PRECIOS POR TIPO DE VENTA (utilidad compartida con NegociacionTab)
 
       const totalesPorVenta = calcularTotalesPorTipoVenta(
-        contenedoresUnicos, preciosEXW, pricingParamsFn, { clienteData }
+        contenedoresUnicos, preciosEXW, baseFn, { clienteData }
       );
       const totalEXW = totalesPorVenta.EXW;
       const totalDAP_TERRESTRE = totalesPorVenta.DAP_TERRESTRE;
@@ -1088,6 +1214,19 @@ const RevisionTab = ({
           precioDestino: transitarioData.precioDestino || 0,
           tipoIVAFletes: transitarioData.tipoIVAFletes || "",
           tipoIVAFletesSoportado: transitarioData.tipoIVAFletesSoportado || "",
+          // Modo doble flete: tramo terrestre con transitario/IVA propios (aditivo)
+          transitarioTerrestre: modoDoble
+            ? transitarioData.transitarioTerrestreSeleccionado?.name || ""
+            : "",
+          transitarioTerrestreCardcode: modoDoble
+            ? transitarioData.transitarioTerrestreSeleccionado?.cardcode || ""
+            : "",
+          tipoIVAFleteTerrestre: modoDoble
+            ? transitarioData.tipoIVAFleteTerrestre || ""
+            : "",
+          tipoIVAFleteTerrestreSoportado: modoDoble
+            ? transitarioData.tipoIVAFleteTerrestreSoportado || ""
+            : "",
         },
 
         // LINE ITEMS (Servicios, Contenedores, Artículos, Fletes)
@@ -1120,14 +1259,13 @@ const RevisionTab = ({
           filledUpTo: Math.round(contenedoresData.totales?.mediaOcupacion || 0),
           numContainers: contenedoresUnicos.length,
           totalEuros: (() => {
-            const tipoVentaNorm = tipoVenta.toUpperCase().replace(/\s+/g, "_");
-            switch(tipoVentaNorm) {
+            switch (tipoVenta) {
               case "EXW": return totalEXW;
+              case "FCA": return totalEXW;
               case "DAP_TERRESTRE": return totalDAP_TERRESTRE;
               case "FOB": return totalFOB;
               case "CFR": return totalCFR;
-              case "DAP_MARITIMO":
-              case "DAP_MARÍTIMO": return totalDAP_MARITIMO;
+              case "DAP_MARITIMO": return totalDAP_MARITIMO;
               case "CIF": return totalCIF;
               default: return totalEXW;
             }
@@ -1455,13 +1593,19 @@ const RevisionTab = ({
 
                     <Heading as="h4">Artículos en este contenedor</Heading>
                     {(() => {
-                      const tipoVentaValue =
-                        clienteData.tipoVenta?.value ||
-                        clienteData.tipoVenta ||
-                        "EXW";
-                      const tipoVentaLabel = tipoVentaValue
-                        .toUpperCase()
-                        .replace(/\s+/g, "_");
+                      const tipoVentaLabel = normalizeIncoterm(
+                        clienteData.tipoVenta?.value || clienteData.tipoVenta
+                      );
+
+                      const cajasContenedor =
+                        contenedorSeleccionado.container_config?.articulos?.reduce(
+                          (sum, a) => sum + (a.numCajas || 0),
+                          0
+                        ) || 0;
+                      const pricingParamsContenedor = buildPricingParamsPorContenedor(
+                        pricingBase,
+                        cajasContenedor
+                      );
 
                       return contenedorSeleccionado.container_config
                         ?.articulos &&
@@ -1522,7 +1666,7 @@ const RevisionTab = ({
                                     ? art.margen_unitario * 100
                                     : clienteData.margen || 12;
                                 const precioEXW =
-                                  preciosEXW[lineItemId] ||
+                                  preciosEXW[lineItemId] != null ? preciosEXW[lineItemId] :
                                   precioCoste +
                                     (precioCoste * margenInicial) / 100;
 
@@ -1536,7 +1680,7 @@ const RevisionTab = ({
                                       ).toFixed(1)
                                     : "0.0";
 
-                                const precioFinalTipoVenta = calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVentaLabel, pricingParams);
+                                const precioFinalTipoVenta = precioEXW === 0 ? 0 : calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVentaLabel, pricingParamsContenedor);
 
                                 return (
                                   <TableRow
@@ -1595,7 +1739,7 @@ const RevisionTab = ({
             <Flex direction="column" gap="small">
               <Flex direction="row" justify="space-between">
                 <RevisionField
-                  label="Transitario *"
+                  label={modoDoble ? "Transitario marítimo *" : "Transitario *"}
                   value={
                     transitarioData.transitarioSeleccionado?.name ||
                     "No seleccionado"
@@ -1609,6 +1753,18 @@ const RevisionTab = ({
                   }
                 />
               </Flex>
+              {modoDoble && (
+                <Flex direction="row" justify="space-between">
+                  <RevisionField
+                    label="Transitario terrestre *"
+                    value={
+                      transitarioData.transitarioTerrestreSeleccionado?.name ||
+                      "No seleccionado"
+                    }
+                    required={true}
+                  />
+                </Flex>
+              )}
               <Flex direction="row" justify="space-between">
                 <RevisionField
                   label="Días Libres en Puerto Destino *"
@@ -1629,11 +1785,9 @@ const RevisionTab = ({
 
             <Heading as="h4">Trayecto Logístico</Heading>
             {(() => {
-              // Extraer el valor si es un objeto {value, options}
-              const tipoVentaValue =
-                clienteData.tipoVenta?.value || clienteData.tipoVenta;
-              const tipoVenta =
-                tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") || "EXW";
+              const tipoVenta = normalizeIncoterm(
+                clienteData.tipoVenta?.value || clienteData.tipoVenta
+              );
 
               // Determinar qué pasos son necesarios según el tipo de venta
               const steps = [
@@ -1658,7 +1812,6 @@ const RevisionTab = ({
                     "CFR",
                     "CIF",
                     "DAP_MARITIMO",
-                    "DAP_MARÍTIMO",
                   ].includes(tipoVenta),
                   completed: !!(
                     transitarioData.puertoSalida?.value ||
@@ -1674,7 +1827,6 @@ const RevisionTab = ({
                     "CFR",
                     "CIF",
                     "DAP_MARITIMO",
-                    "DAP_MARÍTIMO",
                   ].includes(tipoVenta),
                   completed: !!(
                     transitarioData.puertoDestino?.value ||
@@ -1689,7 +1841,6 @@ const RevisionTab = ({
                   required: [
                     "DAP_TERRESTRE",
                     "DAP_MARITIMO",
-                    "DAP_MARÍTIMO",
                   ].includes(tipoVenta),
                   completed: !!(
                     transitarioData.localidadDestino?.value ||
@@ -1771,14 +1922,22 @@ const RevisionTab = ({
               <Heading as="h4">Costes de Transporte</Heading>
               <Flex direction="row" justify="space-between">
                 <RevisionField
-                  label="Precio Ruta hasta Puerto Salida"
+                  label={
+                    modoDoble
+                      ? "Flete terrestre — Precio Ruta hasta Puerto Salida"
+                      : "Precio Ruta hasta Puerto Salida"
+                  }
                   value={
                     formatCurrency(transitarioData.precioOrigen, 2) ||
                     "No especificados"
                   }
                 />
                 <RevisionField
-                  label="Fecha caducidad flete salida *"
+                  label={
+                    modoDoble
+                      ? "Flete terrestre — Fecha caducidad *"
+                      : "Fecha caducidad flete salida *"
+                  }
                   value={
                     transitarioData.fechaCaducidadFleteSalida
                       ? new Date(Date.UTC(
@@ -1790,19 +1949,27 @@ const RevisionTab = ({
                   }
                 />
               </Flex>
-              {!["EXW", "DAP_TERRESTRE"].includes(
-                (clienteData.tipoVenta?.value || clienteData.tipoVenta || "").toUpperCase().replace(/\s+/g, "_")
+              {!["EXW", "FCA", "DAP_TERRESTRE"].includes(
+                normalizeIncoterm(clienteData.tipoVenta?.value || clienteData.tipoVenta)
               ) && (
                 <Flex direction="row" justify="space-between">
                   <RevisionField
-                    label="Precio Ruta hasta Puerto Destino"
+                    label={
+                      modoDoble
+                        ? "Flete marítimo — Precio Ruta hasta Puerto Destino"
+                        : "Precio Ruta hasta Puerto Destino"
+                    }
                     value={
                       formatCurrency(transitarioData.precioDestino, 2) ||
                       "No especificados"
                     }
                   />
                   <RevisionField
-                    label="Fecha caducidad flete destino *"
+                    label={
+                      modoDoble
+                        ? "Flete marítimo — Fecha caducidad *"
+                        : "Fecha caducidad flete destino *"
+                    }
                     value={
                       transitarioData.fechaCaducidadFleteDestino
                         ? new Date(Date.UTC(
@@ -1815,9 +1982,33 @@ const RevisionTab = ({
                   />
                 </Flex>
               )}
+              {modoDoble && (
+                <Flex direction="row" justify="space-between">
+                  <RevisionField
+                    label="IVA Repercutido Flete Terrestre"
+                    value={(() => {
+                      const code = transitarioData.tipoIVAFleteTerrestre;
+                      const opt = tipoIVAOptions.find(o => o.value === code);
+                      return opt?.label || code || "No especificado";
+                    })()}
+                  />
+                  <RevisionField
+                    label="IVA Soportado Flete Terrestre"
+                    value={(() => {
+                      const code = transitarioData.tipoIVAFleteTerrestreSoportado;
+                      const opt = tipoIVASoportadoOptions.find(o => o.value === code);
+                      return opt?.label || code || "No especificado";
+                    })()}
+                  />
+                </Flex>
+              )}
               <Flex direction="row" justify="space-between">
                 <RevisionField
-                  label="IVA Repercutido Fletes"
+                  label={
+                    modoDoble
+                      ? "IVA Repercutido Flete Marítimo"
+                      : "IVA Repercutido Fletes"
+                  }
                   value={(() => {
                     const code = transitarioData.tipoIVAFletes;
                     const opt = tipoIVAOptions.find(o => o.value === code);
@@ -1825,7 +2016,11 @@ const RevisionTab = ({
                   })()}
                 />
                 <RevisionField
-                  label="IVA Soportado Fletes"
+                  label={
+                    modoDoble
+                      ? "IVA Soportado Flete Marítimo"
+                      : "IVA Soportado Fletes"
+                  }
                   value={(() => {
                     const code = transitarioData.tipoIVAFletesSoportado;
                     const opt = tipoIVASoportadoOptions.find(o => o.value === code);
@@ -1936,158 +2131,18 @@ const RevisionTab = ({
               />
               <StatisticsItem
                 label={`Total ${clienteData.tipoVenta || "EXW"}`}
-                number={(() => {
-                  let totalSinIVA = 0;
-                  let totalConIVA = 0;
-
-                  contenedoresUnicos.forEach((cont) => {
-                    cont.container_config?.articulos?.forEach((art) => {
-                      // Usar el precio EXW del estado compartido (editado en NegociacionTab)
-                      const lineItemId = art.line_item_id;
-                      const articuloCompleto = articulosSeleccionados.find(
-                        (a) => a.id === art.articuloId
-                      );
-                      const precioCoste =
-                        articuloCompleto?.hs_price_eur || art.price || 0;
-                      const margenInicial =
-                        art.margen_unitario !== null &&
-                        art.margen_unitario !== undefined
-                          ? art.margen_unitario * 100
-                          : clienteData.margen || 12;
-                      const precioEXW =
-                        preciosEXW[lineItemId] ||
-                        precioCoste + (precioCoste * margenInicial) / 100;
-                      const numCajas = art.numCajas || 0;
-
-                      // Calcular precio según tipo de venta
-                      // Extraer el valor si es un objeto {value, options}
-                      const tipoVentaValue =
-                        clienteData.tipoVenta?.value || clienteData.tipoVenta;
-                      const tipoVenta =
-                        tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") ||
-                        "EXW";
-                      const precioFinal = calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVenta, pricingParams);
-
-                      // Obtener el tipo de IVA del artículo (del estado compartido o del artículo)
-                      const tipoIVAArticulo =
-                        tiposIVA[lineItemId] || art.tipo_iva_repercutido || "";
-                      const ivaPorcentaje = getIVAEfectivo(
-                        tipoIVAArticulo,
-                        ivaData,
-                        (clienteData?.equ || "").toString().toLowerCase() === "si"
-                      );
-
-                      const precioFinalRedondeado = Math.round(precioFinal * 1000) / 1000;
-                      totalSinIVA += precioFinalRedondeado * numCajas;
-                      totalConIVA +=
-                        precioFinalRedondeado * numCajas * (1 + ivaPorcentaje / 100);
-                    });
-                  });
-
-                  return formatCurrency(totalSinIVA, 2);
-                })()}
+                number={formatCurrency(totalesRevision.totalSinIVA, 2)}
               >
                 <StatisticsTrend
                   direction="increase"
-                  value={(() => {
-                    let totalConIVA = 0;
-
-                    contenedoresUnicos.forEach((cont) => {
-                      cont.container_config?.articulos?.forEach((art) => {
-                        const lineItemId = art.line_item_id;
-                        const articuloCompleto = articulosSeleccionados.find(
-                          (a) => a.id === art.articuloId
-                        );
-                        const precioCoste =
-                          articuloCompleto?.hs_price_eur || art.price || 0;
-                        const margenInicial =
-                          art.margen_unitario !== null &&
-                          art.margen_unitario !== undefined
-                            ? art.margen_unitario * 100
-                            : clienteData.margen || 12;
-                        const precioEXW =
-                          preciosEXW[lineItemId] ||
-                          precioCoste + (precioCoste * margenInicial) / 100;
-                        const numCajas = art.numCajas || 0;
-
-                        // Extraer el valor si es un objeto {value, options}
-                        const tipoVentaValue =
-                          clienteData.tipoVenta?.value || clienteData.tipoVenta;
-                        const tipoVenta =
-                          tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") ||
-                          "EXW";
-                        const precioFinal = calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVenta, pricingParams);
-
-                        const tipoIVAArticulo =
-                          tiposIVA[lineItemId] ||
-                          art.tipo_iva_repercutido ||
-                          "";
-                        const ivaPorcentaje = getIVAEfectivo(
-                          tipoIVAArticulo,
-                          ivaData,
-                          (clienteData?.equ || "").toString().toLowerCase() === "si"
-                        );
-                        const precioFinalRedondeado = Math.round(precioFinal * 1000) / 1000;
-                        totalConIVA +=
-                          precioFinalRedondeado * numCajas * (1 + ivaPorcentaje / 100);
-                      });
-                    });
-
-                    return formatCurrency(totalConIVA, 2) + " c/IVA";
-                  })()}
+                  value={formatCurrency(totalesRevision.totalConIVA, 2) + " c/IVA"}
                 />
                 <Text variant="microcopy">
                   {(() => {
-                    let totalSinIVA = 0;
-                    let totalConIVA = 0;
-
-                    contenedoresUnicos.forEach((cont) => {
-                      cont.container_config?.articulos?.forEach((art) => {
-                        const lineItemId = art.line_item_id;
-                        const articuloCompleto = articulosSeleccionados.find(
-                          (a) => a.id === art.articuloId
-                        );
-                        const precioCoste =
-                          articuloCompleto?.hs_price_eur || art.price || 0;
-                        const margenInicial =
-                          art.margen_unitario !== null &&
-                          art.margen_unitario !== undefined
-                            ? art.margen_unitario * 100
-                            : clienteData.margen || 12;
-                        const precioEXW =
-                          preciosEXW[lineItemId] ||
-                          precioCoste + (precioCoste * margenInicial) / 100;
-                        const numCajas = art.numCajas || 0;
-
-                        // Extraer el valor si es un objeto {value, options}
-                        const tipoVentaValue =
-                          clienteData.tipoVenta?.value || clienteData.tipoVenta;
-                        const tipoVenta =
-                          tipoVentaValue?.toUpperCase().replace(/\s+/g, "_") ||
-                          "EXW";
-                        const precioFinal = calcularPrecioPorCajaPorIncoterm(precioEXW, tipoVenta, pricingParams);
-
-                        const tipoIVAArticulo =
-                          tiposIVA[lineItemId] ||
-                          art.tipo_iva_repercutido ||
-                          "";
-                        const ivaPorcentaje = getIVAEfectivo(
-                          tipoIVAArticulo,
-                          ivaData,
-                          (clienteData?.equ || "").toString().toLowerCase() === "si"
-                        );
-
-                        const precioFinalRedondeado = Math.round(precioFinal * 1000) / 1000;
-                        totalSinIVA += precioFinalRedondeado * numCajas;
-                        totalConIVA +=
-                          precioFinalRedondeado * numCajas * (1 + ivaPorcentaje / 100);
-                      });
-                    });
-
                     const precioPorCajaSinIVA =
-                      totalCajas > 0 ? totalSinIVA / totalCajas : 0;
+                      totalCajas > 0 ? totalesRevision.totalSinIVA / totalCajas : 0;
                     const precioPorCajaConIVA =
-                      totalCajas > 0 ? totalConIVA / totalCajas : 0;
+                      totalCajas > 0 ? totalesRevision.totalConIVA / totalCajas : 0;
 
                     return (
                       formatCurrency(precioPorCajaSinIVA) +
@@ -2120,7 +2175,7 @@ const RevisionTab = ({
                           ? art.margen_unitario * 100
                           : clienteData.margen || 12;
                       const precioEXW =
-                        preciosEXW[lineItemId] ||
+                        preciosEXW[lineItemId] != null ? preciosEXW[lineItemId] :
                         precioCoste + (precioCoste * margenInicial) / 100;
                       const numCajas = art.numCajas || 0;
 
@@ -2173,7 +2228,7 @@ const RevisionTab = ({
                             ? art.margen_unitario * 100
                             : clienteData.margen || 12;
                         const precioEXW =
-                          preciosEXW[lineItemId] ||
+                          preciosEXW[lineItemId] != null ? preciosEXW[lineItemId] :
                           precioCoste + (precioCoste * margenInicial) / 100;
                         const numCajas = art.numCajas || 0;
 
