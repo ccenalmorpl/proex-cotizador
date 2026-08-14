@@ -1,0 +1,212 @@
+{
+  "esignature.failure.default" : {
+    "message" : "Hubo un problema al buscar la información de firma. Vuelve a cargar la página.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.failure.label" : {
+    "message" : "Texto de alerta de falla",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.default" : {
+    "message" : "<h3>Firma</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.label" : {
+    "message" : "Encabezado",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.label" : {
+    "message" : "Firma electrónica",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.default" : {
+    "message" : "Elige un perfil para iniciar el proceso de firma electrónica.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.label" : {
+    "message" : "Texto de explicación de firma electrónica",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.redirecting.default" : {
+    "message" : "Redireccionando...",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.default" : {
+    "message" : "Firmar ahora",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.label" : {
+    "message" : "Texto del botón de firmar ahora",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_rate_limit.default" : {
+    "message" : "Has solicitado firmar muy recientemente. Inténtalo de nuevo en 5 minutos.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_unknown.default" : {
+    "message" : "Ha habido un problema al iniciar la firma electrónica. Inténtalo de nuevo.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.default" : {
+    "message" : "Firmado",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.label" : {
+    "message" : "Texto firmado",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.test_mode.default" : {
+    "message" : "Es una cotización de prueba, por lo que no se pueden recibir firmas reales.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.default" : {
+    "message" : "Correo de verificación enviado.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.label" : {
+    "message" : "Texto enviado en correo de verificación",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.default" : {
+    "message" : "Verificar para firmar",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.label" : {
+    "message" : "Texto del botón de correo de verificación",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_rate_limit.default" : {
+    "message" : "Solicitaste un correo de verificación demasiado recientemente. Inténtalo de nuevo en 5 minutos.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_unknown.default" : {
+    "message" : "Hubo un problema al enviar un correo de verificación. Inténtalo de nuevo.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Puedes decidir si quieres recibir firmas cuando creas una cotización con esta plantilla.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Firma",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.default" : {
+    "message" : "Refrendo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.label" : {
+    "message" : "Campo de refrendo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.default" : {
+    "message" : "Fecha",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.label" : {
+    "message" : "Campo de fecha",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.default" : {
+    "message" : "<h3>Refrendo</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.label" : {
+    "message" : "Encabezado",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.inline_help_text" : {
+    "message" : "Al crear una cotización, puede elegir si se mostrará un referendo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.label" : {
+    "message" : "Refrendo",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.default" : {
+    "message" : "Nombre impreso",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.label" : {
+    "message" : "Campo de nombre impreso",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.default" : {
+    "message" : "Fecha",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.label" : {
+    "message" : "Campo de fecha",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.default" : {
+    "message" : "<h3>Firma</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.label" : {
+    "message" : "Encabezado",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.label" : {
+    "message" : "Imprimir firma",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.default" : {
+    "message" : "Nombre impreso",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.label" : {
+    "message" : "Campo de nombre impreso",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.default" : {
+    "message" : "Firma",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.label" : {
+    "message" : "Campo de firma",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -9,7 +9,11 @@ Caso real que motivó el fix (deal SOKAF, 2026-07-30): 1020 cajas a 8,00 CIF +
 
 import pytest
 
-from app.utils.iva_helpers import _derivar_precio_total_fabricantes
+from app.utils.iva_helpers import (
+    _derivar_precio_total_fabricantes,
+    _emparejar_elementos_fabricante,
+    verificar_suma_precio_total_elementos,
+)
 from app.utils.pricing import PricingParams
 
 CAJAS_TOTAL = 1660.0
@@ -80,6 +84,101 @@ def test_caso_real_suma_clava_el_total_negociado():
 
     assert upd == {"el-1": "7078.55", "el-2": "3801.45"}
     assert float(upd["el-1"]) + float(upd["el-2"]) + FLETES + SEGURO == pytest.approx(12640.00)
+
+
+def _escenario_p63433865390():
+    """Caso real DAP TERRESTRE (deal 63433865390): 3.600 cajas ancladas a 7,20,
+    flete 900 y seguro 60. Los Elementos llegan congelados con el EXW que salía
+    del flete viejo de 855 → Σ 25.965 en vez de 25.920."""
+    fabricantes = [
+        _linea("li-1", "6.933", 1200, ancla=7.2, nombre="PINA COCO"),
+        _linea("li-2", "6.933", 1200, ancla=7.2, nombre="FRESA"),
+        _linea("li-3", "6.933", 600, ancla=7.2, nombre="SANDIA UVA"),
+        _linea("li-4", "6.933", 600, ancla=7.2, nombre="MORA"),
+    ]
+    for li in fabricantes:
+        li["incoterm_precio_negociado"] = "DAP_TERRESTRE"
+    elems = [
+        _elem("el-1", "li-1", "8335.0", nombre="PINA COCO"),
+        _elem("el-2", "li-2", "8335.0", nombre="FRESA"),
+        _elem("el-3", "li-3", "4167.5", nombre="SANDIA UVA"),
+        _elem("el-4", "li-4", "4167.5", nombre="MORA"),
+        _elem("el-f", "li-f", "900", tipo="flete", nombre="FLETES"),
+        _elem("el-s", "li-s", "60", tipo="seguro", nombre="SEGURO"),
+    ]
+    pp = _pp(incoterm="DAP_TERRESTRE", cajas=3600.0, origen=900.0, destino=0.0)
+    return fabricantes, elems, pp
+
+
+def test_caso_p63433865390_cuadra_tras_reemparejar():
+    fabricantes, elems, pp = _escenario_p63433865390()
+    # el lid de los Elementos apunta a líneas archivadas; el emparejamiento por
+    # nombre es el que devuelve la vista correcta
+    for el in elems[:4]:
+        el["properties"]["line_item_id"] = "archivado-" + el["id"]
+    emp = _emparejar_elementos_fabricante("cn", fabricantes, elems, {}, "63433865390")
+
+    upd = _derivar_precio_total_fabricantes(fabricantes, pp, elems, emp.by_lid)
+
+    assert upd == {"el-1": "8320.0", "el-2": "8320.0", "el-3": "4160.0", "el-4": "4160.0"}
+    assert sum(float(v) for v in upd.values()) + 900 + 60 == pytest.approx(25920.00)
+
+
+def test_caso_p63433865390_con_lid_stale_no_cuadra():
+    """Comportamiento pre-fix: sin fallback por nombre no se corrige nada y SAP
+    sigue leyendo los 25.965."""
+    fabricantes, elems, pp = _escenario_p63433865390()
+    for el in elems[:4]:
+        el["properties"]["line_item_id"] = "archivado-" + el["id"]
+
+    assert _derivar_precio_total_fabricantes(fabricantes, pp, elems, {}) == {}
+
+
+def test_caso_p63433865390_idempotente_tras_reparar():
+    fabricantes, elems, pp = _escenario_p63433865390()
+    for el, valor in zip(elems[:4], ["8320.0", "8320.0", "4160.0", "4160.0"]):
+        el["properties"]["precio_total"] = valor
+    elem_by_lid = {f"li-{i}": elems[i - 1] for i in range(1, 5)}
+
+    assert _derivar_precio_total_fabricantes(fabricantes, pp, elems, elem_by_lid) == {}
+
+
+def test_linea_sin_emparejar_no_descuadra_el_total():
+    """Con una línea cuyo Elemento no empareja (promo 5+1: el nombre no discrimina),
+    el cuadre tiene que seguir clavando el total: su precio_total viejo cuenta como
+    fijo y el residuo lo absorben las líneas que sí se reescriben.
+
+    Regresión de los contenedores 63661384564-001 y 63701775133-001, que quedaron
+    descuadrados (-97,33 y -243,33) al recalcular con reparación parcial."""
+    fabricantes, elems, pp = _escenario_p63433865390()
+    # el Elemento de la línea li-3 (600 cajas) se queda con el lid archivado
+    elem_by_lid = {"li-1": elems[0], "li-2": elems[1], "li-4": elems[3]}
+
+    upd = _derivar_precio_total_fabricantes(fabricantes, pp, elems, elem_by_lid)
+
+    fijos = sum(
+        float((el.get("properties") or {}).get("precio_total"))
+        for el in elems if el["id"] not in upd
+    )
+    assert sum(float(v) for v in upd.values()) + fijos == pytest.approx(25920.00)
+
+
+def test_invariante_detecta_el_descuadre_de_45():
+    fabricantes, elems, pp = _escenario_p63433865390()
+    res = verificar_suma_precio_total_elementos("63433865390", "cn", fabricantes, pp, elems, {})
+
+    assert res["esperado"] == pytest.approx(25920.00)
+    assert res["suma"] == pytest.approx(25965.00)
+    assert res["delta"] == pytest.approx(45.00)
+
+
+def test_invariante_silencioso_cuando_cuadra():
+    fabricantes, elems, pp = _escenario_p63433865390()
+    pt_upd = {"el-1": "8320.0", "el-2": "8320.0", "el-3": "4160.0", "el-4": "4160.0"}
+
+    assert verificar_suma_precio_total_elementos(
+        "63433865390", "cn", fabricantes, pp, elems, pt_upd,
+    ) is None
 
 
 def test_idempotente_si_ya_esta_corregido():

@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Last ned",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Knappetekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Kunne ikke laste ned tilbudet. Prøv igjen.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Feilmelding vist når nedlastning mislyktes",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Last ned",
+    "description" : "",
+    "placeholders" : null
+  }
+}

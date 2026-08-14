@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "تنزيل",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "نص الزر",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "كانت هناك مشكلة في تنزيل عرض الأسعار. حاول مرة اخرى.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "تظهر رسالة خطأ عند فشل التنزيل",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "تنزيل",
+    "description" : "",
+    "placeholders" : null
+  }
+}

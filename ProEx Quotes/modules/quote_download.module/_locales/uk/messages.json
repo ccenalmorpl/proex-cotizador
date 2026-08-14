@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Завантажити",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Текст кнопки",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Виникла проблема під час завантаження цінової пропозиції. Спробуйте знову.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Повідомлення про помилку, що відображається при збої завантаження",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Завантажити",
+    "description" : "",
+    "placeholders" : null
+  }
+}

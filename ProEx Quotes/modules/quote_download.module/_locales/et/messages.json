@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Laadi alla",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Nupu tekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Pakkumuse allalaadimisel esines probleem. Palun proovige uuesti.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Veateade, mida kuvatakse, kui allalaadimine ebaõnnestub",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Laadi alla",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,44 @@
+{# Download a PDF of the quote #}
+
+{% set mock_template_data = {
+    "hubspot_base_url" : "https://api.hubapi.com",
+    "is_preview": "true",
+    "quote" : { "hs_public_url_key": "0123456789abcdef" }
+  }
+%}
+{% set TEMPLATE_DATA = template_data || mock_template_data %}
+
+{# Idioma del documento: deal.preprints_language. Se resuelve aquí porque los
+   parámetros del tag {% module %} no evalúan variables HubL de la plantilla. #}
+{% set _dl_lang = TEMPLATE_DATA.quote.associated_objects.deal.preprints_language|default("") %}
+{% if _dl_lang == "Español (por defecto)" or _dl_lang == "ES" %}
+  {% set dl_button_text = "Descargar PDF" %}
+  {% set dl_error_text = "No se ha podido descargar el PDF. Inténtalo de nuevo." %}
+{% elif _dl_lang == "Francés" or _dl_lang == "FR" %}
+  {% set dl_button_text = "Télécharger le PDF" %}
+  {% set dl_error_text = "Le téléchargement du PDF a échoué. Veuillez réessayer." %}
+{% else %}
+  {% set dl_button_text = module.button_text %}
+  {% set dl_error_text = module.download_error %}
+{% endif %}
+
+<span id="hs-download__container">
+  <button class="hs-download__button">{{ dl_button_text|sanitize_html }}</button>
+
+  <span class="hs-download__alert--error">{{ dl_error_text|sanitize_html }}</span>
+
+  <template id="hs-download__template">
+    <div class="hs-download__loading-spinner"></div>
+  </template>
+</span>
+
+{# DO NOT EDIT - used for download #}
+{% require_js position="head" %}
+<script type="application/json" data-module-instance="download">
+  {
+    "url_key": "{{ TEMPLATE_DATA.quote.hs_public_url_key|escapejson }}",
+    "api_base_url": "{{ TEMPLATE_DATA.hubspot_base_url|escapejson }}",
+    "is_preview": {{ TEMPLATE_DATA.is_preview|escapejson }}
+  }
+</script>
+{% end_require_js %}

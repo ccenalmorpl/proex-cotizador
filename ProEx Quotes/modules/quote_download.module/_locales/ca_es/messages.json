@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Baixa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Text del botó",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Hi ha hagut un problema en baixar la cotització. Torna-ho a provar.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Missatge d'error mostrat quan falla la baixada",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Baixa",
+    "description" : "",
+    "placeholders" : null
+  }
+}

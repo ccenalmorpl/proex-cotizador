@@ -1,0 +1,212 @@
+{
+  "esignature.failure.default" : {
+    "message" : "İmza bilgileri alınırken bir sorun oluştu. Lütfen sayfayı yenileyin.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.failure.label" : {
+    "message" : "Hata uyarı metni",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.default" : {
+    "message" : "<h3>İmza</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.label" : {
+    "message" : "Başlık",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.label" : {
+    "message" : "E-imza",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.default" : {
+    "message" : "E-imza sürecini başlatmak için bir profil seçin.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.label" : {
+    "message" : "E-imza açıklama metni",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.redirecting.default" : {
+    "message" : "Yeniden yönlendiriliyor...",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.default" : {
+    "message" : "Şimdi imzala",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.label" : {
+    "message" : "Şimdi imzala düğmesi metni",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_rate_limit.default" : {
+    "message" : "Çok yakın zamanda bir imza talebinde bulundunuz. Lütfen, 5 dakika sonra tekrar deneyin.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_unknown.default" : {
+    "message" : "E-imza başlatılırken bir sorun oluştu. Lütfen tekrar deneyin.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.default" : {
+    "message" : "İmzalı",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.label" : {
+    "message" : "İmzalandı metni",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.test_mode.default" : {
+    "message" : "Bu bir deneme teklifidir, gerçek imzaları toplayamaz.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.default" : {
+    "message" : "Doğrulama e-postası gönderildi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.label" : {
+    "message" : "Doğrulama e-postası gönderildi metni",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.default" : {
+    "message" : "İmzalamak için doğrulayın",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.label" : {
+    "message" : "Doğrulama e-postası düğmesi metni",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_rate_limit.default" : {
+    "message" : "Çok yakın zamanda bir doğrulama e-postası talebinde bulundunuz. Lütfen, 5 dakika sonra tekrar deneyin.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_unknown.default" : {
+    "message" : "Doğrulama e-postası gönderilirken bir sorun oluştu. Lütfen tekrar deneyin.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Bu şablonla teklif oluşturduğunuzda imza toplamak isteyip istemediğinize karar verebilirsiniz.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "İmza",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.default" : {
+    "message" : "Countersignature",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.label" : {
+    "message" : "Karşı imza alanı",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.default" : {
+    "message" : "Tarih",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.label" : {
+    "message" : "Tarih alanı",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.default" : {
+    "message" : "<h3>Karşı imza</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.label" : {
+    "message" : "Başlık",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.inline_help_text" : {
+    "message" : "Bir fiyat teklifi oluştururken, karşı imzanın görüntülenip görüntülenmeyeceğini tercih edebilirsiniz.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.label" : {
+    "message" : "Countersignature",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.default" : {
+    "message" : "Yazılı ad",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.label" : {
+    "message" : "Yazılı ad alanı",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.default" : {
+    "message" : "Tarih",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.label" : {
+    "message" : "Tarih alanı",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.default" : {
+    "message" : "<h3>İmza</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.label" : {
+    "message" : "Başlık",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.label" : {
+    "message" : "Yazılı imza",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.default" : {
+    "message" : "Yazılı ad",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.label" : {
+    "message" : "Yazılı ad alanı",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.default" : {
+    "message" : "İmza",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.label" : {
+    "message" : "İmza alanı",
+    "description" : "",
+    "placeholders" : null
+  }
+}

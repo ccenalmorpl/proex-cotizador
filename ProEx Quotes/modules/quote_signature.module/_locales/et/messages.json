@@ -1,0 +1,212 @@
+{
+  "esignature.failure.default" : {
+    "message" : "Allkirjateabe otsingul esines probleem. Palun värskendage lehte.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.failure.label" : {
+    "message" : "Tõrkehoiatuse tekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.default" : {
+    "message" : "<h3>Allkiri</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.label" : {
+    "message" : "Pealkiri",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.label" : {
+    "message" : "E-allkiri",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.default" : {
+    "message" : "Valige profiil, et alustada e-allkirjastamise protsessi.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.label" : {
+    "message" : "E-allkirja selgitav tekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.redirecting.default" : {
+    "message" : "Ümbersuunamine...",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.default" : {
+    "message" : "Allkirjasta kohe",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.label" : {
+    "message" : "Nupu „Allkirjasta kohe” tekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_rate_limit.default" : {
+    "message" : "Olete liiga hiljuti allkirjastamist taotlenud. Palun proovige 5 minuti pärast uuesti.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_unknown.default" : {
+    "message" : "E-allkirja lisamisel tekkis probleem. Palun proovige uuesti.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.default" : {
+    "message" : "Allkirjastatud",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.label" : {
+    "message" : "Tekst allkirjastatud",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.test_mode.default" : {
+    "message" : "See on testpakkumus, seega see ei kogu tegelikke allkirju.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.default" : {
+    "message" : "Kinnitusmeil on saadetud",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.label" : {
+    "message" : "Kinnitusmeili saatmise tekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.default" : {
+    "message" : "Kinnita allkirjastamiseks",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.label" : {
+    "message" : "Kinnituskirja nupu tekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_rate_limit.default" : {
+    "message" : "Olete hiljuti taotlenud ka kinnitusmeili. Palun proovige 5 minuti pärast uuesti.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_unknown.default" : {
+    "message" : "Kinnitusmeili saatmisel oli probleem. Palun proovige uuesti.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Saate otsustada, kas soovite selle malliga pakkumuse loomisel allkirju koguda.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Allkiri",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.default" : {
+    "message" : "Vastuallkiri",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.label" : {
+    "message" : "Vastuallkirja väli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.default" : {
+    "message" : "Kuupäev",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.label" : {
+    "message" : "Kuupäeva väli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.default" : {
+    "message" : "<h3>Vastuallkiri</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.label" : {
+    "message" : "Päis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.inline_help_text" : {
+    "message" : "Pakkumust koostades saate valida, kas kuvada vastuallkirja.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.label" : {
+    "message" : "Vastuallkiri",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.default" : {
+    "message" : "Prinditud nimi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.label" : {
+    "message" : "Prinditud nime väli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.default" : {
+    "message" : "Kuupäev",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.label" : {
+    "message" : "Kuupäeva väli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.default" : {
+    "message" : "<h3>Allkiri</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.label" : {
+    "message" : "Päis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.label" : {
+    "message" : "Prindi allkiri",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.default" : {
+    "message" : "Prinditud nimi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.label" : {
+    "message" : "Prinditud nime väli",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.default" : {
+    "message" : "Allkiri",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.label" : {
+    "message" : "Allkirja väli",
+    "description" : "",
+    "placeholders" : null
+  }
+}

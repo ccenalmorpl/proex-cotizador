@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Laai af",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Knoppieteks",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Daar was 'n probleem om die kwotasie af te laai. Probeer asseblief weer.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Foutboodskap wat wys as aflaai misluk",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Laai af",
+    "description" : "",
+    "placeholders" : null
+  }
+}

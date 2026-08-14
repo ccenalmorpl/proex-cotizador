@@ -1,0 +1,244 @@
+[ {
+  "id" : "esignature",
+  "name" : "esignature",
+  "label" : "E-signature",
+  "required" : false,
+  "locked" : false,
+  "children" : [ {
+    "id" : "esignature.heading",
+    "name" : "heading",
+    "label" : "Heading",
+    "required" : false,
+    "locked" : false,
+    "type" : "richtext",
+    "display_width" : null,
+    "default" : "<h3>Signature</h3>"
+  }, {
+    "id" : "esignature.pretext",
+    "name" : "pretext",
+    "label" : "E-signature explanation text",
+    "required" : false,
+    "locked" : false,
+    "type" : "richtext",
+    "display_width" : null,
+    "default" : "Choose a profile to start the e-signature process."
+  }, {
+    "id" : "esignature.verify_button",
+    "name" : "verify_button",
+    "label" : "Verification email button text",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "Verify to sign"
+  }, {
+    "id" : "esignature.sign_now_button",
+    "name" : "sign_now_button",
+    "label" : "Sign now button text",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "Sign now"
+  }, {
+    "id" : "esignature.failure",
+    "name" : "failure",
+    "label" : "Failure alert text",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "There was a problem retrieving the signature information. Please reload the page."
+  }, {
+    "id" : "esignature.verification_sent",
+    "name" : "verification_sent",
+    "label" : "Verification email sent text",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "Verification email sent"
+  }, {
+    "id" : "esignature.redirecting",
+    "name" : "redirecting",
+    "label" : "Redirecting text",
+    "required" : false,
+    "locked" : true,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "Redirecting..."
+  }, {
+    "id" : "esignature.signed",
+    "name" : "signed",
+    "label" : "Signed text",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "Signed"
+  }, {
+    "id" : "esignature.test_mode",
+    "name" : "test_mode",
+    "label" : "Test mode",
+    "required" : false,
+    "locked" : true,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "This is a test quote, so it can’t collect real signatures."
+  }, {
+    "id" : "esignature.verify_error_rate_limit",
+    "name" : "verify_error_rate_limit",
+    "label" : "Error message shown when sending verification email fails due to rate limit",
+    "required" : false,
+    "locked" : true,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "You have requested a verification email too recently. Please try again in 5 minutes."
+  }, {
+    "id" : "esignature.verify_error_unknown",
+    "name" : "verify_error_unknown",
+    "label" : "Error message shown when sending verification email fails due to unknown reason",
+    "required" : false,
+    "locked" : true,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "There was a problem sending a verification email. Please try again."
+  }, {
+    "id" : "esignature.sign_now_error_rate_limit",
+    "name" : "sign_now_error_rate_limit",
+    "label" : "Error message shown for failed attampt to start an unverified e-signature due to rate limit",
+    "required" : false,
+    "locked" : true,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "You have requested to sign too recently. Please try again in 5 minutes."
+  }, {
+    "id" : "esignature.sign_now_error_unknown",
+    "name" : "sign_now_error_unknown",
+    "label" : "Error message shown for failed attampt to start an unverified e-signature due to unknown reason",
+    "required" : false,
+    "locked" : true,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "There was a problem starting e-signature. Please try again."
+  } ],
+  "tab" : "CONTENT",
+  "expanded" : false,
+  "group_occurrence_meta" : null,
+  "type" : "group",
+  "display_width" : null
+}, {
+  "id" : "print_signature",
+  "name" : "print_signature",
+  "label" : "Print signature",
+  "required" : false,
+  "locked" : false,
+  "children" : [ {
+    "id" : "print_signature.header",
+    "name" : "header",
+    "label" : "Header",
+    "required" : false,
+    "locked" : false,
+    "type" : "richtext",
+    "display_width" : null,
+    "default" : "<h3>Signature</h3>"
+  }, {
+    "id" : "print_signature.signature",
+    "name" : "signature",
+    "label" : "Signature field",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "Signature"
+  }, {
+    "id" : "print_signature.date",
+    "name" : "date",
+    "label" : "Date field",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "Date"
+  }, {
+    "id" : "print_signature.printed_name",
+    "name" : "printed_name",
+    "label" : "Printed name field",
+    "required" : false,
+    "locked" : false,
+    "allow_new_line" : false,
+    "type" : "text",
+    "display_width" : null,
+    "default" : "Printed name"
+  }, {
+    "id" : "print_signature.countersignature",
+    "name" : "countersignature",
+    "label" : "Countersignature",
+    "inline_help_text" : "When creating a quote, you can choose whether to display countersignature",
+    "required" : false,
+    "locked" : false,
+    "children" : [ {
+      "id" : "print_signature.countersignature.header",
+      "name" : "header",
+      "label" : "Header",
+      "required" : false,
+      "locked" : false,
+      "type" : "richtext",
+      "display_width" : null,
+      "default" : "<h3>Countersignature</h3>"
+    }, {
+      "id" : "print_signature.countersignature.countersignature",
+      "name" : "countersignature",
+      "label" : "Countersignature field",
+      "required" : false,
+      "locked" : false,
+      "allow_new_line" : false,
+      "type" : "text",
+      "display_width" : null,
+      "default" : "Countersignature"
+    }, {
+      "id" : "print_signature.countersignature.date",
+      "name" : "date",
+      "label" : "Date field",
+      "required" : false,
+      "locked" : false,
+      "allow_new_line" : false,
+      "type" : "text",
+      "display_width" : null,
+      "default" : "Date"
+    }, {
+      "id" : "print_signature.countersignature.printed_name",
+      "name" : "printed_name",
+      "label" : "Printed name field",
+      "required" : false,
+      "locked" : false,
+      "allow_new_line" : false,
+      "type" : "text",
+      "display_width" : null,
+      "default" : "Printed name"
+    } ],
+    "tab" : "CONTENT",
+    "expanded" : false,
+    "group_occurrence_meta" : null,
+    "type" : "group",
+    "display_width" : null
+  } ],
+  "tab" : "CONTENT",
+  "expanded" : false,
+  "group_occurrence_meta" : null,
+  "type" : "group",
+  "display_width" : null
+} ]

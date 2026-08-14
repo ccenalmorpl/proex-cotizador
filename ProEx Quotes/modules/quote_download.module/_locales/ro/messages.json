@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Descărcare",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Text buton",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "A apărut o problemă la descărcarea ofertei. Încercați din nou.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Mesaj de eroare afișat la descărcarea nereușită",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Descărcare",
+    "description" : "",
+    "placeholders" : null
+  }
+}

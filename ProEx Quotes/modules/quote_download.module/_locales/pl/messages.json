@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Pobierz",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Tekst przycisku",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Wystąpił problem z pobraniem wyceny. Spróbuj ponownie.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Komunikat o błędzie wyświetlany w przypadku niepowodzenia pobierania",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Pobierz",
+    "description" : "",
+    "placeholders" : null
+  }
+}

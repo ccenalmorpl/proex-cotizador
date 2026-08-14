@@ -1,0 +1,212 @@
+{
+  "esignature.failure.default" : {
+    "message" : "Allekirjoitustietojen noutamisessa ilmeni ongelma. Lataa sivu uudelleen.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.failure.label" : {
+    "message" : "Epäonnistumishälytyksen teksti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.default" : {
+    "message" : "<h3>Allekirjoitus</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.label" : {
+    "message" : "Otsikko",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.label" : {
+    "message" : "Sähköinen allekirjoitus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.default" : {
+    "message" : "Aloita sähköinen allekirjoitusprosessi valitsemalla profiili.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.label" : {
+    "message" : "Sähköisen allekirjoituksen seliteteksti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.redirecting.default" : {
+    "message" : "Uudelleenohjataan...",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.default" : {
+    "message" : "Allekirjoita nyt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.label" : {
+    "message" : "Allekirjoita nyt -painikkeen teksti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_rate_limit.default" : {
+    "message" : "Allekirjoituspyynnöstäsi on kulunut liian vähän aikaa. Yritä uudelleen 5 minuutin kuluttua.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_unknown.default" : {
+    "message" : "Sähköisen allekirjoituksen aloittamisessa ilmeni ongelma. Yritä uudelleen.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.default" : {
+    "message" : "Allekirjoitettu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.label" : {
+    "message" : "Teksti allekirjoittamisesta",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.test_mode.default" : {
+    "message" : "Tämä on testitarjous, joten siihen ei voi kerätä oikeita allekirjoituksia.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.default" : {
+    "message" : "Vahvistussähköposti lähetetty",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.label" : {
+    "message" : "Vahvistussähköposti lähetetty -teksti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.default" : {
+    "message" : "Vahvista allekirjoittaaksesi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.label" : {
+    "message" : "Vahvistussähköpostin painiketeksti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_rate_limit.default" : {
+    "message" : "Olet pyytänyt vahvistussähköpostia liian äskettäin. Yritä uudelleen 5 minuutin kuluttua.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_unknown.default" : {
+    "message" : "Vahvistussähköpostia lähettäessä ilmeni ongelma. Yritä uudelleen.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Voit päättää, haluatko kerätä allekirjoituksia, kun luot tarjouksen tällä mallipohjalla.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Allekirjoitus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.default" : {
+    "message" : "Varmennusallekirjoitus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.label" : {
+    "message" : "Varmennusnimikirjoituksen kenttä",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.default" : {
+    "message" : "Päiväys",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.label" : {
+    "message" : "Päivämääräkenttä",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.default" : {
+    "message" : "<h3>Varmennusallekirjoitus</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.label" : {
+    "message" : "Ylätunniste",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.inline_help_text" : {
+    "message" : "Kun luot tarjouksen, voit valita, näytetäänkö varmennus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.label" : {
+    "message" : "Varmennusallekirjoitus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.default" : {
+    "message" : "Tulostettu nimi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.label" : {
+    "message" : "Tulostetun nimen kenttä",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.default" : {
+    "message" : "Päiväys",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.label" : {
+    "message" : "Päivämääräkenttä",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.default" : {
+    "message" : "<h3>Allekirjoitus</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.label" : {
+    "message" : "Ylätunniste",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.label" : {
+    "message" : "Tulosta allekirjoitus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.default" : {
+    "message" : "Tulostettu nimi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.label" : {
+    "message" : "Tulostetun nimen kenttä",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.default" : {
+    "message" : "Allekirjoitus",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.label" : {
+    "message" : "Allekirjoituskenttä",
+    "description" : "",
+    "placeholders" : null
+  }
+}

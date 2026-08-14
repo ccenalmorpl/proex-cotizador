@@ -1,0 +1,212 @@
+{
+  "esignature.failure.default" : {
+    "message" : "Wystąpił problem z pobraniem informacji o podpisie. Załaduj stronę ponownie.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.failure.label" : {
+    "message" : "Tekst alertu o niepowodzeniu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.default" : {
+    "message" : "<h3>Podpis</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.label" : {
+    "message" : "Nagłówek",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.label" : {
+    "message" : "Podpis elektroniczny",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.default" : {
+    "message" : "Wybierz profil, aby rozpocząć proces składania podpisu elektronicznego.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.label" : {
+    "message" : "Tekst wyjaśnienia podpisu elektronicznego",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.redirecting.default" : {
+    "message" : "Przekierowanie…",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.default" : {
+    "message" : "Zarejestruj teraz",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.label" : {
+    "message" : "Tekst przycisku rejestracji",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_rate_limit.default" : {
+    "message" : "Zbyt często przesyłano prośbę o rejestrację. Spróbuj ponownie za 5 minut.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_unknown.default" : {
+    "message" : "Wystąpił problem podczas składania podpisu elektronicznego. Spróbuj ponownie.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.default" : {
+    "message" : "Podpisano",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.label" : {
+    "message" : "Tekst podpisu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.test_mode.default" : {
+    "message" : "To jest wycena testowa, więc nie może zbierać faktycznych podpisów.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.default" : {
+    "message" : "Wysłano weryfikacyjną wiadomość e-mail",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.label" : {
+    "message" : "Tekst wysłanej weryfikacyjnej wiadomości e-mail",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.default" : {
+    "message" : "Zweryfikuj, aby podpisać",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.label" : {
+    "message" : "Tekst przycisku weryfikacji adresu e-mail",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_rate_limit.default" : {
+    "message" : "Zbyt często przesyłano prośbę o weryfikacyjną wiadomość e-mail. Spróbuj ponownie za 5 minut.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_unknown.default" : {
+    "message" : "Wystąpił problem podczas wysyłania weryfikacyjnej wiadomości e-mail. Spróbuj ponownie.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Możesz zdecydować, czy chcesz, żeby składano podpisy przy tworzeniu wyceny za pomocą tego szablonu.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Podpis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.default" : {
+    "message" : "Drugi podpis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.label" : {
+    "message" : "Pole drugiego podpisu",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.default" : {
+    "message" : "Data",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.label" : {
+    "message" : "Pole daty",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.default" : {
+    "message" : "<h3>Drugi podpis</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.label" : {
+    "message" : "Nagłówek",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.inline_help_text" : {
+    "message" : "Podczas tworzenia wyceny możesz wybrać, czy wyświetlić drugi podpis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.label" : {
+    "message" : "Drugi podpis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.default" : {
+    "message" : "Imię i nazwisko wielkimi literami",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.label" : {
+    "message" : "Pole imię i nazwisko drukowanymi literami",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.default" : {
+    "message" : "Data",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.label" : {
+    "message" : "Pole daty",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.default" : {
+    "message" : "<h3>Podpis</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.label" : {
+    "message" : "Nagłówek",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.label" : {
+    "message" : "Podpis drukowanymi literami",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.default" : {
+    "message" : "Imię i nazwisko wielkimi literami",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.label" : {
+    "message" : "Pole imię i nazwisko drukowanymi literami",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.default" : {
+    "message" : "Podpis",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.label" : {
+    "message" : "Pole podpisu",
+    "description" : "",
+    "placeholders" : null
+  }
+}

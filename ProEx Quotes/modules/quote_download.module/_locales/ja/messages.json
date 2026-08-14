@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "ダウンロード",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "ボタンテキスト",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "見積もりのダウンロード時に問題が発生しました。もう一度お試しください。",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "ダウンロードに失敗したときに表示されるエラーメッセージ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "ダウンロード",
+    "description" : "",
+    "placeholders" : null
+  }
+}

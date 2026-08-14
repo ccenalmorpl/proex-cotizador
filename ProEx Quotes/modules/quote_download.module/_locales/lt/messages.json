@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Atsisiųsti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Mygtuko tekstas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Atsisiunčiant pasiūlymą iškilo problema. Bandykite dar kartą.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Nepavykus atsisiųsti rodomas klaidos pranešimas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Atsisiųsti",
+    "description" : "",
+    "placeholders" : null
+  }
+}

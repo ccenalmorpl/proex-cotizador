@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Letöltés",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Gombfelirat",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Hiba történt az árajánlat letöltésekor. Próbálja meg újra.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Hibaüzenet megjelenítése a sikertelen letöltéskor",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Letöltés",
+    "description" : "",
+    "placeholders" : null
+  }
+}

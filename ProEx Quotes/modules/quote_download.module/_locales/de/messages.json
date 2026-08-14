@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Download",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Button-Text",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Beim Herunterladen des Angebots ist ein Problem aufgetreten. Bitte versuchen Sie es erneut.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Fehlermeldung, die bei einem Download-Fehler angezeigt wird",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Download",
+    "description" : "",
+    "placeholders" : null
+  }
+}

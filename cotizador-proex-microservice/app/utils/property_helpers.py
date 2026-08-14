@@ -125,32 +125,57 @@ def parse_hubspot_properties(
 # HubSpot almacena residennum con código numérico: 1=Nacional, 2=Europa, 4=Extranjero
 _RESIDENNUM_CODE_MAP: dict = {"1": "NACIONAL", "2": "EUROPA", "4": "EXTRANJERO"}
 
-def compute_default_tipo_iva(residennum: Any, categoria: str = "repercutido") -> str:
-    """Calcula el tipo de IVA por defecto cuando el producto no trae un valor específico.
-
-    `residennum` admite código numérico (1/2/4) o etiqueta ya resuelta (NACIONAL/EUROPA/EXTRANJERO).
-    Devuelve EX para extranjero, EI21 para Europa, y R21/S21 (según categoria) para nacional.
-    """
-    if not residennum:
-        return "S21" if categoria == "soportado" else "R21"
-
-    s = str(residennum).strip()
-    s = _RESIDENNUM_CODE_MAP.get(s, s).upper()
-
-    if s == "EXTRANJERO":
-        return "EX"
-    elif s == "EUROPA":
-        return "EI21"
-    else:
-        return "S21" if categoria == "soportado" else "R21"
-
-compute_tipo_iva_repercutido = compute_default_tipo_iva
-
 def _normalize_residennum(residennum: Any) -> str:
     if not residennum:
         return "NACIONAL"
     s = str(residennum).strip()
     return _RESIDENNUM_CODE_MAP.get(s, s).upper()
+
+# EX y EI21 son códigos REPERCUTIDOS: no valen como default de soportado. Fuera de
+# NACIONAL la categoría soportado no tiene un equivalente unívoco (compra
+# intracomunitaria vs importación vs inversión del sujeto pasivo), así que se deja
+# sin default y lo elige el usuario en el select.
+_DEFAULT_TIPO_IVA: dict = {
+    ("repercutido", "NACIONAL"): "R21",
+    ("repercutido", "EUROPA"): "EI21",
+    ("repercutido", "EXTRANJERO"): "EX",
+    ("soportado", "NACIONAL"): "S21",
+}
+
+
+def _existe_en_categoria(code: str, categoria: str, residencia: str) -> bool:
+    """False solo si la tabla de IVA está cargada y no tiene ese code en la
+    categoría/residencia. Con el cache vacío no se invalida nada."""
+    from app.shared import hubdb_client
+
+    entries = hubdb_client.list_entries(categoria, residencia)
+    return not entries or any(e.code == code for e in entries)
+
+
+def compute_default_tipo_iva(residennum: Any, categoria: str = "repercutido") -> str:
+    """Calcula el tipo de IVA por defecto cuando el producto no trae un valor específico.
+
+    `residennum` admite código numérico (1/2/4) o etiqueta ya resuelta (NACIONAL/EUROPA/EXTRANJERO).
+    Devuelve "" cuando no hay default seguro para esa categoría y residencia: grabar
+    un código de la categoría contraria rompe la sincronización con SAP.
+    """
+    cat = (categoria or "").strip().lower()
+    residencia = _normalize_residennum(residennum)
+
+    code = _DEFAULT_TIPO_IVA.get((cat, residencia))
+    if not code:
+        return ""
+
+    if not _existe_en_categoria(code, cat, residencia):
+        logger.warning(
+            "[compute_default_tipo_iva] %r no está en categoria=%s residencia=%s — sin default",
+            code, cat, residencia,
+        )
+        return ""
+
+    return code
+
+compute_tipo_iva_repercutido = compute_default_tipo_iva
 
 def resolve_product_iva(
     product_properties: Dict[str, Any],

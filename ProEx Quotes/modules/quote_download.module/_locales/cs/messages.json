@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Stáhnout",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Text tlačítka",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Při stahování nabídky došlo k chybě. Zkuste to znovu.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Zpráva o chybě, která se zobrazí při selhání stahování",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Stáhnout",
+    "description" : "",
+    "placeholders" : null
+  }
+}

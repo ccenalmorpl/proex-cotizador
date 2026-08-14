@@ -1,0 +1,165 @@
+.signature__container {
+  max-width: 100%;
+  width: 100%;
+  margin: 0 auto;
+  /* Added for Acceptance testing */
+  content: 'CSS Loaded';
+}
+
+.signature__box {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-weight: 600;
+  page-break-inside: avoid;
+}
+
+.signature__box {
+  margin-top: 80px;
+}
+
+.signature__field {
+  width: 50%;
+  margin-bottom: 65px;
+}
+
+.signature__field:before {
+  content: '';
+  width: 70%;
+  display: block;
+  border-width: 1px 0 0;
+  border-style: solid;
+}
+
+.esignature {
+  margin-bottom: 40px;
+}
+
+.esignature__profile {
+  max-width: 100%;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  border: 1px solid;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  page-break-inside: avoid;
+}
+
+.esignature__verify-button-container,
+.esignature__sign-now-button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.esignature__warning--test-mode {
+  padding-top: 2px;
+}
+
+.esignature__verify-button,
+.esignature__sign-now-button {
+  position: relative;
+  width: 120px;
+  height: 40px;
+  padding-left: 12px;
+  padding-right: 12px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+}
+
+.esignature__verify-button-loading-spinner,
+.esignature__sign-now-button-loading-spinner {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  border: 3px solid white;
+  border-radius: 50%;
+  border-top-color: black;
+  width: 25px;
+  height: 25px;
+  animation: spin 0.5s linear infinite;
+}
+
+.esignature__verify-button--loading,
+.esignature__sign-now-button--loading {
+  color: transparent !important;
+}
+
+.esignature__verify-button--loading .esignature__verify-button-loading-spinner,
+.esignature__sign-now-button--loading .esignature__sign-now-button-loading-spinner {
+  display: inline-block;
+}
+
+.esignature__verify-error-rate-limit,
+.esignature__verify-error-unknown,
+.esignature__sign-now-error-rate-limit,
+.esignature__sign-now-error-unknown {
+  display: none;
+  color: red;
+  text-align: right;
+}
+
+.esignature__tag--sent,
+.esignature__tag--redirecting {
+  background: rgb(253, 248, 241);
+  border: 1px solid rgb(238, 195, 120);
+  font-size: 12px;
+  padding-left: 24px;
+  padding-right: 24px;
+  height: 25px;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.esignature__tag--signed {
+  background: rgb(233, 248, 246);
+  border: 1px solid rgb(84, 186, 166);
+  font-size: 12px;
+  width: 100px;
+  height: 25px;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.signature-area {
+  /* low (but visible) opacity preserves text tags in newer chrome versions: https://hubspot.slack.com/archives/CGV5LMY69/p1626463505059600?thread_ts=1626099971.025700&cid=CGV5LMY69 */
+  color: rgba(0, 0, 0, 0.01) !important;
+  margin-bottom: -32px;
+  font-size: 22px;
+  font-family: Arial !important;
+  font-weight: bold;
+}
+
+.esignature__loading-spinner {
+  border: 4px solid lightgray;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  margin: 20px 0;
+  animation: spin 0.5s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media print {
+  .signature__container {
+    display: block !important
+  }
+}

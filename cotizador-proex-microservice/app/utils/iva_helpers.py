@@ -10,6 +10,7 @@ verdad para `contenedor.price`."""
 
 import logging
 import time
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from app.core.custom_objects_constants import OBJECT_TYPE_CONTENEDOR, OBJECT_TYPE_ELEMENTO
@@ -318,6 +319,106 @@ def _index_elementos_by_lid(elementos: List[Dict]) -> Dict[str, Dict]:
     return index
 
 
+@dataclass
+class EmparejamientoElementos:
+    by_lid: Dict[str, Dict] = field(default_factory=dict)
+    lid_repairs: List[Dict[str, Any]] = field(default_factory=list)
+    resueltos: int = 0
+    sin_resolver: List[Dict[str, str]] = field(default_factory=list)
+
+
+def _emparejar_elementos_fabricante(
+    container_name: str,
+    fabricantes: List[Dict],
+    elems_contenedor: List[Dict],
+    elem_by_lid: Dict[str, Dict],
+    deal_id: str = "",
+) -> EmparejamientoElementos:
+    """Vista `line_item_id` vivo → Elemento de un contenedor, con fallback por
+    nombre y corrección del lid cuando el Elemento apunta a un line item que ya
+    se archivó.
+
+    Un Elemento creado contra una generación de line items que luego se archiva
+    deja de emparejar por lid, y sin este fallback ni el EXW ni el `precio_total`
+    se sincronizan nunca más (SAP acaba leyendo importes congelados). El fallback
+    solo actúa si el nombre es único en ambos lados, igual que
+    `scripts/repair_elemento_lid_cruzado.py`: con promo 5+1 el nombre se repite y
+    el lid es el único discriminador."""
+    emp = EmparejamientoElementos()
+
+    li_counts: Dict[str, int] = {}
+    for li in fabricantes:
+        nombre = (li.get("name") or "").strip()
+        if nombre:
+            li_counts[nombre] = li_counts.get(nombre, 0) + 1
+
+    elem_counts: Dict[str, int] = {}
+    fabricante_by_nombre: Dict[str, Dict] = {}
+    for el in elems_contenedor:
+        props = el.get("properties") or {}
+        nombre = (props.get("nombre") or "").strip()
+        if not nombre:
+            continue
+        elem_counts[nombre] = elem_counts.get(nombre, 0) + 1
+        if (props.get("tipo_articulo") or "").strip().lower() == "fabricante":
+            fabricante_by_nombre[nombre] = el
+
+    reclamados: set = set()
+    for li in fabricantes:
+        lid = str(li.get("hs_object_id") or "").strip()
+        if not lid:
+            continue
+        nombre_li = (li.get("name") or "").strip()
+
+        motivo = ""
+        elem = elem_by_lid.get(lid)
+        if elem:
+            elem_props = elem.get("properties") or {}
+            nombre_elem = (elem_props.get("nombre") or "").strip()
+            nc_elem = (elem_props.get("nombre_contenedor") or "").strip()
+            if nombre_li and nombre_elem and nombre_li != nombre_elem:
+                elem, motivo = None, "nombre_cruzado"
+            elif nc_elem and container_name and nc_elem != container_name:
+                elem, motivo = None, "otro_contenedor"
+        else:
+            motivo = "lid_no_resuelve"
+
+        if not elem and nombre_li:
+            if li_counts.get(nombre_li, 0) == 1 and elem_counts.get(nombre_li, 0) == 1:
+                elem = fabricante_by_nombre.get(nombre_li)
+                if not elem:
+                    motivo = "sin_elemento_fabricante"
+            elif li_counts.get(nombre_li, 0) > 1 or elem_counts.get(nombre_li, 0) > 1:
+                motivo = "nombre_ambiguo"
+
+        if elem and str(elem.get("id")) in reclamados:
+            elem, motivo = None, "ya_reclamado"
+
+        if not elem:
+            emp.sin_resolver.append({"lid": lid, "nombre": nombre_li, "motivo": motivo})
+            logger.warning(
+                f"[recalcular] deal={deal_id} cont={container_name} line_item={lid} "
+                f"nombre={nombre_li!r}: sin Elemento emparejado (motivo={motivo}); "
+                f"no se sincroniza precio_unitario ni precio_total"
+            )
+            continue
+
+        eid = str(elem.get("id"))
+        reclamados.add(eid)
+        emp.by_lid[lid] = elem
+        emp.resueltos += 1
+
+        lid_actual = str((elem.get("properties") or {}).get("line_item_id") or "").strip()
+        if lid_actual != lid:
+            emp.lid_repairs.append({"id": eid, "properties": {"line_item_id": lid}})
+            logger.info(
+                f"[recalcular] elemento {eid} reemparejado por nombre {nombre_li!r}: "
+                f"line_item_id {lid_actual or '(vacío)'} -> {lid}"
+            )
+
+    return emp
+
+
 def _derivar_writebacks_lineas(
     fabricantes: List[Dict],
     pp: PricingParams,
@@ -376,10 +477,11 @@ def _derivar_writebacks_lineas(
             props["price"] = str(nuevo_exw)
         if nuevo_margen is not None and round_margin(li.get("margen_unitario")) != nuevo_margen:
             props["margen_unitario"] = str(nuevo_margen)
-        if not props:
-            continue
-        li_updates.append({"id": lid, "properties": props})
+        if props:
+            li_updates.append({"id": lid, "properties": props})
 
+        # El Elemento se sincroniza aunque el line item ya esté al día: es el caso
+        # normal tras un cambio de flete, y gatearlo dejaba el espejo desfasado.
         elem = elem_by_lid.get(lid)
         if not elem:
             continue
@@ -429,6 +531,16 @@ def _derivar_precio_total_fabricantes(
     filas = []  # [elem_id, precio_total_persistido, cajas, base, valor]
     total_base = 0.0
     for li in fabricantes:
+        cajas = _to_float(li.get("quantity"))
+        if cajas <= 0:
+            continue
+        es_promo = _to_float(li.get("price")) == 0 and _ancla_vigente(li, pp.incoterm) is None
+        base = 0.0 if es_promo else _resolver_precios_linea(li, pp)["final"] * cajas
+        # La base cuenta TODAS las líneas del contenedor, también las que no se van a
+        # reescribir: su precio_total viejo sigue sumando en lo que lee SAP, así que
+        # cuadrar solo contra las emparejadas descuadraba el total.
+        total_base += base
+
         lid = str(li.get("hs_object_id") or "").strip()
         elem = elem_by_lid.get(lid) if lid else None
         if not elem:
@@ -439,25 +551,20 @@ def _derivar_precio_total_fabricantes(
         # lid cruzado (rotación batch heredada): mismo guard que el writeback del ancla.
         if nombre_li and nombre_elem and nombre_li != nombre_elem:
             continue
-        cajas = _to_float(li.get("quantity"))
-        if cajas <= 0:
-            continue
         persistido = _to_float(elem_props.get("precio_total"))
-        if _to_float(li.get("price")) == 0 and _ancla_vigente(li, pp.incoterm) is None:
+        if es_promo:
             filas.append([str(elem.get("id")), persistido, cajas, 0.0, 0.0])
             continue
-        resuelto = _resolver_precios_linea(li, pp)
-        base = resuelto["final"] * cajas
-        total_base += base
         filas.append([str(elem.get("id")), persistido, cajas, base, round(base - gastos_pc * cajas, 2)])
 
     if not filas:
         return {}
 
+    ids_a_reescribir = {f[0] for f in filas}
     otras = sum(
         _to_float((el.get("properties") or {}).get("precio_total"))
         for el in elems_contenedor
-        if ((el.get("properties") or {}).get("tipo_articulo") or "").strip().lower() != "fabricante"
+        if str(el.get("id")) not in ids_a_reescribir
     )
     target = round(round(total_base, 2) - otras, 2)
     residuo = round(target - sum(f[4] for f in filas), 2)
@@ -484,6 +591,58 @@ def _derivar_precio_total_fabricantes(
         for elem_id, persistido, _cajas, _base, valor in filas
         if persistido != valor
     }
+
+
+def _base_sin_iva_fabricantes(fabricantes: List[Dict], pp: PricingParams) -> float:
+    """Base sin IVA del contenedor: Σ final×cajas de sus líneas fabricante (las
+    promos no repercuten). Es el importe que debe igualar la suma de los
+    `precio_total` de TODOS los Elementos del contenedor, y el que ancla
+    `contenedor.price`."""
+    total = 0.0
+    for li in fabricantes:
+        cajas = _to_float(li.get("quantity"))
+        if cajas <= 0:
+            continue
+        if _to_float(li.get("price")) == 0 and _ancla_vigente(li, pp.incoterm) is None:
+            continue
+        total += _resolver_precios_linea(li, pp)["final"] * cajas
+    return round(total, 2)
+
+
+def verificar_suma_precio_total_elementos(
+    deal_id: str,
+    container_name: str,
+    fabricantes: List[Dict],
+    pp: PricingParams,
+    elems_contenedor: List[Dict],
+    pt_upd: Optional[Dict[str, str]] = None,
+) -> Optional[Dict[str, float]]:
+    """Avisa si la suma de los `precio_total` de los Elementos no cuadra con la
+    base sin IVA del contenedor. Es lo que suma SAP, así que un delta aquí es
+    dinero que se factura de más o de menos.
+
+    Cuenta el valor ya persistido de los Elementos que este recálculo no va a
+    tocar: así detecta también el cuadre parcial (algunas líneas sincronizadas y
+    otras congeladas), que es el caso más caro. Solo informa; nunca lanza."""
+    pt_upd = pt_upd or {}
+    esperado = _base_sin_iva_fabricantes(fabricantes, pp)
+    suma = 0.0
+    for el in elems_contenedor:
+        eid = str(el.get("id"))
+        if eid in pt_upd:
+            suma += _to_float(pt_upd[eid])
+        else:
+            suma += _to_float((el.get("properties") or {}).get("precio_total"))
+    suma = round(suma, 2)
+    delta = round(suma - esperado, 2)
+    if abs(delta) < 0.01:
+        return None
+    logger.warning(
+        f"[recalcular] INVARIANTE deal={deal_id} cont={container_name}: "
+        f"Σ precio_total Elementos={suma} != base sin IVA={esperado} (delta={delta}); "
+        f"SAP facturará esa diferencia"
+    )
+    return {"esperado": esperado, "suma": suma, "delta": delta}
 
 
 def recalcular_contenedores(
@@ -575,25 +734,47 @@ def recalcular_contenedores(
                 except (TypeError, ValueError):
                     continue
             pp_contenedor = pricing_ctx.for_container(container_name, cajas_contenedor)
+            elems_contenedor = elementos_by_container.get(container_name, [])
+            emp = _emparejar_elementos_fabricante(
+                container_name, fabricantes, elems_contenedor, elem_by_lid, deal_id
+            )
             li_upd, el_upd = _derivar_writebacks_lineas(
-                fabricantes, pp_contenedor, elem_by_lid
+                fabricantes, pp_contenedor, emp.by_lid
             )
             line_item_updates.extend(li_upd)
-            # Merge por Elemento: el writeback del ancla y el precio_total corregido
-            # pueden tocar el mismo Elemento y el batch no admite ids duplicados.
+            # Merge por Elemento: el writeback del ancla, el precio_total corregido y
+            # la reparación del lid pueden tocar el mismo Elemento, y el batch no
+            # admite ids duplicados.
             el_by_id = {str(u["id"]): u for u in el_upd}
             pt_upd = _derivar_precio_total_fabricantes(
                 fabricantes,
                 pp_contenedor,
-                elementos_by_container.get(container_name, []),
-                elem_by_lid,
+                elems_contenedor,
+                emp.by_lid,
             )
             for eid, valor in pt_upd.items():
                 if eid in el_by_id:
                     el_by_id[eid]["properties"]["precio_total"] = valor
                 else:
                     el_by_id[eid] = {"id": eid, "properties": {"precio_total": valor}}
+            for rep in emp.lid_repairs:
+                eid = str(rep["id"])
+                if eid in el_by_id:
+                    el_by_id[eid]["properties"].update(rep["properties"])
+                else:
+                    el_by_id[eid] = {"id": eid, "properties": dict(rep["properties"])}
             elemento_updates.extend(el_by_id.values())
+
+            if not emp.resueltos and _base_sin_iva_fabricantes(fabricantes, pp_contenedor) > 0:
+                logger.warning(
+                    f"[recalcular] deal={deal_id} cont={container_name}: "
+                    f"0/{len(fabricantes)} Elementos fabricante emparejados; el cuadre de "
+                    f"precio_total NO se aplica y SAP leerá valores desfasados"
+                )
+            verificar_suma_precio_total_elementos(
+                deal_id, container_name, fabricantes, pp_contenedor,
+                elems_contenedor, pt_upd,
+            )
             new_price = _compute_price_from_fabricantes(fabricantes, company_props, pp_contenedor)
             cobrado_raw = cont_props.get("importe_total_cobrado")
             try:
@@ -662,6 +843,20 @@ def recalcular_contenedores(
         )
 
     if elemento_updates:
+        # Un id repetido (mismo Elemento alcanzado desde dos contenedores) hace que
+        # HubSpot rechace el chunk entero y se pierdan todas las correcciones.
+        merged: Dict[str, Dict[str, Any]] = {}
+        for upd in elemento_updates:
+            eid = str(upd["id"])
+            if eid in merged:
+                logger.warning(
+                    f"[recalcular] elemento {eid} actualizado desde dos contenedores; "
+                    f"fusiono props"
+                )
+                merged[eid]["properties"].update(upd.get("properties") or {})
+            else:
+                merged[eid] = {"id": eid, "properties": dict(upd.get("properties") or {})}
+        elemento_updates = list(merged.values())
         try:
             batch_update_custom_objects(client, OBJECT_TYPE_ELEMENTO, elemento_updates)
         except Exception as e:

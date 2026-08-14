@@ -1,0 +1,157 @@
+"""Tests de `_emparejar_elementos_fabricante`: reemparejar Elemento↔line item
+cuando el `line_item_id` del Elemento apunta a una línea ya archivada.
+
+Caso real (deal 63433865390, 2026-08-11): los 4 Elementos fabricante apuntaban a
+line items archivados, así que `recalcular_contenedores` no los encontraba y ni el
+EXW ni el `precio_total` se sincronizaban. Al subir el flete de 855 a 900 los line
+items bajaron su EXW a 6,933 y los Elementos se quedaron en 6,946: SAP leyó 45,00 €
+de más.
+"""
+
+import logging
+
+from app.utils.iva_helpers import _emparejar_elementos_fabricante
+
+CONT = "63433865390-001"
+
+
+def _linea(lid, nombre, cajas=1200):
+    return {
+        "hs_object_id": lid,
+        "name": nombre,
+        "price": "6.933",
+        "quantity": str(cajas),
+        "numero_container": CONT,
+    }
+
+
+def _elem(eid, lid, nombre, tipo="fabricante", nombre_contenedor=CONT):
+    return {"id": eid, "properties": {
+        "line_item_id": lid,
+        "nombre": nombre,
+        "tipo_articulo": tipo,
+        "nombre_contenedor": nombre_contenedor,
+        "precio_total": "8335.0",
+    }}
+
+
+def _by_lid(elems):
+    idx = {}
+    for el in elems:
+        lid = str((el.get("properties") or {}).get("line_item_id") or "").strip()
+        if lid:
+            idx[lid] = el
+    return idx
+
+
+def test_lid_stale_reempareja_por_nombre_y_repara():
+    fabricantes = [
+        _linea("57706881562", "PINA COCO"),
+        _linea("57706881560", "FRESA"),
+        _linea("57706881556", "SANDIA UVA", 600),
+        _linea("57706881557", "MORA", 600),
+    ]
+    elems = [
+        _elem("el-1", "57712297398", "PINA COCO"),
+        _elem("el-2", "57712297395", "FRESA"),
+        _elem("el-3", "57712297394", "SANDIA UVA"),
+        _elem("el-4", "57712297396", "MORA"),
+    ]
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems), "63433865390")
+
+    assert emp.resueltos == 4
+    assert emp.sin_resolver == []
+    assert emp.by_lid["57706881562"]["id"] == "el-1"
+    assert emp.by_lid["57706881556"]["id"] == "el-3"
+    assert {r["id"]: r["properties"]["line_item_id"] for r in emp.lid_repairs} == {
+        "el-1": "57706881562",
+        "el-2": "57706881560",
+        "el-3": "57706881556",
+        "el-4": "57706881557",
+    }
+
+
+def test_lid_correcto_no_genera_reparacion():
+    fabricantes = [_linea("li-1", "PINA COCO")]
+    elems = [_elem("el-1", "li-1", "PINA COCO")]
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems))
+
+    assert emp.resueltos == 1
+    assert emp.lid_repairs == []
+
+
+def test_cruce_intra_contenedor_repara_los_dos_sin_duplicar():
+    fabricantes = [_linea("li-1", "PINA COCO"), _linea("li-2", "FRESA")]
+    elems = [_elem("el-1", "li-2", "PINA COCO"), _elem("el-2", "li-1", "FRESA")]
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems))
+
+    assert emp.resueltos == 2
+    assert emp.by_lid["li-1"]["id"] == "el-1"
+    assert emp.by_lid["li-2"]["id"] == "el-2"
+    assert len({r["id"] for r in emp.lid_repairs}) == 2
+
+
+def test_promo_nombre_duplicado_no_se_toca():
+    """Dos líneas del mismo artículo (promo 5+1): el nombre no discrimina, así que la
+    que tiene el lid roto se queda sin emparejar en vez de robar el Elemento de la otra."""
+    fabricantes = [_linea("li-1", "PINA COCO"), _linea("li-2", "PINA COCO")]
+    elems = [_elem("el-1", "li-1", "PINA COCO"), _elem("el-2", "li-viejo", "PINA COCO")]
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems))
+
+    assert emp.resueltos == 1
+    assert emp.by_lid["li-1"]["id"] == "el-1"
+    assert emp.lid_repairs == []
+    assert [s["motivo"] for s in emp.sin_resolver] == ["nombre_ambiguo"]
+
+
+def test_un_solo_elemento_para_dos_lineas_iguales_no_se_reclama_dos_veces():
+    fabricantes = [_linea("li-1", "PINA COCO"), _linea("li-2", "PINA COCO")]
+    elems = [_elem("el-1", "li-1", "PINA COCO")]
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems))
+
+    assert emp.resueltos == 1
+    assert len(emp.sin_resolver) == 1
+
+
+def test_elemento_de_otro_contenedor_no_se_empareja():
+    fabricantes = [_linea("li-1", "PINA COCO")]
+    elems = [_elem("el-1", "li-1", "PINA COCO", nombre_contenedor="63433865390-002")]
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, [], _by_lid(elems))
+
+    assert emp.resueltos == 0
+    assert emp.sin_resolver[0]["motivo"] == "otro_contenedor"
+
+
+def test_elemento_renombrado_no_resuelve_y_avisa(caplog):
+    fabricantes = [_linea("li-1", "PINA COCO")]
+    elems = [_elem("el-1", "li-1", "OTRO ARTICULO")]
+
+    with caplog.at_level(logging.WARNING):
+        emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems), "deal-9")
+
+    assert emp.resueltos == 0
+    assert emp.sin_resolver[0]["motivo"] == "nombre_cruzado"
+    assert "line_item=li-1" in caplog.text
+    assert "'PINA COCO'" in caplog.text
+
+
+def test_duplicado_stale_y_vivo_se_deja_intacto():
+    """Contenedor 63436741971-001: la misma línea tiene dos Elementos (uno con lid
+    vivo, otro stale). El nombre es ambiguo, así que no se reempareja nada."""
+    fabricantes = [_linea("57806751756", "MALTA PURE JOY", 2418)]
+    elems = [
+        _elem("59999315640", "57806751756", "MALTA PURE JOY"),
+        _elem("59876143426", "57753142832", "MALTA PURE JOY"),
+    ]
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems))
+
+    assert emp.resueltos == 1
+    assert emp.by_lid["57806751756"]["id"] == "59999315640"
+    assert emp.lid_repairs == []

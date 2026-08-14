@@ -1,0 +1,157 @@
+{# Manages signature functionality and associated signed states. It also includes logic for handwritten signature and countersignature #}
+{% set MOCK_QUOTE = {
+    "hs_show_signature_box": false,
+    "hs_show_countersignature_box": false,
+    "hs_esign_enabled": true,
+    "hs_esign_verification_method": 'email',
+    "hs_public_url_key": "0123456789abcdef",
+    "associated_objects":{
+      "contact_signers": [
+        {
+          "vid": 1,
+          "first_name": "First",
+          "last_name": "Signer",
+          "email": "firstsigner@hubspot.com",
+          "avatar_url":"https://cdn2.hubspotqa.net/hub/99261937/hubfs/d40aadd5-d110-43f0-bf31-fb20ddb2128c.png/height=48/width=48"
+        }
+      ],
+      "user_signers": []
+    }
+  }
+%}
+{% set QUOTE = template_data.quote or MOCK_QUOTE %}
+{% set ASSOCIATED_OBJECTS = QUOTE.associated_objects %}
+
+{# Localize the ordering of first and last name #}
+{% macro localize_signer_names(signers, use_honorific) -%}
+  {% for signer in signers %}
+    {% set signer_full_name = format_name(signer.first_name, signer.last_name, use_honorific) %}
+    {% do signer.update({ "full_name": signer_full_name }) %}
+  {% endfor %}
+{%- endmacro %}
+
+{# Japanese Honorifics should only be used for the contact signers (buyers), not the user signers (senders) #}
+{{ localize_signer_names(ASSOCIATED_OBJECTS.contact_signers, true) }}
+{{ localize_signer_names(ASSOCIATED_OBJECTS.user_signers, false) }}
+
+<div class="signature__container">
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+ {% if QUOTE.hs_show_signature_box %}
+  {{ module.print_signature.header|render|sanitize_html }}
+    <div class="signature__box">
+      <div class="signature__field">
+        {{ module.print_signature.signature|sanitize_html }}
+      </div>
+      <div class="signature__field">
+        {{ module.print_signature.date|sanitize_html }}
+      </div>
+      <div class="signature__field">
+        {{ module.print_signature.printed_name|sanitize_html }}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if QUOTE.hs_show_countersignature_box %}
+    <hr />
+    {{ module.print_signature.countersignature.header|render|sanitize_html }}
+    <div class="signature__box">
+      <div class="signature__field">
+        {{ module.print_signature.countersignature.countersignature|sanitize_html }}
+      </div>
+      <div class="signature__field">
+        {{ module.print_signature.countersignature.date|sanitize_html }}
+      </div>
+      <div class="signature__field">
+        {{ module.print_signature.countersignature.printed_name|sanitize_html }}
+      </div>
+    </div>
+  {% elif QUOTE.hs_esign_enabled %}
+    <div class="esignature" data-module-name="{{ name }}">
+      {{ module.esignature.heading|render|sanitize_html }}
+      {{ module.esignature.pretext|render|sanitize_html }}
+      <div class="esignature__loading-spinner"></div>
+
+      <template class="esignature__template">
+        <div class="esignature__verify-button-container">
+          <button class="esignature__verify-button">
+            {{ module.esignature.verify_button|sanitize_html }}
+            <div class="esignature__verify-button-loading-spinner"></div>
+          </button>
+
+          <div class="esignature__verify-error-rate-limit">
+            {{ module.esignature.verify_error_rate_limit|sanitize_html }}
+          </div>
+          <div class="esignature__verify-error-unknown">
+            {{ module.esignature.verify_error_unknown|sanitize_html }}
+          </div>
+        </div>
+
+        <div class="esignature__sign-now-button-container">
+          <button class="esignature__sign-now-button">
+            {{ module.esignature.sign_now_button|sanitize_html }}
+            <div class="esignature__sign-now-button-loading-spinner"></div>
+          </button>
+          <div class="esignature__sign-now-error-rate-limit">
+            {{ module.esignature.sign_now_error_rate_limit|sanitize_html }}
+          </div>
+          <div class="esignature__sign-now-error-unknown">
+            {{ module.esignature.sign_now_error_unknown|sanitize_html }}
+          </div>
+        </div>
+
+        <div class="esignature__warning--test-mode">
+          {{ module.esignature.test_mode|sanitize_html }}
+        </div>
+
+        <div class="esignature__profile">
+          <div>
+            <b><span class="esignature__signer-name"></span></b><br />
+            <span class="esignature__signer-email"></span>
+          </div>
+        </div>
+
+        <span class="esignature__alert--failure">
+          {{ module.esignature.failure|sanitize_html }}
+        </span>
+
+        <div class="esignature__tag--sent">
+          {{ module.esignature.verification_sent|sanitize_html }}
+        </div>
+
+        <div class="esignature__tag--redirecting">
+          {{ module.esignature.redirecting|sanitize_html }}
+        </div>
+
+        <div class="esignature__tag--signed">{{ module.esignature.signed|sanitize_html }}</div>
+      </template>
+    </div>
+  {% else %}
+    <div></div>
+  {% endif %}
+</div>
+
+{# DO NOT EDIT - used for e-signature #}
+{% if QUOTE.hs_esign_enabled %}
+  {% require_js position="head" %}
+    <script type="application/json" data-module-instance="signature">
+      {
+        "url_key": "{{ QUOTE.hs_public_url_key|escapejson }}",
+        "api_base_url": "{{ (template_data.hubspot_base_url || mock_data.hubspot_base_url)|escapejson }}",
+        "esign_enabled": {{ (QUOTE.hs_esign_enabled || "false")|escapejson }},
+        "hs_esign_verification_method": "{{ (QUOTE.hs_esign_verification_method || "email")|escapejson }}",
+        "contact_signers_preview": {{ ASSOCIATED_OBJECTS.contact_signers|tojson }},
+        "user_signers_preview": {{ ASSOCIATED_OBJECTS.user_signers|tojson }},
+        "is_preview": {{ template_data.is_preview|escapejson }},
+        "test_mode_enabled": {{ (QUOTE.hs_test_mode || "false")|escapejson }},
+        "module_name": "{{ name|escapejson }}"
+      }
+    </script>
+  {% end_require_js %}
+  {% require_js %}
+    <script
+      type="text/javascript"
+      src="https://static.hsappstatic.net/quote-esignature-js/ex/quote-esignature.js"
+      data-cookieconsent="ignore"
+    ></script>
+  {% end_require_js %}
+{% endif %}

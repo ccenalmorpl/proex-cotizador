@@ -209,6 +209,13 @@
   {% set cliente_pais = json_get_str(json_get_obj(payload_json, "cliente"), "pais", "N/A") %}
 {% endif %}
 
+{# Exportación: país fiscal (junto al CIF) y país de operaciones (fila propia) #}
+{% set cliente_pais_fiscal = company.country|default("")|trim %}
+{% set cliente_pais_operaciones = "" %}
+{% if company and company.custom_properties and company.custom_properties.pais_de_operaciones and company.custom_properties.pais_de_operaciones.label %}
+  {% set cliente_pais_operaciones = company.custom_properties.pais_de_operaciones.label %}
+{% endif %}
+
 {# ===================================================== #}
 {# Precios/Stats: siguen viniendo del payload (por ahora)   #}
 {# ===================================================== #}
@@ -270,6 +277,7 @@
   {% set lbl_currency        = "Moneda:" %}
   {% set lbl_seal            = "Precinto N°:" %}
   {% set lbl_eta             = "ETA:" %}
+  {% set lbl_country_ops     = "País de operaciones:" %}
   {% set lbl_products_title  = "Productos" %}
   {% set lbl_col_code        = "CÓDIGO" %}
   {% set lbl_col_item        = "ARTÍCULO" %}
@@ -318,6 +326,7 @@
   {% set lbl_currency        = "Devise :" %}
   {% set lbl_seal            = "Scellé N° :" %}
   {% set lbl_eta             = "ETA :" %}
+  {% set lbl_country_ops     = "Pays d'opérations :" %}
   {% set lbl_products_title  = "Produits" %}
   {% set lbl_col_code        = "CODE" %}
   {% set lbl_col_item        = "ARTICLE" %}
@@ -367,6 +376,7 @@
   {% set lbl_currency        = "Currency:" %}
   {% set lbl_seal            = "Seal N°:" %}
   {% set lbl_eta             = "ETA:" %}
+  {% set lbl_country_ops     = "Country of operations:" %}
   {% set lbl_products_title  = "Products" %}
   {% set lbl_col_code        = "CODE" %}
   {% set lbl_col_item        = "ITEM" %}
@@ -859,8 +869,8 @@
         <div class="ref-column customer-info">
           <p>{{ cliente_nombreEmpresa }}</p>
           <p>{{ deal.direccion_fiscal if deal and deal.direccion_fiscal else "" }}</p>
-          {% if deal.cif %}<p>{{ deal.cif }}</p>{% endif %}
-          <p>{{ cliente_pais }}</p>
+          {% if deal.cif or cliente_pais_fiscal %}<p>{{ deal.cif }}{% if deal.cif and cliente_pais_fiscal %} - {% endif %}{{ cliente_pais_fiscal }}</p>{% endif %}
+          {% if cliente_pais_operaciones %}<p>{{ lbl_country_ops }} {{ cliente_pais_operaciones }}</p>{% endif %}
         </div>
       {% endif %}
 
@@ -1264,8 +1274,8 @@
           <div class="ref-column customer-info">
             <p>{{ cliente_nombreEmpresa }}</p>
             <p>{{ deal.direccion_fiscal if deal and deal.direccion_fiscal else "" }}</p>
-            {% if deal.cif %}<p>{{ deal.cif }}</p>{% endif %}
-            <p>{{ cliente_pais }}</p>
+            {% if deal.cif or cliente_pais_fiscal %}<p>{{ deal.cif }}{% if deal.cif and cliente_pais_fiscal %} - {% endif %}{{ cliente_pais_fiscal }}</p>{% endif %}
+            {% if cliente_pais_operaciones %}<p>{{ lbl_country_ops }} {{ cliente_pais_operaciones }}</p>{% endif %}
           </div>
         {% endif %}
 
@@ -1445,7 +1455,14 @@
   {% set has_page2_content = (textoBaseOferta and not is_nacional) or textoFormaPago or textoBanco %}
   {% set texts_page_num = (num_containers + 1) if (is_desagregado and num_containers > 1) else 2 %}
 
-  {% if has_page2_content and deal.cotizacion_rapida != "Yes" %}
+  {% set show_legal_page = has_page2_content and deal.cotizacion_rapida != "Yes" %}
+
+  {# Firma nativa: la activa el comercial al crear la cotización (caja impresa,
+     contrafirma o firma electrónica). #}
+  {% set show_signature = quote.hs_show_signature_box or quote.hs_show_countersignature_box or quote.hs_esign_enabled %}
+  {% set signature_page_num = (texts_page_num + 1) if show_legal_page else texts_page_num %}
+
+  {% if show_legal_page %}
 
   <div class="page-2">
     {# Header repetido en página de textos #}
@@ -1491,6 +1508,38 @@
     </p>
   </div>
   {% endif %}
+
+  {# ============================================================ #}
+  {# PÁGINA DE FIRMA                                              #}
+  {# El módulo va SIEMPRE en el HTML, sin condicional HubL: para  #}
+  {# habilitar la firma electrónica HubSpot valida la plantilla   #}
+  {# renderizada y un {% if %} lo dejaría fuera (MISSING_         #}
+  {# SIGNATURE_ASSETS). Cuando no hay firma se oculta por CSS,    #}
+  {# igual que original.html y modern.html.                       #}
+  {# ============================================================ #}
+  <div class="page-signature{% if not show_signature %} page-signature--hidden{% endif %}">
+    <div class="commercial-header">
+      <div class="header-title">
+        <h1>{{ lbl_invoice_title }} {{ offerNumber }}</h1>
+      </div>
+      <div class="header-logo">
+        {% module "logo" path="../modules/quote_logo" %}
+      </div>
+    </div>
+
+    <section class="signature-section">
+      <h2>{{ lbl_client_accept }}</h2>
+      {% module "signature" path="@hubspot/quote_signature" %}
+    </section>
+
+    <div class="page-indicator">{{ lbl_page }} {{ signature_page_num }}</div>
+    <p class="company-footer page-2-footer">
+      <span><strong>PROEX DRINKS GROUP, S.A.</strong> — Avda. Américo Vespucio 5, Edif. Cartuja, bloque A, 2ª planta — 41092 Sevilla (Sevilla) España — C.I.F. A41992975</span><br>
+      <span>Commercial Office.- Proex Building. P.I. Área Logística 03-PEI. PEYSI Guadarranque - 11369 San Roque (Cádiz) Spain/Espagne/España (UE)</span><br>
+      <span>Tel.- +34 856 223 943 / +34 956 223 943 - Email.- customerservice@proexdg.com - www.proexdg.com</span><br>
+      <strong>SGS ISO 9001:2015 CERTIFICATE ES16/20592</strong>
+    </p>
+  </div>
 
 {% if SHOW_DEBUG %}
 <div class="debug-block" style="margin:40px; padding:20px; border:2px dashed #888; font-family:monospace; font-size:11px; line-height:1.4; background:#fff;">
@@ -1576,6 +1625,15 @@
   </ul>
 </div>
 {% endif %}
+
+{# ===================================================== #}
+{# Botón flotante de descarga en PDF (todas las variantes) #}
+{# El texto lo traduce el propio módulo: los parámetros del  #}
+{# tag {% module %} no evalúan variables HubL.               #}
+{# ===================================================== #}
+<div class="quote-download-fab">
+  {% module "download" path="../modules/quote_download" %}
+</div>
 
 </body>
 {% endblock body %}

@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Transferir",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Texto do botão",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Ocorreu um problema ao transferir o orçamento. Tente novamente.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Mensagem de erro mostrada quando a transferência falha",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Transferir",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,21 @@
+[ {
+  "id" : "button_text",
+  "name" : "button_text",
+  "label" : "Button text",
+  "required" : true,
+  "locked" : false,
+  "allow_new_line" : false,
+  "type" : "text",
+  "display_width" : null,
+  "default" : "Download PDF"
+}, {
+  "id" : "download_error",
+  "name" : "download_error",
+  "label" : "Error message shown when download fails",
+  "required" : true,
+  "locked" : false,
+  "allow_new_line" : false,
+  "type" : "text",
+  "display_width" : null,
+  "default" : "There was a problem downloading the quote. Please try again."
+} ]

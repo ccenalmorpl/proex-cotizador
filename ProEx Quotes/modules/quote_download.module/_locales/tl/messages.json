@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "I-download",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Button text",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Nagkaproblema sa pag-download sa quote. Subukan muli.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Error na mensahe kapag hindi nag-download",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "I-download",
+    "description" : "",
+    "placeholders" : null
+  }
+}

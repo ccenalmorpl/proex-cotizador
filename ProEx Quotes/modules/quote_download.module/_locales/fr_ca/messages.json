@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Télécharger ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Texte du bouton",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Il y a eu un problème lors du téléchargement du devis. Veuillez réessayer.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Message d'erreur affiché lorsque le téléchargement échoue",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Télécharger ",
+    "description" : "",
+    "placeholders" : null
+  }
+}

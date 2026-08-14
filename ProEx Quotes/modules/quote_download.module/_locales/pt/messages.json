@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Download",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Texto do botão",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Ocorreu um problema ao fazer o download do orçamento. Tente novamente.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Mensagem de erro exibida quando o download falha",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Download",
+    "description" : "",
+    "placeholders" : null
+  }
+}

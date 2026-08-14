@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Download",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Button text",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "There was a problem downloading the quote. Please try again.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Error message shown when download fails",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Download",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Λήψη",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Κείμενο κουμπιού",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Υπήρξε κάποιο πρόβλημα κατά τη λήψη της προσφοράς. Δοκιμάστε ξανά.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Εμφανίζεται μήνυμα σφάλματος όταν η λήψη αποτυγχάνει",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Λήψη",
+    "description" : "",
+    "placeholders" : null
+  }
+}

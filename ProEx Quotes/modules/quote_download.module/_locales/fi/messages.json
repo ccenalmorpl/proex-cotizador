@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Lataa",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Painiketeksti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Tarjouksen lataamisessa ilmeni ongelma. Yritä uudelleen.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Latauksen epäonnistuessa näkyvä virheviesti",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Lataa",
+    "description" : "",
+    "placeholders" : null
+  }
+}

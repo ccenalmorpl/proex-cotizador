@@ -1,0 +1,212 @@
+{
+  "esignature.failure.default" : {
+    "message" : "স্বাক্ষরের তথ্য পাওয়ার ক্ষেত্রে একটি সমস্যা হয়েছে। অনুগ্রহ করে পৃষ্ঠাটি পুনরায় লোড করুন।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.failure.label" : {
+    "message" : "ব্যর্থতার অ্যালার্টের টেক্সট",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.default" : {
+    "message" : "<h3>হস্তাক্ষর</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.label" : {
+    "message" : "হেডিং ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.label" : {
+    "message" : "ই-স্বাক্ষর",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.default" : {
+    "message" : "ই-স্বাক্ষর প্রক্রিয়া শুরু করতে একটি প্রোফাইল বেছে নিন।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.label" : {
+    "message" : "ই-স্বাক্ষরের ব্যাখ্যা টেক্সট",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.redirecting.default" : {
+    "message" : "পুনঃনির্দেশিত করা হচ্ছে...",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.default" : {
+    "message" : "এখনই সাইন ইন",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.label" : {
+    "message" : "বোতামের টেক্সট এখনই সাইন ইন করুন",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_rate_limit.default" : {
+    "message" : "আপনি খুব সম্প্রতি সাইন করার অনুরোধ করেছেন। অনুগ্রহ করে 5 মিনিটের মধ্যে আবার চেষ্টা করুন।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_unknown.default" : {
+    "message" : "ই-সাইন শুরু করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.default" : {
+    "message" : "স্বাক্ষরিত",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.label" : {
+    "message" : "স্বাক্ষরিত টেক্সট",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.test_mode.default" : {
+    "message" : "এটি একটি পরীক্ষার কোট, তাই এটি প্রকৃত স্বাক্ষর সংগ্রহ করতে পারে না।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.default" : {
+    "message" : "যাচাইকরণ ইমেল পাঠানো হয়েছে",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.label" : {
+    "message" : "যাচাইকরণ ইমেইল প্রেরিত টেক্সট",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.default" : {
+    "message" : "স্বাক্ষর করতে যাচাই করুন",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.label" : {
+    "message" : "যাচাইকরণ ইমেইল বাটন টেক্সট",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_rate_limit.default" : {
+    "message" : "আপনি অতি সম্প্রতি একটি যাচাইকরণ ইমেলের অনুরোধ করেছেন৷ অনুগ্রহ করে 5 মিনিটের মধ্যে আবার চেষ্টা করুন।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_unknown.default" : {
+    "message" : "একটি যাচাইকরণ ইমেল পাঠাতে একটি সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "আপনি এই টেমপ্লেট দিয়ে একটি কোট তৈরি করার সময় স্বাক্ষর সংগ্রহ করতে চান কিনা তা আপনি সিদ্ধান্ত নিতে পারেন।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "স্বাক্ষর",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.default" : {
+    "message" : "প্রতিস্বাক্ষর",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.label" : {
+    "message" : "প্রতিস্বাক্ষর ফিল্ড",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.default" : {
+    "message" : "তারিখ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.label" : {
+    "message" : "তারিখ ফিল্ড",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.default" : {
+    "message" : "<h3>প্রতিস্বাক্ষর</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.label" : {
+    "message" : "শিরোনাম",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.inline_help_text" : {
+    "message" : "একটি কোট তৈরি করার সময়, আপনি পাল্টা স্বাক্ষর প্রদর্শন করবেন কিনা তা নির্বাচন করতে পারেন",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.label" : {
+    "message" : "প্রতিস্বাক্ষর",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.default" : {
+    "message" : "মুদ্রিত নাম",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.label" : {
+    "message" : "মুদ্রিত নাম ফিল্ড",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.default" : {
+    "message" : "তারিখ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.label" : {
+    "message" : "তারিখ ফিল্ড",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.default" : {
+    "message" : "<h3>হস্তাক্ষর</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.label" : {
+    "message" : "শিরোনাম",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.label" : {
+    "message" : "স্পষ্ট স্বাক্ষর",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.default" : {
+    "message" : "মুদ্রিত নাম",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.label" : {
+    "message" : "মুদ্রিত নাম ফিল্ড",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.default" : {
+    "message" : "স্বাক্ষর",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.label" : {
+    "message" : "স্বাক্ষর ফিল্ড",
+    "description" : "",
+    "placeholders" : null
+  }
+}

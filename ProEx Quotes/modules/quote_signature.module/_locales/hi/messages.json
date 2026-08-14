@@ -1,0 +1,212 @@
+{
+  "esignature.failure.default" : {
+    "message" : "सिग्नेचर जानकारी प्राप्त करने में एक समस्या हुई। कृपया पेज को रीलोड करें।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.failure.label" : {
+    "message" : "फेलियर अलर्ट टेक्स्ट",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.default" : {
+    "message" : "<h3>हस्ताक्षर</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.label" : {
+    "message" : "हेडिंग",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.label" : {
+    "message" : "E-सिग्नेचर",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.default" : {
+    "message" : "ई-हस्ताक्षर प्रक्रिया शुरू करने के लिए एक प्रोफ़ाइल चुनें।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.label" : {
+    "message" : "E-सिग्नेचर एक्सप्लेनेशन टेक्स्ट",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.redirecting.default" : {
+    "message" : "पुनर्निर्देशित किया जा रहा है...",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.default" : {
+    "message" : "अभी साइन करें",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.label" : {
+    "message" : "अभी बटन का टेक्स्ट साइन करें",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_rate_limit.default" : {
+    "message" : "आपने हाल ही में साइन इन करने का अनुरोध किया है। कृपया 5 मिनट बाद फिर से प्रयास करें।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_unknown.default" : {
+    "message" : "ई-हस्ताक्षर शुरू करने में समस्या हुई। कृपया दोबारा प्रयास करें।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.default" : {
+    "message" : "साइन किया गया",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.label" : {
+    "message" : "साइंड टेक्स्ट",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.test_mode.default" : {
+    "message" : "यह एक क्वोट टेस्ट है, इसलिए यह रियल साइन नहीं ले सकता।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.default" : {
+    "message" : "सत्यापन ईमेल भेज दिया गया",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.label" : {
+    "message" : "सत्यापन ईमेल ने टेक्स्ट भेजा",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.default" : {
+    "message" : "साइन करने के लिए वेरीफाई करें",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.label" : {
+    "message" : "वेरिफिकेशन ईमेल बटन टेक्स्ट",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_rate_limit.default" : {
+    "message" : "आपने हाल ही में एक सत्यापन ईमेल का भी अनुरोध किया है। कृपया 5 मिनट में फिर से प्रयास करें।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_unknown.default" : {
+    "message" : "सत्यापन ईमेल भेजने में समस्या थी। कृपया फिर से प्रयास करें।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "आप तय कर सकते हैं कि इस टेम्पलेट के साथ क्वोट बनाते समय आप हस्ताक्षर लेना चाहते हैं या नहीं।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "हस्ताक्षर",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.default" : {
+    "message" : "काउंटरसिग्नेचर",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.label" : {
+    "message" : "काउंटरसिग्नेचर फील्ड",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.default" : {
+    "message" : "तिथि",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.label" : {
+    "message" : "तिथि फ़ील्ड",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.default" : {
+    "message" : "<h3>काउंटरसिग्नेचर</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.label" : {
+    "message" : "हेडर",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.inline_help_text" : {
+    "message" : "क्वोट बनाते समय, आप चुन सकते हैं कि काउंटरसिग्नेचर डिस्प्ले करना है या नहीं",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.label" : {
+    "message" : "काउंटरसिग्नेचर",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.default" : {
+    "message" : "प्रिंटेड नाम",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.label" : {
+    "message" : "प्रिंटेड नाम फील्ड",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.default" : {
+    "message" : "तिथि",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.label" : {
+    "message" : "तिथि फ़ील्ड",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.default" : {
+    "message" : "<h3>हस्ताक्षर</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.label" : {
+    "message" : "हेडर",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.label" : {
+    "message" : "प्रिंट सिग्नेचर",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.default" : {
+    "message" : "प्रिंटेड नाम",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.label" : {
+    "message" : "प्रिंटेड नाम फील्ड",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.default" : {
+    "message" : "हस्ताक्षर",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.label" : {
+    "message" : "सिग्नेचर फील्ड",
+    "description" : "",
+    "placeholders" : null
+  }
+}

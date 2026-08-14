@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Unduh",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Teks tombol",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Terjadi masalah saat mengunduh penawaran. Silakan coba lagi.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Pesan kesalahan ditampilkan saat pengunduhan gagal",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Unduh",
+    "description" : "",
+    "placeholders" : null
+  }
+}

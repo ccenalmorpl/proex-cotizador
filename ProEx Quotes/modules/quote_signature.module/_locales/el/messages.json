@@ -1,0 +1,212 @@
+{
+  "esignature.failure.default" : {
+    "message" : "Υπήρξε κάποιο πρόβλημα κατά την ανάκτηση των πληροφοριών υπογραφής. Επαναλάβετε τη φόρτωση της σελίδας.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.failure.label" : {
+    "message" : "Κείμενο ειδοποίησης αποτυχίας",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.default" : {
+    "message" : "<h3>Υπογραφή</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.label" : {
+    "message" : "Επικεφαλίδα",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.label" : {
+    "message" : "Ηλεκτρονική υπογραφή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.default" : {
+    "message" : "Επιλογή προφίλ για την έναρξη της διαδικασίας της ηλεκτρονικής υπογραφής",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.label" : {
+    "message" : "Κείμενο επεξήγησης ηλεκτρονικής υπογραφής",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.redirecting.default" : {
+    "message" : "Ανακατεύθυνση...",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.default" : {
+    "message" : "Άμεση υπογραφή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.label" : {
+    "message" : "Κείμενο κουμπιού άμεσης υπογραφής",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_rate_limit.default" : {
+    "message" : "Ζητήσατε πολύ πρόσφατα να υπογράψετε. Δοκιμάστε ξανά σε 5 λεπτά.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_unknown.default" : {
+    "message" : "Υπήρξε κάποιο πρόβλημα με την έναρξη της ηλεκτρονική υπογραφής. Προσπαθήστε ξανά.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.default" : {
+    "message" : "Υπογράφηκε",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.label" : {
+    "message" : "Κείμενο πραγματοποιημένης υπογραφής",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.test_mode.default" : {
+    "message" : "Αυτή είναι μια δοκιμαστική προσφορά, για αυτό δεν είναι δυνατή η συλλογή πραγματικών υπογραφών.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.default" : {
+    "message" : "Το email επαλήθευσης στάλθηκε",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.label" : {
+    "message" : "Κείμενο αποστολής email επαλήθευσης",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.default" : {
+    "message" : "Επαλήθευση για υπογραφή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.label" : {
+    "message" : "Κείμενο κουμπιού email επαλήθευσης",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_rate_limit.default" : {
+    "message" : "Ζητήσατε πολύ πρόσφατα ένα email επαλήθευσης. Δοκιμάστε ξανά σε 5 λεπτά.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_unknown.default" : {
+    "message" : "Υπήρξε πρόβλημα με την αποστολή του email επαλήθευσης. Δοκιμάστε ξανά αργότερα.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "Μπορείτε να αποφασίσετε αν θέλετε να συλλέξετε υπογραφές όταν δημιουργείτε μια προσφορά με αυτό το πρότυπο.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Υπογραφή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.default" : {
+    "message" : "Δεύτερη υπογραφή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.label" : {
+    "message" : "Πεδίο δεύτερης υπογραφής",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.default" : {
+    "message" : "Ημερομηνία",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.label" : {
+    "message" : "Πεδίο ημερομηνίας",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.default" : {
+    "message" : "<h3>Δεύτερη υπογραφή</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.label" : {
+    "message" : "Κεφαλίδα",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.inline_help_text" : {
+    "message" : "Όταν δημιουργείτε μια προσφορά, μπορείτε να επιλέξετε αν θα εμφανίζεται η δεύτερη υπογραφή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.label" : {
+    "message" : "Δεύτερη υπογραφή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.default" : {
+    "message" : "Εκτυπωμένο όνομα",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.label" : {
+    "message" : "Πεδίο ονόματος με κεφαλαία",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.default" : {
+    "message" : "Ημερομηνία",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.label" : {
+    "message" : "Πεδίο ημερομηνίας",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.default" : {
+    "message" : "<h3>Υπογραφή</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.label" : {
+    "message" : "Κεφαλίδα",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.label" : {
+    "message" : "Υπογραφή με κεφαλαία",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.default" : {
+    "message" : "Εκτυπωμένο όνομα",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.label" : {
+    "message" : "Πεδίο ονόματος με κεφαλαία",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.default" : {
+    "message" : "Υπογραφή",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.label" : {
+    "message" : "Πεδίο υπογραφής",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Ladda ner",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Knapptext",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Ett problem uppstod när offerten skulle laddas ned. Försök igen.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Felmeddelande visas när nedladdning misslyckas",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Ladda ner",
+    "description" : "",
+    "placeholders" : null
+  }
+}

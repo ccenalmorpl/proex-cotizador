@@ -1,0 +1,212 @@
+{
+  "esignature.failure.default" : {
+    "message" : "เกิดปัญหาในการเรียกดูข้อมูลลายเซ็น โปรดโหลดหน้าอีกครั้ง",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.failure.label" : {
+    "message" : "ข้อความการแจ้งเตือนความล้มเหลว",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.default" : {
+    "message" : "<h3>ลายเซ็น</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.heading.label" : {
+    "message" : "หัวเรื่อง",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.label" : {
+    "message" : "ลายเซ็นอิเล็กทรอนิกส์",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.default" : {
+    "message" : "เลือกโปรไฟล์ที่จะเริ่มกระบวนการลายเซ็นอิเล็กทรอนิกส์",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.pretext.label" : {
+    "message" : "ข้อความอธิบายลายเซ็นอิเล็กทรอนิกส์",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.redirecting.default" : {
+    "message" : "กำลังเปลี่ยนเส้นทาง...",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.default" : {
+    "message" : "ลงชื่อตอนนี้เลย",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_button.label" : {
+    "message" : "ข้อความปุ่มลงชื่อตอนนี้เลย",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_rate_limit.default" : {
+    "message" : "คุณเพิ่งส่งคำขอลงชื่อไปเมื่อไม่นานนี้ โปรดลองอีกครั้งใน 5 นาที",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.sign_now_error_unknown.default" : {
+    "message" : "เกิดปัญหาในการเริ่มลายเซ็นอิเล็กทรอนิกส์ โปรดลองอีกครั้ง",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.default" : {
+    "message" : "เซ็นแล้ว",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.signed.label" : {
+    "message" : "ข้อความระบุว่าเซ็นแล้ว",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.test_mode.default" : {
+    "message" : "ใบเสนอราคานี้เป็นการทดสอบ จึงไม่สามารถขอลายเซ็นจริงๆ ได้",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.default" : {
+    "message" : "\n",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verification_sent.label" : {
+    "message" : "ข้อความส่งอีเมลยืนยันแล้ว",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.default" : {
+    "message" : "ยืนยันเพื่อเซ็น",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_button.label" : {
+    "message" : "ข้อความบนปุ่มอีเมลการยืนยัน",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_rate_limit.default" : {
+    "message" : "คุณส่งคำขออีเมลยืนยันตัวเร็วเกินไป โปรดรออีกครั้งในอีก 5 นาที",
+    "description" : "",
+    "placeholders" : null
+  },
+  "esignature.verify_error_unknown.default" : {
+    "message" : "เกิดปัญหาในการส่งอีเมลยืนยันตัว โปรดลองอีกครั้ง",
+    "description" : "",
+    "placeholders" : null
+  },
+  "inline_help_text" : {
+    "message" : "คุณตัดสินใจได้ว่าต้องการรวบรวมลายเซ็นหรือไม่ เมื่อคุณสร้างใบเสนอราคาโดยใช้เทมเพลตนี้",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "ผู้อนุมัติ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.default" : {
+    "message" : "ลายเซ็นร่วม",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.countersignature.label" : {
+    "message" : "ช่องลายเซ็นร่วม",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.default" : {
+    "message" : "วันที่",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.date.label" : {
+    "message" : "ช่องวันที่",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.default" : {
+    "message" : "<h3>ลายเซ็นร่วม</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.header.label" : {
+    "message" : "ส่วนหัว",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.inline_help_text" : {
+    "message" : "เวลาที่สร้างใบเสนอราคา คุณสามารถเลือกแสดงลายเซ็นร่วมหรือไม่ก็ได้",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.label" : {
+    "message" : "ลายเซ็นร่วม",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.default" : {
+    "message" : "ชื่อผู้อนุมัติ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.countersignature.printed_name.label" : {
+    "message" : "ช่องสำหรับชื่อตัวบรรจง",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.default" : {
+    "message" : "วันที่",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.date.label" : {
+    "message" : "ช่องวันที่",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.default" : {
+    "message" : "<h3>ลายเซ็น</h3>",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.header.label" : {
+    "message" : "ส่วนหัว",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.label" : {
+    "message" : "ชื่อผู้อนุมัติ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.default" : {
+    "message" : "ชื่อผู้อนุมัติ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.printed_name.label" : {
+    "message" : "ช่องสำหรับชื่อตัวบรรจง",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.default" : {
+    "message" : "ลายเซ็น",
+    "description" : "",
+    "placeholders" : null
+  },
+  "print_signature.signature.label" : {
+    "message" : "ช่องลายเซ็น",
+    "description" : "",
+    "placeholders" : null
+  }
+}

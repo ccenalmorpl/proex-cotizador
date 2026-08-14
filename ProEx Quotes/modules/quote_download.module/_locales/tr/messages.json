@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "İndir",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Düğme metni",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Teklif indirilirken bir sorun oluştu. Lütfen tekrar deneyin.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "İndirme başarısız olduğunda gösterilen hata mesajı",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "İndir",
+    "description" : "",
+    "placeholders" : null
+  }
+}

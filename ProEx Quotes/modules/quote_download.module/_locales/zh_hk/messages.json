@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "下載",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "按鈕文字",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "下載報價時發生問題，請再試一次。",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "下載失敗時顯示的錯誤訊息",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "下載",
+    "description" : "",
+    "placeholders" : null
+  }
+}

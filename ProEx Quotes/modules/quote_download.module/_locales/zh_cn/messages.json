@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "下载",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "按钮文本",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "下载报价时出错。请重试。",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "下载失败时显示的错误消息",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "下载",
+    "description" : "",
+    "placeholders" : null
+  }
+}

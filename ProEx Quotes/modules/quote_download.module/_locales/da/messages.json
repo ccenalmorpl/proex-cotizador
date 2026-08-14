@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Download",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Knaptekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Der opstod et problem med at downloade tilbuddet. Prøv igen.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Fejlmeddelelse, der vises, når download mislykkes",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Download",
+    "description" : "",
+    "placeholders" : null
+  }
+}

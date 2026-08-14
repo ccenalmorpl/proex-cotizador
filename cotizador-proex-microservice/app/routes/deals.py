@@ -2,7 +2,7 @@ import json
 import logging
 import requests
 import time
-from typing import Any, Optional, List
+from typing import Any, Dict, Optional, List
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Path
@@ -6244,6 +6244,106 @@ async def get_deal_transit(
         logger.error(f"Error retrieving transit data for deal {deal_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+def _lookup_transitarios_por_cardcode(client, cardcodes) -> Dict[str, Dict[str, str]]:
+    """Resuelve `{cardcode: {"id", "name"}}` contra Proveedores (2-43108800).
+
+    Si el cardcode se repite entre proveedores gana el que tenga
+    tipo_proveedor=transitario."""
+    codes = sorted({(c or "").strip() for c in cardcodes if (c or "").strip()})
+    if not codes:
+        return {}
+
+    CUSTOM_OBJECT_PROVEEDORES = "2-43108800"
+    headers = {"Authorization": f"Bearer {client.access_token}", "Content-Type": "application/json"}
+    search_url = f"https://api.hubapi.com/crm/v3/objects/{CUSTOM_OBJECT_PROVEEDORES}/search"
+
+    encontrados = {}
+    for i in range(0, len(codes), 100):
+        chunk = codes[i:i + 100]
+        after = None
+        while True:
+            payload = {
+                "filterGroups": [{"filters": [{"propertyName": "cardcode", "operator": "IN", "values": chunk}]}],
+                "properties": ["name", "cardcode", "tipo_proveedor"],
+                "limit": 100
+            }
+            if after:
+                payload["after"] = after
+
+            try:
+                response = requests.post(search_url, headers=headers, json=payload, timeout=10)
+            except Exception as e:
+                logger.warning(f"[rutas] Error resolviendo transitarios {chunk}: {e}")
+                break
+
+            if not response.ok:
+                logger.warning(f"[rutas] Búsqueda de transitarios falló: {response.status_code} - {response.text}")
+                break
+
+            data = response.json()
+            for result in data.get("results", []):
+                props = result.get("properties", {}) or {}
+                cardcode = (props.get("cardcode") or "").strip()
+                name = (props.get("name") or "").strip()
+                if not cardcode or not name:
+                    continue
+                es_transitario = (props.get("tipo_proveedor") or "").strip().lower() == "transitario"
+                previo = encontrados.get(cardcode)
+                if previo and previo["es_transitario"] and not es_transitario:
+                    continue
+                encontrados[cardcode] = {
+                    "id": str(result.get("id", "")),
+                    "name": name,
+                    "es_transitario": es_transitario
+                }
+
+            after = ((data.get("paging") or {}).get("next") or {}).get("after")
+            if not after:
+                break
+
+    return {code: {"id": v["id"], "name": v["name"]} for code, v in encontrados.items()}
+
+def _hidratar_transitario_rutas(client, rutas: list, backfill: bool = True) -> None:
+    """Completa nombre e id del transitario en las rutas leídas de HubSpot.
+
+    Las rutas creadas antes de que el upsert persistiera `transitario_name` solo
+    guardan el cardcode: se resuelve contra Proveedores y se reescribe en el objeto
+    para que la siguiente lectura no dependa del lookup."""
+    if not rutas:
+        return
+
+    resueltos = _lookup_transitarios_por_cardcode(client, [r.transitario_cardcode for r in rutas])
+    if not resueltos:
+        return
+
+    backfill_por_id = {}
+    for ruta in rutas:
+        datos = resueltos.get((ruta.transitario_cardcode or "").strip())
+        if not datos:
+            continue
+        if not ruta.transitario_id:
+            ruta.transitario_id = datos["id"] or None
+        if not (ruta.transitario or "").strip():
+            ruta.transitario = datos["name"]
+            backfill_por_id[ruta.id] = {"id": ruta.id, "properties": {"transitario_name": datos["name"]}}
+
+    if not backfill or not backfill_por_id:
+        return
+
+    try:
+        CUSTOM_OBJECT_RUTAS = "2-53295516"
+        headers = {"Authorization": f"Bearer {client.access_token}", "Content-Type": "application/json"}
+        update_url = f"https://api.hubapi.com/crm/v3/objects/{CUSTOM_OBJECT_RUTAS}/batch/update"
+        inputs = list(backfill_por_id.values())
+        for i in range(0, len(inputs), 100):
+            response = requests.post(update_url, headers=headers, json={"inputs": inputs[i:i + 100]}, timeout=10)
+            if response.ok:
+                logger.info(f"[rutas] transitario_name repuesto en {len(inputs[i:i + 100])} rutas")
+            else:
+                logger.warning(f"[rutas] Backfill de transitario_name falló: {response.status_code} - {response.text}")
+    except Exception as e:
+        logger.warning(f"[rutas] Error en backfill de transitario_name: {e}")
+
 def _find_ruta(
     client,
     tipo_ruta: str,
@@ -6324,7 +6424,7 @@ def _find_ruta(
         logger.error(f"[rutas] Error buscando ruta {tipo_ruta}: {e}")
         return None
 
-def _update_ruta(client, ruta_id: str, importe: float, fecha_caducidad: int) -> bool:
+def _update_ruta(client, ruta_id: str, importe: float, fecha_caducidad: int, transitario_name: str = None) -> bool:
     """Actualiza el importe y fecha_caducidad de una ruta existente en HubSpot.
 
     Args:
@@ -6332,6 +6432,7 @@ def _update_ruta(client, ruta_id: str, importe: float, fecha_caducidad: int) -> 
         ruta_id: ID del objeto ruta en HubSpot
         importe: Nuevo precio de la ruta (EUR)
         fecha_caducidad: Nueva fecha de caducidad (timestamp milliseconds)
+        transitario_name: Nombre del transitario (repone el de las rutas antiguas)
 
     Returns:
         True si la actualización fue exitosa, False en caso contrario
@@ -6348,6 +6449,9 @@ def _update_ruta(client, ruta_id: str, importe: float, fecha_caducidad: int) -> 
                 "fecha_caducidad": str(fecha_caducidad)
             }
         }
+
+        if (transitario_name or "").strip():
+            update_payload["properties"]["transitario_name"] = transitario_name.strip()
 
         response = requests.patch(update_url, headers=headers, json=update_payload, timeout=10)
 
@@ -6473,7 +6577,8 @@ def _crear_ruta(
     puerto_salida: str = None,
     puerto_destino: str = None,
     naviera: str = None,
-    localidad_destino: str = None
+    localidad_destino: str = None,
+    transitario_name: str = None
 ) -> Optional[str]:
     """Crea una nueva ruta terrestre o marítima en HubSpot.
 
@@ -6489,6 +6594,7 @@ def _crear_ruta(
         puerto_destino: Puerto de destino (solo marítima)
         naviera: Naviera (opcional, solo marítima)
         localidad_destino: Localidad de destino (opcional)
+        transitario_name: Nombre del transitario (se resuelve del Proveedor si no llega)
 
     Returns:
         ID de la ruta creada o None si falla
@@ -6516,6 +6622,11 @@ def _crear_ruta(
         ]
         referencia = "__".join(referencia_parts)
 
+        nombre_transitario = (transitario_name or "").strip()
+        if not nombre_transitario and transitario:
+            resueltos = _lookup_transitarios_por_cardcode(client, [transitario])
+            nombre_transitario = resueltos.get(transitario.strip(), {}).get("name", "")
+
         # Build properties
         properties = {
             "transitario": transitario or "",
@@ -6524,6 +6635,11 @@ def _crear_ruta(
             "fecha_caducidad": str(fecha_caducidad),
             "referencia": referencia
         }
+
+        if nombre_transitario:
+            properties["transitario_name"] = nombre_transitario
+        else:
+            logger.warning(f"[rutas] Sin nombre de transitario para cardcode={transitario!r}; la ruta se crea solo con el cardcode")
 
         if tipo_ruta == "terrestre":
             if lugar_carga:
@@ -7395,6 +7511,28 @@ async def update_deal_transit(
             # Only process routes if we have the necessary data
             if transit_data.transitario:
 
+                # El nombre viaja al objeto Ruta para que el listado no dependa de
+                # resolver el Proveedor; el que manda el card es solo el respaldo.
+                nombres_transitarios = _lookup_transitarios_por_cardcode(
+                    client, [transit_data.transitario, transitario_ruta_terrestre]
+                )
+
+                def _nombre_transitario(cardcode: str, hint: Optional[str]) -> Optional[str]:
+                    code = (cardcode or "").strip()
+                    if not code:
+                        return None
+                    return nombres_transitarios.get(code, {}).get("name") or (hint or "").strip() or None
+
+                nombre_transitario_maritimo = _nombre_transitario(
+                    transit_data.transitario, transit_data.transitario_name
+                )
+                nombre_transitario_terrestre = _nombre_transitario(
+                    transitario_ruta_terrestre,
+                    transit_data.transitario_terrestre_name
+                    if (transit_data.transitario_terrestre or "").strip()
+                    else transit_data.transitario_name,
+                )
+
                 # RUTA TERRESTRE: lugar_carga + puerto_salida
                 if lugar_carga and transit_data.puerto_salida and transit_data.precio_ruta_hasta_puerto_de_salida \
                         and transit_data.fecha_caducidad_flete_salida:
@@ -7415,7 +7553,8 @@ async def update_deal_transit(
                             client=client,
                             ruta_id=ruta_id_terrestre,
                             importe=transit_data.precio_ruta_hasta_puerto_de_salida,
-                            fecha_caducidad=transit_data.fecha_caducidad_flete_salida
+                            fecha_caducidad=transit_data.fecha_caducidad_flete_salida,
+                            transitario_name=nombre_transitario_terrestre
                         )
                         assoc_ruta_terrestre_id = ruta_id_terrestre
                     else:
@@ -7429,7 +7568,8 @@ async def update_deal_transit(
                             fecha_caducidad=transit_data.fecha_caducidad_flete_salida,
                             lugar_carga=lugar_carga,
                             puerto_salida=transit_data.puerto_salida,
-                            localidad_destino=transit_data.localidad_destino
+                            localidad_destino=transit_data.localidad_destino,
+                            transitario_name=nombre_transitario_terrestre
                         )
                         if ruta_id:
                             ruta_terrestre_creada = True
@@ -7458,7 +7598,8 @@ async def update_deal_transit(
                             client=client,
                             ruta_id=ruta_id_maritima,
                             importe=transit_data.precio_ruta_hasta_puerto_destino,
-                            fecha_caducidad=transit_data.fecha_caducidad_flete_destino
+                            fecha_caducidad=transit_data.fecha_caducidad_flete_destino,
+                            transitario_name=nombre_transitario_maritimo
                         )
                         assoc_ruta_maritima_id = ruta_id_maritima
                     else:
@@ -7473,7 +7614,8 @@ async def update_deal_transit(
                             puerto_salida=transit_data.puerto_salida,
                             puerto_destino=transit_data.puerto_destino,
                             naviera=transit_data.naviera,
-                            localidad_destino=transit_data.localidad_destino
+                            localidad_destino=transit_data.localidad_destino,
+                            transitario_name=nombre_transitario_maritimo
                         )
                         if ruta_id:
                             ruta_maritima_creada = True
@@ -7966,6 +8108,8 @@ async def get_deal_rutas(
 
             except Exception as e:
                 logger.error(f"Error searching maritime routes: {e}", exc_info=True)
+
+        _hidratar_transitario_rutas(client, rutas_terrestres + rutas_maritimas)
 
         return DealRutasResponse(
             success=True,

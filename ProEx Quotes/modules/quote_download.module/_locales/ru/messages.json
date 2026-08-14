@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Загрузить",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Текст кнопки",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "При загрузке ценового предложения произошла ошибка. Повторите попытку.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Сообщение об ошибке, отображаемое при сбое загрузки",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Загрузить",
+    "description" : "",
+    "placeholders" : null
+  }
+}

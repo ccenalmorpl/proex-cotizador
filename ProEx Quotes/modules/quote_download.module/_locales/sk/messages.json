@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Stiahnuť",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Text tlačidla",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Vyskytol sa problém pri sťahovaní cenovej ponuky. Skúste to znova.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Chybové hlásenie zobrazené, keď sťahovanie zlyhá",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Stiahnuť",
+    "description" : "",
+    "placeholders" : null
+  }
+}

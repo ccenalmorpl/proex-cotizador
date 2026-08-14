@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Downloaden",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Knoptekst",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Er is een probleem opgetreden bij het downloaden van de prijsopgave. Probeer het nog eens.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Weergegeven foutmelding wanneer download mislukt",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Downloaden",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -35,8 +35,13 @@ import requests
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.core.custom_objects_constants import OBJECT_TYPE_ELEMENTO
-from app.services.custom_objects import get_elementos_by_deal, update_elemento
+from app.services.custom_objects import (
+    get_contenedores_by_deal,
+    get_elementos_by_deal,
+    update_elemento,
+)
 from app.services.hubspot_client import hubspot_client
+from app.utils.iva_helpers import recalcular_contenedores
 
 
 def _deal_id_from_nombre_contenedor(nc: str) -> Optional[str]:
@@ -207,6 +212,32 @@ def _reparar_deal(client, plan: dict, apply: bool, only_cross: bool) -> tuple:
     return n_cruce, n_stale
 
 
+def _recalcular_deal(client, deal_id: str) -> None:
+    """Reaplica el cuadre de `precio_total` de los contenedores del deal.
+
+    Reparar el `line_item_id` deja el emparejamiento sano, pero los importes siguen
+    siendo los viejos hasta que se recalcula. NO sella `actualizacion_pedido` ni
+    `copiar_a_factura`: SAP solo re-lee cuando se toca una de esas dos props, y aquí
+    no queremos disparar ninguna lectura."""
+    try:
+        contenedores = get_contenedores_by_deal(client, deal_id, properties=["nombre"])
+    except Exception as e:
+        print(f"  [error recalc] no pude listar contenedores de {deal_id}: {e}")
+        return
+    cids = [str(c.get("id")) for c in contenedores if c.get("id")]
+    if not cids:
+        print(f"  [recalc] deal {deal_id}: sin contenedores")
+        return
+    try:
+        resultados = recalcular_contenedores(client, deal_id, cids)
+    except Exception as e:
+        print(f"  [error recalc] deal {deal_id}: {e}")
+        return
+    for cid, res in (resultados or {}).items():
+        price = (res or {}).get("price")
+        print(f"  [recalc] contenedor={cid} price={price}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     g = ap.add_mutually_exclusive_group(required=True)
@@ -215,6 +246,11 @@ def main() -> int:
     ap.add_argument("--apply", action="store_true", help="ejecutar la reparación (por defecto: solo detectar)")
     ap.add_argument("--only-cross", action="store_true",
                     help="aplicar SOLO los CRUCE (lid apunta a otro line item vivo); los STALE se reportan pero no se tocan")
+    ap.add_argument("--recalc", action="store_true",
+                    help="tras reparar, recalcular los contenedores del deal para que el precio_total "
+                         "vuelva a cuadrar con el precio negociado (no dispara SAP)")
+    ap.add_argument("--skip-deal", action="append", default=[], metavar="DEAL_ID",
+                    help="deal id a excluir (repetible); útil para dejar fuera casos pendientes de revisión")
     args = ap.parse_args()
 
     client = hubspot_client.get_client()
@@ -229,10 +265,18 @@ def main() -> int:
     if args.only_cross:
         print("** Solo se aplicarán los CRUCE; los STALE se reportan pero NO se tocan. **")
 
+    excluidos = {str(d).strip() for d in (args.skip_deal or []) if str(d).strip()}
+    if excluidos:
+        print(f"** Deals excluidos: {', '.join(sorted(excluidos))} **")
+
     total_cruce = 0
     total_stale = 0
     deals_con_fix = 0
+    recalculados = 0
     for deal_id in deal_ids:
+        if deal_id in excluidos:
+            print(f"[skip] deal {deal_id}: excluido por --skip-deal")
+            continue
         plan = _analizar_deal(client, deal_id)
         if plan is None:
             print(f"[skip] deal {deal_id}: sin Elementos")
@@ -242,10 +286,14 @@ def main() -> int:
         total_stale += ns
         if nc or ns:
             deals_con_fix += 1
+        if args.recalc and args.apply:
+            _recalcular_deal(client, deal_id)
+            recalculados += 1
 
     print(f"\n[fin] CRUCE={total_cruce}, STALE={total_stale} en {deals_con_fix} deal(s) "
           f"({'aplicado' if args.apply else 'dry-run — sin cambios'}"
-          f"{', solo cruces' if args.only_cross else ''})")
+          f"{', solo cruces' if args.only_cross else ''}"
+          f"{f', recalculados={recalculados}' if args.recalc else ''})")
     return 0
 
 

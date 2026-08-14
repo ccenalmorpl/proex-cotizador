@@ -672,6 +672,10 @@
    ============================================ */
 
 @page {
+  /* La mitad de los ~10mm por defecto del generador */
+  margin-left: 5mm;
+  margin-right: 5mm;
+
   @bottom-left {
     content: counter(page) " / " counter(pages);
     font-size: 10px;
@@ -701,21 +705,174 @@
     page-break-inside: auto;
   }
 
+  /* El footer va en el flujo: en fixed salía de él, se apilaban los de todas
+     las páginas y tapaban los totales. */
   .company-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    position: static;
     width: 100%;
-    padding-left: 50px;
-    padding-right: 50px;
+    margin-top: 12px;
+    padding-top: 10px;
+    padding-left: 0;
+    padding-right: 0;
     background: #fff;
+    font-size: 10px;
+    line-height: 1.45;
     page-break-before: avoid;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
+  .company-footer strong {
+    font-size: 10px;
+  }
+
+  /* Espaciados compactos: el footer en flujo ocupa sitio y los totales, con
+     break-inside avoid, se iban enteros a la página siguiente. */
+  .commercial-header {
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+  }
+
+  .ref-section {
+    margin-bottom: 14px;
+  }
+
+  .ref-grid {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .products-section {
+    margin-bottom: 14px;
+  }
+
+  .products-section h2 {
+    margin-bottom: 10px;
+  }
+
+  /* Letra menor + nowrap en las columnas numéricas: a 13px el "EUR" caía a una
+     segunda línea y cada fila ocupaba el doble. */
+  .products-table {
+    margin-bottom: 0;
+    font-size: 11px;
+  }
+
+  .products-table th {
+    font-size: 11px;
+    padding: 7px 6px;
+  }
+
+  .products-table td {
+    padding: 6px;
+  }
+
+  .products-table td.code,
+  .products-table td.item {
+    font-size: 11px;
+  }
+
+  .products-table td.colis,
+  .products-table td.price,
+  .products-table td.total,
+  .products-table td.weight,
+  .products-table td.unit {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .totals-section {
+    margin-bottom: 0;
+    padding-top: 14px;
+  }
+
+  .totals-grid {
+    gap: 24px;
+  }
+
+  /* Totales al mismo tamaño que la tabla de productos */
+  .breakdown-table td,
+  .breakdown-table td.label,
+  .breakdown-table tr.subtotal-row td {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .breakdown-table tr.final-total-row td {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+
+  .stats-table td,
+  .stats-table td.label,
+  .stats-table td.value {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .stats-table {
+    margin-bottom: 10px;
+  }
+
+  .stats-table.mt-2 {
+    margin-top: 12px;
+  }
+
+  .nacional-totals-cell {
+    padding: 10px 12px;
+  }
+
+  .nacional-totals-label {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .nacional-totals-value {
+    font-size: 13px;
+  }
+
+  .nacional-totals-table thead th {
+    font-size: 10px;
+    padding: 7px 10px;
+  }
+
+  .nacional-totals-table tbody td {
+    font-size: 11px;
+    padding: 7px 10px;
+  }
+
+  .grand-total {
+    margin-top: 14px;
+    padding: 12px;
+  }
+
+  .grand-total-label {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .grand-total-value {
+    font-size: 22px;
+  }
+
+  /* flex + min-height:100vh descuadra la paginación */
+  .page-1,
+  .page-2,
+  .page-3,
+  .page-4,
+  .page-5,
+  .page-6,
+  .page-7,
+  .page-8,
+  .page-signature {
+    display: block;
+    min-height: 0;
+  }
+
+  /* Un único salto por página lógica: el break-after de .page-1 sumaba una
+     página en blanco (y otra al final cuando no hay página de textos). */
   .page-1 {
-    page-break-after: always !important;
-    break-after: page !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   .page-1-footer {
@@ -723,13 +880,35 @@
     break-after: page !important;
   }
 
-  .page-2 {
+  .page-2,
+  .page-3,
+  .page-4,
+  .page-5,
+  .page-6,
+  .page-7,
+  .page-8,
+  .page-signature {
     page-break-before: always !important;
     break-before: page !important;
   }
 
+  /* Los textos legales ocupan más de una página: con break-inside avoid la
+     sección saltaba entera y dejaba la anterior con solo la cabecera. */
   .legal-content-section {
-    page-break-inside: avoid;
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  .legal-content-section h2 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  .legal-text-page2 {
+    page-break-inside: auto;
+    break-inside: auto;
+    orphans: 3;
+    widows: 3;
   }
 
   .actions-section {
@@ -808,4 +987,343 @@
 .hs-quotes--commercial .hs-download__button:active {
   transform: translateY(0);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ============================================
+   FIRMA (módulo quote_signature)
+   ============================================ */
+
+/* Sin firma el módulo sigue en el HTML (lo exige la validación de HubSpot),
+   solo se oculta. */
+.page-signature--hidden {
+  display: none;
+}
+
+.signature-section {
+  margin-bottom: 30px;
+}
+
+.signature-section h2 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  padding: 0;
+  color: #2c3e50;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hs-quotes--commercial .signature__container {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+.hs-quotes--commercial .signature__container h3 {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+  color: #2c3e50;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.hs-quotes--commercial .signature__container hr {
+  border: none;
+  border-top: 1px solid #dee2e6;
+  margin: 24px 0;
+}
+
+.hs-quotes--commercial .signature__box {
+  margin-top: 40px;
+}
+
+.hs-quotes--commercial .signature__field {
+  width: 45%;
+  margin-bottom: 40px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.hs-quotes--commercial .signature__field:before {
+  width: 100%;
+  border-top-color: #adb5bd;
+  margin-bottom: 6px;
+}
+
+.hs-quotes--commercial .esignature {
+  margin-bottom: 0;
+}
+
+.hs-quotes--commercial .esignature__profile {
+  padding: 14px 16px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.hs-quotes--commercial .esignature__verify-button,
+.hs-quotes--commercial .esignature__sign-now-button {
+  background-color: #2c3e50;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 5px;
+  font-family: 'Montserrat', 'Arial', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.hs-quotes--commercial .esignature__verify-button:hover,
+.hs-quotes--commercial .esignature__sign-now-button:hover {
+  background-color: #1d2b38;
+}
+
+.hs-quotes--commercial .esignature__tag--signed,
+.hs-quotes--commercial .esignature__tag--sent,
+.hs-quotes--commercial .esignature__tag--redirecting {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f0f8f4;
+  color: #2b8a3e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hs-quotes--commercial .esignature__alert--failure,
+.hs-quotes--commercial .esignature__verify-error-rate-limit,
+.hs-quotes--commercial .esignature__verify-error-unknown,
+.hs-quotes--commercial .esignature__sign-now-error-rate-limit,
+.hs-quotes--commercial .esignature__sign-now-error-unknown {
+  color: #c92a2a;
+  font-size: 12px;
+}
+
+/* ============================================
+   DOWNLOAD PDF - BOTÓN FLOTANTE
+   ============================================ */
+
+.quote-download-fab {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 9999;
+}
+
+.quote-download-fab #hs-download__container {
+  position: relative;
+  display: inline-block;
+}
+
+.hs-quotes--commercial .quote-download-fab .hs-download__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 170px;
+  height: 46px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 999px;
+  background-color: #2c3e50;
+  color: #fff;
+  font-family: 'Montserrat', 'Arial', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(44, 62, 80, 0.28);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.hs-quotes--commercial .quote-download-fab .hs-download__button:hover {
+  background-color: #1d2b38;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(44, 62, 80, 0.35);
+}
+
+.hs-quotes--commercial .quote-download-fab .hs-download__button:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 14px rgba(44, 62, 80, 0.3);
+}
+
+.hs-quotes--commercial .quote-download-fab .hs-download__button:focus-visible {
+  outline: 2px solid #2c3e50;
+  outline-offset: 3px;
+}
+
+.hs-quotes--commercial .quote-download-fab .hs-download__button[disabled] {
+  background-color: #8d9aa6;
+  transform: none;
+  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.18);
+  cursor: default;
+}
+
+.quote-download-fab .hs-download__loading-spinner {
+  width: 18px;
+  height: 18px;
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+}
+
+.quote-download-fab .hs-download__alert--error {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  width: max-content;
+  max-width: 280px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid #f1aeae;
+  border-radius: 8px;
+  background: #fff;
+  color: #c92a2a;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: left;
+  box-shadow: 0 6px 18px rgba(44, 62, 80, 0.16);
+}
+
+@media (max-width: 600px) {
+  .quote-download-fab {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .hs-quotes--commercial .quote-download-fab .hs-download__button {
+    min-width: 0;
+    padding: 0 18px;
+  }
+}
+
+@media print {
+  .quote-download-fab {
+    display: none !important;
+  }
+
+  /* Resto de la escala tipográfica del PDF, alineada con los 11px de la tabla
+     de productos y los totales. Va al final del fichero porque estas clases se
+     declaran después del bloque @media print principal. */
+  .hs-quotes--commercial {
+    font-size: 12px;
+  }
+
+  .header-title h1 {
+    font-size: 17px;
+  }
+
+  .header-logo img {
+    max-height: 55px;
+  }
+
+  .ref-label {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .ref-column {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .ref-table td {
+    padding: 2px 0;
+  }
+
+  .customer-info {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .customer-info strong {
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
+
+  .products-section h2 {
+    font-size: 11px;
+  }
+
+  .legal-text {
+    font-size: 11px;
+    line-height: 1.45;
+    padding: 8px 10px;
+    margin-top: 10px;
+  }
+
+  .aseguradora-notice {
+    gap: 18px;
+    margin-bottom: 12px;
+  }
+
+  .aseguradora-text {
+    font-size: 11px;
+  }
+
+  .legal-content-section {
+    margin-bottom: 16px;
+  }
+
+  .legal-content-section h2 {
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+
+  .legal-text-page2 {
+    font-size: 11px;
+    line-height: 1.55;
+    padding: 14px;
+  }
+
+  .page-2-footer {
+    padding-bottom: 12px;
+  }
+
+  /* Firma: solo se compacta. Nada de ocultar el bloque en impresión — la
+     firma tiene que verse en el PDF o la validación de HubSpot falla. */
+  .signature-section {
+    margin-bottom: 16px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .signature-section h2 {
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+
+  .hs-quotes--commercial .signature__container {
+    padding: 14px;
+    font-size: 11px;
+  }
+
+  .hs-quotes--commercial .signature__container h3 {
+    font-size: 11px;
+  }
+
+  .hs-quotes--commercial .signature__box {
+    margin-top: 28px;
+  }
+
+  .hs-quotes--commercial .signature__field {
+    margin-bottom: 28px;
+    font-size: 11px;
+  }
+
+  .hs-quotes--commercial .esignature__profile {
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+
+  .esignature__loading-spinner {
+    display: none !important;
+  }
 }

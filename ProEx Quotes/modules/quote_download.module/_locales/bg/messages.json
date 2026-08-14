@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Изтегляне",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Текст на бутон",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Възникна проблем с изтеглянето на офертата. Моля, опитайте отново.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Съобщение за грешка, показвано при неуспешно изтегляне",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Изтегляне",
+    "description" : "",
+    "placeholders" : null
+  }
+}

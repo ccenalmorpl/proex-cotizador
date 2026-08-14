@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Tải xuống",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Văn bản trên nút",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Đã xảy ra vấn đề khi tải bảng báo giá xuống. Vui lòng thử lại.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Thông báo lỗi hiển thị khi tải xuống không thành công",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Tải xuống",
+    "description" : "",
+    "placeholders" : null
+  }
+}

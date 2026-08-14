@@ -2167,15 +2167,25 @@ def process_deal_custom_objects_from_line_items(
 
         # Defensa: nunca repetir el mismo Elemento en el batch update (HubSpot
         # rechaza IDs duplicados). El gating por nombre ya debería evitarlo.
+        # Dos line items vivos compitiendo por un Elemento pasa cuando coexisten dos
+        # generaciones de líneas del mismo contenedor; gana el primero del orden de
+        # lectura, pero su line_item_id no se pierde: si el descartado traía la
+        # corrección y el ganador no, se conserva (los ids de line item no son
+        # monótonos, así que no hay forma de saber aquí cuál sobrevivirá).
         if elem_to_update:
-            _seen_update_ids = set()
-            _deduped_update = []
+            _by_id = {}
             for x in elem_to_update:
-                if x["id"] in _seen_update_ids:
+                prev = _by_id.get(x["id"])
+                if prev is None:
+                    _by_id[x["id"]] = x
                     continue
-                _seen_update_ids.add(x["id"])
-                _deduped_update.append(x)
-            elem_to_update = _deduped_update
+                logger.warning(
+                    f"[publish] elemento {x['id']} reclamado por dos line items vivos; "
+                    f"mantengo el primero (lid={prev['properties'].get('line_item_id') or '-'})"
+                )
+                if not prev["properties"].get("line_item_id") and x["properties"].get("line_item_id"):
+                    prev["properties"]["line_item_id"] = x["properties"]["line_item_id"]
+            elem_to_update = list(_by_id.values())
 
         if elem_to_update:
             for x in elem_to_update:

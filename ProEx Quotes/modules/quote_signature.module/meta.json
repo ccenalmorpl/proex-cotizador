@@ -1,0 +1,11 @@
+{
+  "global" : false,
+  "content_types" : [ "QUOTE_TEMPLATE", "QUOTE" ],
+  "master_language" : "en",
+  "inline_help_text" : "You can decide if you want to collect signatures when you create a quote with this template.",
+  "host_template_types" : [ "QUOTE" ],
+  "module_id" : 218746148953,
+  "label" : "Signature",
+  "icon" : "../../../mV0_d-commerce-default-modules_hubspot/img/icon/signature.svg",
+  "is_available_for_new_content" : true
+}

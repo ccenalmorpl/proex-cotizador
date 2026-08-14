@@ -48,26 +48,30 @@ export function resolveIVA({
   return getDefaultIVAByResidencia(tipoResidente, options, categoria);
 }
 
-// Default por residencia: repercutido → NACIONAL R21 / EUROPA EI21 / EXTRANJERO EX;
-// soportado → NACIONAL S21 / resto igual.
+// EX y EI21 son códigos REPERCUTIDOS: no valen como default de soportado. Fuera de
+// NACIONAL la categoría soportado no tiene equivalente unívoco (compra
+// intracomunitaria vs importación vs inversión del sujeto pasivo) y se deja sin
+// default en vez de arriesgar un código que rompa la sync con SAP.
+// Espejo de _DEFAULT_TIPO_IVA en el microservicio (app/utils/property_helpers.py).
+const DEFAULT_IVA_POR_RESIDENCIA = {
+  repercutido: { NACIONAL: "R21", EUROPA: "EI21", EXTRANJERO: "EX" },
+  soportado: { NACIONAL: "S21" },
+};
+
+// Devuelve "" si no hay default para esa categoría+residencia o si el código no
+// está entre las opciones recibidas (que ya vienen filtradas por categoría).
 export function getDefaultIVAByResidencia(tipoResidente, tipoIVAOptions, categoria = "repercutido") {
   if (!tipoResidente || !tipoIVAOptions || tipoIVAOptions.length === 0) {
     return "";
   }
 
-  const residencia = tipoResidente.toUpperCase();
-  let defaultIVA;
-
-  if (residencia === "EXTRANJERO") {
-    defaultIVA = "EX";
-  } else if (residencia === "EUROPA") {
-    defaultIVA = "EI21";
-  } else {
-    defaultIVA = categoria === "soportado" ? "S21" : "R21";
+  const porResidencia = DEFAULT_IVA_POR_RESIDENCIA[categoria] || {};
+  const defaultIVA = porResidencia[tipoResidente.toUpperCase()];
+  if (!defaultIVA) {
+    return "";
   }
 
-  const ivaOption = tipoIVAOptions.find((opt) => opt.value === defaultIVA);
-  return ivaOption ? defaultIVA : "";
+  return tipoIVAOptions.some((opt) => opt.value === defaultIVA) ? defaultIVA : "";
 }
 
 export function getIVAPorcentaje(tipoIVA, ivaDataMap) {

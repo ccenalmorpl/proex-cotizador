@@ -6,6 +6,7 @@ EXW persistido manda y el final flota, como siempre. Si el deal cambia de
 incoterm, el EXW manda y el final del nuevo incoterm se re-ancla.
 """
 
+import logging
 from types import SimpleNamespace
 
 import pytest
@@ -370,6 +371,105 @@ def test_recalcular_integra_ancla_y_writebacks(monkeypatch):
     # precio_total corregido: sin Elementos de servicio/flete en el contenedor, la
     # línea fabricante absorbe todos los gastos para que Σ precio_total = 8×1500.
     assert float(elem_updates[0]["properties"]["precio_total"]) == pytest.approx(12000.0)
+
+
+def _recalcular_con_elemento(monkeypatch, elem_props, li_price="7.23", li_margen=None):
+    """Monta el mismo escenario de un contenedor con una línea fabricante anclada y
+    devuelve (resultados, line_updates, elem_updates)."""
+    li_api = _FakeLineItemsBatchApi()
+    client = SimpleNamespace(crm=SimpleNamespace(line_items=SimpleNamespace(batch_api=li_api)))
+
+    extra = {
+        "hs_product_type": "inventory",
+        "tipo_articulo": "fabricante",
+        "numero_container": "D-001",
+    }
+    if li_margen is not None:
+        extra["margen_unitario"] = li_margen
+    fabricante = _linea(
+        li_price, ancla=8.0, ancla_ic="CIF", coste=6.0, cajas="1500", **extra
+    )
+    contexto = DealPricingContext(
+        incoterm="CIF", precio_origen=600.0, precio_destino=375.0,
+        repercutir=False, tiene_intermediario=False, tipo_comision="",
+        importe_comision=0.0, num_contenedores=1,
+        tipo_iva_fletes="EX", tipo_iva_comision="EX",
+        servicios_por_contenedor={"D-001": 150.0}, seguro_por_contenedor={},
+        servicios_buckets_por_contenedor={"D-001": {"EX": 150.0}},
+        seguro_buckets_por_contenedor={},
+    )
+
+    import app.routes.deals as deals_mod
+    monkeypatch.setattr(deals_mod, "_get_associated_ids", lambda _d, _t: ["li-1"])
+    monkeypatch.setattr(iva_helpers, "_batch_read_line_items_superset", lambda _c, _ids: [fabricante])
+    monkeypatch.setattr(iva_helpers, "build_deal_pricing_context", lambda _c, _d, line_items_precached=None: contexto)
+    monkeypatch.setattr(iva_helpers, "_batch_read_contenedores_props", lambda _c, _ids: {
+        "co-1": {"nombre": "D-001", "importe_total_cobrado": ""},
+    })
+    monkeypatch.setattr(iva_helpers, "get_elementos_by_deal", lambda _c, _d, properties=None: [
+        {"id": "el-1", "properties": elem_props},
+    ])
+    co_updates = []
+    monkeypatch.setattr(
+        iva_helpers, "batch_update_custom_objects",
+        lambda _c, otype, updates: co_updates.append((otype, updates)),
+    )
+
+    resultados = iva_helpers.recalcular_contenedores(client, "deal-1", ["co-1"])
+    from app.core.custom_objects_constants import OBJECT_TYPE_ELEMENTO
+    elem_updates = next(
+        (u for otype, u in co_updates if otype == OBJECT_TYPE_ELEMENTO), [],
+    )
+    return resultados, [u for chunk in li_api.updates for u in chunk], elem_updates
+
+
+def _elem_props(lid="li-1", precio_unitario="7.23", precio_total="10845"):
+    return {
+        "line_item_id": lid, "nombre": "Vino Tinto", "tipo_articulo": "fabricante",
+        "cantidad": "1500", "peso_neto_unitario": "1", "peso_bruto_unitario": "1.1",
+        "nombre_contenedor": "D-001",
+        "precio_unitario": precio_unitario, "precio_total": precio_total,
+        "margen_unitario": "0.205",
+    }
+
+
+def test_recalcular_repara_lid_stale_y_cuadra(monkeypatch):
+    """Elemento apuntando a un line item archivado: se reempareja por nombre, se
+    corrige el line_item_id y el precio_total vuelve a cuadrar."""
+    _res, _li, elem_updates = _recalcular_con_elemento(
+        monkeypatch, _elem_props(lid="li-archivado"),
+    )
+
+    assert len(elem_updates) == 1
+    props = elem_updates[0]["properties"]
+    assert props["line_item_id"] == "li-1"
+    assert float(props["precio_total"]) == pytest.approx(12000.0)
+    assert len({u["id"] for u in elem_updates}) == len(elem_updates)
+
+
+def test_recalcular_sincroniza_elemento_aunque_el_line_item_este_al_dia(monkeypatch):
+    """El line item ya tiene EXW y margen derivados (no genera update propio), pero el
+    Elemento espejo sigue con el valor viejo y debe actualizarse igual."""
+    exw = 8.0 - (600.0 + 375.0 + 150.0) / 1500
+    _res, line_updates, elem_updates = _recalcular_con_elemento(
+        monkeypatch, _elem_props(precio_unitario="7.0"),
+        li_price=str(round(exw, 3)), li_margen="0.20833",
+    )
+
+    assert line_updates == []
+    assert float(elem_updates[0]["properties"]["precio_unitario"]) == pytest.approx(exw, abs=0.001)
+
+
+def test_recalcular_avisa_invariante_si_el_elemento_no_resuelve(monkeypatch, caplog):
+    """Elemento con otro nombre: no empareja, no se corrige nada y el invariante
+    canta el descuadre que leerá SAP."""
+    props = _elem_props(lid="li-x", precio_total="10845")
+    props["nombre"] = "Otro Articulo"
+    with caplog.at_level(logging.WARNING):
+        _recalcular_con_elemento(monkeypatch, props)
+
+    assert "0/1 Elementos fabricante emparejados" in caplog.text
+    assert "INVARIANTE" in caplog.text
 
 
 def test_build_pricing_context_seguro_entra_en_servicios(monkeypatch):

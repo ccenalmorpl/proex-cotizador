@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Descargar",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Texto del botón",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Hubo un problema al descargar la cotización. Inténtalo de nuevo.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Mensaje de error que se muestra cuando falla la descarga",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Descargar",
+    "description" : "",
+    "placeholders" : null
+  }
+}

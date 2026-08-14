@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Download",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Testo pulsante",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Si è verificato un problema durante il download del preventivo. Riprova.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Messaggio di errore visualizzato a download non riuscito",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Download",
+    "description" : "",
+    "placeholders" : null
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "ดาวน์โหลด",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "ข้อความบนปุ่ม",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "เกิดปัญหาในการดาวน์โหลดใบเสนอราคา โปรดลองอีกครั้ง",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "ข้อความแสดงข้อผิดพลาดที่จะแสดงเมื่อดาวน์โหลดไม่สำเร็จ",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "ดาวน์โหลด",
+    "description" : "",
+    "placeholders" : null
+  }
+}

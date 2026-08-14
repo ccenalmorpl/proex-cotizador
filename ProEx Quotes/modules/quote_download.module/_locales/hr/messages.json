@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Preuzmi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Tekst gumba",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Došlo je do problema prilikom preuzimanja ponude. Pokušajte ponovno.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Poruka o pogrešci koja se prikazuje pri neuspješnom preuzimanju",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Preuzmi",
+    "description" : "",
+    "placeholders" : null
+  }
+}

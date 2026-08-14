@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "डाउनलोड करें",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "बटन टेक्स्ट",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "कोटेशन डाउनलोड करने में समस्या हुई। कृपया फिर से प्रयास करें।",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "डाउनलोड फेल होने पर दिखाया गया एरर मैसेज",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "डाउनलोड करें",
+    "description" : "",
+    "placeholders" : null
+  }
+}

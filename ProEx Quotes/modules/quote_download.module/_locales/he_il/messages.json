@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "הורד",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "טקסט לחצן",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "אירעה בעיה בהורדת הצעת המחיר. אנא נסה שנית.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "הודעת אזהרה המוצגת כאשר הורדה נכשלה",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "הורד",
+    "description" : "",
+    "placeholders" : null
+  }
+}

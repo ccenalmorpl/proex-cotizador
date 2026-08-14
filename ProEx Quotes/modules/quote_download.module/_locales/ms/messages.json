@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Muat turun",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Teks butang",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Terdapat masalah memuat turun sebut harga. Sila cuba lagi.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Mesej ralat yang ditunjukkan apabila muat turun gagal",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Muat turun",
+    "description" : "",
+    "placeholders" : null
+  }
+}

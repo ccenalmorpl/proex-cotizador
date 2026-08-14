@@ -1,0 +1,27 @@
+{
+  "button_text.default" : {
+    "message" : "Prenesi",
+    "description" : "",
+    "placeholders" : null
+  },
+  "button_text.label" : {
+    "message" : "Besedilo gumba",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.default" : {
+    "message" : "Pri prenosu ponudbe je prišlo do težave. Poskusite znova.",
+    "description" : "",
+    "placeholders" : null
+  },
+  "download_error.label" : {
+    "message" : "Ko prenos ne uspe, se pojavi sporočilo o napaki",
+    "description" : "",
+    "placeholders" : null
+  },
+  "name" : {
+    "message" : "Prenesi",
+    "description" : "",
+    "placeholders" : null
+  }
+}
