@@ -95,6 +95,10 @@ const EDITAR_CONTENEDOR_MODAL_ID = "editar-contenedor-modal";
 const NegociacionTab = ({
   context,
   actions,
+  kitsMarcados,
+  onCambiarMarcaKit,
+  kitsSolicitados,
+  onChangeSolicitudKit,
   onNavigate,
   transitarioData,
   serviciosData,
@@ -1586,6 +1590,10 @@ const NegociacionTab = ({
                           contenedoresUnicos={contenedoresUnicos}
                           clienteData={clienteData}
                           articulosSeleccionados={articulosSeleccionados}
+                          kitsMarcados={kitsMarcados}
+                          onCambiarMarcaKit={onCambiarMarcaKit}
+                          kitsSolicitados={kitsSolicitados}
+                          onChangeSolicitudKit={onChangeSolicitudKit}
                           onClose={() =>
                             actions &&
                             actions.closeOverlay(EDITAR_CONTENEDOR_MODAL_ID)

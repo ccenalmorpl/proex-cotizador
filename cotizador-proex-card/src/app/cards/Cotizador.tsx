@@ -135,6 +135,54 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
   const [tiposIVA, setTiposIVA] = useState<Record<string, string>>({});
   const [tiposIVASoportado, setTiposIVASoportado] = useState<Record<string, string>>({});
 
+  // Pedidos KIT — KIT marcados por ESTA cotización. Vive aquí y no en el panel
+  // porque se marca desde dos sitios (Contenedores y el modal de Negociación) y
+  // se lee en un tercero (el resumen de Vista previa): con estado local en cada
+  // componente, marcar en el modal se perdería al cerrarlo.
+  // MOCKUP: en real esto se persiste en `kit_marcado_por_ids` del negocio KIT.
+  // Marcar no es todo o nada: se marca un KIT y CUÁNTAS cajas se quieren de él
+  // ("hay veces que se consumen completamente, otras el número de cajas").
+  const [kitsMarcados, setKitsMarcados] = useState<
+    Record<string, { marcado?: boolean; cajas?: number }>
+  >({});
+  const cambiarMarcaKit = useCallback(
+    (kitId: string, cambios: { marcado?: boolean; cajas?: number }) => {
+      setKitsMarcados((prev) => ({
+        ...prev,
+        [kitId]: { ...prev[kitId], ...cambios },
+      }));
+    },
+    []
+  );
+
+  // Solicitud de pedido KIT por artículo deficitario: si se pide y cuántas cajas.
+  // Sin entrada se asume solicitado con las cajas calculadas (ver AlertaKits).
+  const [kitsSolicitados, setKitsSolicitados] = useState<
+    Record<string, { solicitado?: boolean; cajas?: number }>
+  >({});
+  const cambiarSolicitudKit = useCallback(
+    (articuloId: string, cambios: { solicitado?: boolean; cajas?: number }) => {
+      setKitsSolicitados((prev) => ({
+        ...prev,
+        [articuloId]: { ...prev[articuloId], ...cambios },
+      }));
+    },
+    []
+  );
+
+  // Stock libre consumido por referencia: cajas sueltas de sobreproducción que
+  // esta oferta aprovecha en vez de producirlas.
+  //
+  // Es un CAMPO ABIERTO: no se guarda en ninguna propiedad ni viaja al backend.
+  // PROEX lleva esas existencias en un documento propio fuera de HubSpot, así que
+  // el sistema no puede proponer la cifra ni contrastarla — sólo preguntar cuántas
+  // cajas se consumen. Se pierde al recargar la card, y es a propósito: fingir que
+  // se recuerda un inventario que no existe sería peor.
+  const [stockUsado, setStockUsado] = useState<Record<string, number>>({});
+  const cambiarStockUsado = useCallback((sku: string, cajas: number) => {
+    setStockUsado((prev) => ({ ...prev, [sku]: cajas }));
+  }, []);
+
   // IVA defaults resolved from product (Fase 4E)
   const [ivaComisionDefaults, setIvaComisionDefaults] = useState<{ repercutido?: string; soportado?: string } | null>(null);
   const [ivaFletesDefaults, setIvaFletesDefaults] = useState<{ repercutido?: string; soportado?: string } | null>(null);
@@ -527,6 +575,12 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
             disabled={noCompanyAssociated}
           >
             <ContenedoresTab
+              kitsMarcados={kitsMarcados}
+              onCambiarMarcaKit={cambiarMarcaKit}
+              kitsSolicitados={kitsSolicitados}
+              onChangeSolicitudKit={cambiarSolicitudKit}
+              stockUsado={stockUsado}
+              onChangeStockUsado={cambiarStockUsado}
               context={context}
               onNavigate={handleNavigate}
               articulosSeleccionados={articulosSeleccionados}
@@ -578,6 +632,10 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
             disabled={noCompanyAssociated}
           >
             <NegociacionTab
+              kitsMarcados={kitsMarcados}
+              onCambiarMarcaKit={cambiarMarcaKit}
+              kitsSolicitados={kitsSolicitados}
+              onChangeSolicitudKit={cambiarSolicitudKit}
               context={context}
               actions={actions}
               onNavigate={handleNavigate}
@@ -623,7 +681,12 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
             disabled={noCompanyAssociated}
           >
             <RevisionTab
+              kitsMarcados={kitsMarcados}
+              onCambiarMarcaKit={cambiarMarcaKit}
+              kitsSolicitados={kitsSolicitados}
+              onChangeSolicitudKit={cambiarSolicitudKit}
               context={context}
+              actions={actions}
               onNavigate={handleNavigate}
               clienteData={clienteData}
               articulosSeleccionados={articulosSeleccionados}

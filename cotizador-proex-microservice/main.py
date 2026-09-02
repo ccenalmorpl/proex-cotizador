@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.card_auth import verify_card_secret
 from app.models.schemas import HealthResponse
-from app.routes import deals, articles, templates
+from app.routes import deals, articles, templates, kits
 from app.shared import hubdb_client
 from datetime import datetime
 import uvicorn
@@ -52,6 +52,9 @@ logger.info("Articles router registered at /articles")
 
 app.include_router(templates.router, prefix="/api/v1/templates", tags=["templates"], dependencies=[Depends(verify_card_secret)])
 logger.info("Templates router registered at /templates")
+
+app.include_router(kits.router, prefix="/api/v1/kits", tags=["kits"], dependencies=[Depends(verify_card_secret)])
+logger.info("Kits router registered at /kits")
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():

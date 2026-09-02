@@ -25,6 +25,11 @@ import {
 } from "@hubspot/ui-extensions";
 import { hubspot } from "@hubspot/ui-extensions";
 import { fetchFromAPI } from "../utils/api.utils";
+// Pedidos KIT — aislado: la alerta y la línea informativa no tocan la lógica del modal
+import { analizarKitsDesdeCajas } from "../utils/kits.utils";
+import AlertaKits, { resumenKitsPorSku } from "./AlertaKits";
+import PanelKitsDisponibles from "./PanelKitsDisponibles";
+import { KITS_DISPONIBLES_STUB } from "../constants/kitsDisponibles.stub";
 import { API_CONFIG } from "../config";
 import { DEBOUNCE_DELAY_MS } from "../constants/common.constants";
 
@@ -87,6 +92,10 @@ const EditarContenedorModal = ({
   articulosSeleccionados = [],
   onClose,
   onUpdated,
+  kitsMarcados,
+  onCambiarMarcaKit,
+  kitsSolicitados,
+  onChangeSolicitudKit,
 }) => {
   const containerName = contenedor?.container_name || "";
   const containerType = contenedor?.container_type || "";
@@ -258,6 +267,46 @@ const EditarContenedorModal = ({
     return cajasOtros + totalCajasContenedor;
   }, [contenedoresUnicos, contenedor, totalCajasContenedor]);
 
+  // Pedidos KIT — cajas por ARTÍCULO en todo el pedido, con el borrador en edición
+  // incluido, para que la alerta se recalcule al teclear. Mismo criterio que
+  // `totalCajasGlobal` (los demás contenedores + este), pero desglosado por
+  // artículo: el bloque de fabricación es por producto y sobre el pedido entero.
+  const analisisKits = useMemo(() => {
+    const porArticulo = new Map();
+    const acumular = (articuloId, cajas) => {
+      const n = Number(cajas) || 0;
+      if (!articuloId || n <= 0) return;
+      porArticulo.set(articuloId, (porArticulo.get(articuloId) || 0) + n);
+    };
+
+    (Array.isArray(contenedoresUnicos) ? contenedoresUnicos : []).forEach((c) => {
+      if (c?.line_item_id === contenedor?.line_item_id) return;
+      (c?.container_config?.articulos || []).forEach((art) =>
+        acumular(art.articuloId, art.numCajas)
+      );
+    });
+    articulos.forEach((art) => acumular(art.articuloId, art.numCajas));
+
+    const catalogo = (articulosSeleccionados || []).map((a) => ({
+      id: a.id,
+      nombre: a.nombre,
+      sku: a.hs_sku || "",
+      tamano_kit: a.tamano_kit,
+      bloque_multiplo: a.bloque_multiplo,
+    }));
+
+    return analizarKitsDesdeCajas(
+      porArticulo,
+      catalogo,
+      resumenKitsPorSku(KITS_DISPONIBLES_STUB, kitsMarcados)
+    );
+  }, [contenedoresUnicos, contenedor, articulos, articulosSeleccionados, kitsMarcados]);
+
+  const skusEnCotizacion = useMemo(
+    () => (articulosSeleccionados || []).map((a) => a.hs_sku || ""),
+    [articulosSeleccionados]
+  );
+
   const comisionPorCaja = useMemo(() => {
     if (
       !clienteData?.codigoIntermediario ||
@@ -426,6 +475,23 @@ const EditarContenedorModal = ({
               guardar igualmente los cambios en el contenedor.
             </Alert>
           )}
+
+          {/* Pedidos KIT: se recalcula al teclear, sobre el total del pedido.
+              El panel de marcado va aquí a petición de Cristóbal: para marcar en
+              una cotización ya creada, este camino es más seguro que reabrir la
+              pestaña Contenedores, que rehace contenedores y line items. Marcar
+              sigue siendo de la COTIZACIÓN, no de este contenedor: el estado lo
+              gobierna Cotizador.tsx y es el mismo en las tres pantallas. */}
+          <AlertaKits
+            analisis={analisisKits}
+            solicitudes={kitsSolicitados}
+            onChangeSolicitud={onChangeSolicitudKit}
+          />
+          <PanelKitsDisponibles
+            skusEnCotizacion={skusEnCotizacion}
+            kitsMarcados={kitsMarcados}
+            onCambiarMarcaKit={onCambiarMarcaKit}
+          />
 
           <SearchInput
             name="buscar-articulo-modal"

@@ -21,6 +21,7 @@ import {
   Select,
   StepIndicator,
   LoadingSpinner,
+  Modal,
   hubspot,
 } from "@hubspot/ui-extensions";
 import {
@@ -38,6 +39,11 @@ import {
   esModoDobleFlete,
 } from "../utils/pricing.utils";
 import { getPorcentajesIVA } from "../utils/iva.utils";
+// Pedidos KIT — aislado: solo alimenta el modal de resumen previo a publicar
+import { analizarKits } from "../utils/kits.utils";
+import { resumenKitsPorSku } from "../components/AlertaKits";
+import { KITS_DISPONIBLES_STUB } from "../constants/kitsDisponibles.stub";
+import ResumenKitsModal from "../components/ResumenKitsModal";
 
 // Resuelve el label legible de un campo: acepta string o {value, options}
 const getSelectLabel = (field) => {
@@ -198,6 +204,9 @@ const PublishingStatusPanel = ({
 /** @typedef {import('../types/common.types').ContenedorUnicoDefinido} ContenedorUnicoDefinido */
 const RevisionTab = ({
   context,
+  actions,
+  kitsMarcados,
+  kitsSolicitados,
   onNavigate,
   clienteData,
   articulosSeleccionados,
@@ -215,6 +224,73 @@ const RevisionTab = ({
 }) => {
   // Extraer dealId del contexto al inicio
   const dealId = context?.crm?.objectId;
+
+  // Pedidos KIT — resumen previo a publicar. Aislado: solo alimenta el modal.
+  const analisisKits = useMemo(
+    () =>
+      analizarKits(
+        contenedoresData?.contenedoresDefinidos || [],
+        contenedoresData?.cantidadesContenedores || {},
+        (articulosSeleccionados || []).filter(Boolean).map((a) => ({
+          id: a.id,
+          nombre: a.nombre,
+          sku: a.hs_sku || "",
+          tamano_kit: a.tamano_kit,
+          bloque_multiplo: a.bloque_multiplo,
+        })),
+        resumenKitsPorSku(KITS_DISPONIBLES_STUB, kitsMarcados)
+      ),
+    [contenedoresData, articulosSeleccionados, kitsMarcados]
+  );
+
+  // Los KIT que esta cotización ha marcado. El estado lo gobierna Cotizador.tsx,
+  // así que aquí se ve lo marcado tanto en Contenedores como en el modal de
+  // Negociación. MOCKUP: en real se filtraría por `kit_marcado_por_ids`.
+  const kitsMarcadosDetalle = useMemo(() => {
+    const skus = new Set(
+      (articulosSeleccionados || [])
+        .filter(Boolean)
+        .map((a) => (a.hs_sku || "").trim())
+        .filter(Boolean)
+    );
+    return KITS_DISPONIBLES_STUB.filter(
+      (k) => kitsMarcados?.[k.id]?.marcado && skus.has((k.productoSku || "").trim())
+    ).map((k) => ({
+      ...k,
+      // Cajas que esta oferta pretende consumir de ese KIT, no el disponible.
+      cajasAConsumir: Math.min(
+        kitsMarcados?.[k.id]?.cajas ?? k.cajasDisponibles,
+        k.cajasDisponibles
+      ),
+    }));
+  }, [articulosSeleccionados, kitsMarcados]);
+
+  // Lo que se va a pedir de verdad: solo los solicitados, con las cajas que el
+  // comercial haya ajustado en la alerta. Sin entrada explícita se asume
+  // solicitado con las cajas calculadas (mismo criterio que AlertaKits).
+  const kitsSolicitadosDetalle = useMemo(
+    () =>
+      analisisKits.kits
+        .filter((k) => kitsSolicitados?.[k.articuloId]?.solicitado ?? true)
+        .map((k) => {
+          // Los bloques extra que haya pedido el comercial sobre el mínimo.
+          const extra = Math.max(
+            0,
+            Number(kitsSolicitados?.[k.articuloId]?.bloquesExtra) || 0
+          );
+          return {
+            ...k,
+            bloques: k.bloquesMinimos + extra,
+            cajasKit: k.cajasKit + extra * k.bloque,
+            // Producción real de fábrica, no "pedidas + kit": parte de las cajas
+            // del cliente pueden salir de KIT ya marcados.
+            cajasProduccion: k.tirada + extra * k.bloque,
+          };
+        }),
+    [analisisKits, kitsSolicitados]
+  );
+
+  const resumenKitsTotal = kitsSolicitadosDetalle.length + kitsMarcadosDetalle.length;
 
   // Estado de carga - empieza en true para esperar los datos de otros paneles
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
@@ -2464,6 +2540,33 @@ const RevisionTab = ({
             onClick={() => onNavigate("documentacion")}
           >
             Anterior
+          </Button>
+          {/* MOCKUP pedidos KIT — botón propio a propósito: "Publicar Cotización"
+              crea la Quote y sus line items de verdad, así que no le metemos un
+              paso intermedio con datos ficticios. Cuando el flujo sea real, este
+              `overlay` pasa al botón de publicar y el confirmar llama a
+              handlePublicar. */}
+          <Button
+            variant="secondary"
+            overlay={
+              <Modal
+                id="resumen-kits-modal"
+                title="Resumen de pedidos KIT"
+                width="md"
+              >
+                <ResumenKitsModal
+                  kitsAGenerar={kitsSolicitadosDetalle}
+                  kitsMarcados={kitsMarcadosDetalle}
+                  onClose={() =>
+                    actions && actions.closeOverlay("resumen-kits-modal")
+                  }
+                />
+              </Modal>
+            }
+          >
+            {resumenKitsTotal > 0
+              ? `Resumen de KIT (${resumenKitsTotal})`
+              : "Resumen de KIT"}
           </Button>
           <Button
             variant="primary"

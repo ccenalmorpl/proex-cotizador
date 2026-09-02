@@ -10,7 +10,10 @@ export class APIError extends Error {
 }
 
 export const fetchFromAPI = async (endpoint, options = {}) => {
-  const url = `${API_CONFIG.baseURL}${endpoint}`;
+  // `options.baseURL` permite apuntar a otro host sin duplicar este helper. Lo
+  // usa el backend local de pedidos KIT; el resto de llamadas no lo pasan y
+  // siguen yendo al microservicio de producción.
+  const url = `${options.baseURL || API_CONFIG.baseURL}${endpoint}`;
 
   try {
     const response = await hubspot.fetch(url, {
@@ -184,6 +187,60 @@ export const fetchTipoIVA = async (tipoResidencia) => {
   } catch (error) {
     console.error("Error al obtener tipos de IVA:", error);
     return empty;
+  }
+};
+
+// Pedidos KIT abiertos con cajas libres, filtrados por los SKU de la cotización.
+//
+// Mientras dure el desarrollo apunta al backend local (`API_CONFIG.kitsBaseURL`);
+// en cuanto el endpoint se despliegue, basta con dejar ese campo vacío y la
+// llamada va sola al microservicio, sin tocar nada más.
+//
+// Devuelve `null` si la llamada falla y `[]` si simplemente no hay KIT para esos
+// SKU. La distinción importa: un array vacío es una respuesta legítima, y si el
+// fallo también devolviera [] el panel desaparecería sin decir por qué. Quien
+// llama usa `null` para caer al fixture.
+export const fetchKitsDisponibles = async (skus = []) => {
+  const limpios = (skus || []).map((s) => (s || "").trim()).filter(Boolean);
+
+  try {
+    const query = limpios.length ? `?skus=${encodeURIComponent(limpios.join(","))}` : "";
+
+    const response = await fetchFromAPI(
+      `${API_CONFIG.endpoints.kitsDisponibles}${query}`,
+      { baseURL: API_CONFIG.kitsBaseURL }
+    );
+
+    return response.kits || [];
+  } catch (error) {
+    console.error("Error al obtener pedidos KIT disponibles:", error);
+    return null;
+  }
+};
+
+// Persiste las marcas de KIT de esta cotización. Se llama al pulsar Siguiente en
+// Contenedores, no en cada clic: el comercial ajusta cantidades varias veces
+// antes de decidir, y escribir en cada pulsación llenaría HubSpot de estados
+// intermedios que nadie ha confirmado.
+//
+// Manda el conjunto COMPLETO de marcas, no un incremento: los KIT que no van en
+// la lista se desmarcan en el servidor. Así desmarcar en la card desmarca de
+// verdad, sin llevar la cuenta de lo que se ha quitado.
+//
+// @param {string} cotizacionId  dealId de la cotización (context.crm.objectId)
+// @param {Array<{kit_id: string, cajas: number}>} marcas
+export const guardarMarcasKit = async (cotizacionId, marcas = []) => {
+  if (!cotizacionId) return null;
+
+  try {
+    return await fetchFromAPI(API_CONFIG.endpoints.kitsMarcas, {
+      method: "POST",
+      baseURL: API_CONFIG.kitsBaseURL,
+      body: { cotizacion_id: String(cotizacionId), marcas },
+    });
+  } catch (error) {
+    console.error("Error al guardar las marcas de pedidos KIT:", error);
+    return null;
   }
 };
 
