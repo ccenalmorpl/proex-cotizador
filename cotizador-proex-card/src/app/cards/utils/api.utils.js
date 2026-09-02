@@ -2,12 +2,23 @@ import { hubspot } from "@hubspot/ui-extensions";
 import { API_CONFIG } from "../config";
 
 export class APIError extends Error {
-  constructor(message, statusCode = null) {
+  constructor(message, statusCode = null, code = null) {
     super(message);
     this.name = "APIError";
     this.statusCode = statusCode;
+    // `detail.error_code` del backend, para que el caller distinga el motivo sin
+    // parsear el mensaje (p.ej. "edit_in_progress").
+    this.code = code;
   }
 }
+
+const extractErrorCode = (errorText) => {
+  try {
+    return JSON.parse(errorText)?.detail?.error_code || null;
+  } catch {
+    return null;
+  }
+};
 
 export const fetchFromAPI = async (endpoint, options = {}) => {
   const url = `${API_CONFIG.baseURL}${endpoint}`;
@@ -24,7 +35,8 @@ export const fetchFromAPI = async (endpoint, options = {}) => {
       const errorText = await response.text().catch(() => "");
       throw new APIError(
         `Error ${response.status}: ${response.statusText}${errorText ? ` - ${errorText}` : ""}`,
-        response.status
+        response.status,
+        extractErrorCode(errorText)
       );
     }
 

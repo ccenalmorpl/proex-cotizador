@@ -222,35 +222,17 @@ def validate_object_type_ids():
 def get_tipo_contenedor_label(value: str) -> str:
     """
     Obtiene el label de un tipo de contenedor.
-
-    Args:
-        value: Valor del tipo de contenedor
-
-    Returns:
-        Label legible o el valor original si no se encuentra
     """
     return TIPO_CONTENEDOR_LABELS.get(value, value)
 
 def get_tipo_articulo_label(value: str) -> str:
     """
     Obtiene el label de un tipo de artículo.
-
-    Args:
-        value: Valor del tipo de artículo
-
-    Returns:
-        Label legible o el valor original si no se encuentra
     """
     return TIPO_ARTICULO_LABELS.get(value, value)
 
 def get_tipo_iva_label(value: str) -> str:
     """
     Obtiene el label de un tipo de IVA.
-
-    Args:
-        value: Valor del tipo de IVA
-
-    Returns:
-        Label legible o el valor original si no se encuentra
     """
     return TIPO_IVA_LABELS.get(value, value)

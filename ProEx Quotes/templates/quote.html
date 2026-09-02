@@ -242,6 +242,10 @@
 {# Lo decide el tipo de cliente de la Company             #}
 {# (tipo_cliente: nacional | exportacion), NO el          #}
 {# transporte. Vacío/desconocido → exportación.           #}
+{# Excepción: Ceuta y Melilla son clientes nacionales     #}
+{# fuera del territorio aduanero de la UE, así que su     #}
+{# documentación sale en formato exportación (la aduana   #}
+{# exige Incoterm y peso neto/bruto).                     #}
 {# ===================================================== #}
 {% set _tipo_cliente = "" %}
 {% if company and company.custom_properties and company.custom_properties.tipo_cliente %}
@@ -251,7 +255,13 @@
 {% if not _tipo_cliente %}
   {% set _tipo_cliente = json_get_str(json_get_obj(payload_json, "cliente"), "tipoCliente", "")|lower|trim %}
 {% endif %}
-{% set is_nacional = (_tipo_cliente == "nacional") %}
+
+{# El puerto llega como valor interno (CEU/MEL) o como label ("Ceuta, ES"). #}
+{# Melbourne (MEB) no colisiona con ninguna de las cuatro formas.           #}
+{% set _puerto_destino = (destinationPort|default(""))|string|split(",")|first|upper|trim %}
+{% set fuera_territorio_aduanero_ue = (_puerto_destino == "CEU") or (_puerto_destino == "MEL") or (_puerto_destino == "CEUTA") or (_puerto_destino == "MELILLA") %}
+
+{% set is_nacional = (_tipo_cliente == "nacional") and not fuera_territorio_aduanero_ue %}
 
 {# En exportación con carga por palets el tipo de contenedor no es relevante (grupaje): se oculta. #}
 {% set is_carga_palets = deal.carga_por_palets == "true" or deal.carga_por_palets == true %}
@@ -1550,6 +1560,7 @@
     <li>deal_id = {{ deal.hs_object_id }}</li>
     <li>tipo_de_venta (terms) = {{ terms }} → _term = {{ _term }}</li>
     <li>is_nacional = {{ is_nacional }}</li>
+    <li>puerto_destino = {{ _puerto_destino }} → fuera_territorio_aduanero_ue = {{ fuera_territorio_aduanero_ue }}</li>
     <li>precio_ruta_hasta_puerto_de_salida (precio_origen) = {{ precio_origen }}</li>
     <li>precio_ruta_hasta_puerto_destino (precio_destino) = {{ precio_destino }}</li>
     <li>num_containers = {{ num_containers }} (nc usado = {{ _nc }})</li>

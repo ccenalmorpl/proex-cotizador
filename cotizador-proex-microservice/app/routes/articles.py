@@ -41,7 +41,6 @@ async def search_products(
 
         logger.info(f"Searching products with query: '{query}', limit: {limit}")
 
-        # Get properties to request from ProductItem model
         properties_to_request = get_model_property_names(ProductItem, exclude=['id'])
 
         # Regla unificada: artículos = hs_product_type = inventory y tipo_articulo = fabricante.
@@ -61,7 +60,6 @@ async def search_products(
             "limit": limit
         }
 
-        # Execute search using the SDK
         search_response = client.crm.products.search_api.do_search(
             public_object_search_request=search_request
         )
@@ -70,7 +68,6 @@ async def search_products(
         products = []
         if search_response.results:
             for result in search_response.results:
-                # Parse product properties dynamically based on model
                 product_data = parse_hubspot_properties(result.id, result.properties, ProductItem)
                 products.append(ProductItem(**product_data))
 
@@ -125,12 +122,10 @@ async def list_services(
             "limit": limit
         }
 
-        # Execute search using the SDK
         search_response = client.crm.products.search_api.do_search(
             public_object_search_request=search_request
         )
 
-        # Parse results, excluding transitario and comisiones products
         products = []
         if search_response.results:
             for result in search_response.results:
@@ -184,7 +179,6 @@ async def list_service_providers(
         # Properties to request based on ProviderData model
         properties_to_request = get_model_property_names(ProviderData, exclude=['id'])
 
-        # Build filters - always filter by tipo_proveedor
         filter_groups = []
 
         if query:
@@ -219,13 +213,11 @@ async def list_service_providers(
             "limit": limit,
         }
 
-        # Execute search on custom object 'proveedores'
         search_response = client.crm.objects.search_api.do_search(
             object_type="2-43108800",
             public_object_search_request=search_request
         )
 
-        # Get lugar_de_la_carga_envio options for mapping
         lugar_carga_options = {}
         try:
             access_token = client.access_token
@@ -246,7 +238,6 @@ async def list_service_providers(
             for result in search_response.results:
                 provider_data = parse_hubspot_properties(result.id, result.properties, ProviderData)
 
-                # Map lugar_de_la_carga_envio value to label
                 lugar_value = provider_data.get("lugar_de_la_carga_envio")
                 if lugar_value and lugar_carga_options:
                     provider_data["lugar_de_la_carga_envio"] = lugar_carga_options.get(lugar_value, lugar_value)
@@ -282,7 +273,6 @@ async def get_provider(
 
         logger.info(f"Searching for provider with cardcode: {provider_id}")
 
-        # Get properties to request from ProviderData model
         properties_to_request = get_model_property_names(ProviderData, exclude=['id'])
 
         # Search for custom object "Proveedores" with matching cardcode
@@ -302,7 +292,6 @@ async def get_provider(
             "limit": 1
         }
 
-        # Execute search on custom object "Proveedores"
         search_response = client.crm.objects.search_api.do_search(
             object_type="2-43108800",
             public_object_search_request=search_request
@@ -317,7 +306,6 @@ async def get_provider(
                 provider=None
             )
 
-        # Get lugar_de_la_carga_envio options for mapping value to label
         lugar_carga_options = {}
         try:
             # Fetch property definition for the custom object
@@ -329,17 +317,14 @@ async def get_provider(
             if prop_response.ok:
                 prop_data = prop_response.json()
                 options = prop_data.get("options", [])
-                # Create a mapping of value -> label
                 lugar_carga_options = {opt["value"]: opt["label"] for opt in options if "value" in opt and "label" in opt}
                 logger.info(f"Loaded {len(lugar_carga_options)} lugar_de_la_carga_envio options")
         except Exception as e:
             logger.warning(f"Error fetching lugar_de_la_carga_envio options: {e}")
 
-        # Parse first result using helper function
         result = search_response.results[0]
         provider_data_dict = parse_hubspot_properties(result.id, result.properties, ProviderData)
 
-        # Map lugar_de_la_carga_envio value to label if available
         lugar_value = provider_data_dict.get("lugar_de_la_carga_envio")
         if lugar_value and lugar_carga_options:
             lugar_label = lugar_carga_options.get(lugar_value, lugar_value)
@@ -421,13 +406,11 @@ async def search_providers(
             "limit": limit,
         }
 
-        # Execute search on the custom object 'proveedores'
         search_response = client.crm.objects.search_api.do_search(
             object_type="2-43108800",
             public_object_search_request=search_request
         )
 
-        # Get lugar_de_la_carga_envio options for mapping value to label
         lugar_carga_options = {}
         try:
             # Fetch property definition for the custom object
@@ -439,7 +422,6 @@ async def search_providers(
             if prop_response.ok:
                 prop_data = prop_response.json()
                 options = prop_data.get("options", [])
-                # Create a mapping of value -> label
                 lugar_carga_options = {opt["value"]: opt["label"] for opt in options if "value" in opt and "label" in opt}
                 logger.info(f"Loaded {len(lugar_carga_options)} lugar_de_la_carga_envio options for provider search")
         except Exception as e:
@@ -453,7 +435,6 @@ async def search_providers(
                     result.id, result.properties, ProviderData
                 )
 
-                # Map lugar_de_la_carga_envio value to label if available
                 lugar_value = provider_data.get("lugar_de_la_carga_envio")
                 if lugar_value and lugar_carga_options:
                     lugar_label = lugar_carga_options.get(lugar_value, lugar_value)

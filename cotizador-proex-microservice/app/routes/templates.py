@@ -26,7 +26,6 @@ async def get_quote_templates():
 
         logger.info('🔍 Fetching quote templates...')
 
-        # Get all quote templates
         templates_response = client.crm.objects.basic_api.get_page(
             object_type='quote_template',
             limit=100,

@@ -79,6 +79,20 @@ const buildPhysicalEntry = (producto, tipoContenedor) => {
   };
 };
 
+const mapArticulosDelContenedor = (contenedor, containerName) =>
+  (contenedor?.container_config?.articulos || []).map((art, idx) => ({
+    _uid: art.line_item_id ? String(art.line_item_id) : `init-${idx}`,
+    // Promoción = precio EXW guardado a 0 (regalo, no se repercute nada).
+    _esPromo: art.price != null && art.price !== "" && Number(art.price) === 0,
+    line_item_id: art.line_item_id || null,
+    articuloId: art.articuloId,
+    articuloName: art.articuloName || `${containerName} - ${art.nombre}`,
+    nombre: art.nombre || art.articuloName || "",
+    numCajas: Number(art.numCajas) || 0,
+    precio_de_coste:
+      art.precio_de_coste != null ? Number(art.precio_de_coste) : null,
+  }));
+
 const EditarContenedorModal = ({
   dealId,
   contenedor,
@@ -103,18 +117,7 @@ const EditarContenedorModal = ({
   const nextUid = () => `new-${++uidRef.current}`;
 
   const [articulos, setArticulos] = useState(() =>
-    (contenedor?.container_config?.articulos || []).map((art, idx) => ({
-      _uid: art.line_item_id ? String(art.line_item_id) : `init-${idx}`,
-      // Promoción = precio EXW guardado a 0 (regalo, no se repercute nada).
-      _esPromo: art.price != null && art.price !== "" && Number(art.price) === 0,
-      line_item_id: art.line_item_id || null,
-      articuloId: art.articuloId,
-      articuloName: art.articuloName || `${containerName} - ${art.nombre}`,
-      nombre: art.nombre || art.articuloName || "",
-      numCajas: Number(art.numCajas) || 0,
-      precio_de_coste:
-        art.precio_de_coste != null ? Number(art.precio_de_coste) : null,
-    })),
+    mapArticulosDelContenedor(contenedor, containerName),
   );
 
   const [searchValue, setSearchValue] = useState("");
@@ -125,6 +128,23 @@ const EditarContenedorModal = ({
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const enviandoRef = useRef(false);
+
+  // El modal vive en el overlay del botón de NegociacionTab, que no siempre se
+  // remonta al cambiar de contenedor en el Select. Sin esto, `articulos` se
+  // quedaría con las filas del contenedor anterior y sus line_item_id: el backend
+  // no reconocería esos ids, los trataría como artículos nuevos y RECREARÍA las
+  // líneas del contenedor destino (incidencia 2026-08-28).
+  const contenedorIdRef = useRef(contenedor?.line_item_id);
+  useEffect(() => {
+    if (contenedorIdRef.current === contenedor?.line_item_id) return;
+    contenedorIdRef.current = contenedor?.line_item_id;
+    uidRef.current = 0;
+    setArticulos(mapArticulosDelContenedor(contenedor, containerName));
+    setSearchValue("");
+    setProductosFiltrados([]);
+    setSubmitError(null);
+  }, [contenedor, containerName]);
 
   const [datosFisicos, setDatosFisicos] = useState(() => {
     const map = {};
@@ -356,6 +376,10 @@ const EditarContenedorModal = ({
       );
       return;
     }
+    // `submitting` no sirve de guard: setState no es síncrono, así que dos
+    // ejecuciones del handler en el mismo tick pasarían las dos. El ref sí corta.
+    if (enviandoRef.current) return;
+    enviandoRef.current = true;
     setSubmitting(true);
     setSubmitError(null);
 
@@ -392,8 +416,16 @@ const EditarContenedorModal = ({
       }
       onClose();
     } catch (err) {
+      // El backend serializa las ediciones por negocio: si otra petición tiene el
+      // lock, esta no ha hecho nada y la otra sí está guardando. Cerrar en vez de
+      // mostrar un error rojo por un guardado que sí se está aplicando.
+      if (err?.code === "edit_in_progress") {
+        onClose();
+        return;
+      }
       setSubmitError(err.message || "Error al guardar los cambios.");
     } finally {
+      enviandoRef.current = false;
       setSubmitting(false);
     }
   };
