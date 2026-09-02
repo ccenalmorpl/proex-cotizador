@@ -4,11 +4,9 @@ Envoltorio fino sobre `app/services/kits_service.py`: toda la logica vive alli y
 en `app/utils/kits.py`, para que el endpoint y `scripts/kits_disponibles.py`
 devuelvan lo mismo por construccion.
 
-De momento solo LECTURA. Crear KIT y marcar cajas siguen fuera del backend
-mientras no se decida desplegarlo.
-
-Este modulo NO esta registrado en `main.py`: se monta desde `kits_local.py` para
-poder probarlo en local con ngrok sin tocar el microservicio en produccion.
+Lee KIT disponibles, guarda las marcas de una cotizacion y crea los KIT que esa
+cotizacion genera. Lo que NO hace es validar consumos: eso descuenta cajas de
+verdad y vive en el asistente de pedidos, que es quien lo confirma.
 """
 
 import logging
@@ -21,8 +19,10 @@ from app.core.config import settings
 from app.services.kits_service import (
     analizar,
     buscar_kits,
+    crear_kits_de_cotizacion,
     guardar_marcas_de_cotizacion,
     kits_disponibles_para_card,
+    params_kit_por_sku,
 )
 
 logger = logging.getLogger(__name__)
@@ -102,6 +102,72 @@ def guardar_marcas(payload: GuardarMarcasRequest):
         raise HTTPException(status_code=502, detail={"error": "hubspot_error", "mensaje": str(e)})
 
     return {"success": True, **resultado}
+
+
+class KitACrear(BaseModel):
+    """Un artículo que no completa bloque y necesita su pedido KIT."""
+
+    sku: str
+    nombre: str = ""
+    cajas: int = Field(gt=0)
+
+
+class CrearKitsRequest(BaseModel):
+    cotizacion_id: str
+    kits: List[KitACrear] = Field(default_factory=list)
+
+
+@router.post("/crear")
+def crear_kits(payload: CrearKitsRequest):
+    """Crea los pedidos KIT de una cotización.
+
+    Lo llama la card DESPUES de publicar, no la propia publicación: así el flujo
+    de publicar cotizaciones se queda como está y un fallo creando KIT no puede
+    tumbarlo.
+
+    Idempotente por (cotizacion, SKU): republicar no duplica. Los KIT que ya
+    existían se devuelven en `omitidos` con su número, para que la card pueda
+    decir "ya estaba creado" en vez de fingir que hizo algo.
+    """
+    try:
+        resultado = crear_kits_de_cotizacion(
+            settings.proex_access_token,
+            payload.cotizacion_id,
+            [k.model_dump() for k in payload.kits],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail={"error": "peticion_invalida", "mensaje": str(e)})
+    except RuntimeError as e:
+        logger.error(f"[kits] fallo creando KIT: {e}")
+        raise HTTPException(status_code=502, detail={"error": "hubspot_error", "mensaje": str(e)})
+
+    return {"success": True, **resultado}
+
+
+@router.get("/params")
+def parametros_de_kit(
+    skus: Optional[str] = Query(
+        default=None,
+        description="SKUs separados por coma. Devuelve solo los que tengan tamano_kit.",
+    ),
+):
+    """`tamano_kit` y `bloque_multiplo` de los productos, leidos de HubSpot.
+
+    Sustituye al fichero de parametros escrito a mano en la card. Un producto sin
+    `tamano_kit` NO aparece en la respuesta: la ausencia es informacion, y la card
+    no debe inventarse un bloque.
+    """
+    lista = _skus(skus)
+    if not lista:
+        return {"success": True, "params": {}, "total": 0}
+
+    try:
+        params = params_kit_por_sku(settings.proex_access_token, lista)
+    except RuntimeError as e:
+        logger.error(f"[kits] fallo leyendo params: {e}")
+        raise HTTPException(status_code=502, detail={"error": "hubspot_error", "mensaje": str(e)})
+
+    return {"success": True, "params": params, "total": len(params)}
 
 
 @router.get("/auditoria")

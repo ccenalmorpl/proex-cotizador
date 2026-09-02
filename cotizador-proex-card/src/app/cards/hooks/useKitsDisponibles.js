@@ -31,6 +31,11 @@ export const useKitsDisponibles = (skus = []) => {
     cargando: false,
   });
 
+  // Se incrementa para forzar una relectura: tras guardar marcas hay que volver a
+  // pedir la lista, o el panel seguiría enseñando el estado anterior.
+  const [refresco, setRefresco] = useState(0);
+  const recargar = () => setRefresco((n) => n + 1);
+
   // Se serializan los SKU para que el efecto no se relance al recibir un array
   // nuevo con el mismo contenido en cada render.
   const clave = (skus || [])
@@ -59,9 +64,9 @@ export const useKitsDisponibles = (skus = []) => {
     return () => {
       cancelado = true;
     };
-  }, [clave]);
+  }, [clave, refresco]);
 
-  return estado;
+  return { ...estado, recargar };
 };
 
 export default useKitsDisponibles;

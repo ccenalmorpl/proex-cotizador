@@ -244,6 +244,52 @@ export const guardarMarcasKit = async (cotizacionId, marcas = []) => {
   }
 };
 
+// `tamano_kit` y `bloque_multiplo` de los productos de la cotización, leídos de
+// HubSpot. Sustituye al fichero de parámetros escrito a mano: con esto, cada
+// producto empieza a generar KIT en cuanto PROEX le ponga el lote mínimo, sin
+// tocar código.
+//
+// Devuelve {} si falla: sin parámetros no se calcula ningún KIT, que es más
+// seguro que calcularlo con un bloque inventado.
+export const fetchKitParams = async (skus = []) => {
+  const limpios = (skus || []).map((s) => (s || "").trim()).filter(Boolean);
+  if (limpios.length === 0) return {};
+
+  try {
+    const response = await fetchFromAPI(
+      `${API_CONFIG.endpoints.kitsParams}?skus=${encodeURIComponent(limpios.join(","))}`,
+      { baseURL: API_CONFIG.kitsBaseURL }
+    );
+    return response.params || {};
+  } catch (error) {
+    console.error("Error al obtener los parámetros de KIT:", error);
+    return {};
+  }
+};
+
+// Crea los pedidos KIT que genera esta cotización. Se llama al publicar, cuando
+// la publicación ya ha salido bien: si esto falla, la cotización sigue publicada.
+//
+// El backend es idempotente por (cotización, SKU), así que republicar no duplica.
+// Devuelve `creados` y `omitidos` — los omitidos son los que ya existían.
+//
+// @param {string} cotizacionId
+// @param {Array<{sku: string, nombre: string, cajas: number}>} kits
+export const crearKitsDeCotizacion = async (cotizacionId, kits = []) => {
+  if (!cotizacionId || kits.length === 0) return null;
+
+  try {
+    return await fetchFromAPI(API_CONFIG.endpoints.kitsCrear, {
+      method: "POST",
+      baseURL: API_CONFIG.kitsBaseURL,
+      body: { cotizacion_id: String(cotizacionId), kits },
+    });
+  } catch (error) {
+    console.error("Error al crear los pedidos KIT:", error);
+    return null;
+  }
+};
+
 // Empresas asociadas a la del negocio por la relación "Proveedor-Cliente", con
 // su dirección de entrega. Alimenta el selector de autorrelleno de la
 // "Dirección de Entrega" en DocumentacionTab.

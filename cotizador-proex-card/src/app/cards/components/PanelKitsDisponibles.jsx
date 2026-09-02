@@ -27,6 +27,8 @@ import {
 } from "@hubspot/ui-extensions";
 
 import { KITS_DISPONIBLES_STUB } from "../constants/kitsDisponibles.stub";
+import { marcaEfectivaDeKit, marcasDeOtros } from "../utils/kits.utils";
+import { guardarMarcasKit } from "../utils/api.utils";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-ES");
 
@@ -42,9 +44,19 @@ const PanelKitsDisponibles = ({
   // de Vista previa lo vea. Si no se pasan, cae a estado local (uso aislado).
   kitsMarcados,
   onCambiarMarcaKit,
+  // Cotización abierta. Sin esto no se puede distinguir la marca propia de la de
+  // otra oferta, y al volver no se vería lo ya marcado.
+  negocioId = "",
+  // Se llama tras guardar, para que la lista se relea de HubSpot.
+  onGuardado,
 }) => {
   const [marcadosLocal, setMarcadosLocal] = useState({});
   const marcados = kitsMarcados ?? marcadosLocal;
+
+  // null = nada intentado todavía
+  const [guardando, setGuardando] = useState(false);
+  const [errorGuardado, setErrorGuardado] = useState(null);
+  const [guardadoOk, setGuardadoOk] = useState(false);
 
   const cambiar = (kitId, cambios) => {
     if (typeof onCambiarMarcaKit === "function") return onCambiarMarcaKit(kitId, cambios);
@@ -54,14 +66,10 @@ const PanelKitsDisponibles = ({
   // Marcar no reserva el máximo: sin cantidad explícita se asume todo lo
   // disponible, pero el input permite bajarlo — "puede ser que se termine el kit
   // en la totalidad o que se carguen 10 cajas". Nunca por encima del disponible.
-  const marcaDe = (k) => {
-    const m = marcados[k.id] || {};
-    const cajas = m.cajas ?? k.cajasDisponibles;
-    return {
-      marcado: !!m.marcado,
-      cajas: Math.min(Number(cajas) || 0, Number(k.cajasDisponibles) || 0),
-    };
-  };
+  //
+  // Si no hay edición local, cae a la marca que esta cotización ya tenga guardada
+  // en HubSpot: así al volver sigue apareciendo marcada.
+  const marcaDe = (k) => marcaEfectivaDeKit(k, marcados, negocioId);
 
   const skus = new Set(
     (skusEnCotizacion || []).map((s) => (s || "").trim()).filter(Boolean)
@@ -101,6 +109,49 @@ const PanelKitsDisponibles = ({
       </Alert>
     );
   }
+
+  // Marcas listas para el backend, calculadas con la marca EFECTIVA: si el
+  // comercial vuelve y no toca nada, sus marcas ya guardadas se reenvían tal
+  // cual. Con sólo el estado local se mandaría una lista vacía y se borrarían.
+  const marcasParaGuardar = () =>
+    disponibles
+      .map((k) => {
+        const m = marcaDe(k);
+        return m.marcado && m.cajas > 0
+          ? { kit_id: String(k.id), cajas: m.cajas }
+          : null;
+      })
+      .filter(Boolean);
+
+  // Cuántos KIT tienen una edición sin guardar. Va en la etiqueta del botón para
+  // que olvidarse de pulsarlo cueste: el riesgo de un guardado explícito es
+  // precisamente que nadie lo pulse.
+  const pendientes = disponibles.filter((k) => {
+    const local = (marcados || {})[k.id];
+    if (!local) return false;
+    const guardada = (k.marcas || []).find(
+      (m) => String(m?.negocioId || "") === String(negocioId || "")
+    );
+    const m = marcaDe(k);
+    if (!m.marcado) return !!guardada;               // desmarcado algo guardado
+    return !guardada || Number(guardada.cajas) !== m.cajas;
+  }).length;
+
+  const guardar = async () => {
+    setGuardando(true);
+    setErrorGuardado(null);
+    setGuardadoOk(false);
+    try {
+      const res = await guardarMarcasKit(negocioId, marcasParaGuardar());
+      if (!res) throw new Error("El servidor no confirmó el guardado");
+      setGuardadoOk(true);
+      if (typeof onGuardado === "function") onGuardado();
+    } catch (e) {
+      setErrorGuardado(e?.message || "No se pudieron guardar las cajas a consumir");
+    } finally {
+      setGuardando(false);
+    }
+  };
 
   return (
     <Flex direction="column" gap="small">
@@ -161,13 +212,24 @@ const PanelKitsDisponibles = ({
                   <Tag variant="success">Abierto</Tag>
                 </TableCell>
                 <TableCell>
-                  {(k.marcas || []).length === 0 && !estaMarcado ? (
+                  {marcasDeOtros(k, negocioId).length === 0 && !estaMarcado ? (
                     <Text variant="microcopy">Sin marcas</Text>
                   ) : (
                     <Flex direction="column" gap="extra-small">
-                      {(k.marcas || []).map((m, i) => (
+                      {/* Sólo las de OTRAS ofertas: la propia se enseña abajo como
+                          "Esta oferta", y repetirla confundiría. */}
+                      {marcasDeOtros(k, negocioId).map((m, i) => (
                         <Text key={i} variant="microcopy">
-                          {m.negocio} · {m.propietario} · {m.fecha}
+                          {/* Si el negocio no se pudo resolver —borrado, o un id
+                              que no es un negocio— se enseña el id en crudo. Peor
+                              es un separador colgando sin nada delante. */}
+                          {[
+                            m.negocio || `Negocio ${m.negocioId}`,
+                            m.propietario,
+                            `${fmt(m.cajas)} cajas`,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </Text>
                       ))}
                       {estaMarcado && (
@@ -195,6 +257,51 @@ const PanelKitsDisponibles = ({
           })}
         </TableBody>
       </Table>
+
+      {/* El guardado va aquí y no en la cabecera: es donde acaba la vista después
+          de marcar, así que es donde se espera la acción. Y el resultado puede ir
+          al lado en vez de flotando arriba.
+
+          Explícito a propósito: guardar en cada clic llenaría HubSpot de estados
+          intermedios que nadie ha confirmado. El contador de pendientes está para
+          que olvidarse de pulsarlo cueste. */}
+      {!soloInformativo && (
+        <Flex direction="row" align="center" gap="small">
+          <Button
+            variant={pendientes > 0 ? "primary" : "secondary"}
+            disabled={guardando || pendientes === 0 || !negocioId}
+            onClick={guardar}
+          >
+            {/* "Cajas a consumir" es el nombre de la columna que el comercial
+                tiene delante: así queda claro que guarda eso y no el stock libre
+                ni el check de Solicitar, que están en la tabla de arriba.
+                Sin pendientes basta con "Guardado": ahí sólo confirma. */}
+            {guardando
+              ? "Guardando..."
+              : pendientes > 0
+              ? `Guardar cajas a consumir (${pendientes})`
+              : "Guardado"}
+          </Button>
+
+          {pendientes > 0 && !guardando && (
+            <Text variant="microcopy">
+              {pendientes === 1
+                ? "1 KIT con cambios sin guardar"
+                : `${pendientes} KIT con cambios sin guardar`}
+            </Text>
+          )}
+          {guardadoOk && pendientes === 0 && !errorGuardado && (
+            <Text variant="microcopy">Guardado en HubSpot.</Text>
+          )}
+        </Flex>
+      )}
+
+      {errorGuardado && (
+        <Alert title="No se pudieron guardar las cajas a consumir" variant="error">
+          {errorGuardado}. Vuelve a intentarlo; los contenedores no se han visto
+          afectados.
+        </Alert>
+      )}
     </Flex>
   );
 };

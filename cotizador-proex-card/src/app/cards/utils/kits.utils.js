@@ -13,8 +13,6 @@
 // Aislado a propósito: nada de aquí se llama desde la lógica existente de
 // contenedores, sólo desde los componentes de KIT.
 
-import { KIT_PARAMS_POR_SKU } from "../constants/kits.fixture";
-
 const toNumber = (value) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
@@ -114,9 +112,28 @@ export function calcularProduccion(cajasPedidas, marcadas, tamanoKit, bloqueMult
 }
 
 /**
- * Parámetros de KIT de un artículo. Prioriza lo que venga del propio artículo
- * (fase 2, cuando el backend sirva las propiedades del Producto) y cae al
- * fixture local mientras no lleguen.
+ * Añade a cada artículo el `tamano_kit` que venga de HubSpot.
+ *
+ * El catálogo no sirve esa propiedad, así que llega por su propio endpoint y se
+ * mezcla aquí. Lo que ya traiga el artículo manda: el día que el catálogo la
+ * incluya, esto deja de hacer nada y se puede borrar sin tocar el cálculo.
+ *
+ * @param {Array} articulos  con `sku`
+ * @param {object} params    { [sku]: { tamano_kit, bloque_multiplo } }
+ */
+export function conParamsKit(articulos = [], params = {}) {
+  return (articulos || []).map((a) => {
+    if (!a) return a;
+    const p = params[(a.sku || "").trim()];
+    if (!p || toNumber(a.tamano_kit) > 0) return a;
+    return { ...a, tamano_kit: p.tamano_kit, bloque_multiplo: p.bloque_multiplo };
+  });
+}
+
+/**
+ * Parámetros de KIT de un artículo, ya mezclados por `conParamsKit` con lo que
+ * devuelve el endpoint. Sin `tamano_kit` devuelve null: quien llama decide si
+ * avisar de la falta de dato, pero nadie se inventa un bloque.
  */
 export function paramsKitDeArticulo(articulo) {
   if (!articulo) return null;
@@ -130,15 +147,9 @@ export function paramsKitDeArticulo(articulo) {
     };
   }
 
-  const delFixture = KIT_PARAMS_POR_SKU[(articulo.sku || "").trim()];
-  if (delFixture && toNumber(delFixture.tamanoKit) > 0) {
-    return {
-      tamanoKit: toNumber(delFixture.tamanoKit),
-      bloqueMultiplo: toNumber(delFixture.bloqueMultiplo) || 1,
-      origen: "fixture",
-    };
-  }
-
+  // Sin `tamano_kit` no se calcula KIT. Antes había aquí un fichero de respaldo
+  // con un SKU escrito a mano, y era peor que nada: si HubSpot decía que ese
+  // producto no tiene bloque, el respaldo lo contradecía con un número inventado.
   return null;
 }
 
@@ -251,4 +262,59 @@ export function analizarKitsDesdeCajas(porArticulo, articulos, marcadasPorSku = 
     sinDato,
     totalCajasKit: kits.reduce((sum, k) => sum + k.cajasKit, 0),
   };
+}
+
+/**
+ * Marca efectiva de esta oferta sobre un KIT.
+ *
+ * Prioriza la edición local (lo que el comercial acaba de tocar) y, si no hay,
+ * lee la marca YA GUARDADA en HubSpot para este negocio. Esa segunda parte es la
+ * que hace que al volver a la cotización siga apareciendo marcada.
+ *
+ * Es lectura, no copia: no se vuelca nada al estado local. Si se volcara, habría
+ * dos fuentes de verdad y un efecto que las sincronice — y el primer render con
+ * los KIT aún sin llegar borraría las marcas.
+ *
+ * @param {object} kit         del endpoint, con `marcas: [{negocioId, cajas}]`
+ * @param {object} marcados    estado local por id de KIT
+ * @param {string} negocioId   la cotización abierta (context.crm.objectId)
+ */
+export function marcaEfectivaDeKit(kit, marcados = {}, negocioId = "") {
+  const disp = toNumber(kit?.cajasDisponibles);
+  const local = (marcados || {})[kit?.id];
+
+  const propia = negocioId
+    ? (kit?.marcas || []).find(
+        (m) => String(m?.negocioId || "") === String(negocioId || "")
+      )
+    : null;
+
+  // Cualquier edición local manda, y se mezcla campo a campo con lo guardado.
+  // Ojo: escribir una cantidad sin pulsar Marcar deja `marcado` sin definir, y
+  // ahí hay que conservar la cifra tecleada — si se descartara, el campo volvería
+  // al máximo y el comercial vería desaparecer lo que acaba de escribir.
+  if (local && (local.marcado !== undefined || local.cajas !== undefined)) {
+    const marcado =
+      local.marcado !== undefined ? !!local.marcado : !!propia;
+    const cajas = local.cajas ?? propia?.cajas ?? disp;
+    return { marcado, cajas: Math.min(toNumber(cajas), disp), origen: "local" };
+  }
+
+  // Sin edición local: la marca que esta cotización ya tenga guardada.
+  if (propia) {
+    return {
+      marcado: true,
+      cajas: Math.min(toNumber(propia.cajas), disp),
+      origen: "guardada",
+    };
+  }
+
+  return { marcado: false, cajas: disp, origen: "ninguna" };
+}
+
+/** Marcas de OTRAS ofertas: las que no son de este negocio. */
+export function marcasDeOtros(kit, negocioId = "") {
+  return (kit?.marcas || []).filter(
+    (m) => String(m?.negocioId || "") !== String(negocioId || "")
+  );
 }

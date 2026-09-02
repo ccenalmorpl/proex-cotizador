@@ -25,6 +25,8 @@ export const API_CONFIG = {
     articles: '/api/v1/articles',
     kitsDisponibles: '/api/v1/kits/disponibles',
     kitsMarcas: '/api/v1/kits/marcas',
+    kitsCrear: '/api/v1/kits/crear',
+    kitsParams: '/api/v1/kits/params',
     // Agregar aquí endpoints futuros cuando se implementen
     // quotes: '/api/v1/quotes',
     // etc.

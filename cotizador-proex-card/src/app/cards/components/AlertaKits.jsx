@@ -32,6 +32,8 @@ import {
   TableHeader,
 } from "@hubspot/ui-extensions";
 
+import { marcaEfectivaDeKit } from "../utils/kits.utils";
+
 const fmt = (n) => Number(n || 0).toLocaleString("es-ES");
 
 // Aviso de artículos sin `tamano_kit`. Apagado a propósito: hoy sólo 1 de los 326
@@ -78,7 +80,8 @@ const explicacionBloques = (k, bloquesElegidos) => {
 export const resumenKitsPorSku = (
   kits = [],
   marcados = {},
-  stockUsadoPorSku = {}
+  stockUsadoPorSku = {},
+  negocioId = ""
 ) => {
   const mapa = new Map();
 
@@ -96,8 +99,10 @@ export const resumenKitsPorSku = (
     const sku = (k.productoSku || "").trim();
     if (!sku) return;
     const disp = Number(k.cajasDisponibles) || 0;
-    const m = marcados[k.id] || {};
-    const marcadas = m.marcado ? Math.min(Number(m.cajas ?? disp) || 0, disp) : 0;
+    // Marca efectiva: cuenta también lo que esta cotización ya tenía guardado en
+    // HubSpot, para que al volver el cálculo salga igual que al salir.
+    const marca = marcaEfectivaDeKit(k, marcados, negocioId);
+    const marcadas = marca.marcado ? marca.cajas : 0;
     const prev = entrada(sku);
     mapa.set(sku, {
       ...prev,

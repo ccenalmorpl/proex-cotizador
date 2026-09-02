@@ -28,7 +28,7 @@ import {
   LOADING_MESSAGES,
   INITIAL_RENDER_DELAY_MS,
 } from "../constants/common.constants";
-import { fetchFromAPI } from "../utils/api.utils";
+import { crearKitsDeCotizacion, fetchFromAPI } from "../utils/api.utils";
 import { API_CONFIG } from "../config";
 import {
   calcularPrecioPorCajaPorIncoterm,
@@ -42,7 +42,9 @@ import { getPorcentajesIVA } from "../utils/iva.utils";
 // Pedidos KIT — aislado: solo alimenta el modal de resumen previo a publicar
 import { analizarKits } from "../utils/kits.utils";
 import { resumenKitsPorSku } from "../components/AlertaKits";
-import { KITS_DISPONIBLES_STUB } from "../constants/kitsDisponibles.stub";
+import { useKitsDisponibles } from "../hooks/useKitsDisponibles";
+import { conParamsKit, marcaEfectivaDeKit } from "../utils/kits.utils";
+import { useKitParams } from "../hooks/useKitParams";
 import ResumenKitsModal from "../components/ResumenKitsModal";
 
 // Resuelve el label legible de un campo: acepta string o {value, options}
@@ -226,21 +228,37 @@ const RevisionTab = ({
   const dealId = context?.crm?.objectId;
 
   // Pedidos KIT — resumen previo a publicar. Aislado: solo alimenta el modal.
+  // KIT reales de HubSpot, los mismos que ve Contenedores. Con el fixture, esta
+  // pantalla daba otro número para el mismo pedido.
+  const { kits: kitsDisponibles } = useKitsDisponibles(
+    (articulosSeleccionados || [])
+      .filter(Boolean)
+      .map((a) => (a.hs_sku || "").trim())
+  );
+
+  // `tamano_kit` real por SKU, igual que en Contenedores.
+  const paramsKit = useKitParams(
+    (articulosSeleccionados || []).filter(Boolean).map((a) => (a.hs_sku || "").trim())
+  );
+
   const analisisKits = useMemo(
     () =>
       analizarKits(
         contenedoresData?.contenedoresDefinidos || [],
         contenedoresData?.cantidadesContenedores || {},
-        (articulosSeleccionados || []).filter(Boolean).map((a) => ({
-          id: a.id,
-          nombre: a.nombre,
-          sku: a.hs_sku || "",
-          tamano_kit: a.tamano_kit,
-          bloque_multiplo: a.bloque_multiplo,
-        })),
-        resumenKitsPorSku(KITS_DISPONIBLES_STUB, kitsMarcados)
+        conParamsKit(
+          (articulosSeleccionados || []).filter(Boolean).map((a) => ({
+            id: a.id,
+            nombre: a.nombre,
+            sku: a.hs_sku || "",
+            tamano_kit: a.tamano_kit,
+            bloque_multiplo: a.bloque_multiplo,
+          })),
+          paramsKit
+        ),
+        resumenKitsPorSku(kitsDisponibles, kitsMarcados, {}, dealId)
       ),
-    [contenedoresData, articulosSeleccionados, kitsMarcados]
+    [contenedoresData, articulosSeleccionados, kitsMarcados, kitsDisponibles, dealId, paramsKit]
   );
 
   // Los KIT que esta cotización ha marcado. El estado lo gobierna Cotizador.tsx,
@@ -253,17 +271,15 @@ const RevisionTab = ({
         .map((a) => (a.hs_sku || "").trim())
         .filter(Boolean)
     );
-    return KITS_DISPONIBLES_STUB.filter(
-      (k) => kitsMarcados?.[k.id]?.marcado && skus.has((k.productoSku || "").trim())
-    ).map((k) => ({
-      ...k,
-      // Cajas que esta oferta pretende consumir de ese KIT, no el disponible.
-      cajasAConsumir: Math.min(
-        kitsMarcados?.[k.id]?.cajas ?? k.cajasDisponibles,
-        k.cajasDisponibles
-      ),
-    }));
-  }, [articulosSeleccionados, kitsMarcados]);
+    // Marca EFECTIVA: cuenta lo editado en esta sesión y lo que ya estaba guardado
+    // en HubSpot para esta cotización. Sin lo segundo, entrando directo a Vista
+    // previa no aparecería ningún KIT consumido.
+    return kitsDisponibles
+      .filter((k) => skus.has((k.productoSku || "").trim()))
+      .map((k) => ({ kit: k, marca: marcaEfectivaDeKit(k, kitsMarcados, dealId) }))
+      .filter(({ marca }) => marca.marcado && marca.cajas > 0)
+      .map(({ kit, marca }) => ({ ...kit, cajasAConsumir: marca.cajas }));
+  }, [articulosSeleccionados, kitsMarcados, kitsDisponibles, dealId]);
 
   // Lo que se va a pedir de verdad: solo los solicitados, con las cajas que el
   // comercial haya ajustado en la alerta. Sin entrada explícita se asume
@@ -298,6 +314,9 @@ const RevisionTab = ({
   // Estados para el proceso de publicación
   const [publicando, setPublicando] = useState(false);
   const [publicacionError, setPublicacionError] = useState(null);
+  // Resultado de crear los KIT al publicar: {creados, omitidos}. null = no se
+  // ha intentado todavía.
+  const [resultadoKits, setResultadoKits] = useState(null);
 
   // Statuses canónicos en ambos endpoints: not_started | pending | processing | completed | error
   const POLLING_MAX_ATTEMPTS = 20;
@@ -1413,6 +1432,22 @@ const RevisionTab = ({
         });
         setPublishStatus("completed");
         triggerCustomObjects();
+
+        // Los pedidos KIT se crean AQUÍ, después de publicar y no dentro de la
+        // publicación: si esto falla, la cotización ya está publicada y no se
+        // pierde lo importante. El backend es idempotente por (cotización, SKU),
+        // así que republicar no duplica.
+        if (kitsSolicitadosDetalle.length > 0) {
+          const kits = kitsSolicitadosDetalle.map((k) => ({
+            sku: k.sku,
+            nombre: k.nombre,
+            cajas: k.cajasKit,
+          }));
+          const res = await crearKitsDeCotizacion(dealId, kits);
+          setResultadoKits(
+            res || { creados: [], omitidos: [], error: true }
+          );
+        }
       } else {
         console.error("❌ Error al publicar la cotización:", response.error);
         setPublishStatus("error");
@@ -2589,6 +2624,58 @@ const RevisionTab = ({
           <Alert title="Revise los errores antes de publicar" variant="warning">
             Complete todos los campos requeridos marcados arriba para poder
             publicar la cotización.
+          </Alert>
+        )}
+
+        {/* Qué pasó con los pedidos KIT al publicar. Se dice explícitamente:
+            crear un KIT compromete producción en fábrica, así que no puede
+            ocurrir en silencio ni fallar en silencio. */}
+        {resultadoKits && resultadoKits.error && (
+          <Alert title="La cotización se publicó, pero los pedidos KIT no" variant="warning">
+            Vuelve a publicar para reintentarlo, o avisa a Administración para que
+            los cree a mano. La cotización no se ve afectada.
+          </Alert>
+        )}
+
+        {resultadoKits && !resultadoKits.error && resultadoKits.creados?.length > 0 && (
+          <Alert
+            title={
+              resultadoKits.creados.length === 1
+                ? "1 pedido KIT creado"
+                : `${resultadoKits.creados.length} pedidos KIT creados`
+            }
+            variant="success"
+          >
+            <Flex direction="column" gap="extra-small">
+              <Text>
+                Quedan en Pendiente de validación hasta que Administración
+                confirme la producción.
+              </Text>
+              {resultadoKits.creados.map((k) => (
+                <Text key={k.kit_id} variant="microcopy">
+                  {k.numero} — {Number(k.cajas || 0).toLocaleString("es-ES")} cajas
+                </Text>
+              ))}
+            </Flex>
+          </Alert>
+        )}
+
+        {resultadoKits && !resultadoKits.error && resultadoKits.omitidos?.length > 0 && (
+          <Alert title="Pedidos KIT que ya existían" variant="info">
+            <Flex direction="column" gap="extra-small">
+              <Text>
+                Esta cotización ya los había generado, así que no se han
+                duplicado.
+              </Text>
+              {resultadoKits.omitidos.map((k, i) => (
+                <Text key={i} variant="microcopy">
+                  {k.numero || k.sku}{" "}
+                  {k.cajas
+                    ? `— ${Number(k.cajas).toLocaleString("es-ES")} cajas`
+                    : ""}
+                </Text>
+              ))}
+            </Flex>
           </Alert>
         )}
       </Flex>

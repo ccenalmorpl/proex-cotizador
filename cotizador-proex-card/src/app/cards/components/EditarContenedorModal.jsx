@@ -29,7 +29,9 @@ import { fetchFromAPI } from "../utils/api.utils";
 import { analizarKitsDesdeCajas } from "../utils/kits.utils";
 import AlertaKits, { resumenKitsPorSku } from "./AlertaKits";
 import PanelKitsDisponibles from "./PanelKitsDisponibles";
-import { KITS_DISPONIBLES_STUB } from "../constants/kitsDisponibles.stub";
+import { useKitsDisponibles } from "../hooks/useKitsDisponibles";
+import { useKitParams } from "../hooks/useKitParams";
+import { conParamsKit } from "../utils/kits.utils";
 import { API_CONFIG } from "../config";
 import { DEBOUNCE_DELAY_MS } from "../constants/common.constants";
 
@@ -271,6 +273,16 @@ const EditarContenedorModal = ({
   // incluido, para que la alerta se recalcule al teclear. Mismo criterio que
   // `totalCajasGlobal` (los demás contenedores + este), pero desglosado por
   // artículo: el bloque de fabricación es por producto y sobre el pedido entero.
+  const skusEnCotizacion = useMemo(
+    () => (articulosSeleccionados || []).map((a) => a.hs_sku || ""),
+    [articulosSeleccionados]
+  );
+
+  // KIT reales de HubSpot, los mismos que ven Contenedores y Vista previa. Con el
+  // fixture, este modal daba otro pedido KIT para el mismo pedido.
+  const { kits: kitsDisponibles } = useKitsDisponibles(skusEnCotizacion);
+  const paramsKit = useKitParams(skusEnCotizacion);
+
   const analisisKits = useMemo(() => {
     const porArticulo = new Map();
     const acumular = (articuloId, cajas) => {
@@ -297,15 +309,11 @@ const EditarContenedorModal = ({
 
     return analizarKitsDesdeCajas(
       porArticulo,
-      catalogo,
-      resumenKitsPorSku(KITS_DISPONIBLES_STUB, kitsMarcados)
+      conParamsKit(catalogo, paramsKit),
+      resumenKitsPorSku(kitsDisponibles, kitsMarcados, {}, dealId)
     );
-  }, [contenedoresUnicos, contenedor, articulos, articulosSeleccionados, kitsMarcados]);
+  }, [contenedoresUnicos, contenedor, articulos, articulosSeleccionados, kitsMarcados, kitsDisponibles, dealId, paramsKit]);
 
-  const skusEnCotizacion = useMemo(
-    () => (articulosSeleccionados || []).map((a) => a.hs_sku || ""),
-    [articulosSeleccionados]
-  );
 
   const comisionPorCaja = useMemo(() => {
     if (
@@ -489,8 +497,10 @@ const EditarContenedorModal = ({
           />
           <PanelKitsDisponibles
             skusEnCotizacion={skusEnCotizacion}
+            kits={kitsDisponibles}
             kitsMarcados={kitsMarcados}
             onCambiarMarcaKit={onCambiarMarcaKit}
+            negocioId={dealId}
           />
 
           <SearchInput

@@ -26,14 +26,15 @@ import {
 } from "@hubspot/ui-extensions";
 
 // Utils and Constants
-import { fetchFromAPI, guardarMarcasKit } from "../utils/api.utils";
+import { fetchFromAPI } from "../utils/api.utils";
 import { useCustomObjectsSync } from "../hooks/useCustomObjectsSync";
 
 // Pedidos KIT (aislado: sólo se consume desde el aviso, no toca la lógica de contenedores)
-import { analizarKits } from "../utils/kits.utils";
+import { analizarKits, conParamsKit } from "../utils/kits.utils";
 import AlertaKits, { resumenKitsPorSku } from "../components/AlertaKits";
 import PanelKitsDisponibles from "../components/PanelKitsDisponibles";
-import { useKitsDisponibles, ORIGEN_VIVO } from "../hooks/useKitsDisponibles";
+import { useKitsDisponibles } from "../hooks/useKitsDisponibles";
+import { useKitParams } from "../hooks/useKitParams";
 import {
   ERROR_MESSAGES,
   LOADING_MESSAGES,
@@ -92,24 +93,17 @@ const ContenedoresTab = ({
 
   // Pedidos KIT disponibles. El hook decide la fuente: backend local si está
   // configurado, y si no el fixture. Nada más de esta pestaña depende de ello.
-  const { kits: kitsDisponibles, origen: origenKits } = useKitsDisponibles(
+  const { kits: kitsDisponibles, recargar: recargarKits } = useKitsDisponibles(
     ARTICULOS_DISPONIBLES.map((a) => a.sku)
   );
 
-  // Marcas listas para el backend. Sin cantidad explícita se asume todo lo
-  // disponible, igual que hace el panel al pintarlas, y nunca por encima de eso.
-  const marcasKitParaGuardar = () =>
-    kitsDisponibles
-      .map((k) => {
-        const marca = (kitsMarcados || {})[k.id] || {};
-        if (!marca.marcado) return null;
-        const cajas = Math.min(
-          Number(marca.cajas ?? k.cajasDisponibles) || 0,
-          Number(k.cajasDisponibles) || 0
-        );
-        return cajas > 0 ? { kit_id: String(k.id), cajas } : null;
-      })
-      .filter(Boolean);
+  // `tamano_kit` real de cada producto. Sin esto sólo calculaba KIT el único SKU
+  // que estaba en el fichero de parámetros.
+  const paramsKit = useKitParams(ARTICULOS_DISPONIBLES.map((a) => a.sku));
+  const articulosConKit = conParamsKit(ARTICULOS_DISPONIBLES, paramsKit);
+
+  // La cotización abierta: identifica cuáles de las marcas de un KIT son suyas.
+  const negocioId = context?.crm?.objectId ? String(context.crm.objectId) : "";
 
   // Estado para el contenedor que se está configurando
   const [tipoContenedor, setTipoContenedor] = useState(
@@ -139,8 +133,8 @@ const ContenedoresTab = ({
   const analisisKits = analizarKits(
     contenedoresDefinidos,
     cantidadesContenedores,
-    ARTICULOS_DISPONIBLES,
-    resumenKitsPorSku(kitsDisponibles, kitsMarcados, stockUsado)
+    articulosConKit,
+    resumenKitsPorSku(kitsDisponibles, kitsMarcados, stockUsado, negocioId)
   );
 
   // Estados de carga / error inicial (UX igual a ClienteTab)
@@ -672,15 +666,6 @@ const ContenedoresTab = ({
         // Don't block navigation if this fails
       }
 
-      // Marcas de pedidos KIT: se persisten aquí, al avanzar, no en cada clic del
-      // panel. No bloquea la navegación si falla — las marcas se pueden rehacer,
-      // y perder el guardado de contenedores por esto sería mucho peor.
-      try {
-        await guardarMarcasKit(dealId, marcasKitParaGuardar());
-      } catch (error) {
-        console.error("No se pudieron guardar las marcas de pedidos KIT:", error);
-      }
-
       onNavigate("transitario");
     } catch (error) {
       setErrorSave(
@@ -1004,14 +989,6 @@ const ContenedoresTab = ({
                     onChangeStockUsado={onChangeStockUsado}
                   />
 
-                  {/* Solo mientras dure el desarrollo: confirma de un vistazo que lo
-                      que se ve viene de HubSpot y no del fixture. */}
-                  {origenKits === ORIGEN_VIVO && (
-                    <Text variant="microcopy">
-                      Pedidos KIT leídos en vivo de HubSpot.
-                    </Text>
-                  )}
-
                   {/* KIT abiertos consumibles, filtrados por los artículos de esta
                       cotización. La fuente la decide el hook: en vivo si hay backend
                       local levantado, y si no el fixture. */}
@@ -1020,6 +997,8 @@ const ContenedoresTab = ({
                     kits={kitsDisponibles}
                     kitsMarcados={kitsMarcados}
                     onCambiarMarcaKit={onCambiarMarcaKit}
+                    negocioId={negocioId}
+                    onGuardado={recargarKits}
                   />
 
                 </>
