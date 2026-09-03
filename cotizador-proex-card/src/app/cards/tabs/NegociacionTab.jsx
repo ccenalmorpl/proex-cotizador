@@ -1585,6 +1585,7 @@ const NegociacionTab = ({
                         width="lg"
                       >
                         <EditarContenedorModal
+                          actions={actions}
                           dealId={context?.crm?.objectId}
                           contenedor={contenedorSeleccionado}
                           contenedoresUnicos={contenedoresUnicos}

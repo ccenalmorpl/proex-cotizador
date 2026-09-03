@@ -22,6 +22,7 @@ from app.services.kits_service import (
     crear_kits_de_cotizacion,
     guardar_marcas_de_cotizacion,
     kits_disponibles_para_card,
+    negocios_generadores_por_sku,
     params_kit_por_sku,
 )
 
@@ -168,6 +169,49 @@ def parametros_de_kit(
         raise HTTPException(status_code=502, detail={"error": "hubspot_error", "mensaje": str(e)})
 
     return {"success": True, "params": params, "total": len(params)}
+
+
+@router.get("/negocios")
+def negocios_generadores(
+    skus: Optional[str] = Query(
+        default=None,
+        description="SKUs separados por coma.",
+    ),
+    excluir: Optional[str] = Query(
+        default=None,
+        description="ID de la cotizacion actual: va siempre dentro y no se ofrece.",
+    ),
+):
+    """Ofertas abiertas que podrian generar el KIT junto con esta cotizacion.
+
+    Un pedido KIT no nace de una sola oferta: PROEX suma las cajas de varias
+    ofertas abiertas de la misma referencia y pide un unico KIT por la diferencia.
+    Devuelve, por SKU, el negocio y sus cajas —sumadas de todos sus contenedores—
+    para que la card pueda recalcular la produccion al anotarlos.
+
+    El filtro es el de la reunion del 2026-09-03: pipeline de cotizacion, ni
+    ganado ni perdido, y con cajas de esa referencia.
+
+    Una lista vacia es una respuesta valida y frecuente: significa que esta oferta
+    es la unica abierta con esa referencia.
+    """
+    lista = _skus(skus)
+    if not lista:
+        return {"success": True, "negocios": {}, "total": 0}
+
+    try:
+        negocios = negocios_generadores_por_sku(
+            settings.proex_access_token, lista, excluir_deal_id=excluir or ""
+        )
+    except RuntimeError as e:
+        logger.error(f"[kits] fallo leyendo negocios generadores: {e}")
+        raise HTTPException(status_code=502, detail={"error": "hubspot_error", "mensaje": str(e)})
+
+    return {
+        "success": True,
+        "negocios": negocios,
+        "total": sum(len(v) for v in negocios.values()),
+    }
 
 
 @router.get("/auditoria")

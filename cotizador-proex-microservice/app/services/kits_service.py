@@ -19,6 +19,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional
 
 from app.core.kits_constants import (
+    COTIZACION_PIPELINE_ID,
     KIT_COMPANY_ID,
     KIT_DEALSTAGE_ABIERTO,
     KIT_DEALSTAGE_LABELS,
@@ -32,6 +33,8 @@ from app.core.kits_constants import (
     PROP_KIT_NUMERO,
     PROP_KIT_SKU,
     PROP_KIT_VALIDACION_PRODUCCION,
+    PROP_LINE_ITEM_CANTIDAD,
+    PROP_LINE_ITEM_PRODUCTO,
     PROP_PRODUCTO_BLOQUE_MULTIPLO,
     PROP_PRODUCTO_TAMANO_KIT,
 )
@@ -553,4 +556,209 @@ def params_kit_por_sku(token: str, skus: List[str]) -> Dict[str, dict]:
                 salida[sku] = params
 
     logger.info(f"[kits] params de KIT: {len(salida)} de {len(limpios)} SKU tienen tamano_kit")
+    return salida
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NEGOCIOS GENERADORES DEL KIT
+#
+# Reunión del 2026-09-03: al pedir un KIT se anotan otras ofertas abiertas de la
+# misma referencia y su demanda entra en la producción, para consolidar en una
+# tirada en vez de dejar cajas paradas y arrancar otra dentro de un mes.
+#
+# El camino es referencia → producto → line items → negocios, y no al revés:
+# ir por negocios obligaría a leer los line items de los 65 negocios abiertos,
+# mientras que partir del producto deja 6 line items para esta referencia.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _productos_por_referencia(token: str, referencias: List[str]) -> Dict[str, str]:
+    """Referencia comercial → ID interno del producto en HubSpot.
+
+    Hace falta porque `hs_sku` significa dos cosas distintas: en el producto es
+    la referencia ("0303003002-00250") y en el line item es este ID interno.
+    """
+    limpias = sorted({str(r).strip() for r in (referencias or []) if str(r).strip()})
+    if not limpias:
+        return {}
+
+    salida: Dict[str, str] = {}
+    for i in range(0, len(limpias), 100):
+        res = _post(
+            f"{BASE_URL}/crm/v3/objects/products/search",
+            {
+                "filterGroups": [
+                    {"filters": [{"propertyName": "hs_sku", "operator": "IN",
+                                  "values": limpias[i:i + 100]}]}
+                ],
+                "properties": ["hs_sku"],
+                "limit": 100,
+            },
+            token,
+        )
+        for p in res.get("results", []):
+            ref = ((p.get("properties") or {}).get("hs_sku") or "").strip()
+            if ref:
+                salida[ref] = str(p.get("id"))
+    return salida
+
+
+def _cajas_por_negocio(token: str, producto_id: str) -> Dict[str, int]:
+    """Negocio → cajas de ese producto, sumando TODOS sus contenedores.
+
+    Un negocio puede llevar la misma referencia en varios contenedores y las
+    cajas son la suma ("sumar las cajas de los contenedores que incluyen ese
+    artículo"). Los line items de contenedor no estorban: no llevan el ID del
+    producto, así que el filtro los deja fuera solo.
+    """
+    line_items: List[dict] = []
+    after = None
+    while True:
+        cuerpo = {
+            "filterGroups": [
+                {"filters": [{"propertyName": PROP_LINE_ITEM_PRODUCTO,
+                              "operator": "EQ", "value": str(producto_id)}]}
+            ],
+            "properties": [PROP_LINE_ITEM_CANTIDAD],
+            "limit": 100,
+        }
+        if after:
+            cuerpo["after"] = after
+        res = _post(f"{BASE_URL}/crm/v3/objects/line_items/search", cuerpo, token)
+        line_items += res.get("results", [])
+        after = ((res.get("paging") or {}).get("next") or {}).get("after")
+        if not after:
+            break
+
+    if not line_items:
+        return {}
+
+    cantidad = {}
+    for li in line_items:
+        try:
+            cantidad[str(li.get("id"))] = int(float(
+                (li.get("properties") or {}).get(PROP_LINE_ITEM_CANTIDAD) or 0))
+        except (TypeError, ValueError):
+            cantidad[str(li.get("id"))] = 0
+
+    cajas: Dict[str, int] = defaultdict(int)
+    ids = list(cantidad)
+    for i in range(0, len(ids), 100):
+        res = _post(
+            f"{BASE_URL}/crm/v4/associations/line_items/deals/batch/read",
+            {"inputs": [{"id": x} for x in ids[i:i + 100]]},
+            token,
+        )
+        for fila in res.get("results", []):
+            origen = str((fila.get("from") or {}).get("id"))
+            for destino in fila.get("to") or []:
+                cajas[str(destino.get("toObjectId"))] += cantidad.get(origen, 0)
+
+    return dict(cajas)
+
+
+def _etapas_abiertas_de_cotizacion(token: str) -> Dict[str, str]:
+    """Etapas NO cerradas del pipeline de cotización → su etiqueta.
+
+    Se usa `metadata.isClosed` en vez de comparar contra los IDs de ganado y
+    perdido: si PROEX añade otra etapa de cierre, queda fuera sin tocar código.
+    """
+    res = _get(
+        f"{BASE_URL}/crm/v3/pipelines/deals/{COTIZACION_PIPELINE_ID}", token
+    )
+    etapas = {}
+    for etapa in res.get("stages") or []:
+        cerrada = str((etapa.get("metadata") or {}).get("isClosed", "")).lower() == "true"
+        if not cerrada:
+            etapas[str(etapa.get("id"))] = etapa.get("label") or ""
+    return etapas
+
+
+def _negocios_con_etapa(ids: List[str], token: str) -> Dict[str, dict]:
+    """Nombre, etapa y pipeline de varios negocios en UNA llamada.
+
+    No se reutiliza `_nombres_de_negocios` porque aquella no lee la etapa y
+    ampliarla cambiaria lo que ya consumen los KIT disponibles.
+    """
+    ids = [str(i).strip() for i in (ids or []) if str(i).strip()]
+    if not ids:
+        return {}
+
+    salida: Dict[str, dict] = {}
+    for i in range(0, len(ids), 100):
+        try:
+            res = _post(
+                f"{BASE_URL}/crm/v3/objects/deals/batch/read",
+                {"properties": ["dealname", "dealstage", "pipeline"],
+                 "inputs": [{"id": x} for x in ids[i:i + 100]]},
+                token,
+            )
+        except RuntimeError as e:
+            logger.warning(f"[kits] no se pudieron leer los negocios generadores: {e}")
+            continue
+        for d in res.get("results", []):
+            props = d.get("properties") or {}
+            salida[str(d["id"])] = {
+                "nombre": props.get("dealname") or "",
+                "etapa": str(props.get("dealstage") or ""),
+                "pipeline": str(props.get("pipeline") or ""),
+            }
+    return salida
+
+
+def negocios_generadores_por_sku(
+    token: str,
+    skus: List[str],
+    excluir_deal_id: str = "",
+) -> Dict[str, List[Dict]]:
+    """Por referencia, las ofertas abiertas que podrían generar el KIT con ella.
+
+    Devuelve `{sku: [{id, nombre, etapa, cajas}]}`. La cotización actual se
+    excluye de la lista porque en la card va siempre dentro y no se puede quitar:
+    ofrecerla como opción sería ofrecer desmarcar lo que no se desmarca.
+
+    Un negocio sin cajas de esa referencia no sale: no aportaría demanda y solo
+    alargaría una lista que ya puede tener decenas de ofertas.
+    """
+    productos = _productos_por_referencia(token, skus)
+    if not productos:
+        return {}
+
+    abiertas = _etapas_abiertas_de_cotizacion(token)
+    excluir = str(excluir_deal_id or "").strip()
+
+    salida: Dict[str, List[Dict]] = {}
+    for sku, producto_id in productos.items():
+        cajas = _cajas_por_negocio(token, producto_id)
+        candidatos = [d for d in cajas if d != excluir and cajas[d] > 0]
+        if not candidatos:
+            salida[sku] = []
+            continue
+
+        negocios = _negocios_con_etapa(candidatos, token)
+        filas = []
+        for deal_id in candidatos:
+            info = negocios.get(deal_id) or {}
+            # El filtro de la reunión: pipeline de cotización, ni ganado ni
+            # perdido. Una etapa que no esté entre las abiertas queda fuera.
+            if info.get("pipeline") != COTIZACION_PIPELINE_ID:
+                continue
+            etapa = info.get("etapa") or ""
+            if etapa not in abiertas:
+                continue
+            filas.append({
+                "id": deal_id,
+                "nombre": info.get("nombre") or f"Negocio {deal_id}",
+                "etapa": abiertas[etapa],
+                "cajas": cajas[deal_id],
+            })
+
+        filas.sort(key=lambda f: -f["cajas"])
+        salida[sku] = filas
+
+    total = sum(len(v) for v in salida.values())
+    logger.info(
+        f"[kits] negocios generadores: {total} ofertas abiertas "
+        f"en {len(salida)} referencias (excluida {excluir or 'ninguna'})"
+    )
     return salida

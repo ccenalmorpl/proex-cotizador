@@ -42,6 +42,9 @@ import {
 } from "../constants/common.constants";
 
 const ContenedoresTab = ({
+  // Para cerrar el diálogo de negocios del aviso de KIT: los overlays los
+  // gestiona HubSpot, no el componente.
+  actions,
   context,
   onNavigate,
   articulosSeleccionados,
@@ -985,8 +988,10 @@ const ContenedoresTab = ({
                     analisis={analisisKits}
                     solicitudes={kitsSolicitados}
                     onChangeSolicitud={onChangeSolicitudKit}
+                    actions={actions}
                     stockUsado={stockUsado}
                     onChangeStockUsado={onChangeStockUsado}
+                    negocioId={negocioId}
                   />
 
                   {/* KIT abiertos consumibles, filtrados por los artículos de esta

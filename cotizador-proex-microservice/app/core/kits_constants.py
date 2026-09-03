@@ -61,3 +61,32 @@ PROP_KIT_CONSUMIDO_POR_IDS = "kit_consumido_por_ids"
 # Separadores del formato serializado.
 KIT_SEP_ENTRADAS = ";"
 KIT_SEP_CAMPOS = ":"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NEGOCIOS GENERADORES DEL KIT
+#
+# Un pedido KIT no nace de una sola cotización: PROEX suma las cajas de varias
+# ofertas abiertas de la misma referencia y pide un único KIT por la diferencia
+# ("van a sumar los tres contenedores independientes… nos van a generar un único
+# pedido kit", reunión del 2026-09-03). Para ofrecer esa lista hay que filtrar
+# negocios del pipeline de cotización que no estén ni ganados ni perdidos.
+# ─────────────────────────────────────────────────────────────────────────────
+
+COTIZACION_PIPELINE_ID = "default"
+
+# Se conservan por nombre porque son los que se citaron en la reunión, pero el
+# filtro real usa `metadata.isClosed` de la etapa: así una etapa cerrada nueva
+# queda fuera sola, sin tocar código.
+COTIZACION_DEALSTAGE_GANADO = "986679651"
+COTIZACION_DEALSTAGE_PERDIDO = "987141733"
+
+# En los line items, `hs_sku` NO es la referencia: es el ID interno del producto
+# en HubSpot. En los productos sí es la referencia. Verificado sobre datos reales
+# (line item 57667553062: hs_sku="42078145076", name="63361158165-001 - CERVEZA…").
+#
+# Por eso el filtro va por ID de producto y es exacto, y no hace falta el
+# "nombre contiene nombre" que temíamos: el nombre del line item lleva delante el
+# ID del contenedor y nunca coincide con el del producto.
+PROP_LINE_ITEM_PRODUCTO = "hs_sku"
+PROP_LINE_ITEM_CANTIDAD = "quantity"

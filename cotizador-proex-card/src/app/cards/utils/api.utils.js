@@ -267,6 +267,43 @@ export const fetchKitParams = async (skus = []) => {
   }
 };
 
+// Ofertas abiertas que podrían generar el KIT junto con esta cotización.
+//
+// Un pedido KIT no nace de una sola oferta: PROEX suma las cajas de varias
+// cotizaciones abiertas de la misma referencia y pide un único KIT por la
+// diferencia. El backend filtra por pipeline de cotización sin ganar ni perder,
+// y devuelve las cajas ya sumadas de todos los contenedores de cada negocio.
+//
+// La cotización actual se excluye: en la tabla va siempre dentro y no se puede
+// quitar, así que ofrecerla sería ofrecer desmarcar lo que no se desmarca.
+//
+// Un mapa vacío es una respuesta normal y frecuente: significa que esta oferta es
+// la única abierta con esa referencia.
+//
+// @param {string[]} skus
+// @param {string} excluirNegocioId
+// @returns {Promise<Object<string, Array<{id,nombre,etapa,cajas}>>>}
+export const fetchNegociosGeneradores = async (skus = [], excluirNegocioId = "") => {
+  const limpios = (skus || []).map((s) => (s || "").trim()).filter(Boolean);
+  if (limpios.length === 0) return {};
+
+  try {
+    const params = new URLSearchParams({ skus: limpios.join(",") });
+    if (excluirNegocioId) params.set("excluir", excluirNegocioId);
+
+    const response = await fetchFromAPI(
+      `${API_CONFIG.endpoints.kitsNegocios}?${params.toString()}`,
+      { baseURL: API_CONFIG.kitsBaseURL }
+    );
+    return response.negocios || {};
+  } catch (error) {
+    // Sin lista no se puede anotar otras ofertas, pero el KIT de esta sí se puede
+    // pedir: se devuelve vacío en vez de romper la tabla entera.
+    console.error("Error al obtener los negocios generadores:", error);
+    return {};
+  }
+};
+
 // Crea los pedidos KIT que genera esta cotización. Se llama al publicar, cuando
 // la publicación ya ha salido bien: si esto falla, la cotización sigue publicada.
 //

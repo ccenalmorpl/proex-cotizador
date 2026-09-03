@@ -87,6 +87,7 @@ const buildPhysicalEntry = (producto, tipoContenedor) => {
 };
 
 const EditarContenedorModal = ({
+  actions,
   dealId,
   contenedor,
   contenedoresUnicos = [],
@@ -494,6 +495,8 @@ const EditarContenedorModal = ({
             analisis={analisisKits}
             solicitudes={kitsSolicitados}
             onChangeSolicitud={onChangeSolicitudKit}
+            actions={actions}
+            negocioId={dealId}
           />
           <PanelKitsDisponibles
             skusEnCotizacion={skusEnCotizacion}

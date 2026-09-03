@@ -22,6 +22,7 @@ import {
   TableHeader,
   Tag,
   Button,
+  Checkbox,
   Alert,
   NumberInput,
 } from "@hubspot/ui-extensions";
@@ -160,7 +161,7 @@ const PanelKitsDisponibles = ({
         Cajas ya fabricadas que esta oferta puede consumir en vez de producir nuevas.
       </Text>
       <Text variant="microcopy" format={{ fontWeight: "bold" }}>
-        Marcar no reserva: se las lleva el primer pedido que pague.
+        Solicitar no reserva: se las lleva el primer pedido que pague.
       </Text>
 
       <Table bordered={true}>
@@ -171,8 +172,8 @@ const PanelKitsDisponibles = ({
             <TableHeader>Cajas disponibles</TableHeader>
             <TableHeader>Cajas a consumir</TableHeader>
             <TableHeader>Estado</TableHeader>
-            <TableHeader>Marcado por</TableHeader>
-            <TableHeader>Acciones</TableHeader>
+            <TableHeader>Solicitado por</TableHeader>
+            <TableHeader>Solicitar</TableHeader>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -213,7 +214,7 @@ const PanelKitsDisponibles = ({
                 </TableCell>
                 <TableCell>
                   {marcasDeOtros(k, negocioId).length === 0 && !estaMarcado ? (
-                    <Text variant="microcopy">Sin marcas</Text>
+                    <Text variant="microcopy">Sin solicitudes</Text>
                   ) : (
                     <Flex direction="column" gap="extra-small">
                       {/* Sólo las de OTRAS ofertas: la propia se enseña abajo como
@@ -244,13 +245,16 @@ const PanelKitsDisponibles = ({
                   )}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant={estaMarcado ? "primary" : "secondary"}
-                    size="extra-small"
-                    onClick={() => cambiar(k.id, { marcado: !estaMarcado })}
+                  {/* Check y no botón, para que las dos tablas se manejen igual:
+                      las dos se solicitan con un check. Un botón que
+                      cambia de texto obliga a leerlo para saber el estado. */}
+                  <Checkbox
+                    name={"marcar-kit-" + k.id}
+                    checked={estaMarcado}
+                    onChange={(checked) => cambiar(k.id, { marcado: !!checked })}
                   >
-                    {estaMarcado ? "Marcado" : "Marcar"}
-                  </Button>
+                    {" "}
+                  </Checkbox>
                 </TableCell>
               </TableRow>
             );

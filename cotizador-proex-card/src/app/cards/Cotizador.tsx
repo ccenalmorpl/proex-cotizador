@@ -575,6 +575,7 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
             disabled={noCompanyAssociated}
           >
             <ContenedoresTab
+              actions={actions}
               kitsMarcados={kitsMarcados}
               onCambiarMarcaKit={cambiarMarcaKit}
               kitsSolicitados={kitsSolicitados}
