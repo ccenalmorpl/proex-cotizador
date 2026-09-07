@@ -1,9 +1,14 @@
-"""Transporte camión vs contenedor: decide nacional/exportación en la plantilla y
-el título de la cotización. Función pura, sin red."""
+"""Transporte camión vs contenedor (apariencia y almacén) y destinos fuera de la
+unión aduanera, que sí deciden nacional/exportación en la plantilla y el título de
+la cotización. Funciones puras, sin red."""
 
 import pytest
 
-from app.utils.tipologia import es_camion, normalize_tipo_contenedor
+from app.utils.tipologia import (
+    es_camion,
+    es_destino_fuera_territorio_aduanero_ue,
+    normalize_tipo_contenedor,
+)
 
 
 @pytest.mark.parametrize(
@@ -26,3 +31,19 @@ def test_normalize_quita_no_alfanumericos():
     assert normalize_tipo_contenedor("trailer-80") == "TRAILER80"
     assert normalize_tipo_contenedor("D40DR") == "D40DR"
     assert normalize_tipo_contenedor(None) == ""
+
+
+@pytest.mark.parametrize(
+    "puerto", ["CEU", "MEL", "ceu", " mel ", "Ceuta, ES", "Melilla, ES"],
+)
+def test_ceuta_y_melilla_estan_fuera_del_territorio_aduanero(puerto):
+    assert es_destino_fuera_territorio_aduanero_ue(puerto) is True
+
+
+@pytest.mark.parametrize(
+    "puerto",
+    ["MEB", "Melbourne, (VI), AU", "ALG", "Algeciras, ES", "CAS", "TNG", "", None],
+)
+def test_resto_de_puertos_dentro(puerto):
+    # MEB es Melbourne: no debe colarse por parecido con MEL.
+    assert es_destino_fuera_territorio_aduanero_ue(puerto) is False

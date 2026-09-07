@@ -2316,12 +2316,12 @@ class PublishQuoteRequest(BaseModel):
                     "eta": None
                 },
                 "empresa": {
-                    "nombre": "Pymext",
-                    "direccion": "Calle Tuétaro 10, Valencia, España",
+                    "nombre": "Proex Drinks Group S.A.",
+                    "direccion": "Avda. Americo Vespucio 5, Edif. Cartuja, 41092 Sevilla, España",
                     "iniciales": "AD"
                 },
                 "cliente": {
-                    "nombreEmpresa": "Pymext",
+                    "nombreEmpresa": "CLIENTE EJEMPLO S.A.",
                     "pais": "Andorra",
                     "tipoCliente": "exportacion",
                     "tipoVenta": "CIF",

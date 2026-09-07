@@ -1,0 +1,1577 @@
+START RequestId: d1b55172-c395-445a-9d85-712d69bafb88 Version: $LATEST
+END RequestId: d1b55172-c395-445a-9d85-712d69bafb88
+REPORT RequestId: d1b55172-c395-445a-9d85-712d69bafb88	Duration: 344.75 ms	Billed Duration: 345 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 11d3360c-9483-463a-b514-84a5ac3f0218 Version: $LATEST
+END RequestId: 11d3360c-9483-463a-b514-84a5ac3f0218
+REPORT RequestId: 11d3360c-9483-463a-b514-84a5ac3f0218	Duration: 1284.22 ms	Billed Duration: 1285 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: e05bb5e3-eb15-4ed3-838e-c5d0ffd4b50a Version: $LATEST
+END RequestId: e05bb5e3-eb15-4ed3-838e-c5d0ffd4b50a
+REPORT RequestId: e05bb5e3-eb15-4ed3-838e-c5d0ffd4b50a	Duration: 481.36 ms	Billed Duration: 482 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: f8505949-3658-406a-a659-97ea818ee66e Version: $LATEST
+END RequestId: f8505949-3658-406a-a659-97ea818ee66e
+REPORT RequestId: f8505949-3658-406a-a659-97ea818ee66e	Duration: 1260.46 ms	Billed Duration: 1261 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 6dc27996-c26b-458f-b226-a0ba6201aa27 Version: $LATEST
+END RequestId: 6dc27996-c26b-458f-b226-a0ba6201aa27
+REPORT RequestId: 6dc27996-c26b-458f-b226-a0ba6201aa27	Duration: 347.42 ms	Billed Duration: 348 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 6f6b5af4-9adf-43ed-8b37-5bf7888f9afe Version: $LATEST
+END RequestId: 6f6b5af4-9adf-43ed-8b37-5bf7888f9afe
+REPORT RequestId: 6f6b5af4-9adf-43ed-8b37-5bf7888f9afe	Duration: 1586.82 ms	Billed Duration: 1587 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 40232827-4739-4bf3-ba4a-10d282464502 Version: $LATEST
+END RequestId: 40232827-4739-4bf3-ba4a-10d282464502
+REPORT RequestId: 40232827-4739-4bf3-ba4a-10d282464502	Duration: 322.93 ms	Billed Duration: 323 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 61e7e92b-fe5a-4e27-bd4b-18f385ab28d0 Version: $LATEST
+END RequestId: 61e7e92b-fe5a-4e27-bd4b-18f385ab28d0
+REPORT RequestId: 61e7e92b-fe5a-4e27-bd4b-18f385ab28d0	Duration: 1287.68 ms	Billed Duration: 1288 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: b2a610e3-2356-42b2-ad59-8f8e360d2499 Version: $LATEST
+END RequestId: b2a610e3-2356-42b2-ad59-8f8e360d2499
+REPORT RequestId: b2a610e3-2356-42b2-ad59-8f8e360d2499	Duration: 521.69 ms	Billed Duration: 522 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 2f679351-659a-462c-a5df-7c02805c5ee1 Version: $LATEST
+END RequestId: 2f679351-659a-462c-a5df-7c02805c5ee1
+REPORT RequestId: 2f679351-659a-462c-a5df-7c02805c5ee1	Duration: 1454.63 ms	Billed Duration: 1455 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 0d285946-c6e6-4ebd-a4c5-c5c88e2fd583 Version: $LATEST
+END RequestId: 0d285946-c6e6-4ebd-a4c5-c5c88e2fd583
+REPORT RequestId: 0d285946-c6e6-4ebd-a4c5-c5c88e2fd583	Duration: 303.45 ms	Billed Duration: 304 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 31484cd3-bd9c-4e86-9170-f219febbeb46 Version: $LATEST
+END RequestId: 31484cd3-bd9c-4e86-9170-f219febbeb46
+REPORT RequestId: 31484cd3-bd9c-4e86-9170-f219febbeb46	Duration: 1280.74 ms	Billed Duration: 1281 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 17c275dc-d6af-47a7-8d5e-794d9b13efaf Version: $LATEST
+END RequestId: 17c275dc-d6af-47a7-8d5e-794d9b13efaf
+REPORT RequestId: 17c275dc-d6af-47a7-8d5e-794d9b13efaf	Duration: 319.21 ms	Billed Duration: 320 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: bf06dd35-2d8d-40ee-9f16-a354f28ad64a Version: $LATEST
+END RequestId: bf06dd35-2d8d-40ee-9f16-a354f28ad64a
+REPORT RequestId: bf06dd35-2d8d-40ee-9f16-a354f28ad64a	Duration: 1487.64 ms	Billed Duration: 1488 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 1e882bd5-b9fe-4087-b5cd-75d040a27aae Version: $LATEST
+END RequestId: 1e882bd5-b9fe-4087-b5cd-75d040a27aae
+REPORT RequestId: 1e882bd5-b9fe-4087-b5cd-75d040a27aae	Duration: 336.56 ms	Billed Duration: 337 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 57a45aae-ece3-446b-a131-b78dfd3f48b4 Version: $LATEST
+END RequestId: 57a45aae-ece3-446b-a131-b78dfd3f48b4
+REPORT RequestId: 57a45aae-ece3-446b-a131-b78dfd3f48b4	Duration: 1277.93 ms	Billed Duration: 1278 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 65f9ce8e-a3cd-42f1-b53f-980030a893a5 Version: $LATEST
+END RequestId: 65f9ce8e-a3cd-42f1-b53f-980030a893a5
+REPORT RequestId: 65f9ce8e-a3cd-42f1-b53f-980030a893a5	Duration: 309.92 ms	Billed Duration: 310 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 17f8894d-5538-49e8-98be-bb291ce597fc Version: $LATEST
+END RequestId: 17f8894d-5538-49e8-98be-bb291ce597fc
+REPORT RequestId: 17f8894d-5538-49e8-98be-bb291ce597fc	Duration: 1337.78 ms	Billed Duration: 1338 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 45dc2555-48a1-483c-823a-c8951265fcfb Version: $LATEST
+END RequestId: 45dc2555-48a1-483c-823a-c8951265fcfb
+REPORT RequestId: 45dc2555-48a1-483c-823a-c8951265fcfb	Duration: 314.55 ms	Billed Duration: 315 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: b6c67823-7a65-47e3-925b-a1f7ef61cd89 Version: $LATEST
+END RequestId: b6c67823-7a65-47e3-925b-a1f7ef61cd89
+REPORT RequestId: b6c67823-7a65-47e3-925b-a1f7ef61cd89	Duration: 1373.40 ms	Billed Duration: 1374 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 65a4f8ce-2b9c-48d3-90a6-de828603a0ff Version: $LATEST
+END RequestId: 65a4f8ce-2b9c-48d3-90a6-de828603a0ff
+REPORT RequestId: 65a4f8ce-2b9c-48d3-90a6-de828603a0ff	Duration: 301.72 ms	Billed Duration: 302 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: c54675f5-4f90-4bc8-a4ad-245c2f099798 Version: $LATEST
+END RequestId: c54675f5-4f90-4bc8-a4ad-245c2f099798
+REPORT RequestId: c54675f5-4f90-4bc8-a4ad-245c2f099798	Duration: 1346.54 ms	Billed Duration: 1347 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 492445c4-6667-4db3-a729-95d180144922 Version: $LATEST
+END RequestId: 492445c4-6667-4db3-a729-95d180144922
+REPORT RequestId: 492445c4-6667-4db3-a729-95d180144922	Duration: 319.19 ms	Billed Duration: 320 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: ff1352b4-a3a9-4a93-a795-d46c9ccf4f3a Version: $LATEST
+END RequestId: ff1352b4-a3a9-4a93-a795-d46c9ccf4f3a
+REPORT RequestId: ff1352b4-a3a9-4a93-a795-d46c9ccf4f3a	Duration: 1478.18 ms	Billed Duration: 1479 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 18d98936-8f0e-48e5-8f2e-fe8063e56110 Version: $LATEST
+END RequestId: 18d98936-8f0e-48e5-8f2e-fe8063e56110
+REPORT RequestId: 18d98936-8f0e-48e5-8f2e-fe8063e56110	Duration: 333.50 ms	Billed Duration: 334 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 5a018e1c-fe72-4a66-9785-86dec46336eb Version: $LATEST
+END RequestId: 5a018e1c-fe72-4a66-9785-86dec46336eb
+REPORT RequestId: 5a018e1c-fe72-4a66-9785-86dec46336eb	Duration: 1217.20 ms	Billed Duration: 1218 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: e1d78e23-0626-43be-a293-b292a76170bc Version: $LATEST
+END RequestId: e1d78e23-0626-43be-a293-b292a76170bc
+REPORT RequestId: e1d78e23-0626-43be-a293-b292a76170bc	Duration: 308.68 ms	Billed Duration: 309 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 219f55c0-9530-4d21-8a3d-6f639003e9df Version: $LATEST
+START RequestId: cb8e5c6a-c396-47ea-a37e-589d7bc9dc4b Version: $LATEST
+END RequestId: cb8e5c6a-c396-47ea-a37e-589d7bc9dc4b
+REPORT RequestId: cb8e5c6a-c396-47ea-a37e-589d7bc9dc4b	Duration: 346.41 ms	Billed Duration: 347 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+END RequestId: 219f55c0-9530-4d21-8a3d-6f639003e9df
+REPORT RequestId: 219f55c0-9530-4d21-8a3d-6f639003e9df	Duration: 1227.99 ms	Billed Duration: 1228 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: f98b74b8-fc9c-4213-97b1-11f7aaede481 Version: $LATEST
+START RequestId: fc8bc60e-e72f-486e-8667-48aa71193e6f Version: $LATEST
+END RequestId: f98b74b8-fc9c-4213-97b1-11f7aaede481
+REPORT RequestId: f98b74b8-fc9c-4213-97b1-11f7aaede481	Duration: 546.01 ms	Billed Duration: 547 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+END RequestId: fc8bc60e-e72f-486e-8667-48aa71193e6f
+REPORT RequestId: fc8bc60e-e72f-486e-8667-48aa71193e6f	Duration: 1610.45 ms	Billed Duration: 1611 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: af0bdeae-ad97-4c72-ba5e-79473eeabb8f Version: $LATEST
+END RequestId: af0bdeae-ad97-4c72-ba5e-79473eeabb8f
+REPORT RequestId: af0bdeae-ad97-4c72-ba5e-79473eeabb8f	Duration: 331.21 ms	Billed Duration: 332 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: c31de4e7-22b0-4266-9099-02b38e0d38d9 Version: $LATEST
+END RequestId: c31de4e7-22b0-4266-9099-02b38e0d38d9
+REPORT RequestId: c31de4e7-22b0-4266-9099-02b38e0d38d9	Duration: 1234.31 ms	Billed Duration: 1235 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 66d638b3-e104-4b57-879f-0ad654ebf238 Version: $LATEST
+END RequestId: 66d638b3-e104-4b57-879f-0ad654ebf238
+REPORT RequestId: 66d638b3-e104-4b57-879f-0ad654ebf238	Duration: 312.07 ms	Billed Duration: 313 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 7ec99c5e-59f6-4e13-b6b8-e845f44a9f08 Version: $LATEST
+END RequestId: 7ec99c5e-59f6-4e13-b6b8-e845f44a9f08
+REPORT RequestId: 7ec99c5e-59f6-4e13-b6b8-e845f44a9f08	Duration: 1376.46 ms	Billed Duration: 1377 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 1e4ddddd-ff31-4d30-b442-80655b7f7292 Version: $LATEST
+END RequestId: 1e4ddddd-ff31-4d30-b442-80655b7f7292
+REPORT RequestId: 1e4ddddd-ff31-4d30-b442-80655b7f7292	Duration: 347.53 ms	Billed Duration: 348 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: ffdf167e-b808-44b6-8a45-ce5d253d51d9 Version: $LATEST
+END RequestId: ffdf167e-b808-44b6-8a45-ce5d253d51d9
+REPORT RequestId: ffdf167e-b808-44b6-8a45-ce5d253d51d9	Duration: 1277.43 ms	Billed Duration: 1278 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: f2d12093-ef5f-42fd-9757-e40e7c7e52bc Version: $LATEST
+END RequestId: f2d12093-ef5f-42fd-9757-e40e7c7e52bc
+REPORT RequestId: f2d12093-ef5f-42fd-9757-e40e7c7e52bc	Duration: 567.83 ms	Billed Duration: 568 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 85431fc6-3cc4-4752-8047-40c5d3f0ccc6 Version: $LATEST
+END RequestId: 85431fc6-3cc4-4752-8047-40c5d3f0ccc6
+REPORT RequestId: 85431fc6-3cc4-4752-8047-40c5d3f0ccc6	Duration: 1586.21 ms	Billed Duration: 1587 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 22a55f68-da00-464d-bcd8-0cf343516df8 Version: $LATEST
+END RequestId: 22a55f68-da00-464d-bcd8-0cf343516df8
+REPORT RequestId: 22a55f68-da00-464d-bcd8-0cf343516df8	Duration: 328.24 ms	Billed Duration: 329 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 273fe6e3-73ba-4c8f-9104-bacdf322bcf8 Version: $LATEST
+END RequestId: 273fe6e3-73ba-4c8f-9104-bacdf322bcf8
+REPORT RequestId: 273fe6e3-73ba-4c8f-9104-bacdf322bcf8	Duration: 1519.12 ms	Billed Duration: 1520 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 144527d6-34ab-404c-a73d-39ba5c5db0f6 Version: $LATEST
+END RequestId: 144527d6-34ab-404c-a73d-39ba5c5db0f6
+REPORT RequestId: 144527d6-34ab-404c-a73d-39ba5c5db0f6	Duration: 333.87 ms	Billed Duration: 334 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: f4dd9e59-d24f-456a-b42f-7af7bfcff69e Version: $LATEST
+END RequestId: f4dd9e59-d24f-456a-b42f-7af7bfcff69e
+REPORT RequestId: f4dd9e59-d24f-456a-b42f-7af7bfcff69e	Duration: 1521.81 ms	Billed Duration: 1522 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: c9759ac9-d896-4fe1-ba4a-f92a2eb65211 Version: $LATEST
+END RequestId: c9759ac9-d896-4fe1-ba4a-f92a2eb65211
+REPORT RequestId: c9759ac9-d896-4fe1-ba4a-f92a2eb65211	Duration: 322.24 ms	Billed Duration: 323 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: d901140a-2a90-4f54-8813-944176289edc Version: $LATEST
+END RequestId: d901140a-2a90-4f54-8813-944176289edc
+REPORT RequestId: d901140a-2a90-4f54-8813-944176289edc	Duration: 2064.66 ms	Billed Duration: 2065 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 3e68290e-ad8c-4187-b048-b1c12ca8d82f Version: $LATEST
+END RequestId: 3e68290e-ad8c-4187-b048-b1c12ca8d82f
+REPORT RequestId: 3e68290e-ad8c-4187-b048-b1c12ca8d82f	Duration: 324.59 ms	Billed Duration: 325 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: c192cd9d-ae13-4afd-b18a-42764f85253a Version: $LATEST
+END RequestId: c192cd9d-ae13-4afd-b18a-42764f85253a
+REPORT RequestId: c192cd9d-ae13-4afd-b18a-42764f85253a	Duration: 1626.89 ms	Billed Duration: 1627 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: ee19a07f-027f-47cf-98cc-78ff310e78d8 Version: $LATEST
+END RequestId: ee19a07f-027f-47cf-98cc-78ff310e78d8
+REPORT RequestId: ee19a07f-027f-47cf-98cc-78ff310e78d8	Duration: 327.44 ms	Billed Duration: 328 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 672356ae-11b8-4df3-813f-973186557928 Version: $LATEST
+END RequestId: 672356ae-11b8-4df3-813f-973186557928
+REPORT RequestId: 672356ae-11b8-4df3-813f-973186557928	Duration: 1476.87 ms	Billed Duration: 1477 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 6caf3340-9840-4e65-bbcd-9c7d0364d806 Version: $LATEST
+END RequestId: 6caf3340-9840-4e65-bbcd-9c7d0364d806
+REPORT RequestId: 6caf3340-9840-4e65-bbcd-9c7d0364d806	Duration: 482.09 ms	Billed Duration: 483 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 350ebd40-cb4a-458d-a65c-b51910231ce0 Version: $LATEST
+[WARNING]	2026-08-28T08:31:50.542Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] READ deal_id=63436230289 fetching container line items
+START RequestId: db326213-b124-463c-860f-a2fedede1a8f Version: $LATEST
+[WARNING]	2026-08-28T08:31:50.831Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[Batch API] 42 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:31:50.832Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] READ line_item_ids count=42 ids=['57706720401', '57706720402', '57706720403', '57706720404', '57706720405', '57706720406', '57706720407', '57706720408', '57706720409', '57706720410', '57706720411', '57706720412', '57706720413', '57706720414', '57706720415', '57706720416', '57706720417', '57706720418', '57706720419', '57706720420']...
+[WARNING]	2026-08-28T08:31:51.153Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] Batch fetched 42 line items
+[WARNING]	2026-08-28T08:31:51.153Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] line_item[0] id=57706720406 hs_product_type='Articulo' hs_product_id=42078145088 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:31:51.153Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] line_item[1] id=57706720407 hs_product_type='Articulo' hs_product_id=42078145056 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:31:51.153Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] line_item[2] id=57706720440 hs_product_type='Articulo' hs_product_id=42078145060 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:31:51.153Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] line_item[3] id=57706720411 hs_product_type='Flete' hs_product_id=42084189861 tipo_articulo='transitario'
+[WARNING]	2026-08-28T08:31:51.154Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] line_item[4] id=57706720427 hs_product_type='Articulo' hs_product_id=42078145099 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:31:51.653Z	db326213-b124-463c-860f-a2fedede1a8f	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:31:51.758Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] Classified: container_line_items=3 article_line_items=33
+START RequestId: 3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87 Version: $LATEST
+[WARNING]	2026-08-28T08:31:51.829Z	3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87	Fetching deal 63436230289 with properties: ['tipo_de_venta', 'tipo_contenedor', 'carga_por_palets', 'margen_cliente', 'dias_libres', 'naviera', 'preprints_language', 'project', 'codigo_intermediario', 'repercutir_a_cliente', 'tipo_comision', 'importe_comision', 'fecha_caducidad_cotizacion', 'tipo_iva_comision', 'tipo_iva_comision_soportado']
+START RequestId: a8297b7b-facd-438b-bd80-5c6462d8b1a0 Version: $LATEST
+START RequestId: 92f3b3fe-1d66-4406-bf27-270e6d8fdd76 Version: $LATEST
+[WARNING]	2026-08-28T08:31:52.069Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] Fetching articles with tipo_articulo=fabricante for deal 63436230289
+START RequestId: e0b3b0fb-16fe-4e17-856b-dde03559100e Version: $LATEST
+START RequestId: c44fa1cf-4de7-4e29-bc39-a706d090b8bd Version: $LATEST
+[WARNING]	2026-08-28T08:31:52.208Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[services] READ deal_id=63436230289 fetching services
+[WARNING]	2026-08-28T08:31:52.350Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Batch fetched 14 product SKUs
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Loaded individual container #3: D20DR x1
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Loaded individual container #1: D20DR x1
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Loaded individual container #2: D20DR x1
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Grouped containers: D20DR x3 (containers #1-3)
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720406: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720407: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720440: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720427: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720437: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720419: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720512: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720416: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720403: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720432: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720434: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720415: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720409: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720431: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720425: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720428: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:31:52.351Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720408: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720402: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720404: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720429: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720421: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720405: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720441: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720417: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720430: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720420: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720433: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720436: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720410: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720435: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720426: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720413: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped article line item 57706720423: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	Mapped data for 33 article line items (33 unique names)
+[WARNING]	2026-08-28T08:31:52.352Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] HubSpot sync degradation detected: 33 fabricante articles missing precio_de_coste. Restoring from product catalog (current hs_price_eur, not historical cost).
+START RequestId: 9a7b4677-4a6c-479f-9d01-b6916ff0b74d Version: $LATEST
+[WARNING]	2026-08-28T08:31:52.522Z	a8297b7b-facd-438b-bd80-5c6462d8b1a0	[Batch API] 1 companies asociados al deal 63436230289
+END RequestId: db326213-b124-463c-860f-a2fedede1a8f
+REPORT RequestId: db326213-b124-463c-860f-a2fedede1a8f	Duration: 2009.99 ms	Billed Duration: 2010 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+[WARNING]	2026-08-28T08:31:52.579Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[Batch API] 42 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:31:52.580Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[services] READ line_item_ids count=42 ids=['57706720401', '57706720402', '57706720403', '57706720404', '57706720405', '57706720406', '57706720407', '57706720408', '57706720409', '57706720410', '57706720411', '57706720412', '57706720413', '57706720414', '57706720415', '57706720416', '57706720417', '57706720418', '57706720419', '57706720420']...
+END RequestId: 9a7b4677-4a6c-479f-9d01-b6916ff0b74d
+REPORT RequestId: 9a7b4677-4a6c-479f-9d01-b6916ff0b74d	Duration: 451.82 ms	Billed Duration: 2066 ms	Memory Size: 512 MB	Max Memory Used: 134 MB	Init Duration: 1613.48 ms	
+[WARNING]	2026-08-28T08:31:52.876Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[services] Batch fetched 42 line items
+[WARNING]	2026-08-28T08:31:52.876Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[services] line_item[0] id=57706720441 hs_product_type='Articulo' hs_product_id=42078145088
+[WARNING]	2026-08-28T08:31:52.876Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[services] line_item[1] id=57706720423 hs_product_type='Articulo' hs_product_id=42078145099
+[WARNING]	2026-08-28T08:31:52.876Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[services] line_item[2] id=57706720429 hs_product_type='Articulo' hs_product_id=42078144943
+[WARNING]	2026-08-28T08:31:52.876Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[services] line_item[3] id=57706720436 hs_product_type='Articulo' hs_product_id=42078145060
+[WARNING]	2026-08-28T08:31:52.876Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[services] line_item[4] id=57706720413 hs_product_type='Articulo' hs_product_id=42078145101
+START RequestId: e9b986eb-6069-48ec-979b-a9d34ff3bc4b Version: $LATEST
+END RequestId: a8297b7b-facd-438b-bd80-5c6462d8b1a0
+REPORT RequestId: a8297b7b-facd-438b-bd80-5c6462d8b1a0	Duration: 943.52 ms	Billed Duration: 2297 ms	Memory Size: 512 MB	Max Memory Used: 134 MB	Init Duration: 1352.61 ms	
+[WARNING]	2026-08-28T08:31:53.057Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[Batch API] 42 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:31:53.058Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] READ deal_id=63436230289 -> line_item_ids count=42 ids=['57706720401', '57706720402', '57706720403', '57706720404', '57706720405', '57706720406', '57706720407', '57706720408', '57706720409', '57706720410', '57706720411', '57706720412', '57706720413', '57706720414', '57706720415', '57706720416', '57706720417', '57706720418', '57706720419', '57706720420']...
+START RequestId: 63d8dccf-6382-443a-aab8-ad2c3faf0a19 Version: $LATEST
+[WARNING]	2026-08-28T08:31:53.101Z	63d8dccf-6382-443a-aab8-ad2c3faf0a19	Fetching transit data for deal 63436230289
+[WARNING]	2026-08-28T08:31:53.156Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[services] Filtered to 3 service line items (hs_product_type=service)
+END RequestId: e0b3b0fb-16fe-4e17-856b-dde03559100e
+REPORT RequestId: e0b3b0fb-16fe-4e17-856b-dde03559100e	Duration: 1070.02 ms	Billed Duration: 2455 ms	Memory Size: 512 MB	Max Memory Used: 151 MB	Init Duration: 1384.76 ms	
+[WARNING]	2026-08-28T08:31:53.355Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] Batch fetched 42 line items
+[WARNING]	2026-08-28T08:31:53.355Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] line_item[0] id=57706720431 hs_product_type='Articulo' tipo_articulo='fabricante' hs_product_id=42050417060
+[WARNING]	2026-08-28T08:31:53.356Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] line_item[1] id=57706720434 hs_product_type='Articulo' tipo_articulo='fabricante' hs_product_id=42050417035
+[WARNING]	2026-08-28T08:31:53.356Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] line_item[2] id=57706720432 hs_product_type='Articulo' tipo_articulo='fabricante' hs_product_id=42078145068
+[WARNING]	2026-08-28T08:31:53.356Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] line_item[3] id=57706720441 hs_product_type='Articulo' tipo_articulo='fabricante' hs_product_id=42078145088
+[WARNING]	2026-08-28T08:31:53.356Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] line_item[4] id=57706720414 hs_product_type='service' tipo_articulo='seguro' hs_product_id=42399229255
+[WARNING]	2026-08-28T08:31:53.356Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] After fabricante filter: product_ids count=11 product_ids=['42050417060', '42050417035', '42078145068', '42078145088', '42050417004', '42078145099', '42050417012', '42078145101', '42078144943', '42078145056', '42078145060']
+[WARNING]	2026-08-28T08:31:53.478Z	c44fa1cf-4de7-4e29-bc39-a706d090b8bd	[services] READ returning services=1 (deduplicated from 3 line items)
+END RequestId: c44fa1cf-4de7-4e29-bc39-a706d090b8bd
+REPORT RequestId: c44fa1cf-4de7-4e29-bc39-a706d090b8bd	Duration: 1273.97 ms	Billed Duration: 2588 ms	Memory Size: 512 MB	Max Memory Used: 133 MB	Init Duration: 1313.31 ms	
+[WARNING]	2026-08-28T08:31:53.544Z	3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87	[Batch API] 1 contacts asociados al deal 63436230289
+[WARNING]	2026-08-28T08:31:53.544Z	3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87	Found associated contact: 238985759650
+[WARNING]	2026-08-28T08:31:53.545Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] Auto-repair: restored margen_unitario for 33 line items
+[WARNING]	2026-08-28T08:31:53.545Z	350ebd40-cb4a-458d-a65c-b51910231ce0	[containers] READ returning containers=1 unique_containers=3 total_units=3 total_colis=9360
+END RequestId: 350ebd40-cb4a-458d-a65c-b51910231ce0
+REPORT RequestId: 350ebd40-cb4a-458d-a65c-b51910231ce0	Duration: 3006.69 ms	Billed Duration: 3007 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+[WARNING]	2026-08-28T08:31:53.658Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] Batch fetched 11 products
+[WARNING]	2026-08-28T08:31:53.952Z	63d8dccf-6382-443a-aab8-ad2c3faf0a19	[Batch API] 1 companies asociados al deal 63436230289
+START RequestId: 30d5429f-18f9-4712-bc7b-c80a2d285605 Version: $LATEST
+[WARNING]	2026-08-28T08:31:53.969Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[Batch API] 6 2-43108800 asociados al deal 63436230289
+[WARNING]	2026-08-28T08:31:53.969Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] Found 6 provider associations (pre-filter)
+[WARNING]	2026-08-28T08:31:54.188Z	3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:31:54.189Z	3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87	Found associated company: 57248397648
+[WARNING]	2026-08-28T08:31:54.558Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] Batch fetched 3 providers
+[WARNING]	2026-08-28T08:31:54.558Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] Skipping provider P0619 with tipo_proveedor=transitario
+[WARNING]	2026-08-28T08:31:54.558Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] Skipping provider P0082 with tipo_proveedor=seguro
+[WARNING]	2026-08-28T08:31:54.559Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] Remaining 1 providers after filtering by tipo_proveedor=fabricante
+END RequestId: 30d5429f-18f9-4712-bc7b-c80a2d285605
+REPORT RequestId: 30d5429f-18f9-4712-bc7b-c80a2d285605	Duration: 611.69 ms	Billed Duration: 612 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+[WARNING]	2026-08-28T08:31:54.661Z	3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87	margen_cliente RAW from HubSpot: 0.12 (type: <class 'str'>)
+[WARNING]	2026-08-28T08:31:54.661Z	3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87	margen_cliente after safe_convert (final value): 0.12
+[WARNING]	2026-08-28T08:31:54.724Z	92f3b3fe-1d66-4406-bf27-270e6d8fdd76	[articles] READ returning articles=11 providers=1
+END RequestId: 92f3b3fe-1d66-4406-bf27-270e6d8fdd76
+REPORT RequestId: 92f3b3fe-1d66-4406-bf27-270e6d8fdd76	Duration: 2677.25 ms	Billed Duration: 4025 ms	Memory Size: 512 MB	Max Memory Used: 135 MB	Init Duration: 1347.17 ms	
+[WARNING]	2026-08-28T08:31:54.984Z	3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87	[Batch API] 6 2-43108800 asociados al deal 63436230289
+END RequestId: e9b986eb-6069-48ec-979b-a9d34ff3bc4b
+REPORT RequestId: e9b986eb-6069-48ec-979b-a9d34ff3bc4b	Duration: 2059.37 ms	Billed Duration: 2060 ms	Memory Size: 512 MB	Max Memory Used: 151 MB	
+START RequestId: efb895c8-b295-4abc-b5f5-50fa31f182fa Version: $LATEST
+END RequestId: 3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87
+REPORT RequestId: 3a6b6bd2-6b20-4cc1-8b50-5ee8ac016b87	Duration: 3961.92 ms	Billed Duration: 5077 ms	Memory Size: 512 MB	Max Memory Used: 151 MB	Init Duration: 1114.41 ms	
+END RequestId: 63d8dccf-6382-443a-aab8-ad2c3faf0a19
+REPORT RequestId: 63d8dccf-6382-443a-aab8-ad2c3faf0a19	Duration: 2829.77 ms	Billed Duration: 2830 ms	Memory Size: 512 MB	Max Memory Used: 141 MB	
+END RequestId: efb895c8-b295-4abc-b5f5-50fa31f182fa
+REPORT RequestId: efb895c8-b295-4abc-b5f5-50fa31f182fa	Duration: 515.66 ms	Billed Duration: 516 ms	Memory Size: 512 MB	Max Memory Used: 152 MB	
+START RequestId: 8022804d-7f9d-4034-a1fe-f1adb0755917 Version: $LATEST
+START RequestId: 22fdd421-5ac2-42ae-a9a2-3a27806be82d Version: $LATEST
+START RequestId: b115adbc-7b09-44b3-a84d-5aa0f6f2a2df Version: $LATEST
+[WARNING]	2026-08-28T08:31:56.536Z	b115adbc-7b09-44b3-a84d-5aa0f6f2a2df	Fetching documentacion for deal 63436230289
+END RequestId: 8022804d-7f9d-4034-a1fe-f1adb0755917
+REPORT RequestId: 8022804d-7f9d-4034-a1fe-f1adb0755917	Duration: 614.20 ms	Billed Duration: 615 ms	Memory Size: 512 MB	Max Memory Used: 153 MB	
+END RequestId: 22fdd421-5ac2-42ae-a9a2-3a27806be82d
+REPORT RequestId: 22fdd421-5ac2-42ae-a9a2-3a27806be82d	Duration: 613.43 ms	Billed Duration: 614 ms	Memory Size: 512 MB	Max Memory Used: 144 MB	
+[WARNING]	2026-08-28T08:31:57.726Z	b115adbc-7b09-44b3-a84d-5aa0f6f2a2df	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:31:58.305Z	b115adbc-7b09-44b3-a84d-5aa0f6f2a2df	[Batch API] 1 contacts asociados al deal 63436230289
+END RequestId: b115adbc-7b09-44b3-a84d-5aa0f6f2a2df
+REPORT RequestId: b115adbc-7b09-44b3-a84d-5aa0f6f2a2df	Duration: 2228.20 ms	Billed Duration: 2229 ms	Memory Size: 512 MB	Max Memory Used: 151 MB	
+START RequestId: f0e9e01a-f6e5-4c15-9ab1-76c0378d6dbb Version: $LATEST
+END RequestId: f0e9e01a-f6e5-4c15-9ab1-76c0378d6dbb
+REPORT RequestId: f0e9e01a-f6e5-4c15-9ab1-76c0378d6dbb	Duration: 750.42 ms	Billed Duration: 751 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: e90bd105-0404-4793-a42c-e79e0684bff3 Version: $LATEST
+END RequestId: e90bd105-0404-4793-a42c-e79e0684bff3
+REPORT RequestId: e90bd105-0404-4793-a42c-e79e0684bff3	Duration: 323.70 ms	Billed Duration: 324 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 0d6e7f38-4274-4d7a-a993-acfe40e43fcd Version: $LATEST
+END RequestId: 0d6e7f38-4274-4d7a-a993-acfe40e43fcd
+REPORT RequestId: 0d6e7f38-4274-4d7a-a993-acfe40e43fcd	Duration: 1474.68 ms	Billed Duration: 1475 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: e1be3260-5469-4545-bb9b-89e1b21c2718 Version: $LATEST
+END RequestId: e1be3260-5469-4545-bb9b-89e1b21c2718
+REPORT RequestId: e1be3260-5469-4545-bb9b-89e1b21c2718	Duration: 321.96 ms	Billed Duration: 322 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 5ffb6659-18b0-47ae-9b5a-10ac74b87f48 Version: $LATEST
+END RequestId: 5ffb6659-18b0-47ae-9b5a-10ac74b87f48
+REPORT RequestId: 5ffb6659-18b0-47ae-9b5a-10ac74b87f48	Duration: 320.02 ms	Billed Duration: 321 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 57674262-028b-4c45-82d3-b00630882148 Version: $LATEST
+START RequestId: c36789bd-1900-48f8-bcbb-fe8bd10420de Version: $LATEST
+START RequestId: 55b04fac-dd16-4962-8675-89de25376ac6 Version: $LATEST
+[WARNING]	2026-08-28T08:32:31.020Z	55b04fac-dd16-4962-8675-89de25376ac6	[Batch API] 1 companies asociados al deal 63436230289
+END RequestId: 57674262-028b-4c45-82d3-b00630882148
+REPORT RequestId: 57674262-028b-4c45-82d3-b00630882148	Duration: 1307.58 ms	Billed Duration: 1308 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+[WARNING]	2026-08-28T08:32:31.175Z	c36789bd-1900-48f8-bcbb-fe8bd10420de	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:32:31.711Z	55b04fac-dd16-4962-8675-89de25376ac6	[Batch API] 6 2-43108800 asociados al deal 63436230289
+[WARNING]	2026-08-28T08:32:31.791Z	c36789bd-1900-48f8-bcbb-fe8bd10420de	[Batch API] 6 2-43108800 asociados al deal 63436230289
+[WARNING]	2026-08-28T08:32:32.960Z	55b04fac-dd16-4962-8675-89de25376ac6	[Batch API] 42 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:32:33.014Z	c36789bd-1900-48f8-bcbb-fe8bd10420de	[Batch API] 42 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:32:36.846Z	c36789bd-1900-48f8-bcbb-fe8bd10420de	[Batch API] 1 contacts asociados al deal 63436230289
+[WARNING]	2026-08-28T08:32:37.115Z	55b04fac-dd16-4962-8675-89de25376ac6	[Batch API] 1 contacts asociados al deal 63436230289
+[WARNING]	2026-08-28T08:32:37.146Z	c36789bd-1900-48f8-bcbb-fe8bd10420de	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:32:37.422Z	55b04fac-dd16-4962-8675-89de25376ac6	[Batch API] 1 companies asociados al deal 63436230289
+START RequestId: 93eecc02-637b-4abb-9065-86a7e1527116 Version: $LATEST
+END RequestId: 93eecc02-637b-4abb-9065-86a7e1527116
+REPORT RequestId: 93eecc02-637b-4abb-9065-86a7e1527116	Duration: 349.36 ms	Billed Duration: 350 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 2034f934-c003-4544-a04c-c0e56f2e50c5 Version: $LATEST
+END RequestId: 2034f934-c003-4544-a04c-c0e56f2e50c5
+REPORT RequestId: 2034f934-c003-4544-a04c-c0e56f2e50c5	Duration: 280.64 ms	Billed Duration: 281 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+[WARNING]	2026-08-28T08:32:44.571Z	c36789bd-1900-48f8-bcbb-fe8bd10420de	[Batch API] 42 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:32:45.344Z	55b04fac-dd16-4962-8675-89de25376ac6	[Batch API] 42 line_items asociados al deal 63436230289
+START RequestId: fe1b9148-1993-407a-84aa-8969271c05cc Version: $LATEST
+END RequestId: fe1b9148-1993-407a-84aa-8969271c05cc
+REPORT RequestId: fe1b9148-1993-407a-84aa-8969271c05cc	Duration: 1228.66 ms	Billed Duration: 1229 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+END RequestId: c36789bd-1900-48f8-bcbb-fe8bd10420de
+REPORT RequestId: c36789bd-1900-48f8-bcbb-fe8bd10420de	Duration: 19922.20 ms	Billed Duration: 19923 ms	Memory Size: 512 MB	Max Memory Used: 147 MB	
+END RequestId: 55b04fac-dd16-4962-8675-89de25376ac6
+REPORT RequestId: 55b04fac-dd16-4962-8675-89de25376ac6	Duration: 20236.01 ms	Billed Duration: 20237 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: cfa5ce7a-5cb5-4dd3-a0df-52bc183b75f0 Version: $LATEST
+END RequestId: cfa5ce7a-5cb5-4dd3-a0df-52bc183b75f0
+REPORT RequestId: cfa5ce7a-5cb5-4dd3-a0df-52bc183b75f0	Duration: 310.55 ms	Billed Duration: 311 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: b502d9e6-7209-4f30-8f9e-4a06736a8810 Version: $LATEST
+END RequestId: b502d9e6-7209-4f30-8f9e-4a06736a8810
+REPORT RequestId: b502d9e6-7209-4f30-8f9e-4a06736a8810	Duration: 333.63 ms	Billed Duration: 334 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: da5e411e-3c2d-4156-984a-213b097c2857 Version: $LATEST
+END RequestId: da5e411e-3c2d-4156-984a-213b097c2857
+REPORT RequestId: da5e411e-3c2d-4156-984a-213b097c2857	Duration: 1526.39 ms	Billed Duration: 1527 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: 16604a07-4ba5-4429-803e-42277e6f07eb Version: $LATEST
+END RequestId: 16604a07-4ba5-4429-803e-42277e6f07eb
+REPORT RequestId: 16604a07-4ba5-4429-803e-42277e6f07eb	Duration: 309.73 ms	Billed Duration: 310 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: fe7691d6-7a86-43d9-9250-3791e44b81c8 Version: $LATEST
+END RequestId: fe7691d6-7a86-43d9-9250-3791e44b81c8
+REPORT RequestId: fe7691d6-7a86-43d9-9250-3791e44b81c8	Duration: 315.59 ms	Billed Duration: 316 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: 43704a97-075d-43f8-a069-fb0a8fe36bd1 Version: $LATEST
+END RequestId: 43704a97-075d-43f8-a069-fb0a8fe36bd1
+REPORT RequestId: 43704a97-075d-43f8-a069-fb0a8fe36bd1	Duration: 1449.01 ms	Billed Duration: 1450 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: 83e55f1a-0622-40cc-81ce-906ba5922359 Version: $LATEST
+[WARNING]	2026-08-28T08:33:28.200Z	83e55f1a-0622-40cc-81ce-906ba5922359	[Batch API] 1 companies asociados al deal 63436230289
+START RequestId: 6160c3af-7d90-4fad-839d-caf015856be8 Version: $LATEST
+[WARNING]	2026-08-28T08:33:28.860Z	83e55f1a-0622-40cc-81ce-906ba5922359	[Batch API] 6 2-43108800 asociados al deal 63436230289
+END RequestId: 6160c3af-7d90-4fad-839d-caf015856be8
+REPORT RequestId: 6160c3af-7d90-4fad-839d-caf015856be8	Duration: 817.29 ms	Billed Duration: 818 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+[WARNING]	2026-08-28T08:33:30.407Z	83e55f1a-0622-40cc-81ce-906ba5922359	[Batch API] 42 line_items asociados al deal 63436230289
+START RequestId: d45faf0a-7b72-4c78-8b56-029c4fd9b662 Version: $LATEST
+END RequestId: d45faf0a-7b72-4c78-8b56-029c4fd9b662
+REPORT RequestId: d45faf0a-7b72-4c78-8b56-029c4fd9b662	Duration: 375.71 ms	Billed Duration: 376 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 3ff27684-e938-479f-9623-c3526930b2bb Version: $LATEST
+END RequestId: 3ff27684-e938-479f-9623-c3526930b2bb
+REPORT RequestId: 3ff27684-e938-479f-9623-c3526930b2bb	Duration: 1620.08 ms	Billed Duration: 1621 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+[WARNING]	2026-08-28T08:33:40.717Z	83e55f1a-0622-40cc-81ce-906ba5922359	[Batch API] 1 contacts asociados al deal 63436230289
+[WARNING]	2026-08-28T08:33:41.076Z	83e55f1a-0622-40cc-81ce-906ba5922359	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:33:41.077Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290' — propiedad omitida
+[WARNING]	2026-08-28T08:33:41.077Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 ' — propiedad omitida
+[WARNING]	2026-08-28T08:33:41.077Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 ' — propiedad omitida
+[WARNING]	2026-08-28T08:33:41.077Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 ' — propiedad omitida
+[WARNING]	2026-08-28T08:33:41.077Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 ' — propiedad omitida
+[WARNING]	2026-08-28T08:33:41.077Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 ' — propiedad omitida
+[WARNING]	2026-08-28T08:33:41.078Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 ' — propiedad omitida
+[WARNING]	2026-08-28T08:33:41.078Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 ' — propiedad omitida
+[WARNING]	2026-08-28T08:33:41.078Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 ' — propiedad omitida
+[WARNING]	2026-08-28T08:33:41.078Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455' — propiedad omitida
+[WARNING]	2026-08-28T08:33:41.078Z	83e55f1a-0622-40cc-81ce-906ba5922359	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 ' — propiedad omitida
+START RequestId: 9ca518ad-ea04-49f5-b220-cd341debe70d Version: $LATEST
+END RequestId: 9ca518ad-ea04-49f5-b220-cd341debe70d
+REPORT RequestId: 9ca518ad-ea04-49f5-b220-cd341debe70d	Duration: 300.57 ms	Billed Duration: 301 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 9a392829-f55f-4331-b5b5-f69abf72c245 Version: $LATEST
+END RequestId: 9a392829-f55f-4331-b5b5-f69abf72c245
+REPORT RequestId: 9a392829-f55f-4331-b5b5-f69abf72c245	Duration: 469.04 ms	Billed Duration: 470 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+[WARNING]	2026-08-28T08:33:49.959Z	83e55f1a-0622-40cc-81ce-906ba5922359	[Batch API] 42 line_items asociados al deal 63436230289
+START RequestId: 489e3352-489c-423b-be2d-d6ff36e819fa Version: $LATEST
+END RequestId: 83e55f1a-0622-40cc-81ce-906ba5922359
+REPORT RequestId: 83e55f1a-0622-40cc-81ce-906ba5922359	Duration: 27331.97 ms	Billed Duration: 27332 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+END RequestId: 489e3352-489c-423b-be2d-d6ff36e819fa
+REPORT RequestId: 489e3352-489c-423b-be2d-d6ff36e819fa	Duration: 1753.24 ms	Billed Duration: 1754 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: c33f1d23-9ca6-421f-92bf-d9135b98eb0c Version: $LATEST
+END RequestId: c33f1d23-9ca6-421f-92bf-d9135b98eb0c
+REPORT RequestId: c33f1d23-9ca6-421f-92bf-d9135b98eb0c	Duration: 645.62 ms	Billed Duration: 646 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 9564ca81-c76f-4243-82ef-777910fb82ab Version: $LATEST
+END RequestId: 9564ca81-c76f-4243-82ef-777910fb82ab
+REPORT RequestId: 9564ca81-c76f-4243-82ef-777910fb82ab	Duration: 564.42 ms	Billed Duration: 565 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 2995202f-d86a-478e-954d-8b8a28c1aec3 Version: $LATEST
+END RequestId: 2995202f-d86a-478e-954d-8b8a28c1aec3
+REPORT RequestId: 2995202f-d86a-478e-954d-8b8a28c1aec3	Duration: 1268.88 ms	Billed Duration: 1269 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 0999406c-fa3c-435a-927d-e0372507d777 Version: $LATEST
+END RequestId: 0999406c-fa3c-435a-927d-e0372507d777
+REPORT RequestId: 0999406c-fa3c-435a-927d-e0372507d777	Duration: 321.68 ms	Billed Duration: 322 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: a39224c4-e67b-4db7-9932-cb6ebc7b5681 Version: $LATEST
+END RequestId: a39224c4-e67b-4db7-9932-cb6ebc7b5681
+REPORT RequestId: a39224c4-e67b-4db7-9932-cb6ebc7b5681	Duration: 303.20 ms	Billed Duration: 304 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 86e0ace6-4360-4074-886d-29c26f897389 Version: $LATEST
+START RequestId: 2535b2b7-53be-4643-b4c8-440599841cc4 Version: $LATEST
+[WARNING]	2026-08-28T08:34:27.914Z	86e0ace6-4360-4074-886d-29c26f897389	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:34:28.135Z	2535b2b7-53be-4643-b4c8-440599841cc4	[Batch API] 1 companies asociados al deal 63436230289
+START RequestId: d11b7b11-5592-4daf-98dc-f0d613340075 Version: $LATEST
+[WARNING]	2026-08-28T08:34:28.549Z	86e0ace6-4360-4074-886d-29c26f897389	[Batch API] 6 2-43108800 asociados al deal 63436230289
+[WARNING]	2026-08-28T08:34:28.777Z	2535b2b7-53be-4643-b4c8-440599841cc4	[Batch API] 6 2-43108800 asociados al deal 63436230289
+[WARNING]	2026-08-28T08:34:29.710Z	86e0ace6-4360-4074-886d-29c26f897389	[Batch API] 42 line_items asociados al deal 63436230289
+END RequestId: d11b7b11-5592-4daf-98dc-f0d613340075
+REPORT RequestId: d11b7b11-5592-4daf-98dc-f0d613340075	Duration: 1277.58 ms	Billed Duration: 1278 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+[WARNING]	2026-08-28T08:34:29.926Z	2535b2b7-53be-4643-b4c8-440599841cc4	[Batch API] 42 line_items asociados al deal 63436230289
+START RequestId: 64fdadde-cf5a-40fd-89bb-d7b81bf4a341 Version: $LATEST
+END RequestId: 64fdadde-cf5a-40fd-89bb-d7b81bf4a341
+REPORT RequestId: 64fdadde-cf5a-40fd-89bb-d7b81bf4a341	Duration: 308.08 ms	Billed Duration: 309 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 44527856-6cb7-41fb-bec5-0ff86f79346c Version: $LATEST
+END RequestId: 44527856-6cb7-41fb-bec5-0ff86f79346c
+REPORT RequestId: 44527856-6cb7-41fb-bec5-0ff86f79346c	Duration: 392.70 ms	Billed Duration: 393 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+[WARNING]	2026-08-28T08:34:39.466Z	86e0ace6-4360-4074-886d-29c26f897389	[Batch API] 1 contacts asociados al deal 63436230289
+[WARNING]	2026-08-28T08:34:39.749Z	2535b2b7-53be-4643-b4c8-440599841cc4	[Batch API] 1 contacts asociados al deal 63436230289
+[WARNING]	2026-08-28T08:34:39.787Z	86e0ace6-4360-4074-886d-29c26f897389	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:34:39.787Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290' — propiedad omitida
+[WARNING]	2026-08-28T08:34:39.787Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:39.787Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:39.787Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:39.788Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:39.788Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:39.788Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:39.788Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:39.788Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:39.788Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455' — propiedad omitida
+[WARNING]	2026-08-28T08:34:39.788Z	86e0ace6-4360-4074-886d-29c26f897389	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.082Z	2535b2b7-53be-4643-b4c8-440599841cc4	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:34:40.082Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.083Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.083Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.083Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.083Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.083Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.083Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.083Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.083Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 ' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.083Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455' — propiedad omitida
+[WARNING]	2026-08-28T08:34:40.083Z	2535b2b7-53be-4643-b4c8-440599841cc4	[batch_create_elementos] precio_unitario es None para tipo_articulo='fabricante' nombre='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 ' — propiedad omitida
+START RequestId: ecaaea07-f64c-4ecd-9ce7-30d19ddfdeff Version: $LATEST
+END RequestId: ecaaea07-f64c-4ecd-9ce7-30d19ddfdeff
+REPORT RequestId: ecaaea07-f64c-4ecd-9ce7-30d19ddfdeff	Duration: 1425.14 ms	Billed Duration: 1426 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: a34c8346-c883-4ce8-ade2-1f24b53d5927 Version: $LATEST
+[WARNING]	2026-08-28T08:34:48.559Z	86e0ace6-4360-4074-886d-29c26f897389	[Batch API] 53 line_items asociados al deal 63436230289
+END RequestId: a34c8346-c883-4ce8-ade2-1f24b53d5927
+REPORT RequestId: a34c8346-c883-4ce8-ade2-1f24b53d5927	Duration: 305.97 ms	Billed Duration: 306 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+[WARNING]	2026-08-28T08:34:48.824Z	2535b2b7-53be-4643-b4c8-440599841cc4	[Batch API] 53 line_items asociados al deal 63436230289
+START RequestId: 3eda9b60-ea98-4bd6-8d19-48cddf853854 Version: $LATEST
+END RequestId: 3eda9b60-ea98-4bd6-8d19-48cddf853854
+REPORT RequestId: 3eda9b60-ea98-4bd6-8d19-48cddf853854	Duration: 302.65 ms	Billed Duration: 303 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+END RequestId: 2535b2b7-53be-4643-b4c8-440599841cc4
+REPORT RequestId: 2535b2b7-53be-4643-b4c8-440599841cc4	Duration: 26227.53 ms	Billed Duration: 26228 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+END RequestId: 86e0ace6-4360-4074-886d-29c26f897389
+REPORT RequestId: 86e0ace6-4360-4074-886d-29c26f897389	Duration: 26453.67 ms	Billed Duration: 26454 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: d71079b3-6f42-4d94-b66c-76d6a55a2e76 Version: $LATEST
+END RequestId: d71079b3-6f42-4d94-b66c-76d6a55a2e76
+REPORT RequestId: d71079b3-6f42-4d94-b66c-76d6a55a2e76	Duration: 1564.45 ms	Billed Duration: 1565 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 53a38117-1536-41bd-8e9f-49e1b043a5ce Version: $LATEST
+END RequestId: 53a38117-1536-41bd-8e9f-49e1b043a5ce
+REPORT RequestId: 53a38117-1536-41bd-8e9f-49e1b043a5ce	Duration: 339.76 ms	Billed Duration: 340 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 78a5d8e7-2dd3-4c41-ab86-fd315e51975d Version: $LATEST
+END RequestId: 78a5d8e7-2dd3-4c41-ab86-fd315e51975d
+REPORT RequestId: 78a5d8e7-2dd3-4c41-ab86-fd315e51975d	Duration: 481.43 ms	Billed Duration: 482 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: fd658f4a-cf1e-4ddd-bf95-cab0cfbe8f84 Version: $LATEST
+START RequestId: 8cc61d4d-e534-443e-9747-473082d68a69 Version: $LATEST
+END RequestId: 8cc61d4d-e534-443e-9747-473082d68a69
+REPORT RequestId: 8cc61d4d-e534-443e-9747-473082d68a69	Duration: 375.74 ms	Billed Duration: 376 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+END RequestId: fd658f4a-cf1e-4ddd-bf95-cab0cfbe8f84
+REPORT RequestId: fd658f4a-cf1e-4ddd-bf95-cab0cfbe8f84	Duration: 1463.49 ms	Billed Duration: 1464 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 06525dc3-d169-44b1-b78c-9facdb76dd9d Version: $LATEST
+END RequestId: 06525dc3-d169-44b1-b78c-9facdb76dd9d
+REPORT RequestId: 06525dc3-d169-44b1-b78c-9facdb76dd9d	Duration: 315.91 ms	Billed Duration: 316 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 8a0ea372-d8f5-44ae-9452-6812369b2934 Version: $LATEST
+END RequestId: 8a0ea372-d8f5-44ae-9452-6812369b2934
+REPORT RequestId: 8a0ea372-d8f5-44ae-9452-6812369b2934	Duration: 311.06 ms	Billed Duration: 312 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 4a946c66-d2f0-4ca3-a380-89d072a47474 Version: $LATEST
+START RequestId: af9c097c-3c24-4b4b-9ef0-cb35fa5295a7 Version: $LATEST
+END RequestId: af9c097c-3c24-4b4b-9ef0-cb35fa5295a7
+REPORT RequestId: af9c097c-3c24-4b4b-9ef0-cb35fa5295a7	Duration: 335.30 ms	Billed Duration: 336 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+END RequestId: 4a946c66-d2f0-4ca3-a380-89d072a47474
+REPORT RequestId: 4a946c66-d2f0-4ca3-a380-89d072a47474	Duration: 1284.80 ms	Billed Duration: 1285 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 32cd0a7c-96be-4fd5-87b3-ba62be3d79ad Version: $LATEST
+END RequestId: 32cd0a7c-96be-4fd5-87b3-ba62be3d79ad
+REPORT RequestId: 32cd0a7c-96be-4fd5-87b3-ba62be3d79ad	Duration: 335.96 ms	Billed Duration: 336 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 9dcfb105-bf98-49e6-9352-875381b4a4a7 Version: $LATEST
+END RequestId: 9dcfb105-bf98-49e6-9352-875381b4a4a7
+REPORT RequestId: 9dcfb105-bf98-49e6-9352-875381b4a4a7	Duration: 339.75 ms	Billed Duration: 340 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: c12cc29f-73f0-405a-b8ea-07cab01ad7e5 Version: $LATEST
+END RequestId: c12cc29f-73f0-405a-b8ea-07cab01ad7e5
+REPORT RequestId: c12cc29f-73f0-405a-b8ea-07cab01ad7e5	Duration: 1408.78 ms	Billed Duration: 1409 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 6c1f0637-e1c6-4051-8de0-1c59569dc6cb Version: $LATEST
+END RequestId: 6c1f0637-e1c6-4051-8de0-1c59569dc6cb
+REPORT RequestId: 6c1f0637-e1c6-4051-8de0-1c59569dc6cb	Duration: 473.14 ms	Billed Duration: 474 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: f2aa472f-9609-47ac-9019-a8a34d68026e Version: $LATEST
+END RequestId: f2aa472f-9609-47ac-9019-a8a34d68026e
+REPORT RequestId: f2aa472f-9609-47ac-9019-a8a34d68026e	Duration: 302.58 ms	Billed Duration: 303 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: ec0b19db-66d6-450f-a5d2-8d38f84cdd86 Version: $LATEST
+END RequestId: ec0b19db-66d6-450f-a5d2-8d38f84cdd86
+REPORT RequestId: ec0b19db-66d6-450f-a5d2-8d38f84cdd86	Duration: 1535.64 ms	Billed Duration: 1536 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 9b1b61db-8eed-465c-9a1e-e0e2a93f7945 Version: $LATEST
+END RequestId: 9b1b61db-8eed-465c-9a1e-e0e2a93f7945
+REPORT RequestId: 9b1b61db-8eed-465c-9a1e-e0e2a93f7945	Duration: 426.47 ms	Billed Duration: 427 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: bf99c652-0c98-4e54-9330-c779e19b830a Version: $LATEST
+END RequestId: bf99c652-0c98-4e54-9330-c779e19b830a
+REPORT RequestId: bf99c652-0c98-4e54-9330-c779e19b830a	Duration: 322.29 ms	Billed Duration: 323 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: d12c1573-3a98-4707-9fa1-17a9cc9e7a09 Version: $LATEST
+END RequestId: d12c1573-3a98-4707-9fa1-17a9cc9e7a09
+REPORT RequestId: d12c1573-3a98-4707-9fa1-17a9cc9e7a09	Duration: 1454.95 ms	Billed Duration: 1455 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 54277069-4660-4965-9b52-429bc7c311aa Version: $LATEST
+END RequestId: 54277069-4660-4965-9b52-429bc7c311aa
+REPORT RequestId: 54277069-4660-4965-9b52-429bc7c311aa	Duration: 317.99 ms	Billed Duration: 318 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 827ba334-0a1c-4fb9-b2ff-4dcb20ea0ca6 Version: $LATEST
+END RequestId: 827ba334-0a1c-4fb9-b2ff-4dcb20ea0ca6
+REPORT RequestId: 827ba334-0a1c-4fb9-b2ff-4dcb20ea0ca6	Duration: 578.55 ms	Billed Duration: 579 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: fc6305cf-bb19-4d9a-aff3-2d61c315932f Version: $LATEST
+END RequestId: fc6305cf-bb19-4d9a-aff3-2d61c315932f
+REPORT RequestId: fc6305cf-bb19-4d9a-aff3-2d61c315932f	Duration: 1373.53 ms	Billed Duration: 1374 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 2af0149e-92dd-46f4-ab00-a7ef2d74f5cb Version: $LATEST
+END RequestId: 2af0149e-92dd-46f4-ab00-a7ef2d74f5cb
+REPORT RequestId: 2af0149e-92dd-46f4-ab00-a7ef2d74f5cb	Duration: 363.05 ms	Billed Duration: 364 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: d3152c1e-c374-48b7-ab19-7fbfb32654df Version: $LATEST
+END RequestId: d3152c1e-c374-48b7-ab19-7fbfb32654df
+REPORT RequestId: d3152c1e-c374-48b7-ab19-7fbfb32654df	Duration: 311.19 ms	Billed Duration: 312 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+START RequestId: 22e92d81-4cac-4a2b-b728-389d7578e409 Version: $LATEST
+START RequestId: fddceaab-f415-46ff-97a5-b72dbca52a3e Version: $LATEST
+[WARNING]	2026-08-28T08:37:02.662Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Updating negotiation data for 33 unique line items in deal 63436230289
+[WARNING]	2026-08-28T08:37:02.988Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:37:03.351Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Fetching 33 line items to get tipo_articulo
+[WARNING]	2026-08-28T08:37:03.632Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Fetched data for 33 line items
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720436 with price=5.872178, margin=0.23833, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720436: Setting price=5.872 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720428 with price=6.232178, margin=0.23654, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720428: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720404 with price=6.232178, margin=0.26928, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720404: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720410 with price=6.232178, margin=0.26928, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720410: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720415 with price=6.232178, margin=0.24594, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720415: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720419 with price=6.232178, margin=0.29891, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720419: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720421 with price=6.232178, margin=0.12271, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720421: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720405 with price=6.232178, margin=0.18957, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720405: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720433 with price=6.232178, margin=0.175, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720433: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720417 with price=6.232178, margin=0.15926, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720417: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 57706720416 with price=6.232178, margin=0.27239, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 57706720416: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377920903 with price=5.87195, margin=0.23829, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377920903: Setting price=5.872 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377914453 with price=6.23195, margin=0.2365, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377914453: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377325414 with price=6.23195, margin=0.26924, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.633Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377325414: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58379462994 with price=6.23195, margin=0.26924, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58379462994: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377318824 with price=6.23195, margin=0.24589, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377318824: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377925042 with price=6.23195, margin=0.29886, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377925042: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377292951 with price=6.23195, margin=0.12267, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377292951: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377666386 with price=6.23195, margin=0.18953, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377666386: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377920906 with price=6.23195, margin=0.17495, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377920906: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377290816 with price=6.23195, margin=0.15922, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377290816: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58375750735 with price=6.23195, margin=0.27235, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58375750735: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377233676 with price=5.87195, margin=0.23829, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377233676: Setting price=5.872 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377907733 with price=6.23195, margin=0.2365, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377907733: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377668172 with price=6.23195, margin=0.26924, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377668172: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377349381 with price=6.23195, margin=0.26924, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377349381: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377287036 with price=6.23195, margin=0.24589, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377287036: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377903464 with price=6.23195, margin=0.29886, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377903464: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377916311 with price=6.23195, margin=0.12267, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377916311: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.634Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377136055 with price=6.23195, margin=0.18953, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.635Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377136055: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.635Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377119919 with price=6.23195, margin=0.17495, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.635Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377119919: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.635Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377113430 with price=6.23195, margin=0.15922, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.635Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377113430: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.635Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Preparing update for line item 58377134455 with price=6.23195, margin=0.27235, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:37:03.635Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Line item 58377134455: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:37:03.635Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Executing batch update for 33 line items
+END RequestId: 22e92d81-4cac-4a2b-b728-389d7578e409
+REPORT RequestId: 22e92d81-4cac-4a2b-b728-389d7578e409	Duration: 1457.62 ms	Billed Duration: 1458 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+[WARNING]	2026-08-28T08:37:04.191Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[negociacion] Successfully updated 33 line items
+START RequestId: 44bf8ef5-7648-4401-98b7-a849beebc199 Version: $LATEST
+END RequestId: 44bf8ef5-7648-4401-98b7-a849beebc199
+REPORT RequestId: 44bf8ef5-7648-4401-98b7-a849beebc199	Duration: 369.47 ms	Billed Duration: 370 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 88433b8a-ef40-40c4-bd03-ffc7db9b9692 Version: $LATEST
+END RequestId: 88433b8a-ef40-40c4-bd03-ffc7db9b9692
+REPORT RequestId: 88433b8a-ef40-40c4-bd03-ffc7db9b9692	Duration: 313.59 ms	Billed Duration: 314 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 0271b0a1-d8b7-430c-87cc-ba58adf8148d Version: $LATEST
+END RequestId: 0271b0a1-d8b7-430c-87cc-ba58adf8148d
+REPORT RequestId: 0271b0a1-d8b7-430c-87cc-ba58adf8148d	Duration: 1272.83 ms	Billed Duration: 1273 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+[WARNING]	2026-08-28T08:37:20.939Z	fddceaab-f415-46ff-97a5-b72dbca52a3e	[Batch API] 53 line_items asociados al deal 63436230289
+END RequestId: fddceaab-f415-46ff-97a5-b72dbca52a3e
+REPORT RequestId: fddceaab-f415-46ff-97a5-b72dbca52a3e	Duration: 23732.43 ms	Billed Duration: 23733 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: 52a3a338-5a3e-451d-af1a-8d26746dc6db Version: $LATEST
+END RequestId: 52a3a338-5a3e-451d-af1a-8d26746dc6db
+REPORT RequestId: 52a3a338-5a3e-451d-af1a-8d26746dc6db	Duration: 357.67 ms	Billed Duration: 358 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: adc53940-6e4e-4c6c-a087-defd4c0964dd Version: $LATEST
+END RequestId: adc53940-6e4e-4c6c-a087-defd4c0964dd
+REPORT RequestId: adc53940-6e4e-4c6c-a087-defd4c0964dd	Duration: 371.02 ms	Billed Duration: 372 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: abe3e882-499d-4269-af1c-cd42e43a01b5 Version: $LATEST
+END RequestId: abe3e882-499d-4269-af1c-cd42e43a01b5
+REPORT RequestId: abe3e882-499d-4269-af1c-cd42e43a01b5	Duration: 1256.05 ms	Billed Duration: 1257 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: 7fcec0c7-31d5-4625-9e93-5fa9313834ca Version: $LATEST
+END RequestId: 7fcec0c7-31d5-4625-9e93-5fa9313834ca
+REPORT RequestId: 7fcec0c7-31d5-4625-9e93-5fa9313834ca	Duration: 471.17 ms	Billed Duration: 472 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: cfd51d64-2597-498e-a891-d7733e00104c Version: $LATEST
+END RequestId: cfd51d64-2597-498e-a891-d7733e00104c
+REPORT RequestId: cfd51d64-2597-498e-a891-d7733e00104c	Duration: 1226.38 ms	Billed Duration: 1227 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: 19dc4ea9-0b33-40e1-8af3-6791000e6396 Version: $LATEST
+END RequestId: 19dc4ea9-0b33-40e1-8af3-6791000e6396
+REPORT RequestId: 19dc4ea9-0b33-40e1-8af3-6791000e6396	Duration: 320.57 ms	Billed Duration: 321 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: 73305ea9-27fd-4fad-97b5-acc12acd0967 Version: $LATEST
+END RequestId: 73305ea9-27fd-4fad-97b5-acc12acd0967
+REPORT RequestId: 73305ea9-27fd-4fad-97b5-acc12acd0967	Duration: 1302.39 ms	Billed Duration: 1303 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: baf5a104-13cd-4da9-b491-71c2ae622bce Version: $LATEST
+END RequestId: baf5a104-13cd-4da9-b491-71c2ae622bce
+REPORT RequestId: baf5a104-13cd-4da9-b491-71c2ae622bce	Duration: 322.21 ms	Billed Duration: 323 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: ebe56ff6-337d-4eb3-803b-6d913e23576b Version: $LATEST
+END RequestId: ebe56ff6-337d-4eb3-803b-6d913e23576b
+REPORT RequestId: ebe56ff6-337d-4eb3-803b-6d913e23576b	Duration: 1561.41 ms	Billed Duration: 1562 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: cd317667-6f5c-40ff-af3d-11be2cc8a109 Version: $LATEST
+END RequestId: cd317667-6f5c-40ff-af3d-11be2cc8a109
+REPORT RequestId: cd317667-6f5c-40ff-af3d-11be2cc8a109	Duration: 322.26 ms	Billed Duration: 323 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: 963432da-f2b0-499e-acd3-f463fd514cce Version: $LATEST
+END RequestId: 963432da-f2b0-499e-acd3-f463fd514cce
+REPORT RequestId: 963432da-f2b0-499e-acd3-f463fd514cce	Duration: 1344.88 ms	Billed Duration: 1345 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: 3d726b09-477b-4c7b-a0ba-f001a230abed Version: $LATEST
+END RequestId: 3d726b09-477b-4c7b-a0ba-f001a230abed
+REPORT RequestId: 3d726b09-477b-4c7b-a0ba-f001a230abed	Duration: 376.13 ms	Billed Duration: 377 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+START RequestId: f65c2e49-2225-4164-9277-4a9c96e58884 Version: $LATEST
+[WARNING]	2026-08-28T08:39:00.068Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] Fetching articles with tipo_articulo=fabricante for deal 63436230289
+START RequestId: b86ccfd4-06e7-4232-b1fd-ad3ec583270d Version: $LATEST
+[WARNING]	2026-08-28T08:39:00.100Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] READ deal_id=63436230289 fetching container line items
+START RequestId: e40646fe-53fa-4c50-b9d9-432358c16d52 Version: $LATEST
+[WARNING]	2026-08-28T08:39:00.403Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[Batch API] 53 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:39:00.403Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] READ line_item_ids count=53 ids=['57706720401', '57706720404', '57706720405', '57706720410', '57706720411', '57706720412', '57706720414', '57706720415', '57706720416', '57706720417', '57706720418', '57706720419', '57706720421', '57706720422', '57706720424', '57706720428', '57706720433', '57706720436', '57706720438', '57706720439']...
+START RequestId: 85bb2c34-9820-484d-b8d4-dd7933b7e762 Version: $LATEST
+[WARNING]	2026-08-28T08:39:00.710Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] Batch fetched 53 line items
+[WARNING]	2026-08-28T08:39:00.710Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] line_item[0] id=57706720410 hs_product_type='Articulo' hs_product_id=42078145088 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:39:00.710Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] line_item[1] id=58376040714 hs_product_type='Articulo' hs_product_id=42050417060 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:39:00.710Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] line_item[2] id=58377920903 hs_product_type='Articulo' hs_product_id=42078145060 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:39:00.710Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] line_item[3] id=57706720411 hs_product_type='Flete' hs_product_id=42084189861 tipo_articulo='transitario'
+[WARNING]	2026-08-28T08:39:00.710Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] line_item[4] id=57706720424 hs_product_type='container' hs_product_id=34240664372 tipo_articulo='transitario'
+[WARNING]	2026-08-28T08:39:00.812Z	f65c2e49-2225-4164-9277-4a9c96e58884	[Batch API] 53 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:39:00.813Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] READ deal_id=63436230289 -> line_item_ids count=53 ids=['57706720401', '57706720404', '57706720405', '57706720410', '57706720411', '57706720412', '57706720414', '57706720415', '57706720416', '57706720417', '57706720418', '57706720419', '57706720421', '57706720422', '57706720424', '57706720428', '57706720433', '57706720436', '57706720438', '57706720439']...
+END RequestId: 85bb2c34-9820-484d-b8d4-dd7933b7e762
+REPORT RequestId: 85bb2c34-9820-484d-b8d4-dd7933b7e762	Duration: 456.88 ms	Billed Duration: 457 ms	Memory Size: 512 MB	Max Memory Used: 152 MB	
+[WARNING]	2026-08-28T08:39:01.220Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] Classified: container_line_items=3 article_line_items=44
+[WARNING]	2026-08-28T08:39:01.332Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] Batch fetched 53 line items
+[WARNING]	2026-08-28T08:39:01.332Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] line_item[0] id=57706720439 hs_product_type='container' tipo_articulo='transitario' hs_product_id=34240664372
+[WARNING]	2026-08-28T08:39:01.332Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] line_item[1] id=58375750735 hs_product_type='Articulo' tipo_articulo='fabricante' hs_product_id=42050417035
+[WARNING]	2026-08-28T08:39:01.332Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] line_item[2] id=57706720414 hs_product_type='service' tipo_articulo='seguro' hs_product_id=42399229255
+[WARNING]	2026-08-28T08:39:01.332Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] line_item[3] id=57706720438 hs_product_type='Flete' tipo_articulo='transitario' hs_product_id=42084189861
+[WARNING]	2026-08-28T08:39:01.332Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] line_item[4] id=58377292951 hs_product_type='Articulo' tipo_articulo='fabricante' hs_product_id=42050417060
+[WARNING]	2026-08-28T08:39:01.333Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] After fabricante filter: product_ids count=11 product_ids=['42050417035', '42050417060', '42078145101', '42078145099', '42078145068', '42078145088', '42050417004', '42078145056', '42050417012', '42078144943', '42078145060']
+[WARNING]	2026-08-28T08:39:01.512Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Batch fetched 14 product SKUs
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Loaded individual container #1: D20DR x1
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Loaded individual container #3: D20DR x1
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Loaded individual container #2: D20DR x1
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Grouped containers: D20DR x1 (containers #1-1)
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Grouped containers: D20DR x1 (containers #3-3)
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Grouped containers: D20DR x1 (containers #2-2)
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720410: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58376040714: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377920903: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720433: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720419: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377287036: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377246775: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377914472: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377903464: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377668172: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377318824: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377136055: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377916311: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377914453: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377925042: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377102880: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58368077668: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720416: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720404: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377925131: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377059421: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:39:01.513Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58379462994: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720405: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377334531: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720415: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377290816: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58379475362: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377349381: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377233676: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377113430: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377907733: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377666386: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377920906: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720428: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377243986: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377119919: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377325414: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720417: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58375750735: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720436: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377292951: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 57706720421: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58379461214: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped article line item 58377134455: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Mapped data for 44 article line items (33 unique names)
+[WARNING]	2026-08-28T08:39:01.514Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] HubSpot sync degradation detected: 44 fabricante articles missing precio_de_coste. Restoring from product catalog (current hs_price_eur, not historical cost).
+[WARNING]	2026-08-28T08:39:01.607Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] Batch fetched 11 products
+END RequestId: e40646fe-53fa-4c50-b9d9-432358c16d52
+REPORT RequestId: e40646fe-53fa-4c50-b9d9-432358c16d52	Duration: 1482.82 ms	Billed Duration: 1483 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: d2ec2733-299d-47e2-90a5-4f00c7daec29 Version: $LATEST
+[WARNING]	2026-08-28T08:39:01.937Z	f65c2e49-2225-4164-9277-4a9c96e58884	[Batch API] 6 2-43108800 asociados al deal 63436230289
+[WARNING]	2026-08-28T08:39:01.937Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] Found 6 provider associations (pre-filter)
+START RequestId: dee14604-f693-4919-9aed-713772a7d2a5 Version: $LATEST
+[WARNING]	2026-08-28T08:39:02.049Z	dee14604-f693-4919-9aed-713772a7d2a5	Fetching deal 63436230289 with properties: ['tipo_de_venta', 'tipo_contenedor', 'carga_por_palets', 'margen_cliente', 'dias_libres', 'naviera', 'preprints_language', 'project', 'codigo_intermediario', 'repercutir_a_cliente', 'tipo_comision', 'importe_comision', 'fecha_caducidad_cotizacion', 'tipo_iva_comision', 'tipo_iva_comision_soportado']
+START RequestId: bdf789f9-5726-4c68-b9f9-8d3fbf8e86eb Version: $LATEST
+START RequestId: cfe4f058-8340-4cfc-95f2-408f87ade5ad Version: $LATEST
+START RequestId: 5ab46dcf-e9a3-4586-b2ff-e56c909920e7 Version: $LATEST
+[WARNING]	2026-08-28T08:39:02.384Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[services] READ deal_id=63436230289 fetching services
+[WARNING]	2026-08-28T08:39:02.648Z	bdf789f9-5726-4c68-b9f9-8d3fbf8e86eb	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:39:02.656Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] Auto-repair: restored margen_unitario for 44 line items
+[WARNING]	2026-08-28T08:39:02.657Z	b86ccfd4-06e7-4232-b1fd-ad3ec583270d	[containers] READ returning containers=3 unique_containers=3 total_units=3 total_colis=9280
+END RequestId: b86ccfd4-06e7-4232-b1fd-ad3ec583270d
+REPORT RequestId: b86ccfd4-06e7-4232-b1fd-ad3ec583270d	Duration: 2560.23 ms	Billed Duration: 2561 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+[WARNING]	2026-08-28T08:39:02.694Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[Batch API] 53 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:39:02.694Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[services] READ line_item_ids count=53 ids=['57706720401', '57706720404', '57706720405', '57706720410', '57706720411', '57706720412', '57706720414', '57706720415', '57706720416', '57706720417', '57706720418', '57706720419', '57706720421', '57706720422', '57706720424', '57706720428', '57706720433', '57706720436', '57706720438', '57706720439']...
+END RequestId: bdf789f9-5726-4c68-b9f9-8d3fbf8e86eb
+REPORT RequestId: bdf789f9-5726-4c68-b9f9-8d3fbf8e86eb	Duration: 953.16 ms	Billed Duration: 2267 ms	Memory Size: 512 MB	Max Memory Used: 134 MB	Init Duration: 1313.75 ms	
+[WARNING]	2026-08-28T08:39:03.017Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] Batch fetched 3 providers
+[WARNING]	2026-08-28T08:39:03.017Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] Skipping provider P0619 with tipo_proveedor=transitario
+[WARNING]	2026-08-28T08:39:03.017Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] Skipping provider P0082 with tipo_proveedor=seguro
+[WARNING]	2026-08-28T08:39:03.017Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] Remaining 1 providers after filtering by tipo_proveedor=fabricante
+[WARNING]	2026-08-28T08:39:03.019Z	f65c2e49-2225-4164-9277-4a9c96e58884	[articles] READ returning articles=11 providers=1
+END RequestId: f65c2e49-2225-4164-9277-4a9c96e58884
+REPORT RequestId: f65c2e49-2225-4164-9277-4a9c96e58884	Duration: 2957.90 ms	Billed Duration: 2958 ms	Memory Size: 512 MB	Max Memory Used: 161 MB	
+END RequestId: d2ec2733-299d-47e2-90a5-4f00c7daec29
+REPORT RequestId: d2ec2733-299d-47e2-90a5-4f00c7daec29	Duration: 1261.96 ms	Billed Duration: 2435 ms	Memory Size: 512 MB	Max Memory Used: 151 MB	Init Duration: 1172.30 ms	
+[WARNING]	2026-08-28T08:39:03.176Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[services] Batch fetched 53 line items
+[WARNING]	2026-08-28T08:39:03.176Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[services] line_item[0] id=58377246775 hs_product_type='Articulo' hs_product_id=42078145088
+[WARNING]	2026-08-28T08:39:03.176Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[services] line_item[1] id=57706720433 hs_product_type='Articulo' hs_product_id=42050417004
+[WARNING]	2026-08-28T08:39:03.176Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[services] line_item[2] id=57706720421 hs_product_type='Articulo' hs_product_id=42050417060
+[WARNING]	2026-08-28T08:39:03.176Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[services] line_item[3] id=58377914472 hs_product_type='Articulo' hs_product_id=42078145060
+[WARNING]	2026-08-28T08:39:03.176Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[services] line_item[4] id=58379461214 hs_product_type='Articulo' hs_product_id=42050417012
+[WARNING]	2026-08-28T08:39:03.451Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[services] Filtered to 3 service line items (hs_product_type=service)
+[WARNING]	2026-08-28T08:39:03.465Z	cfe4f058-8340-4cfc-95f2-408f87ade5ad	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:39:03.659Z	5ab46dcf-e9a3-4586-b2ff-e56c909920e7	[services] READ returning services=1 (deduplicated from 3 line items)
+END RequestId: 5ab46dcf-e9a3-4586-b2ff-e56c909920e7
+REPORT RequestId: 5ab46dcf-e9a3-4586-b2ff-e56c909920e7	Duration: 1279.09 ms	Billed Duration: 2761 ms	Memory Size: 512 MB	Max Memory Used: 133 MB	Init Duration: 1481.12 ms	
+[WARNING]	2026-08-28T08:39:03.817Z	dee14604-f693-4919-9aed-713772a7d2a5	[Batch API] 1 contacts asociados al deal 63436230289
+[WARNING]	2026-08-28T08:39:03.817Z	dee14604-f693-4919-9aed-713772a7d2a5	Found associated contact: 238985759650
+START RequestId: 6b5720ca-f89f-48d0-8ff2-5619c2321330 Version: $LATEST
+END RequestId: cfe4f058-8340-4cfc-95f2-408f87ade5ad
+REPORT RequestId: cfe4f058-8340-4cfc-95f2-408f87ade5ad	Duration: 2077.07 ms	Billed Duration: 3377 ms	Memory Size: 512 MB	Max Memory Used: 138 MB	Init Duration: 1299.74 ms	
+[WARNING]	2026-08-28T08:39:04.248Z	dee14604-f693-4919-9aed-713772a7d2a5	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:39:04.249Z	dee14604-f693-4919-9aed-713772a7d2a5	Found associated company: 57248397648
+[WARNING]	2026-08-28T08:39:04.512Z	dee14604-f693-4919-9aed-713772a7d2a5	margen_cliente RAW from HubSpot: 0.12 (type: <class 'str'>)
+[WARNING]	2026-08-28T08:39:04.512Z	dee14604-f693-4919-9aed-713772a7d2a5	margen_cliente after safe_convert (final value): 0.12
+[WARNING]	2026-08-28T08:39:04.773Z	dee14604-f693-4919-9aed-713772a7d2a5	[Batch API] 6 2-43108800 asociados al deal 63436230289
+END RequestId: 6b5720ca-f89f-48d0-8ff2-5619c2321330
+REPORT RequestId: 6b5720ca-f89f-48d0-8ff2-5619c2321330	Duration: 945.80 ms	Billed Duration: 946 ms	Memory Size: 512 MB	Max Memory Used: 151 MB	
+START RequestId: ea0d837a-e036-4710-bd54-1b8b3ea9cf45 Version: $LATEST
+END RequestId: dee14604-f693-4919-9aed-713772a7d2a5
+REPORT RequestId: dee14604-f693-4919-9aed-713772a7d2a5	Duration: 3176.78 ms	Billed Duration: 4461 ms	Memory Size: 512 MB	Max Memory Used: 151 MB	Init Duration: 1283.84 ms	
+START RequestId: 31f2a314-89f3-4983-a3d8-517e01463dca Version: $LATEST
+[WARNING]	2026-08-28T08:39:05.326Z	31f2a314-89f3-4983-a3d8-517e01463dca	Fetching transit data for deal 63436230289
+[WARNING]	2026-08-28T08:39:05.743Z	31f2a314-89f3-4983-a3d8-517e01463dca	[Batch API] 1 companies asociados al deal 63436230289
+END RequestId: ea0d837a-e036-4710-bd54-1b8b3ea9cf45
+REPORT RequestId: ea0d837a-e036-4710-bd54-1b8b3ea9cf45	Duration: 707.83 ms	Billed Duration: 708 ms	Memory Size: 512 MB	Max Memory Used: 151 MB	
+START RequestId: c71b05ab-71fd-4e6f-bfd2-adbf6f2b1c7b Version: $LATEST
+START RequestId: 4f683eb5-7dfc-4372-9ced-e021de741354 Version: $LATEST
+START RequestId: d8947deb-3eff-4dbb-af70-f2ff2c0d15ce Version: $LATEST
+[WARNING]	2026-08-28T08:39:06.090Z	d8947deb-3eff-4dbb-af70-f2ff2c0d15ce	Fetching documentacion for deal 63436230289
+END RequestId: c71b05ab-71fd-4e6f-bfd2-adbf6f2b1c7b
+REPORT RequestId: c71b05ab-71fd-4e6f-bfd2-adbf6f2b1c7b	Duration: 493.10 ms	Billed Duration: 494 ms	Memory Size: 512 MB	Max Memory Used: 151 MB	
+END RequestId: 4f683eb5-7dfc-4372-9ced-e021de741354
+REPORT RequestId: 4f683eb5-7dfc-4372-9ced-e021de741354	Duration: 661.92 ms	Billed Duration: 662 ms	Memory Size: 512 MB	Max Memory Used: 142 MB	
+END RequestId: 31f2a314-89f3-4983-a3d8-517e01463dca
+REPORT RequestId: 31f2a314-89f3-4983-a3d8-517e01463dca	Duration: 1581.96 ms	Billed Duration: 1582 ms	Memory Size: 512 MB	Max Memory Used: 153 MB	
+[WARNING]	2026-08-28T08:39:07.060Z	d8947deb-3eff-4dbb-af70-f2ff2c0d15ce	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:39:07.491Z	d8947deb-3eff-4dbb-af70-f2ff2c0d15ce	[Batch API] 1 contacts asociados al deal 63436230289
+END RequestId: d8947deb-3eff-4dbb-af70-f2ff2c0d15ce
+REPORT RequestId: d8947deb-3eff-4dbb-af70-f2ff2c0d15ce	Duration: 1635.40 ms	Billed Duration: 1636 ms	Memory Size: 512 MB	Max Memory Used: 159 MB	
+START RequestId: a5f56cc0-0c44-41aa-9026-3fb53b322f91 Version: $LATEST
+END RequestId: a5f56cc0-0c44-41aa-9026-3fb53b322f91
+REPORT RequestId: a5f56cc0-0c44-41aa-9026-3fb53b322f91	Duration: 1270.03 ms	Billed Duration: 1271 ms	Memory Size: 512 MB	Max Memory Used: 160 MB	
+START RequestId: ece812e6-ff18-4e8b-99b7-aecde28abdc5 Version: $LATEST
+END RequestId: ece812e6-ff18-4e8b-99b7-aecde28abdc5
+REPORT RequestId: ece812e6-ff18-4e8b-99b7-aecde28abdc5	Duration: 312.49 ms	Billed Duration: 313 ms	Memory Size: 512 MB	Max Memory Used: 160 MB	
+START RequestId: 97f311e2-9506-41cc-832a-031ec63d634c Version: $LATEST
+END RequestId: 97f311e2-9506-41cc-832a-031ec63d634c
+REPORT RequestId: 97f311e2-9506-41cc-832a-031ec63d634c	Duration: 317.80 ms	Billed Duration: 318 ms	Memory Size: 512 MB	Max Memory Used: 160 MB	
+START RequestId: d09d116b-27e3-4e93-885d-bded2fd11063 Version: $LATEST
+START RequestId: 775a4581-0237-4ed7-bf8d-74eaf1cb1487 Version: $LATEST
+END RequestId: d09d116b-27e3-4e93-885d-bded2fd11063
+REPORT RequestId: d09d116b-27e3-4e93-885d-bded2fd11063	Duration: 1267.90 ms	Billed Duration: 1268 ms	Memory Size: 512 MB	Max Memory Used: 160 MB	
+END RequestId: 775a4581-0237-4ed7-bf8d-74eaf1cb1487
+REPORT RequestId: 775a4581-0237-4ed7-bf8d-74eaf1cb1487	Duration: 801.82 ms	Billed Duration: 802 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: ec921780-4387-45ea-b44a-fb85b0518739 Version: $LATEST
+END RequestId: ec921780-4387-45ea-b44a-fb85b0518739
+REPORT RequestId: ec921780-4387-45ea-b44a-fb85b0518739	Duration: 324.70 ms	Billed Duration: 325 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: d723b949-84cc-49a3-b3f5-2a48e58ef95b Version: $LATEST
+START RequestId: 39cece58-0cd1-4d95-8958-346a6ecd4eb7 Version: $LATEST
+END RequestId: 39cece58-0cd1-4d95-8958-346a6ecd4eb7
+REPORT RequestId: 39cece58-0cd1-4d95-8958-346a6ecd4eb7	Duration: 333.47 ms	Billed Duration: 334 ms	Memory Size: 512 MB	Max Memory Used: 160 MB	
+END RequestId: d723b949-84cc-49a3-b3f5-2a48e58ef95b
+REPORT RequestId: d723b949-84cc-49a3-b3f5-2a48e58ef95b	Duration: 1274.69 ms	Billed Duration: 1275 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 6c4582c2-3af7-4513-9982-efbcd9afd18e Version: $LATEST
+END RequestId: 6c4582c2-3af7-4513-9982-efbcd9afd18e
+REPORT RequestId: 6c4582c2-3af7-4513-9982-efbcd9afd18e	Duration: 308.09 ms	Billed Duration: 309 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 7f0b7fc5-f08b-4244-af06-80111e248d0c Version: $LATEST
+START RequestId: 6a821b31-0585-40d5-a2dd-e4d079960d12 Version: $LATEST
+END RequestId: 6a821b31-0585-40d5-a2dd-e4d079960d12
+REPORT RequestId: 6a821b31-0585-40d5-a2dd-e4d079960d12	Duration: 309.81 ms	Billed Duration: 310 ms	Memory Size: 512 MB	Max Memory Used: 160 MB	
+END RequestId: 7f0b7fc5-f08b-4244-af06-80111e248d0c
+REPORT RequestId: 7f0b7fc5-f08b-4244-af06-80111e248d0c	Duration: 1370.72 ms	Billed Duration: 1371 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 63d62eb2-8bdf-448a-a857-07c0b5f2c57c Version: $LATEST
+END RequestId: 63d62eb2-8bdf-448a-a857-07c0b5f2c57c
+REPORT RequestId: 63d62eb2-8bdf-448a-a857-07c0b5f2c57c	Duration: 329.88 ms	Billed Duration: 330 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: aeabf80e-ec90-4c4f-be68-4d71697a736f Version: $LATEST
+END RequestId: aeabf80e-ec90-4c4f-be68-4d71697a736f
+REPORT RequestId: aeabf80e-ec90-4c4f-be68-4d71697a736f	Duration: 1265.34 ms	Billed Duration: 1266 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 8b36ff32-0086-4da5-9134-0d57a19c5031 Version: $LATEST
+END RequestId: 8b36ff32-0086-4da5-9134-0d57a19c5031
+REPORT RequestId: 8b36ff32-0086-4da5-9134-0d57a19c5031	Duration: 315.64 ms	Billed Duration: 316 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 8cd3a03b-28f7-4a93-bd23-e8e8ec4b9d44 Version: $LATEST
+END RequestId: 8cd3a03b-28f7-4a93-bd23-e8e8ec4b9d44
+REPORT RequestId: 8cd3a03b-28f7-4a93-bd23-e8e8ec4b9d44	Duration: 1331.86 ms	Billed Duration: 1332 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 4b4400fc-5c8b-4bfb-98aa-220a634ae3d5 Version: $LATEST
+END RequestId: 4b4400fc-5c8b-4bfb-98aa-220a634ae3d5
+REPORT RequestId: 4b4400fc-5c8b-4bfb-98aa-220a634ae3d5	Duration: 312.05 ms	Billed Duration: 313 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 6c9418e1-3653-4047-88d9-a9fd48424d28 Version: $LATEST
+END RequestId: 6c9418e1-3653-4047-88d9-a9fd48424d28
+REPORT RequestId: 6c9418e1-3653-4047-88d9-a9fd48424d28	Duration: 1241.18 ms	Billed Duration: 1242 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 12351adb-c5f0-4a83-965d-3c975a9c24bc Version: $LATEST
+END RequestId: 12351adb-c5f0-4a83-965d-3c975a9c24bc
+REPORT RequestId: 12351adb-c5f0-4a83-965d-3c975a9c24bc	Duration: 384.81 ms	Billed Duration: 385 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 7c76da8b-fa89-404a-a360-f6d1e85694e0 Version: $LATEST
+END RequestId: 7c76da8b-fa89-404a-a360-f6d1e85694e0
+REPORT RequestId: 7c76da8b-fa89-404a-a360-f6d1e85694e0	Duration: 1413.42 ms	Billed Duration: 1414 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 7c452cbd-b14b-43f4-8c05-b323b1395e4a Version: $LATEST
+END RequestId: 7c452cbd-b14b-43f4-8c05-b323b1395e4a
+REPORT RequestId: 7c452cbd-b14b-43f4-8c05-b323b1395e4a	Duration: 334.05 ms	Billed Duration: 335 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+START RequestId: 767908bb-f25c-462a-a4ce-0974c6d7ebbd Version: $LATEST
+START RequestId: 6a04619d-14e2-43db-914e-aa8dc70bb584 Version: $LATEST
+[WARNING]	2026-08-28T08:41:32.009Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] Fetching articles with tipo_articulo=fabricante for deal 63436230289
+START RequestId: 13056a30-808e-46ec-a19c-deef00d8fe93 Version: $LATEST
+START RequestId: 56b25323-5724-4604-bef9-403868dc730a Version: $LATEST
+[WARNING]	2026-08-28T08:41:32.045Z	56b25323-5724-4604-bef9-403868dc730a	[containers] READ deal_id=63436230289 fetching container line items
+START RequestId: d3fa79d2-e5d8-4a4e-a367-e89b51d3e1b1 Version: $LATEST
+START RequestId: f0e960eb-5df1-4a20-95df-dea8476a7894 Version: $LATEST
+START RequestId: e9437657-9a8d-45e3-9888-e1c5c2857cbe Version: $LATEST
+[WARNING]	2026-08-28T08:41:32.111Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[services] READ deal_id=63436230289 fetching services
+[WARNING]	2026-08-28T08:41:32.111Z	e9437657-9a8d-45e3-9888-e1c5c2857cbe	Fetching deal 63436230289 with properties: ['tipo_de_venta', 'tipo_contenedor', 'carga_por_palets', 'margen_cliente', 'dias_libres', 'naviera', 'preprints_language', 'project', 'codigo_intermediario', 'repercutir_a_cliente', 'tipo_comision', 'importe_comision', 'fecha_caducidad_cotizacion', 'tipo_iva_comision', 'tipo_iva_comision_soportado']
+START RequestId: c68fc186-f606-4d81-93d2-8e7d0409036a Version: $LATEST
+START RequestId: 59076a4b-227a-42eb-8a11-dc7934af2e3f Version: $LATEST
+[WARNING]	2026-08-28T08:41:32.366Z	56b25323-5724-4604-bef9-403868dc730a	[Batch API] 53 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:32.366Z	56b25323-5724-4604-bef9-403868dc730a	[containers] READ line_item_ids count=53 ids=['57706720401', '57706720404', '57706720405', '57706720410', '57706720411', '57706720412', '57706720414', '57706720415', '57706720416', '57706720417', '57706720418', '57706720419', '57706720421', '57706720422', '57706720424', '57706720428', '57706720433', '57706720436', '57706720438', '57706720439']...
+[WARNING]	2026-08-28T08:41:32.421Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[Batch API] 53 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:32.421Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[services] READ line_item_ids count=53 ids=['57706720401', '57706720404', '57706720405', '57706720410', '57706720411', '57706720412', '57706720414', '57706720415', '57706720416', '57706720417', '57706720418', '57706720419', '57706720421', '57706720422', '57706720424', '57706720428', '57706720433', '57706720436', '57706720438', '57706720439']...
+[WARNING]	2026-08-28T08:41:32.436Z	d3fa79d2-e5d8-4a4e-a367-e89b51d3e1b1	[Batch API] 1 companies asociados al deal 63436230289
+END RequestId: c68fc186-f606-4d81-93d2-8e7d0409036a
+REPORT RequestId: c68fc186-f606-4d81-93d2-8e7d0409036a	Duration: 366.87 ms	Billed Duration: 367 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+END RequestId: 59076a4b-227a-42eb-8a11-dc7934af2e3f
+REPORT RequestId: 59076a4b-227a-42eb-8a11-dc7934af2e3f	Duration: 376.50 ms	Billed Duration: 377 ms	Memory Size: 512 MB	Max Memory Used: 152 MB	
+[WARNING]	2026-08-28T08:41:32.669Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[Batch API] 53 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:32.669Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] READ deal_id=63436230289 -> line_item_ids count=53 ids=['57706720401', '57706720404', '57706720405', '57706720410', '57706720411', '57706720412', '57706720414', '57706720415', '57706720416', '57706720417', '57706720418', '57706720419', '57706720421', '57706720422', '57706720424', '57706720428', '57706720433', '57706720436', '57706720438', '57706720439']...
+[WARNING]	2026-08-28T08:41:32.715Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[services] Batch fetched 53 line items
+[WARNING]	2026-08-28T08:41:32.715Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[services] line_item[0] id=58377246775 hs_product_type='Articulo' hs_product_id=42078145088
+[WARNING]	2026-08-28T08:41:32.715Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[services] line_item[1] id=57706720433 hs_product_type='Articulo' hs_product_id=42050417004
+[WARNING]	2026-08-28T08:41:32.715Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[services] line_item[2] id=57706720421 hs_product_type='Articulo' hs_product_id=42050417060
+[WARNING]	2026-08-28T08:41:32.715Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[services] line_item[3] id=58377914472 hs_product_type='Articulo' hs_product_id=42078145060
+[WARNING]	2026-08-28T08:41:32.715Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[services] line_item[4] id=58379461214 hs_product_type='Articulo' hs_product_id=42050417012
+[WARNING]	2026-08-28T08:41:32.720Z	56b25323-5724-4604-bef9-403868dc730a	[containers] Batch fetched 53 line items
+[WARNING]	2026-08-28T08:41:32.721Z	56b25323-5724-4604-bef9-403868dc730a	[containers] line_item[0] id=58377668172 hs_product_type='Articulo' hs_product_id=42078144943 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:41:32.721Z	56b25323-5724-4604-bef9-403868dc730a	[containers] line_item[1] id=58377113430 hs_product_type='Articulo' hs_product_id=42050417012 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:41:32.721Z	56b25323-5724-4604-bef9-403868dc730a	[containers] line_item[2] id=57706720433 hs_product_type='Articulo' hs_product_id=42050417004 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:41:32.721Z	56b25323-5724-4604-bef9-403868dc730a	[containers] line_item[3] id=57706720411 hs_product_type='Flete' hs_product_id=42084189861 tipo_articulo='transitario'
+[WARNING]	2026-08-28T08:41:32.721Z	56b25323-5724-4604-bef9-403868dc730a	[containers] line_item[4] id=58379462994 hs_product_type='Articulo' hs_product_id=42078145088 tipo_articulo='fabricante'
+END RequestId: 767908bb-f25c-462a-a4ce-0974c6d7ebbd
+REPORT RequestId: 767908bb-f25c-462a-a4ce-0974c6d7ebbd	Duration: 1249.21 ms	Billed Duration: 1250 ms	Memory Size: 512 MB	Max Memory Used: 168 MB	
+END RequestId: d3fa79d2-e5d8-4a4e-a367-e89b51d3e1b1
+REPORT RequestId: d3fa79d2-e5d8-4a4e-a367-e89b51d3e1b1	Duration: 866.16 ms	Billed Duration: 867 ms	Memory Size: 512 MB	Max Memory Used: 162 MB	
+[WARNING]	2026-08-28T08:41:32.993Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] Batch fetched 53 line items
+[WARNING]	2026-08-28T08:41:32.993Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] line_item[0] id=57706720439 hs_product_type='container' tipo_articulo='transitario' hs_product_id=34240664372
+[WARNING]	2026-08-28T08:41:32.993Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] line_item[1] id=57706720414 hs_product_type='service' tipo_articulo='seguro' hs_product_id=42399229255
+[WARNING]	2026-08-28T08:41:32.993Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] line_item[2] id=57706720438 hs_product_type='Flete' tipo_articulo='transitario' hs_product_id=42084189861
+[WARNING]	2026-08-28T08:41:32.993Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] line_item[3] id=58376040714 hs_product_type='Articulo' tipo_articulo='fabricante' hs_product_id=42050417060
+[WARNING]	2026-08-28T08:41:32.993Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] line_item[4] id=58368077668 hs_product_type='Articulo' tipo_articulo='fabricante' hs_product_id=42078144943
+[WARNING]	2026-08-28T08:41:32.993Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] After fabricante filter: product_ids count=11 product_ids=['42050417060', '42078144943', '42050417012', '42050417035', '42050417004', '42078145068', '42078145056', '42078145060', '42078145088', '42078145099', '42078145101']
+[WARNING]	2026-08-28T08:41:32.993Z	13056a30-808e-46ec-a19c-deef00d8fe93	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:33.242Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[services] Filtered to 3 service line items (hs_product_type=service)
+[WARNING]	2026-08-28T08:41:33.248Z	56b25323-5724-4604-bef9-403868dc730a	[containers] Classified: container_line_items=3 article_line_items=44
+[WARNING]	2026-08-28T08:41:33.272Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] Batch fetched 11 products
+[WARNING]	2026-08-28T08:41:33.548Z	56b25323-5724-4604-bef9-403868dc730a	Batch fetched 14 product SKUs
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Loaded individual container #1: D20DR x1
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Loaded individual container #3: D20DR x1
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Loaded individual container #2: D20DR x1
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Grouped containers: D20DR x1 (containers #1-1)
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Grouped containers: D20DR x1 (containers #3-3)
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Grouped containers: D20DR x1 (containers #2-2)
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377668172: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377113430: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720433: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58379462994: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720436: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377920906: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377246775: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377059421: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377907733: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377916311: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58368077668: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377334531: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58376040714: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377925042: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377136055: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377290816: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720410: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58379475362: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377102880: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720404: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720416: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377318824: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:41:33.549Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720415: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720417: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720421: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720428: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377233676: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377914453: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA SALVAJE-LATA-24X25CL-1004065 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377914472: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377349381: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PIÑA & COCO-LATA-24X25CL-1004218 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377920903: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL-LATA-24X25CL-1004290'
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377925131: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720419: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 57706720405: name='63436230289-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377287036: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-SANDIA & UVA-LATA-24X25CL-1004009 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377119919: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA-LATA-24X25CL-1005453 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377134455: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377666386: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRAMBUESA & CHEESECAKE-LATA-24X25CL-1004164 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377243986: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58375750735: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-CRAZY COCONUT-LATA-24X25CL-1004808 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377292951: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANGO-LATA-24X25CL-1005060 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377903464: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MORA SALVAJE-LATA-24X25CL-1004140 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58377325414: name='63436230289-002 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-MANZANA & MELON-LATA-24X25CL-1004219 '
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped article line item 58379461214: name='63436230289-003 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-PLATANO-LATA-24X25CL-1005455'
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	Mapped data for 44 article line items (33 unique names)
+[WARNING]	2026-08-28T08:41:33.550Z	56b25323-5724-4604-bef9-403868dc730a	[containers] HubSpot sync degradation detected: 44 fabricante articles missing precio_de_coste. Restoring from product catalog (current hs_price_eur, not historical cost).
+[WARNING]	2026-08-28T08:41:33.553Z	f0e960eb-5df1-4a20-95df-dea8476a7894	[services] READ returning services=1 (deduplicated from 3 line items)
+END RequestId: f0e960eb-5df1-4a20-95df-dea8476a7894
+REPORT RequestId: f0e960eb-5df1-4a20-95df-dea8476a7894	Duration: 1445.43 ms	Billed Duration: 1446 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+[WARNING]	2026-08-28T08:41:33.598Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[Batch API] 6 2-43108800 asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:33.598Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] Found 6 provider associations (pre-filter)
+END RequestId: 13056a30-808e-46ec-a19c-deef00d8fe93
+REPORT RequestId: 13056a30-808e-46ec-a19c-deef00d8fe93	Duration: 1981.93 ms	Billed Duration: 1982 ms	Memory Size: 512 MB	Max Memory Used: 143 MB	
+START RequestId: 7e25642c-ee07-41d6-a671-3c58ecb56c4d Version: $LATEST
+[WARNING]	2026-08-28T08:41:34.035Z	e9437657-9a8d-45e3-9888-e1c5c2857cbe	[Batch API] 1 contacts asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:34.036Z	e9437657-9a8d-45e3-9888-e1c5c2857cbe	Found associated contact: 238985759650
+[WARNING]	2026-08-28T08:41:34.182Z	56b25323-5724-4604-bef9-403868dc730a	[containers] Auto-repair: restored margen_unitario for 44 line items
+[WARNING]	2026-08-28T08:41:34.182Z	56b25323-5724-4604-bef9-403868dc730a	[containers] READ returning containers=3 unique_containers=3 total_units=3 total_colis=9280
+[WARNING]	2026-08-28T08:41:34.184Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] Batch fetched 3 providers
+[WARNING]	2026-08-28T08:41:34.184Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] Skipping provider P0619 with tipo_proveedor=transitario
+[WARNING]	2026-08-28T08:41:34.184Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] Skipping provider P0082 with tipo_proveedor=seguro
+[WARNING]	2026-08-28T08:41:34.184Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] Remaining 1 providers after filtering by tipo_proveedor=fabricante
+END RequestId: 56b25323-5724-4604-bef9-403868dc730a
+REPORT RequestId: 56b25323-5724-4604-bef9-403868dc730a	Duration: 2140.01 ms	Billed Duration: 2141 ms	Memory Size: 512 MB	Max Memory Used: 151 MB	
+[WARNING]	2026-08-28T08:41:34.186Z	6a04619d-14e2-43db-914e-aa8dc70bb584	[articles] READ returning articles=11 providers=1
+END RequestId: 6a04619d-14e2-43db-914e-aa8dc70bb584
+REPORT RequestId: 6a04619d-14e2-43db-914e-aa8dc70bb584	Duration: 2187.35 ms	Billed Duration: 2188 ms	Memory Size: 512 MB	Max Memory Used: 160 MB	
+START RequestId: 5ef04473-6934-4416-8639-d7f9aef7b943 Version: $LATEST
+[WARNING]	2026-08-28T08:41:34.554Z	5ef04473-6934-4416-8639-d7f9aef7b943	Fetching transit data for deal 63436230289
+END RequestId: 7e25642c-ee07-41d6-a671-3c58ecb56c4d
+REPORT RequestId: 7e25642c-ee07-41d6-a671-3c58ecb56c4d	Duration: 608.09 ms	Billed Duration: 609 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+[WARNING]	2026-08-28T08:41:34.782Z	e9437657-9a8d-45e3-9888-e1c5c2857cbe	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:34.782Z	e9437657-9a8d-45e3-9888-e1c5c2857cbe	Found associated company: 57248397648
+[WARNING]	2026-08-28T08:41:35.190Z	e9437657-9a8d-45e3-9888-e1c5c2857cbe	margen_cliente RAW from HubSpot: 0.12 (type: <class 'str'>)
+[WARNING]	2026-08-28T08:41:35.190Z	e9437657-9a8d-45e3-9888-e1c5c2857cbe	margen_cliente after safe_convert (final value): 0.12
+[WARNING]	2026-08-28T08:41:35.245Z	5ef04473-6934-4416-8639-d7f9aef7b943	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:35.521Z	e9437657-9a8d-45e3-9888-e1c5c2857cbe	[Batch API] 6 2-43108800 asociados al deal 63436230289
+END RequestId: e9437657-9a8d-45e3-9888-e1c5c2857cbe
+REPORT RequestId: e9437657-9a8d-45e3-9888-e1c5c2857cbe	Duration: 4070.16 ms	Billed Duration: 4071 ms	Memory Size: 512 MB	Max Memory Used: 152 MB	
+START RequestId: 9293814c-647d-48ac-8619-c2921d985d0b Version: $LATEST
+END RequestId: 5ef04473-6934-4416-8639-d7f9aef7b943
+REPORT RequestId: 5ef04473-6934-4416-8639-d7f9aef7b943	Duration: 2303.03 ms	Billed Duration: 2304 ms	Memory Size: 512 MB	Max Memory Used: 162 MB	
+START RequestId: e3a887b0-a393-4199-9b77-7c34bddc6788 Version: $LATEST
+START RequestId: 70718b44-2605-47f8-92ef-2e0c051671e3 Version: $LATEST
+[WARNING]	2026-08-28T08:41:37.004Z	70718b44-2605-47f8-92ef-2e0c051671e3	Fetching documentacion for deal 63436230289
+END RequestId: e3a887b0-a393-4199-9b77-7c34bddc6788
+REPORT RequestId: e3a887b0-a393-4199-9b77-7c34bddc6788	Duration: 601.70 ms	Billed Duration: 602 ms	Memory Size: 512 MB	Max Memory Used: 164 MB	
+END RequestId: 9293814c-647d-48ac-8619-c2921d985d0b
+REPORT RequestId: 9293814c-647d-48ac-8619-c2921d985d0b	Duration: 628.32 ms	Billed Duration: 629 ms	Memory Size: 512 MB	Max Memory Used: 153 MB	
+[WARNING]	2026-08-28T08:41:38.144Z	70718b44-2605-47f8-92ef-2e0c051671e3	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:38.753Z	70718b44-2605-47f8-92ef-2e0c051671e3	[Batch API] 1 contacts asociados al deal 63436230289
+END RequestId: 70718b44-2605-47f8-92ef-2e0c051671e3
+REPORT RequestId: 70718b44-2605-47f8-92ef-2e0c051671e3	Duration: 2069.42 ms	Billed Duration: 2070 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: bc436eb4-949c-4497-a9af-e5a15230014e Version: $LATEST
+END RequestId: bc436eb4-949c-4497-a9af-e5a15230014e
+REPORT RequestId: bc436eb4-949c-4497-a9af-e5a15230014e	Duration: 549.83 ms	Billed Duration: 550 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 6781ea60-880a-420f-9127-9d06044d884c Version: $LATEST
+END RequestId: 6781ea60-880a-420f-9127-9d06044d884c
+REPORT RequestId: 6781ea60-880a-420f-9127-9d06044d884c	Duration: 337.50 ms	Billed Duration: 338 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: ad07f72d-ad6c-4c00-8fa7-ed421c86ad9f Version: $LATEST
+START RequestId: 37062227-15c4-4d17-a14e-59bb388a2ac2 Version: $LATEST
+[WARNING]	2026-08-28T08:41:49.260Z	ad07f72d-ad6c-4c00-8fa7-ed421c86ad9f	[Batch API] 1 companies asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:49.969Z	ad07f72d-ad6c-4c00-8fa7-ed421c86ad9f	[Batch API] 6 2-43108800 asociados al deal 63436230289
+END RequestId: 37062227-15c4-4d17-a14e-59bb388a2ac2
+REPORT RequestId: 37062227-15c4-4d17-a14e-59bb388a2ac2	Duration: 2059.77 ms	Billed Duration: 2060 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+[WARNING]	2026-08-28T08:41:51.146Z	ad07f72d-ad6c-4c00-8fa7-ed421c86ad9f	[Batch API] 53 line_items asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:55.183Z	ad07f72d-ad6c-4c00-8fa7-ed421c86ad9f	[Batch API] 1 contacts asociados al deal 63436230289
+[WARNING]	2026-08-28T08:41:55.466Z	ad07f72d-ad6c-4c00-8fa7-ed421c86ad9f	[Batch API] 1 companies asociados al deal 63436230289
+START RequestId: bf67e9d2-937c-483a-8f74-788cd0360fdc Version: $LATEST
+END RequestId: bf67e9d2-937c-483a-8f74-788cd0360fdc
+REPORT RequestId: bf67e9d2-937c-483a-8f74-788cd0360fdc	Duration: 319.35 ms	Billed Duration: 320 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+[WARNING]	2026-08-28T08:42:02.420Z	ad07f72d-ad6c-4c00-8fa7-ed421c86ad9f	[Batch API] 53 line_items asociados al deal 63436230289
+START RequestId: 86f69b9b-f752-4b1f-b6a0-12b0cfb1662a Version: $LATEST
+END RequestId: 86f69b9b-f752-4b1f-b6a0-12b0cfb1662a
+REPORT RequestId: 86f69b9b-f752-4b1f-b6a0-12b0cfb1662a	Duration: 417.20 ms	Billed Duration: 418 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 8f8315d7-d9b8-4b4c-b62f-029c92b7d82e Version: $LATEST
+END RequestId: 8f8315d7-d9b8-4b4c-b62f-029c92b7d82e
+REPORT RequestId: 8f8315d7-d9b8-4b4c-b62f-029c92b7d82e	Duration: 1465.83 ms	Billed Duration: 1466 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+END RequestId: ad07f72d-ad6c-4c00-8fa7-ed421c86ad9f
+REPORT RequestId: ad07f72d-ad6c-4c00-8fa7-ed421c86ad9f	Duration: 19630.22 ms	Billed Duration: 19631 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+START RequestId: 1319622e-882e-449d-8d1d-572b5436140a Version: $LATEST
+END RequestId: 1319622e-882e-449d-8d1d-572b5436140a
+REPORT RequestId: 1319622e-882e-449d-8d1d-572b5436140a	Duration: 335.39 ms	Billed Duration: 336 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+START RequestId: 4bbb07c9-270b-46da-bd77-76175b8013ea Version: $LATEST
+END RequestId: 4bbb07c9-270b-46da-bd77-76175b8013ea
+REPORT RequestId: 4bbb07c9-270b-46da-bd77-76175b8013ea	Duration: 389.75 ms	Billed Duration: 390 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+START RequestId: 41f194d4-4cef-4f1e-9288-01bbdc541177 Version: $LATEST
+[WARNING]	2026-08-28T08:42:22.573Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Updating negotiation data for 33 unique line items in deal 63436230289
+[WARNING]	2026-08-28T08:42:22.881Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[Batch API] 1 companies asociados al deal 63436230289
+START RequestId: cedc0840-f7ce-4bc6-9119-dc7163d7181f Version: $LATEST
+[WARNING]	2026-08-28T08:42:23.188Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Fetching 33 line items to get tipo_articulo
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Fetched data for 33 line items
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720436 with price=5.872636, margin=0.23843, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720436: Setting price=5.873 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720428 with price=6.232636, margin=0.23663, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720428: Setting price=6.233 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720404 with price=6.232636, margin=0.26938, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720404: Setting price=6.233 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720410 with price=6.232636, margin=0.26938, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720410: Setting price=6.233 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720415 with price=6.232636, margin=0.24603, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720415: Setting price=6.233 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720419 with price=6.232636, margin=0.29901, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720419: Setting price=6.233 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720421 with price=6.232636, margin=0.1228, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720421: Setting price=6.233 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720405 with price=6.232636, margin=0.18966, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720405: Setting price=6.233 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720433 with price=6.232636, margin=0.17508, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720433: Setting price=6.233 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720417 with price=6.232636, margin=0.15934, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720417: Setting price=6.233 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 57706720416 with price=6.232636, margin=0.27249, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 57706720416: Setting price=6.233 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377920903 with price=5.87195, margin=0.23829, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377920903: Setting price=5.872 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377914453 with price=6.23195, margin=0.2365, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377914453: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377325414 with price=6.23195, margin=0.26924, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377325414: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58379462994 with price=6.23195, margin=0.26924, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.523Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58379462994: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377318824 with price=6.23195, margin=0.24589, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377318824: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377925042 with price=6.23195, margin=0.29886, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377925042: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377292951 with price=6.23195, margin=0.12267, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377292951: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377666386 with price=6.23195, margin=0.18953, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377666386: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377920906 with price=6.23195, margin=0.17495, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377920906: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377290816 with price=6.23195, margin=0.15922, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377290816: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58375750735 with price=6.23195, margin=0.27235, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58375750735: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377233676 with price=5.87195, margin=0.23829, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377233676: Setting price=5.872 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377059421 with price=5.6448, margin=0.12, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377059421: Setting price=5.645 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377668172 with price=6.23195, margin=0.26924, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377668172: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377246775 with price=5.4992, margin=0.12, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377246775: Setting price=5.499 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377102880 with price=5.60224, margin=0.12, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377102880: Setting price=5.602 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377334531 with price=5.37376, margin=0.12, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377334531: Setting price=5.374 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377916311 with price=6.23195, margin=0.12267, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377916311: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377136055 with price=6.23195, margin=0.18953, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377136055: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377925131 with price=5.94048, margin=0.12, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377925131: Setting price=5.94 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377113430 with price=6.23195, margin=0.15922, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377113430: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Preparing update for line item 58377134455 with price=6.23195, margin=0.27235, VAT rep=EX, VAT sop=S21
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Line item 58377134455: Setting price=6.232 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:42:23.524Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Executing batch update for 33 line items
+[WARNING]	2026-08-28T08:42:24.129Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[negociacion] Successfully updated 33 line items
+END RequestId: cedc0840-f7ce-4bc6-9119-dc7163d7181f
+REPORT RequestId: cedc0840-f7ce-4bc6-9119-dc7163d7181f	Duration: 1331.19 ms	Billed Duration: 1332 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: ccba4ae6-49df-4601-8e10-89febdb1ef46 Version: $LATEST
+END RequestId: ccba4ae6-49df-4601-8e10-89febdb1ef46
+REPORT RequestId: ccba4ae6-49df-4601-8e10-89febdb1ef46	Duration: 314.60 ms	Billed Duration: 315 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+[WARNING]	2026-08-28T08:42:34.639Z	41f194d4-4cef-4f1e-9288-01bbdc541177	[Batch API] 53 line_items asociados al deal 63436230289
+START RequestId: f0b4e269-d764-45b3-bcae-9a22eb8d3a2a Version: $LATEST
+END RequestId: f0b4e269-d764-45b3-bcae-9a22eb8d3a2a
+REPORT RequestId: f0b4e269-d764-45b3-bcae-9a22eb8d3a2a	Duration: 317.23 ms	Billed Duration: 318 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 8a20989a-3e8f-42e6-adc8-7b1838a89135 Version: $LATEST
+END RequestId: 41f194d4-4cef-4f1e-9288-01bbdc541177
+REPORT RequestId: 41f194d4-4cef-4f1e-9288-01bbdc541177	Duration: 17621.92 ms	Billed Duration: 17622 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+END RequestId: 8a20989a-3e8f-42e6-adc8-7b1838a89135
+REPORT RequestId: 8a20989a-3e8f-42e6-adc8-7b1838a89135	Duration: 1299.57 ms	Billed Duration: 1300 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: c869eaef-2a80-4718-accd-1590edbb05c8 Version: $LATEST
+END RequestId: c869eaef-2a80-4718-accd-1590edbb05c8
+REPORT RequestId: c869eaef-2a80-4718-accd-1590edbb05c8	Duration: 296.35 ms	Billed Duration: 297 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 3220e3c9-3a37-4dea-a778-8321a319a8f5 Version: $LATEST
+END RequestId: 3220e3c9-3a37-4dea-a778-8321a319a8f5
+REPORT RequestId: 3220e3c9-3a37-4dea-a778-8321a319a8f5	Duration: 1234.30 ms	Billed Duration: 1235 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 0efc75f8-93d8-4f1f-b668-d6f8756a2f8a Version: $LATEST
+END RequestId: 0efc75f8-93d8-4f1f-b668-d6f8756a2f8a
+REPORT RequestId: 0efc75f8-93d8-4f1f-b668-d6f8756a2f8a	Duration: 346.89 ms	Billed Duration: 347 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 0c3ae0f6-1afe-4b2a-97a8-3c72e8125c2f Version: $LATEST
+END RequestId: 0c3ae0f6-1afe-4b2a-97a8-3c72e8125c2f
+REPORT RequestId: 0c3ae0f6-1afe-4b2a-97a8-3c72e8125c2f	Duration: 1287.27 ms	Billed Duration: 1288 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: ea96808f-32f9-4e91-bb67-4dbdb42c3527 Version: $LATEST
+END RequestId: ea96808f-32f9-4e91-bb67-4dbdb42c3527
+REPORT RequestId: ea96808f-32f9-4e91-bb67-4dbdb42c3527	Duration: 297.07 ms	Billed Duration: 298 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 08d2eecf-3827-4483-b05a-4debcdf75292 Version: $LATEST
+END RequestId: 08d2eecf-3827-4483-b05a-4debcdf75292
+REPORT RequestId: 08d2eecf-3827-4483-b05a-4debcdf75292	Duration: 1325.75 ms	Billed Duration: 1326 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 449551a8-b2e9-4743-9f70-6495f9c57f49 Version: $LATEST
+END RequestId: 449551a8-b2e9-4743-9f70-6495f9c57f49
+REPORT RequestId: 449551a8-b2e9-4743-9f70-6495f9c57f49	Duration: 401.04 ms	Billed Duration: 402 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: db7a70f9-1c12-4b6c-9c02-8153591b0215 Version: $LATEST
+END RequestId: db7a70f9-1c12-4b6c-9c02-8153591b0215
+REPORT RequestId: db7a70f9-1c12-4b6c-9c02-8153591b0215	Duration: 1254.83 ms	Billed Duration: 1255 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 5698195a-0afc-497e-8b8f-edd7277c0fac Version: $LATEST
+END RequestId: 5698195a-0afc-497e-8b8f-edd7277c0fac
+REPORT RequestId: 5698195a-0afc-497e-8b8f-edd7277c0fac	Duration: 366.16 ms	Billed Duration: 367 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 4f181a8d-595e-4622-bb2c-e8a4610ac63e Version: $LATEST
+END RequestId: 4f181a8d-595e-4622-bb2c-e8a4610ac63e
+REPORT RequestId: 4f181a8d-595e-4622-bb2c-e8a4610ac63e	Duration: 1607.18 ms	Billed Duration: 1608 ms	Memory Size: 512 MB	Max Memory Used: 170 MB	
+START RequestId: 833582d3-3bf9-42a8-ab81-c5d25e66318a Version: $LATEST
+END RequestId: 833582d3-3bf9-42a8-ab81-c5d25e66318a
+REPORT RequestId: 833582d3-3bf9-42a8-ab81-c5d25e66318a	Duration: 316.21 ms	Billed Duration: 317 ms	Memory Size: 512 MB	Max Memory Used: 170 MB	
+START RequestId: 5c1d4e78-6961-4ec9-a0e8-7eeb655ba3d8 Version: $LATEST
+START RequestId: 727c6d90-384e-4366-a7b4-68c806b60105 Version: $LATEST
+END RequestId: 5c1d4e78-6961-4ec9-a0e8-7eeb655ba3d8
+REPORT RequestId: 5c1d4e78-6961-4ec9-a0e8-7eeb655ba3d8	Duration: 1946.50 ms	Billed Duration: 1947 ms	Memory Size: 512 MB	Max Memory Used: 170 MB	
+END RequestId: 727c6d90-384e-4366-a7b4-68c806b60105
+REPORT RequestId: 727c6d90-384e-4366-a7b4-68c806b60105	Duration: 376.37 ms	Billed Duration: 377 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+START RequestId: 78f1c13c-b35f-4e4e-ba56-15f1fa9d5c65 Version: $LATEST
+START RequestId: 4a0d0bb2-80e4-412f-a43c-e780bad47fb1 Version: $LATEST
+END RequestId: 4a0d0bb2-80e4-412f-a43c-e780bad47fb1
+REPORT RequestId: 4a0d0bb2-80e4-412f-a43c-e780bad47fb1	Duration: 332.12 ms	Billed Duration: 333 ms	Memory Size: 512 MB	Max Memory Used: 170 MB	
+END RequestId: 78f1c13c-b35f-4e4e-ba56-15f1fa9d5c65
+REPORT RequestId: 78f1c13c-b35f-4e4e-ba56-15f1fa9d5c65	Duration: 1346.14 ms	Billed Duration: 1347 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+START RequestId: d69534c1-5d5b-4341-bb4a-3fa73363efc1 Version: $LATEST
+END RequestId: d69534c1-5d5b-4341-bb4a-3fa73363efc1
+REPORT RequestId: d69534c1-5d5b-4341-bb4a-3fa73363efc1	Duration: 324.07 ms	Billed Duration: 325 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+START RequestId: 37fb4391-c4b4-4fb9-83b3-e1933382e80d Version: $LATEST
+END RequestId: 37fb4391-c4b4-4fb9-83b3-e1933382e80d
+REPORT RequestId: 37fb4391-c4b4-4fb9-83b3-e1933382e80d	Duration: 1215.88 ms	Billed Duration: 1216 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+START RequestId: 16ef8d76-e695-429e-abae-90f5b36d739d Version: $LATEST
+END RequestId: 16ef8d76-e695-429e-abae-90f5b36d739d
+REPORT RequestId: 16ef8d76-e695-429e-abae-90f5b36d739d	Duration: 326.76 ms	Billed Duration: 327 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+START RequestId: b5c3a406-45ad-467c-8d4b-dde099abde0c Version: $LATEST
+END RequestId: b5c3a406-45ad-467c-8d4b-dde099abde0c
+REPORT RequestId: b5c3a406-45ad-467c-8d4b-dde099abde0c	Duration: 1247.86 ms	Billed Duration: 1248 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+START RequestId: 222d9bde-5e51-47d8-b7d8-944c74f3c0d4 Version: $LATEST
+[WARNING]	2026-08-28T08:45:18.168Z	222d9bde-5e51-47d8-b7d8-944c74f3c0d4	[articles] Fetching articles with tipo_articulo=fabricante for deal 64421775273
+START RequestId: de269824-131f-4adb-bda0-f71ef390049a Version: $LATEST
+[WARNING]	2026-08-28T08:45:18.186Z	de269824-131f-4adb-bda0-f71ef390049a	[containers] READ deal_id=64421775273 fetching container line items
+START RequestId: 6170311f-e8d4-480c-8139-edee5e706dac Version: $LATEST
+START RequestId: 3bba33f3-ccc9-4f6d-af17-dfa5b1b5102f Version: $LATEST
+START RequestId: fcd1fbf6-67b3-43e8-930e-e8fc25ace593 Version: $LATEST
+START RequestId: dca5dd34-58fc-485b-9e15-49ac03b8367d Version: $LATEST
+START RequestId: 5ff54221-41d5-4abc-9741-3b8ac10599bb Version: $LATEST
+START RequestId: 3833bc8b-e347-43df-8824-b9a7b8a78d5d Version: $LATEST
+[WARNING]	2026-08-28T08:45:18.256Z	3833bc8b-e347-43df-8824-b9a7b8a78d5d	[services] READ deal_id=64421775273 fetching services
+[WARNING]	2026-08-28T08:45:18.255Z	dca5dd34-58fc-485b-9e15-49ac03b8367d	Fetching deal 64421775273 with properties: ['tipo_de_venta', 'tipo_contenedor', 'carga_por_palets', 'margen_cliente', 'dias_libres', 'naviera', 'preprints_language', 'project', 'codigo_intermediario', 'repercutir_a_cliente', 'tipo_comision', 'importe_comision', 'fecha_caducidad_cotizacion', 'tipo_iva_comision', 'tipo_iva_comision_soportado']
+[WARNING]	2026-08-28T08:45:18.570Z	3bba33f3-ccc9-4f6d-af17-dfa5b1b5102f	[Batch API] 1 companies asociados al deal 64421775273
+END RequestId: 5ff54221-41d5-4abc-9741-3b8ac10599bb
+REPORT RequestId: 5ff54221-41d5-4abc-9741-3b8ac10599bb	Duration: 405.85 ms	Billed Duration: 406 ms	Memory Size: 512 MB	Max Memory Used: 162 MB	
+[WARNING]	2026-08-28T08:45:18.765Z	de269824-131f-4adb-bda0-f71ef390049a	[HTTP v4] sin resultados para line_items en deal 64421775273
+[WARNING]	2026-08-28T08:45:18.766Z	de269824-131f-4adb-bda0-f71ef390049a	[containers] READ line_item_ids count=0 ids=[]
+[WARNING]	2026-08-28T08:45:18.766Z	de269824-131f-4adb-bda0-f71ef390049a	[containers] No line items found for deal 64421775273 -> will return empty containers
+[WARNING]	2026-08-28T08:45:18.766Z	de269824-131f-4adb-bda0-f71ef390049a	Mapped data for 0 article line items (0 unique names)
+[WARNING]	2026-08-28T08:45:18.766Z	de269824-131f-4adb-bda0-f71ef390049a	[containers] READ returning containers=0 unique_containers=0 total_units=0 total_colis=0
+END RequestId: de269824-131f-4adb-bda0-f71ef390049a
+REPORT RequestId: de269824-131f-4adb-bda0-f71ef390049a	Duration: 582.81 ms	Billed Duration: 583 ms	Memory Size: 512 MB	Max Memory Used: 170 MB	
+END RequestId: 3bba33f3-ccc9-4f6d-af17-dfa5b1b5102f
+REPORT RequestId: 3bba33f3-ccc9-4f6d-af17-dfa5b1b5102f	Duration: 671.47 ms	Billed Duration: 672 ms	Memory Size: 512 MB	Max Memory Used: 152 MB	
+[WARNING]	2026-08-28T08:45:18.940Z	6170311f-e8d4-480c-8139-edee5e706dac	[Batch API] 1 companies asociados al deal 64421775273
+END RequestId: fcd1fbf6-67b3-43e8-930e-e8fc25ace593
+REPORT RequestId: fcd1fbf6-67b3-43e8-930e-e8fc25ace593	Duration: 793.11 ms	Billed Duration: 794 ms	Memory Size: 512 MB	Max Memory Used: 159 MB	
+[WARNING]	2026-08-28T08:45:19.086Z	3833bc8b-e347-43df-8824-b9a7b8a78d5d	[HTTP v4] sin resultados para line_items en deal 64421775273
+[WARNING]	2026-08-28T08:45:19.086Z	3833bc8b-e347-43df-8824-b9a7b8a78d5d	[services] READ line_item_ids count=0 ids=[]
+[WARNING]	2026-08-28T08:45:19.086Z	3833bc8b-e347-43df-8824-b9a7b8a78d5d	[services] No line items for deal 64421775273 -> returning empty services
+END RequestId: 3833bc8b-e347-43df-8824-b9a7b8a78d5d
+REPORT RequestId: 3833bc8b-e347-43df-8824-b9a7b8a78d5d	Duration: 832.85 ms	Billed Duration: 833 ms	Memory Size: 512 MB	Max Memory Used: 153 MB	
+[WARNING]	2026-08-28T08:45:19.101Z	222d9bde-5e51-47d8-b7d8-944c74f3c0d4	[HTTP v4] sin resultados para line_items en deal 64421775273
+[WARNING]	2026-08-28T08:45:19.102Z	222d9bde-5e51-47d8-b7d8-944c74f3c0d4	[articles] READ deal_id=64421775273 -> line_item_ids count=0 ids=[]
+[WARNING]	2026-08-28T08:45:19.102Z	222d9bde-5e51-47d8-b7d8-944c74f3c0d4	[articles] No line_item_ids for deal 64421775273 -> will return empty articles
+[WARNING]	2026-08-28T08:45:19.102Z	222d9bde-5e51-47d8-b7d8-944c74f3c0d4	[articles] After fabricante filter: product_ids count=0 product_ids=[]
+[WARNING]	2026-08-28T08:45:19.708Z	222d9bde-5e51-47d8-b7d8-944c74f3c0d4	[HTTP v4] sin resultados para 2-43108800 en deal 64421775273
+[WARNING]	2026-08-28T08:45:19.708Z	222d9bde-5e51-47d8-b7d8-944c74f3c0d4	[articles] Found 0 provider associations (pre-filter)
+[WARNING]	2026-08-28T08:45:19.760Z	dca5dd34-58fc-485b-9e15-49ac03b8367d	[Batch API] 1 contacts asociados al deal 64421775273
+[WARNING]	2026-08-28T08:45:19.761Z	dca5dd34-58fc-485b-9e15-49ac03b8367d	Found associated contact: 115724724083
+END RequestId: 6170311f-e8d4-480c-8139-edee5e706dac
+REPORT RequestId: 6170311f-e8d4-480c-8139-edee5e706dac	Duration: 1653.54 ms	Billed Duration: 1654 ms	Memory Size: 512 MB	Max Memory Used: 165 MB	
+[WARNING]	2026-08-28T08:45:19.996Z	222d9bde-5e51-47d8-b7d8-944c74f3c0d4	[articles] Remaining 0 providers after filtering by tipo_proveedor=fabricante
+[WARNING]	2026-08-28T08:45:19.997Z	222d9bde-5e51-47d8-b7d8-944c74f3c0d4	[articles] READ returning articles=0 providers=0
+END RequestId: 222d9bde-5e51-47d8-b7d8-944c74f3c0d4
+REPORT RequestId: 222d9bde-5e51-47d8-b7d8-944c74f3c0d4	Duration: 1841.91 ms	Billed Duration: 1842 ms	Memory Size: 512 MB	Max Memory Used: 174 MB	
+START RequestId: 14a329e6-2fe8-4434-948c-d0ad7141ec72 Version: $LATEST
+[WARNING]	2026-08-28T08:45:20.390Z	14a329e6-2fe8-4434-948c-d0ad7141ec72	Fetching transit data for deal 64421775273
+[WARNING]	2026-08-28T08:45:20.393Z	dca5dd34-58fc-485b-9e15-49ac03b8367d	[Batch API] 1 companies asociados al deal 64421775273
+[WARNING]	2026-08-28T08:45:20.393Z	dca5dd34-58fc-485b-9e15-49ac03b8367d	Found associated company: 31785023825
+[WARNING]	2026-08-28T08:45:20.684Z	dca5dd34-58fc-485b-9e15-49ac03b8367d	margen_cliente RAW from HubSpot: None (type: <class 'NoneType'>)
+[WARNING]	2026-08-28T08:45:20.684Z	dca5dd34-58fc-485b-9e15-49ac03b8367d	margen_cliente after safe_convert (final value): None
+[WARNING]	2026-08-28T08:45:21.043Z	14a329e6-2fe8-4434-948c-d0ad7141ec72	[Batch API] 1 companies asociados al deal 64421775273
+[WARNING]	2026-08-28T08:45:21.337Z	dca5dd34-58fc-485b-9e15-49ac03b8367d	[HTTP v4] sin resultados para 2-43108800 en deal 64421775273
+END RequestId: dca5dd34-58fc-485b-9e15-49ac03b8367d
+REPORT RequestId: dca5dd34-58fc-485b-9e15-49ac03b8367d	Duration: 3408.22 ms	Billed Duration: 3409 ms	Memory Size: 512 MB	Max Memory Used: 169 MB	
+START RequestId: 315400f3-e668-4c8a-9254-c6dde1ba98d5 Version: $LATEST
+START RequestId: 21bd738d-b111-4314-a4cb-1336a82878cb Version: $LATEST
+[WARNING]	2026-08-28T08:45:22.183Z	21bd738d-b111-4314-a4cb-1336a82878cb	Fetching documentacion for deal 64421775273
+END RequestId: 315400f3-e668-4c8a-9254-c6dde1ba98d5
+REPORT RequestId: 315400f3-e668-4c8a-9254-c6dde1ba98d5	Duration: 562.05 ms	Billed Duration: 563 ms	Memory Size: 512 MB	Max Memory Used: 171 MB	
+END RequestId: 14a329e6-2fe8-4434-948c-d0ad7141ec72
+REPORT RequestId: 14a329e6-2fe8-4434-948c-d0ad7141ec72	Duration: 2580.03 ms	Billed Duration: 2581 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+[WARNING]	2026-08-28T08:45:23.281Z	21bd738d-b111-4314-a4cb-1336a82878cb	[Batch API] 1 companies asociados al deal 64421775273
+[WARNING]	2026-08-28T08:45:24.127Z	21bd738d-b111-4314-a4cb-1336a82878cb	[Batch API] 1 contacts asociados al deal 64421775273
+END RequestId: 21bd738d-b111-4314-a4cb-1336a82878cb
+REPORT RequestId: 21bd738d-b111-4314-a4cb-1336a82878cb	Duration: 2241.38 ms	Billed Duration: 2242 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: 8fa71b95-d0c7-4657-8789-729e6cbe20f7 Version: $LATEST
+END RequestId: 8fa71b95-d0c7-4657-8789-729e6cbe20f7
+REPORT RequestId: 8fa71b95-d0c7-4657-8789-729e6cbe20f7	Duration: 749.12 ms	Billed Duration: 750 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: 0cc2b9df-6c5f-499b-8305-1d779de22964 Version: $LATEST
+END RequestId: 0cc2b9df-6c5f-499b-8305-1d779de22964
+REPORT RequestId: 0cc2b9df-6c5f-499b-8305-1d779de22964	Duration: 360.79 ms	Billed Duration: 361 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: 9c97b8fe-2bf5-488b-bad3-861951487566 Version: $LATEST
+START RequestId: 09180ab0-03f9-4ae1-b0ca-33f7766003d2 Version: $LATEST
+END RequestId: 9c97b8fe-2bf5-488b-bad3-861951487566
+REPORT RequestId: 9c97b8fe-2bf5-488b-bad3-861951487566	Duration: 636.46 ms	Billed Duration: 637 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: cd01add9-14aa-406b-8823-baee02139d49 Version: $LATEST
+END RequestId: 09180ab0-03f9-4ae1-b0ca-33f7766003d2
+REPORT RequestId: 09180ab0-03f9-4ae1-b0ca-33f7766003d2	Duration: 1494.70 ms	Billed Duration: 1495 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+END RequestId: cd01add9-14aa-406b-8823-baee02139d49
+REPORT RequestId: cd01add9-14aa-406b-8823-baee02139d49	Duration: 778.37 ms	Billed Duration: 779 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: ea90459e-2ca4-479b-8d05-1fa70cd0b543 Version: $LATEST
+[WARNING]	2026-08-28T08:45:32.758Z	ea90459e-2ca4-479b-8d05-1fa70cd0b543	[Batch API] 1 companies asociados al deal 64421775273
+[WARNING]	2026-08-28T08:45:32.758Z	ea90459e-2ca4-479b-8d05-1fa70cd0b543	Updating company 31785023825 for deal 64421775273
+[WARNING]	2026-08-28T08:45:33.149Z	ea90459e-2ca4-479b-8d05-1fa70cd0b543	Company 31785023825 updated successfully with properties: {'tipo_cliente': 'exportacion'}
+[WARNING]	2026-08-28T08:45:33.150Z	ea90459e-2ca4-479b-8d05-1fa70cd0b543	Updating deal 64421775273 with properties: {'tipo_de_venta': 'CIF', 'tipo_contenedor': 'D20DR', 'carga_por_palets': 'false', 'margen_cliente': '0.12', 'preprints_language': '', 'project': 'ANNALIESE', 'codigo_intermediario': '', 'repercutir_a_cliente': '', 'tipo_comision': '', 'importe_comision': '0.0', 'tipo_iva_comision': 'EX', 'tipo_iva_comision_soportado': 'S21', 'fecha_caducidad_cotizacion': '1790553600000'}
+[WARNING]	2026-08-28T08:45:33.564Z	ea90459e-2ca4-479b-8d05-1fa70cd0b543	Deal 64421775273 updated successfully
+END RequestId: ea90459e-2ca4-479b-8d05-1fa70cd0b543
+REPORT RequestId: ea90459e-2ca4-479b-8d05-1fa70cd0b543	Duration: 1128.21 ms	Billed Duration: 1129 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: 46defc16-cf85-4169-a345-edb0e4e17e49 Version: $LATEST
+END RequestId: 46defc16-cf85-4169-a345-edb0e4e17e49
+REPORT RequestId: 46defc16-cf85-4169-a345-edb0e4e17e49	Duration: 379.90 ms	Billed Duration: 380 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: a59c6a63-c592-48f5-bc0f-ab74b8560d16 Version: $LATEST
+END RequestId: a59c6a63-c592-48f5-bc0f-ab74b8560d16
+REPORT RequestId: a59c6a63-c592-48f5-bc0f-ab74b8560d16	Duration: 602.79 ms	Billed Duration: 603 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: c9dbe9aa-eae4-4890-afa2-e2648cf53c44 Version: $LATEST
+END RequestId: c9dbe9aa-eae4-4890-afa2-e2648cf53c44
+REPORT RequestId: c9dbe9aa-eae4-4890-afa2-e2648cf53c44	Duration: 404.22 ms	Billed Duration: 405 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: 1448e953-9fe7-41e5-9d3c-ecf4deaa9e0a Version: $LATEST
+END RequestId: 1448e953-9fe7-41e5-9d3c-ecf4deaa9e0a
+REPORT RequestId: 1448e953-9fe7-41e5-9d3c-ecf4deaa9e0a	Duration: 530.44 ms	Billed Duration: 531 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: b3af0ac6-410e-434e-a229-4955e9038781 Version: $LATEST
+END RequestId: b3af0ac6-410e-434e-a229-4955e9038781
+REPORT RequestId: b3af0ac6-410e-434e-a229-4955e9038781	Duration: 319.63 ms	Billed Duration: 320 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: 9f24b0a4-b732-415f-8603-078ea41db6a0 Version: $LATEST
+END RequestId: 9f24b0a4-b732-415f-8603-078ea41db6a0
+REPORT RequestId: 9f24b0a4-b732-415f-8603-078ea41db6a0	Duration: 419.86 ms	Billed Duration: 420 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: 579f6599-5b3d-4d41-96aa-7bd09feec592 Version: $LATEST
+END RequestId: 579f6599-5b3d-4d41-96aa-7bd09feec592
+REPORT RequestId: 579f6599-5b3d-4d41-96aa-7bd09feec592	Duration: 494.74 ms	Billed Duration: 495 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: 8851ed29-0c0d-4563-a84b-e344bc281808 Version: $LATEST
+END RequestId: 8851ed29-0c0d-4563-a84b-e344bc281808
+REPORT RequestId: 8851ed29-0c0d-4563-a84b-e344bc281808	Duration: 1349.99 ms	Billed Duration: 1350 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: 80d081cb-fe50-49dd-876c-0bf633910757 Version: $LATEST
+END RequestId: 80d081cb-fe50-49dd-876c-0bf633910757
+REPORT RequestId: 80d081cb-fe50-49dd-876c-0bf633910757	Duration: 601.66 ms	Billed Duration: 602 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: 51ec101c-35df-415a-bafe-5191785939ec Version: $LATEST
+END RequestId: 51ec101c-35df-415a-bafe-5191785939ec
+REPORT RequestId: 51ec101c-35df-415a-bafe-5191785939ec	Duration: 320.97 ms	Billed Duration: 321 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: da335e79-8249-4bc5-b01d-0968fe10169d Version: $LATEST
+END RequestId: da335e79-8249-4bc5-b01d-0968fe10169d
+REPORT RequestId: da335e79-8249-4bc5-b01d-0968fe10169d	Duration: 385.28 ms	Billed Duration: 386 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: f5df7ca3-929f-4b8a-bd71-72944ae07763 Version: $LATEST
+END RequestId: f5df7ca3-929f-4b8a-bd71-72944ae07763
+REPORT RequestId: f5df7ca3-929f-4b8a-bd71-72944ae07763	Duration: 1091.15 ms	Billed Duration: 1092 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: c3bdfb42-bef7-49e5-aa11-5d3fd48d9855 Version: $LATEST
+END RequestId: c3bdfb42-bef7-49e5-aa11-5d3fd48d9855
+REPORT RequestId: c3bdfb42-bef7-49e5-aa11-5d3fd48d9855	Duration: 1651.64 ms	Billed Duration: 1652 ms	Memory Size: 512 MB	Max Memory Used: 166 MB	
+START RequestId: a8d2dbe4-2812-43ad-9c91-23c514167a55 Version: $LATEST
+[WARNING]	2026-08-28T08:46:04.798Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[articles] Processing 1 SKUs and 1 providers
+START RequestId: 422e6dbf-3bf0-4ad6-a1a7-b3a6e469b18a Version: $LATEST
+[WARNING]	2026-08-28T08:46:06.357Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[Batch API] 1 companies asociados al deal 64421775273
+END RequestId: 422e6dbf-3bf0-4ad6-a1a7-b3a6e469b18a
+REPORT RequestId: 422e6dbf-3bf0-4ad6-a1a7-b3a6e469b18a	Duration: 316.01 ms	Billed Duration: 317 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+[WARNING]	2026-08-28T08:46:06.683Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[articles] Company residence: 4
+[WARNING]	2026-08-28T08:46:06.683Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[articles] Unique SKUs=1, unique providers=1
+[WARNING]	2026-08-28T08:46:06.683Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[products] Using product IDs directly: ['42078144944']
+[WARNING]	2026-08-28T08:46:06.683Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[providers] Searching providers in OR batches
+[WARNING]	2026-08-28T08:46:07.011Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[providers] cardcode=P0670 -> provider=49116767906
+[WARNING]	2026-08-28T08:46:07.805Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[HTTP v4] sin resultados para line_items en deal 64421775273
+[WARNING]	2026-08-28T08:46:07.805Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[cleanup] Total line items associated: 0
+[WARNING]	2026-08-28T08:46:08.464Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[HTTP v4] sin resultados para 2-43108800 en deal 64421775273
+[WARNING]	2026-08-28T08:46:08.465Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[providers-batch-filter] Found 0 providers for deal 64421775273
+[WARNING]	2026-08-28T08:46:08.465Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[providers-delete] fabricante providers=0
+[WARNING]	2026-08-28T08:46:08.742Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	[articles] product=42078144944 sku=42078144944 RAW_PRODUCT_PROPS={'createdate': '2026-02-28T12:34:02.023Z', 'description': 'CERVEZA SIN ALCOHOL-VITALSBERG-0.0%-LATA-4X6X33CL', 'formato': '6', 'hs_lastmodifieddate': '2026-08-04T13:18:12.765Z', 'hs_object_id': '42078144944', 'hs_price_eur': '4.896', 'hs_sku': '0303003002-00258', 'marca_certificado': 'VITALSBERG', 'name': 'CERVEZA-VITALSBERG-0.0%-LATA-4X6X33CL-3B0VBLB6 ', 'name_en': 'NON ALCOHOLIC BEER-VITALSBERG-0.0%-CANNED-4X6X33CL', 'name_fr': 'BIERE SANS ALCOOL-VITALSBERG-0.0%-CANETTE-4X6X33CL', 'peso_bruto': '8.613', 'peso_neto': '7.92', 'tipo_iva_repercutido': 'R21', 'tipo_iva_repercutido_eu': 'EI21', 'tipo_iva_repercutido_ex': 'EX', 'tipo_iva_soportado': 'S21', 'tipo_iva_soportado_eu': 'S21', 'tipo_iva_soportado_ex': 'SEXP', 'ultimo_precio_compra': None, 'ultimo_precio_evaluado': None}
+[WARNING]	2026-08-28T08:46:08.742Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	Creating line item for product 42078144944 (SKU: 42078144944)
+[WARNING]	2026-08-28T08:46:09.224Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	Created line item 58377289062 for product 42078144944
+[WARNING]	2026-08-28T08:46:09.696Z	a8d2dbe4-2812-43ad-9c91-23c514167a55	Successfully associated line item 58377289062 with deal 64421775273
+END RequestId: a8d2dbe4-2812-43ad-9c91-23c514167a55
+REPORT RequestId: a8d2dbe4-2812-43ad-9c91-23c514167a55	Duration: 5408.90 ms	Billed Duration: 5409 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 72ff38fc-87b7-4c94-b733-5da30a1ad6ae Version: $LATEST
+END RequestId: 72ff38fc-87b7-4c94-b733-5da30a1ad6ae
+REPORT RequestId: 72ff38fc-87b7-4c94-b733-5da30a1ad6ae	Duration: 301.90 ms	Billed Duration: 302 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 8c322f09-8ed6-461b-b676-82d1d6192a1e Version: $LATEST
+END RequestId: 8c322f09-8ed6-461b-b676-82d1d6192a1e
+REPORT RequestId: 8c322f09-8ed6-461b-b676-82d1d6192a1e	Duration: 1321.30 ms	Billed Duration: 1322 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 49419655-13ae-490a-89d9-4d98c1b36c65 Version: $LATEST
+END RequestId: 49419655-13ae-490a-89d9-4d98c1b36c65
+REPORT RequestId: 49419655-13ae-490a-89d9-4d98c1b36c65	Duration: 313.24 ms	Billed Duration: 314 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 804756b4-475f-42d1-9438-ce000ffa3014 Version: $LATEST
+[WARNING]	2026-08-28T08:46:24.910Z	804756b4-475f-42d1-9438-ce000ffa3014	Processing 3 container configurations for deal 64421775273
+[WARNING]	2026-08-28T08:46:25.597Z	804756b4-475f-42d1-9438-ce000ffa3014	Searching for container product with SKU: 'CONTAINER-D20DR'
+[WARNING]	2026-08-28T08:46:26.036Z	804756b4-475f-42d1-9438-ce000ffa3014	Found container product 34240664372 for SKU CONTAINER-D20DR
+[WARNING]	2026-08-28T08:46:26.335Z	804756b4-475f-42d1-9438-ce000ffa3014	[Batch API] 1 companies asociados al deal 64421775273
+[WARNING]	2026-08-28T08:46:26.721Z	804756b4-475f-42d1-9438-ce000ffa3014	Company residence is 4
+[WARNING]	2026-08-28T08:46:27.217Z	804756b4-475f-42d1-9438-ce000ffa3014	[Batch API] 2 2-43108800 asociados al deal 64421775273
+[WARNING]	2026-08-28T08:46:27.217Z	804756b4-475f-42d1-9438-ce000ffa3014	[fabricante] Found 2 provider associations
+[WARNING]	2026-08-28T08:46:27.504Z	804756b4-475f-42d1-9438-ce000ffa3014	[fabricante] Found fabricante provider with cardcode: P0670
+[WARNING]	2026-08-28T08:46:27.799Z	804756b4-475f-42d1-9438-ce000ffa3014	[Batch API] 1 line_items asociados al deal 64421775273
+[WARNING]	2026-08-28T08:46:27.799Z	804756b4-475f-42d1-9438-ce000ffa3014	Found 1 existing line items
+[WARNING]	2026-08-28T08:46:28.075Z	804756b4-475f-42d1-9438-ce000ffa3014	[containers] merge incremental deal=64421775273: 0 previos, 3 nuevos, 0 eliminados (max_numero=0)
+[WARNING]	2026-08-28T08:46:28.646Z	804756b4-475f-42d1-9438-ce000ffa3014	[Batch API] 1 companies asociados al deal 64421775273
+[WARNING]	2026-08-28T08:46:29.478Z	804756b4-475f-42d1-9438-ce000ffa3014	[Batch API] 2 2-43108800 asociados al deal 64421775273
+START RequestId: 98e3eec0-4dc9-4843-b054-b430c4492e7c Version: $LATEST
+END RequestId: 98e3eec0-4dc9-4843-b054-b430c4492e7c
+REPORT RequestId: 98e3eec0-4dc9-4843-b054-b430c4492e7c	Duration: 338.16 ms	Billed Duration: 339 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+[WARNING]	2026-08-28T08:46:30.162Z	804756b4-475f-42d1-9438-ce000ffa3014	Identified 1 unique article SKUs to search (nuevos)
+[WARNING]	2026-08-28T08:46:30.505Z	804756b4-475f-42d1-9438-ce000ffa3014	Batch read found 1 article products
+[WARNING]	2026-08-28T08:46:30.505Z	804756b4-475f-42d1-9438-ce000ffa3014	[containers] product=42078144944 peso_neto='7.92' peso_bruto='8.613' name_en='NON ALCOHOLIC BEER-VITALSBERG-0.0%-CANNED-4X6X33CL' name_fr='BIERE SANS ALCOOL-VITALSBERG-0.0%-CANETTE-4X6X33CL'
+[WARNING]	2026-08-28T08:46:30.505Z	804756b4-475f-42d1-9438-ce000ffa3014	Prepared NUEVO container 64421775273-001 (D20DR) with 1 articles
+[WARNING]	2026-08-28T08:46:30.505Z	804756b4-475f-42d1-9438-ce000ffa3014	Prepared NUEVO container 64421775273-002 (D20DR) with 1 articles
+[WARNING]	2026-08-28T08:46:30.505Z	804756b4-475f-42d1-9438-ce000ffa3014	Prepared NUEVO container 64421775273-003 (D20DR) with 1 articles
+[WARNING]	2026-08-28T08:46:30.806Z	804756b4-475f-42d1-9438-ce000ffa3014	Prepared 3 container line items, 3 article line items, 0 intermediario line items, and 0 cloned service/flete/seguro line items
+[WARNING]	2026-08-28T08:46:31.479Z	804756b4-475f-42d1-9438-ce000ffa3014	Batch created 6 line items
+[WARNING]	2026-08-28T08:46:31.479Z	804756b4-475f-42d1-9438-ce000ffa3014	Created 3 container line items and 3 article line items
+[WARNING]	2026-08-28T08:46:31.803Z	804756b4-475f-42d1-9438-ce000ffa3014	[containers] archivadas 1 líneas de catálogo sin contenedor
+END RequestId: 804756b4-475f-42d1-9438-ce000ffa3014
+REPORT RequestId: 804756b4-475f-42d1-9438-ce000ffa3014	Duration: 7607.30 ms	Billed Duration: 7608 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 547ee765-1c27-4208-bf8e-94f6b04ef7b6 Version: $LATEST
+[WARNING]	2026-08-28T08:46:32.983Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] READ deal_id=64421775273 fetching container line items
+[WARNING]	2026-08-28T08:46:33.284Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[Batch API] 6 line_items asociados al deal 64421775273
+[WARNING]	2026-08-28T08:46:33.284Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] READ line_item_ids count=6 ids=['58377931267', '58377931268', '58377931269', '58377931270', '58377931271', '58377931272']
+[WARNING]	2026-08-28T08:46:33.561Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] Batch fetched 6 line items
+[WARNING]	2026-08-28T08:46:33.561Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] line_item[0] id=58377931270 hs_product_type='Articulo' hs_product_id=42078144944 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:46:33.561Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] line_item[1] id=58377931271 hs_product_type='Articulo' hs_product_id=42078144944 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:46:33.561Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] line_item[2] id=58377931267 hs_product_type='container' hs_product_id=34240664372 tipo_articulo='transitario'
+[WARNING]	2026-08-28T08:46:33.561Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] line_item[3] id=58377931269 hs_product_type='container' hs_product_id=34240664372 tipo_articulo='transitario'
+[WARNING]	2026-08-28T08:46:33.561Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] line_item[4] id=58377931272 hs_product_type='Articulo' hs_product_id=42078144944 tipo_articulo='fabricante'
+[WARNING]	2026-08-28T08:46:33.840Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] Classified: container_line_items=3 article_line_items=3
+[WARNING]	2026-08-28T08:46:34.131Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	Batch fetched 2 product SKUs
+[WARNING]	2026-08-28T08:46:34.131Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	Loaded individual container #1: D20DR x1
+[WARNING]	2026-08-28T08:46:34.131Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	Loaded individual container #2: D20DR x1
+[WARNING]	2026-08-28T08:46:34.132Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	Loaded individual container #3: D20DR x1
+[WARNING]	2026-08-28T08:46:34.132Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	Grouped containers: D20DR x3 (containers #1-3)
+[WARNING]	2026-08-28T08:46:34.132Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	Mapped article line item 58377931270: name='64421775273-001 - CERVEZA-VITALSBERG-0.0%-LATA-4X6X33CL-3B0VBLB6 '
+[WARNING]	2026-08-28T08:46:34.132Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	Mapped article line item 58377931271: name='64421775273-002 - CERVEZA-VITALSBERG-0.0%-LATA-4X6X33CL-3B0VBLB6 '
+[WARNING]	2026-08-28T08:46:34.132Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	Mapped article line item 58377931272: name='64421775273-003 - CERVEZA-VITALSBERG-0.0%-LATA-4X6X33CL-3B0VBLB6 '
+[WARNING]	2026-08-28T08:46:34.132Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	Mapped data for 3 article line items (3 unique names)
+[WARNING]	2026-08-28T08:46:34.132Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] HubSpot sync degradation detected: 3 fabricante articles missing precio_de_coste. Restoring from product catalog (current hs_price_eur, not historical cost).
+[WARNING]	2026-08-28T08:46:34.770Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] Auto-repair: restored margen_unitario for 3 line items
+[WARNING]	2026-08-28T08:46:34.771Z	547ee765-1c27-4208-bf8e-94f6b04ef7b6	[containers] READ returning containers=1 unique_containers=3 total_units=3 total_colis=7254
+END RequestId: 547ee765-1c27-4208-bf8e-94f6b04ef7b6
+REPORT RequestId: 547ee765-1c27-4208-bf8e-94f6b04ef7b6	Duration: 1790.65 ms	Billed Duration: 1791 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 1f4f21d1-4974-4272-a859-9b8f2b2da588 Version: $LATEST
+START RequestId: 4f5f9a1e-e5f6-4563-b029-e9a0763c2fd3 Version: $LATEST
+END RequestId: 1f4f21d1-4974-4272-a859-9b8f2b2da588
+REPORT RequestId: 1f4f21d1-4974-4272-a859-9b8f2b2da588	Duration: 1407.10 ms	Billed Duration: 1408 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+END RequestId: 4f5f9a1e-e5f6-4563-b029-e9a0763c2fd3
+REPORT RequestId: 4f5f9a1e-e5f6-4563-b029-e9a0763c2fd3	Duration: 316.39 ms	Billed Duration: 317 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: d73d410b-5c9d-4aec-a2e9-1e0043945033 Version: $LATEST
+END RequestId: d73d410b-5c9d-4aec-a2e9-1e0043945033
+REPORT RequestId: d73d410b-5c9d-4aec-a2e9-1e0043945033	Duration: 303.11 ms	Billed Duration: 304 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: 67b8c539-e1b8-4a56-aa00-42c5b3222549 Version: $LATEST
+START RequestId: 7a2e3db4-44b5-4c70-b402-ff43bd4968a6 Version: $LATEST
+END RequestId: 7a2e3db4-44b5-4c70-b402-ff43bd4968a6
+REPORT RequestId: 7a2e3db4-44b5-4c70-b402-ff43bd4968a6	Duration: 299.86 ms	Billed Duration: 300 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+END RequestId: 67b8c539-e1b8-4a56-aa00-42c5b3222549
+REPORT RequestId: 67b8c539-e1b8-4a56-aa00-42c5b3222549	Duration: 1410.16 ms	Billed Duration: 1411 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: 9aedc3af-9376-4d2c-8adc-75afad9f9976 Version: $LATEST
+END RequestId: 9aedc3af-9376-4d2c-8adc-75afad9f9976
+REPORT RequestId: 9aedc3af-9376-4d2c-8adc-75afad9f9976	Duration: 327.01 ms	Billed Duration: 328 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: df184148-2389-42ef-b8d5-816381e9b639 Version: $LATEST
+END RequestId: df184148-2389-42ef-b8d5-816381e9b639
+REPORT RequestId: df184148-2389-42ef-b8d5-816381e9b639	Duration: 317.20 ms	Billed Duration: 318 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: 1e465e48-7fdd-4af6-9808-1a472e5f0605 Version: $LATEST
+START RequestId: c0b8d59f-5b24-461d-8643-ed3377021ba4 Version: $LATEST
+[WARNING]	2026-08-28T08:47:10.892Z	c0b8d59f-5b24-461d-8643-ed3377021ba4	Fetching rutas for deal 64421775273
+END RequestId: 1e465e48-7fdd-4af6-9808-1a472e5f0605
+REPORT RequestId: 1e465e48-7fdd-4af6-9808-1a472e5f0605	Duration: 1271.47 ms	Billed Duration: 1272 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+END RequestId: c0b8d59f-5b24-461d-8643-ed3377021ba4
+REPORT RequestId: c0b8d59f-5b24-461d-8643-ed3377021ba4	Duration: 1189.66 ms	Billed Duration: 1190 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 145674ef-98ee-4179-85d2-d51462fda9fb Version: $LATEST
+[WARNING]	2026-08-28T08:47:16.491Z	145674ef-98ee-4179-85d2-d51462fda9fb	Fetching rutas for deal 64421775273
+START RequestId: 25e62143-17be-43d1-8659-8b07b0ca0856 Version: $LATEST
+END RequestId: 25e62143-17be-43d1-8659-8b07b0ca0856
+REPORT RequestId: 25e62143-17be-43d1-8659-8b07b0ca0856	Duration: 470.80 ms	Billed Duration: 471 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+END RequestId: 145674ef-98ee-4179-85d2-d51462fda9fb
+REPORT RequestId: 145674ef-98ee-4179-85d2-d51462fda9fb	Duration: 1542.79 ms	Billed Duration: 1543 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 1a1ecd4d-936b-41ff-8581-e794eedb102b Version: $LATEST
+END RequestId: 1a1ecd4d-936b-41ff-8581-e794eedb102b
+REPORT RequestId: 1a1ecd4d-936b-41ff-8581-e794eedb102b	Duration: 326.65 ms	Billed Duration: 327 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 33208f69-a227-461c-a7f1-a34b7734a010 Version: $LATEST
+END RequestId: 33208f69-a227-461c-a7f1-a34b7734a010
+REPORT RequestId: 33208f69-a227-461c-a7f1-a34b7734a010	Duration: 1208.60 ms	Billed Duration: 1209 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 9b4668ee-5df3-4ce5-bf88-7c1874e8c303 Version: $LATEST
+END RequestId: 9b4668ee-5df3-4ce5-bf88-7c1874e8c303
+REPORT RequestId: 9b4668ee-5df3-4ce5-bf88-7c1874e8c303	Duration: 295.48 ms	Billed Duration: 296 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: de5197d5-48b1-4af7-bc2a-e2da6df9b3fd Version: $LATEST
+END RequestId: de5197d5-48b1-4af7-bc2a-e2da6df9b3fd
+REPORT RequestId: de5197d5-48b1-4af7-bc2a-e2da6df9b3fd	Duration: 324.40 ms	Billed Duration: 325 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 0c911ce9-d17e-4abe-a215-2abaa0f6ace5 Version: $LATEST
+END RequestId: 0c911ce9-d17e-4abe-a215-2abaa0f6ace5
+REPORT RequestId: 0c911ce9-d17e-4abe-a215-2abaa0f6ace5	Duration: 1225.80 ms	Billed Duration: 1226 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: edd6f3c4-998e-45e5-ae65-e1ff5a0fb512 Version: $LATEST
+END RequestId: edd6f3c4-998e-45e5-ae65-e1ff5a0fb512
+REPORT RequestId: edd6f3c4-998e-45e5-ae65-e1ff5a0fb512	Duration: 311.25 ms	Billed Duration: 312 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 6006ed60-b959-4c9b-85e7-d64b8af4c99c Version: $LATEST
+END RequestId: 6006ed60-b959-4c9b-85e7-d64b8af4c99c
+REPORT RequestId: 6006ed60-b959-4c9b-85e7-d64b8af4c99c	Duration: 372.85 ms	Billed Duration: 373 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 97ec9a2c-a8c9-489e-ab17-8a34069ad143 Version: $LATEST
+END RequestId: 97ec9a2c-a8c9-489e-ab17-8a34069ad143
+REPORT RequestId: 97ec9a2c-a8c9-489e-ab17-8a34069ad143	Duration: 1391.64 ms	Billed Duration: 1392 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: dbc7b047-d003-466d-b886-8d8d2e927d69 Version: $LATEST
+END RequestId: dbc7b047-d003-466d-b886-8d8d2e927d69
+REPORT RequestId: dbc7b047-d003-466d-b886-8d8d2e927d69	Duration: 299.75 ms	Billed Duration: 300 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 807a244b-2354-4734-8e26-1eb7c756cff7 Version: $LATEST
+END RequestId: 807a244b-2354-4734-8e26-1eb7c756cff7
+REPORT RequestId: 807a244b-2354-4734-8e26-1eb7c756cff7	Duration: 301.83 ms	Billed Duration: 302 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: a1242647-8adf-4c58-9f9b-98600497e135 Version: $LATEST
+END RequestId: a1242647-8adf-4c58-9f9b-98600497e135
+REPORT RequestId: a1242647-8adf-4c58-9f9b-98600497e135	Duration: 1393.54 ms	Billed Duration: 1394 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 1f30debd-8d17-4da6-9d4a-f8355a066046 Version: $LATEST
+END RequestId: 1f30debd-8d17-4da6-9d4a-f8355a066046
+REPORT RequestId: 1f30debd-8d17-4da6-9d4a-f8355a066046	Duration: 716.33 ms	Billed Duration: 717 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 181944ce-ed3b-4965-a184-741c7f34cd61 Version: $LATEST
+START RequestId: 245319c8-5efd-40b5-a4ed-c1411bb76bd7 Version: $LATEST
+[WARNING]	2026-08-28T08:48:29.338Z	181944ce-ed3b-4965-a184-741c7f34cd61	[Batch API] 2 2-43108800 asociados al deal 64421775273
+END RequestId: 245319c8-5efd-40b5-a4ed-c1411bb76bd7
+REPORT RequestId: 245319c8-5efd-40b5-a4ed-c1411bb76bd7	Duration: 322.46 ms	Billed Duration: 323 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+[WARNING]	2026-08-28T08:48:30.640Z	181944ce-ed3b-4965-a184-741c7f34cd61	[Batch API] 6 line_items asociados al deal 64421775273
+[WARNING]	2026-08-28T08:48:31.260Z	181944ce-ed3b-4965-a184-741c7f34cd61	[Batch API] 1 companies asociados al deal 64421775273
+[WARNING]	2026-08-28T08:48:33.947Z	181944ce-ed3b-4965-a184-741c7f34cd61	[Batch API] 1 contacts asociados al deal 64421775273
+[WARNING]	2026-08-28T08:48:34.246Z	181944ce-ed3b-4965-a184-741c7f34cd61	[Batch API] 1 companies asociados al deal 64421775273
+[WARNING]	2026-08-28T08:48:34.246Z	181944ce-ed3b-4965-a184-741c7f34cd61	[transit] no CONTENEDOR CO matched for key=('64421775273-001', 'legacy') name='64421775273-001'; available keys=[]
+[WARNING]	2026-08-28T08:48:34.246Z	181944ce-ed3b-4965-a184-741c7f34cd61	[transit] no CONTENEDOR CO matched for key=('64421775273-002', 'legacy') name='64421775273-002'; available keys=[]
+[WARNING]	2026-08-28T08:48:34.246Z	181944ce-ed3b-4965-a184-741c7f34cd61	[transit] no CONTENEDOR CO matched for key=('64421775273-003', 'legacy') name='64421775273-003'; available keys=[]
+START RequestId: fd4c5f25-b737-4178-a7f3-35a5cf2f86fc Version: $LATEST
+END RequestId: fd4c5f25-b737-4178-a7f3-35a5cf2f86fc
+REPORT RequestId: fd4c5f25-b737-4178-a7f3-35a5cf2f86fc	Duration: 1214.66 ms	Billed Duration: 1215 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: 38b944f1-f9db-4729-8cf7-4d623f0af8c7 Version: $LATEST
+END RequestId: 38b944f1-f9db-4729-8cf7-4d623f0af8c7
+REPORT RequestId: 38b944f1-f9db-4729-8cf7-4d623f0af8c7	Duration: 432.22 ms	Billed Duration: 433 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+END RequestId: 181944ce-ed3b-4965-a184-741c7f34cd61
+REPORT RequestId: 181944ce-ed3b-4965-a184-741c7f34cd61	Duration: 10160.15 ms	Billed Duration: 10161 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: dcd89e50-d55d-4e20-a6d0-b9b063ab6b51 Version: $LATEST
+END RequestId: dcd89e50-d55d-4e20-a6d0-b9b063ab6b51
+REPORT RequestId: dcd89e50-d55d-4e20-a6d0-b9b063ab6b51	Duration: 291.03 ms	Billed Duration: 292 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: e448cad1-eb28-443a-9e1a-78878040e34c Version: $LATEST
+[WARNING]	2026-08-28T08:48:50.016Z	e448cad1-eb28-443a-9e1a-78878040e34c	[Batch API] 9 line_items asociados al deal 64421775273
+[WARNING]	2026-08-28T08:48:50.616Z	e448cad1-eb28-443a-9e1a-78878040e34c	[Batch API] 1 companies asociados al deal 64421775273
+START RequestId: 6dfe8ba8-de47-4f71-a424-95ab4e508fbb Version: $LATEST
+[WARNING]	2026-08-28T08:48:52.095Z	e448cad1-eb28-443a-9e1a-78878040e34c	[Batch API] 4 2-43108800 asociados al deal 64421775273
+END RequestId: 6dfe8ba8-de47-4f71-a424-95ab4e508fbb
+REPORT RequestId: 6dfe8ba8-de47-4f71-a424-95ab4e508fbb	Duration: 1317.50 ms	Billed Duration: 1318 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: d290dbc2-497e-4aff-bfc6-a64096b6f0e9 Version: $LATEST
+END RequestId: d290dbc2-497e-4aff-bfc6-a64096b6f0e9
+REPORT RequestId: d290dbc2-497e-4aff-bfc6-a64096b6f0e9	Duration: 308.64 ms	Billed Duration: 309 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+[WARNING]	2026-08-28T08:48:54.224Z	e448cad1-eb28-443a-9e1a-78878040e34c	[Batch API] 1 contacts asociados al deal 64421775273
+[WARNING]	2026-08-28T08:48:54.526Z	e448cad1-eb28-443a-9e1a-78878040e34c	[Batch API] 1 companies asociados al deal 64421775273
+END RequestId: e448cad1-eb28-443a-9e1a-78878040e34c
+REPORT RequestId: e448cad1-eb28-443a-9e1a-78878040e34c	Duration: 5460.57 ms	Billed Duration: 5461 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: facebc72-0d8e-40f0-90bc-10e418012ab2 Version: $LATEST
+END RequestId: facebc72-0d8e-40f0-90bc-10e418012ab2
+REPORT RequestId: facebc72-0d8e-40f0-90bc-10e418012ab2	Duration: 322.73 ms	Billed Duration: 323 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 11cff7da-4a43-4589-b0e0-1c60a57e1a65 Version: $LATEST
+START RequestId: 2ece1b91-beba-4827-8e45-0415e24a23a2 Version: $LATEST
+END RequestId: 11cff7da-4a43-4589-b0e0-1c60a57e1a65
+REPORT RequestId: 11cff7da-4a43-4589-b0e0-1c60a57e1a65	Duration: 1241.50 ms	Billed Duration: 1242 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+END RequestId: 2ece1b91-beba-4827-8e45-0415e24a23a2
+REPORT RequestId: 2ece1b91-beba-4827-8e45-0415e24a23a2	Duration: 530.96 ms	Billed Duration: 531 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: b27eff87-5077-47ad-952e-8d1922b4ec53 Version: $LATEST
+END RequestId: b27eff87-5077-47ad-952e-8d1922b4ec53
+REPORT RequestId: b27eff87-5077-47ad-952e-8d1922b4ec53	Duration: 301.06 ms	Billed Duration: 302 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: 43406bb7-c0f8-4ec1-a66c-ef2b26943e01 Version: $LATEST
+START RequestId: dc7381ec-c442-4d4e-9e2d-557e65a14b13 Version: $LATEST
+END RequestId: dc7381ec-c442-4d4e-9e2d-557e65a14b13
+REPORT RequestId: dc7381ec-c442-4d4e-9e2d-557e65a14b13	Duration: 314.62 ms	Billed Duration: 315 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 8e9ac7af-53e7-404e-866b-38daa715acf4 Version: $LATEST
+[WARNING]	2026-08-28T08:49:25.738Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Updating negotiation data for 3 unique line items in deal 64421775273
+END RequestId: 43406bb7-c0f8-4ec1-a66c-ef2b26943e01
+REPORT RequestId: 43406bb7-c0f8-4ec1-a66c-ef2b26943e01	Duration: 1248.40 ms	Billed Duration: 1249 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+[WARNING]	2026-08-28T08:49:26.042Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[Batch API] 1 companies asociados al deal 64421775273
+[WARNING]	2026-08-28T08:49:26.366Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Fetching 3 line items to get tipo_articulo
+[WARNING]	2026-08-28T08:49:26.700Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Fetched data for 3 line items
+[WARNING]	2026-08-28T08:49:26.700Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Preparing update for line item 58377931270 with price=5.356865, margin=0.09413, VAT rep=EX, VAT sop=SEXP
+[WARNING]	2026-08-28T08:49:26.700Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Line item 58377931270: Setting price=5.357 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:49:26.700Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Preparing update for line item 58377931271 with price=5.356865, margin=0.09413, VAT rep=EX, VAT sop=SEXP
+[WARNING]	2026-08-28T08:49:26.700Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Line item 58377931271: Setting price=5.357 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:49:26.700Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Preparing update for line item 58377931272 with price=5.356865, margin=0.09413, VAT rep=EX, VAT sop=SEXP
+[WARNING]	2026-08-28T08:49:26.700Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Line item 58377931272: Setting price=5.357 (negotiated price from frontend)
+[WARNING]	2026-08-28T08:49:26.700Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Executing batch update for 3 line items
+[WARNING]	2026-08-28T08:49:27.121Z	8e9ac7af-53e7-404e-866b-38daa715acf4	[negociacion] Successfully updated 3 line items
+END RequestId: 8e9ac7af-53e7-404e-866b-38daa715acf4
+REPORT RequestId: 8e9ac7af-53e7-404e-866b-38daa715acf4	Duration: 2318.72 ms	Billed Duration: 2319 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+START RequestId: 5c3a75a0-a54b-4586-921a-f3fb59ae7923 Version: $LATEST
+START RequestId: 107e2652-7657-40ad-80d5-36c9c1be3d5d Version: $LATEST
+END RequestId: 5c3a75a0-a54b-4586-921a-f3fb59ae7923
+REPORT RequestId: 5c3a75a0-a54b-4586-921a-f3fb59ae7923	Duration: 288.23 ms	Billed Duration: 289 ms	Memory Size: 512 MB	Max Memory Used: 167 MB	
+END RequestId: 107e2652-7657-40ad-80d5-36c9c1be3d5d
+REPORT RequestId: 107e2652-7657-40ad-80d5-36c9c1be3d5d	Duration: 703.99 ms	Billed Duration: 704 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: 6b6db326-f5c4-4ffe-a16d-8539d9bd172a Version: $LATEST
+END RequestId: 6b6db326-f5c4-4ffe-a16d-8539d9bd172a
+REPORT RequestId: 6b6db326-f5c4-4ffe-a16d-8539d9bd172a	Duration: 307.76 ms	Billed Duration: 308 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: 3d11e2ca-fc4d-4b3a-85ef-814df4981561 Version: $LATEST
+END RequestId: 3d11e2ca-fc4d-4b3a-85ef-814df4981561
+REPORT RequestId: 3d11e2ca-fc4d-4b3a-85ef-814df4981561	Duration: 1336.83 ms	Billed Duration: 1337 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: fbfa94e0-a0b9-4ee5-9941-67faa6960da5 Version: $LATEST
+END RequestId: fbfa94e0-a0b9-4ee5-9941-67faa6960da5
+REPORT RequestId: fbfa94e0-a0b9-4ee5-9941-67faa6960da5	Duration: 335.63 ms	Billed Duration: 336 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: 785b6511-920f-467c-bc93-fc040f008101 Version: $LATEST
+END RequestId: 785b6511-920f-467c-bc93-fc040f008101
+REPORT RequestId: 785b6511-920f-467c-bc93-fc040f008101	Duration: 306.33 ms	Billed Duration: 307 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	
+START RequestId: 1355eb85-6dc5-494d-9598-4a510c6e15ab Version: $LATEST
+END RequestId: 1355eb85-6dc5-494d-9598-4a510c6e15ab
+REPORT RequestId: 1355eb85-6dc5-494d-9598-4a510c6e15ab	Duration: 1243.74 ms	Billed Duration: 1244 ms	Memory Size: 512 MB	Max Memory Used: 175 MB	

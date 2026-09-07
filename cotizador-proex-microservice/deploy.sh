@@ -304,6 +304,27 @@ aws lambda wait function-updated \
   --region ${AWS_REGION} \
   --profile ${AWS_PROFILE}
 
+# proex-jobs-worker corre esta misma imagen (publicación de custom objects, re-sync
+# de Contenedor/Elemento). Lambda fija el digest al desplegar, así que sin este
+# update se queda con el código anterior aunque el tag siga siendo :latest.
+WORKER_NAME="proex-jobs-worker"
+if aws lambda get-function --function-name ${WORKER_NAME} --region ${AWS_REGION} --profile ${AWS_PROFILE} &>/dev/null; then
+  echo "🔄 Actualizando ${WORKER_NAME} con la misma imagen..."
+  aws lambda update-function-code \
+    --function-name ${WORKER_NAME} \
+    --image-uri ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:latest \
+    --region ${AWS_REGION} \
+    --profile ${AWS_PROFILE} > /dev/null
+
+  aws lambda wait function-updated \
+    --function-name ${WORKER_NAME} \
+    --region ${AWS_REGION} \
+    --profile ${AWS_PROFILE}
+  echo "✅ ${WORKER_NAME} actualizado"
+else
+  echo "⚠️  ${WORKER_NAME} no existe; se omite"
+fi
+
 API_ID=$(aws apigatewayv2 get-apis \
   --region ${AWS_REGION} \
   --profile ${AWS_PROFILE} \

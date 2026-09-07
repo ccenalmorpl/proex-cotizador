@@ -184,7 +184,6 @@ const ArticulosTab = ({
           );
         }
 
-        // 1) Artículos - Group by hs_sku to show unique products
         // Since articles may now be individual line items per container,
         // we need to deduplicate them for display in ArticulosTab
         const articulosMap = new Map();
@@ -230,7 +229,6 @@ const ArticulosTab = ({
         const articulosTransformados = Array.from(articulosMap.values());
         console.log("[ArticulosTab] Artículos transformados (únicos por SKU):", articulosTransformados.length, "items:", articulosTransformados);
         setArticulosSeleccionados(articulosTransformados);
-        // 2) Proveedores
         const proveedoresIniciales = (data.providers || []).map((prov) => ({
           id: prov.id || prov.cardcode,
           cardcode: prov.cardcode,
@@ -239,7 +237,6 @@ const ArticulosTab = ({
         }));
         setProveedoresSeleccionados(proveedoresIniciales);
 
-        // 3) Localidad de carga options and value
         if (data.lugar_carga_options) {
           setLugarCargaOptions(data.lugar_carga_options);
         }

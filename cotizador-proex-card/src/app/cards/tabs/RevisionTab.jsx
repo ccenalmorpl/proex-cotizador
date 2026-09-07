@@ -1071,7 +1071,6 @@ const RevisionTab = ({
       if (!dealId) {
         throw new Error("ID del negocio no disponible");
       }
-      // 1. CALCULAR TOTALES Y ESTADÍSTICAS
 
       // Total de cajas
       const totalCajas = contenedoresUnicos.reduce((total, cont) => {
@@ -1131,7 +1130,6 @@ const RevisionTab = ({
         numContenedores,
       };
 
-      // 2. CONSTRUIR LINE ITEMS (Servicios, Contenedores, Artículos, Fletes)
 
       const lineItems = [];
 
@@ -1235,7 +1233,7 @@ const RevisionTab = ({
         });
       }
 
-      // 3. CALCULAR PRECIOS POR TIPO DE VENTA (utilidad compartida con NegociacionTab)
+      // Utilidad compartida con NegociacionTab.
 
       const totalesPorVenta = calcularTotalesPorTipoVenta(
         contenedoresUnicos, preciosEXW, baseFn, { clienteData }
@@ -1247,7 +1245,6 @@ const RevisionTab = ({
       const totalDAP_MARITIMO = totalesPorVenta.DAP_MARITIMO;
       const totalCIF = totalesPorVenta.CIF;
 
-      // 4. CONSTRUIR PAYLOAD COMPLETO
 
       const quotePayload = {
         // HEADER
@@ -1268,7 +1265,7 @@ const RevisionTab = ({
 
         // INFORMACIÓN DE LA EMPRESA
         empresa: {
-          nombre: "Pymext",
+          nombre: "Proex Drinks Group S.A.",
           direccion: documentacionData.direccionFiscal || "",
           iniciales: "AD",
         },

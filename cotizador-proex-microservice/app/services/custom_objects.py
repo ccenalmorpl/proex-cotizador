@@ -41,6 +41,69 @@ from app.utils.property_helpers import round_margin, round_price, resolve_almace
 
 logger = logging.getLogger(__name__)
 
+
+def fetch_associated_ids(client: HubSpot, from_type: str, from_id: str, to_type: str) -> List[str]:
+    """IDs asociados recorriendo TODAS las páginas de la v4.
+
+    La batch API v3 corta en 100 por objeto sin avisar, y aquí eso no es un
+    truncado inocuo: el diff de publicación crea y BORRA Contenedor/Elemento
+    comparando lo que lee con los line items, así que una lista corta hace que
+    dé por sobrantes objetos que sí existen. Un deal de 12 contenedores ya pasa
+    de 100 Elementos.
+    """
+    url = f"https://api.hubapi.com/crm/v4/objects/{from_type}/{from_id}/associations/{to_type}"
+    headers = {"Authorization": f"Bearer {client.access_token}", "Content-Type": "application/json"}
+    ids, after, paginas = [], None, 0
+
+    while True:
+        params = {"limit": 500}
+        if after:
+            params["after"] = after
+        r = requests.get(url, headers=headers, params=params, timeout=30)
+        if not r.ok:
+            raise RuntimeError(f"HTTP {r.status_code}: {r.text}")
+
+        data = r.json() or {}
+        for item in data.get("results", []):
+            val = item.get("toObjectId") or item.get("id")
+            if val is not None:
+                ids.append(str(val))
+
+        paginas += 1
+        after = ((data.get("paging") or {}).get("next") or {}).get("after")
+        if not after:
+            return ids
+        if paginas >= 40:
+            logger.error(
+                f"[assoc] corte de seguridad tras {paginas} páginas de {to_type} "
+                f"en {from_type} {from_id}; puede faltar contenido"
+            )
+            return ids
+
+
+def batch_read_objects(client: HubSpot, object_type: str, ids: List[str], properties: List[str]) -> List[Dict[str, Any]]:
+    """Lee objetos por id en lotes de 100, el máximo que admite la batch API.
+
+    Antes se pasaba la lista entera de golpe y colaba solo porque las
+    asociaciones llegaban truncadas a 100.
+    """
+    from hubspot.crm.objects import BatchReadInputSimplePublicObjectId
+
+    out = []
+    for i in range(0, len(ids), 100):
+        lote = BatchReadInputSimplePublicObjectId(
+            properties=properties,
+            inputs=[{"id": str(x)} for x in ids[i:i + 100]],
+        )
+        resp = client.crm.objects.batch_api.read(
+            object_type=object_type,
+            batch_read_input_simple_public_object_id=lote,
+        )
+        for obj in getattr(resp, "results", []) or []:
+            out.append({"id": obj.id, "properties": obj.properties})
+    return out
+
+
 # CONTENEDOR CRUD OPERATIONS
 
 def create_contenedor(
@@ -60,24 +123,6 @@ def create_contenedor(
 ) -> Optional[str]:
     """
     Create a Contenedor custom object and associate it with a deal.
-
-    Args:
-        client: HubSpot client instance
-        deal_id: HubSpot deal ID to associate with
-        nombre: Unique container name (e.g., "46298478914-001")
-        tipo_contenedor: Container type (e.g., "d40dr")
-        numero_container: Sequential container number
-        ocupacion: Occupancy percentage (90-103%)
-        peso_neto: Total net weight in kg
-        peso_bruto: Total gross weight in kg
-        container_config: JSON configuration string
-        total_cajas: Total boxes/units
-        price: Container price
-        line_item_id: Original line item ID for dual tracking
-        numero_precinto: Security seal number
-
-    Returns:
-        Created contenedor object ID if successful, None otherwise
     """
     try:
         # Prepare properties (all values as strings for HubSpot)
@@ -106,7 +151,6 @@ def create_contenedor(
         if numero_precinto:
             properties["numero_precinto"] = numero_precinto
 
-        # Create the object first without associations
         object_input = SimplePublicObjectInputForCreate(
             properties=properties
         )
@@ -154,19 +198,8 @@ def batch_create_contenedores_with_associations(
 ) -> Dict[str, str]:
     """
     Batch create multiple Contenedor objects and their associations to a deal.
-
     This is much faster than creating them one by one.
     Reduces API calls from N creates + N associations to 1 batch create + N associations.
-
-    Args:
-        client: HubSpot client instance
-        contenedores_data: List of dicts with Contenedor properties
-        deal_id: Deal ID to associate with
-        contact_id: Contact ID to associate with (optional)
-        company_id: Company ID to associate with (optional)
-
-    Returns:
-        Dict mapping contenedor nombre to contenedor ID
     """
     if not contenedores_data:
         return {}
@@ -201,23 +234,24 @@ def batch_create_contenedores_with_associations(
         prep_time = time.time() - prep_start
         logger.info(f"⏱️  [TIMER] Prepared {len(batch_inputs)} contenedores data in {prep_time:.2f}s")
 
-        # Batch create contenedores
         create_start = time.time()
-        batch_input = BatchInputSimplePublicObjectInputForCreate(inputs=batch_inputs)
-        result = client.crm.objects.batch_api.create(
-            object_type=OBJECT_TYPE_CONTENEDOR,
-            batch_input_simple_public_object_input_for_create=batch_input
-        )
-
-        # Create mapping of nombre -> id
         contenedor_map = {}
-        for obj in result.results:
-            nombre = obj.properties.get("nombre")
-            if nombre:
-                contenedor_map[nombre] = obj.id
+        for i in range(0, len(batch_inputs), 100):
+            batch_input = BatchInputSimplePublicObjectInputForCreate(
+                inputs=batch_inputs[i:i + 100]
+            )
+            result = client.crm.objects.batch_api.create(
+                object_type=OBJECT_TYPE_CONTENEDOR,
+                batch_input_simple_public_object_input_for_create=batch_input
+            )
+
+            for obj in result.results:
+                nombre = obj.properties.get("nombre")
+                if nombre:
+                    contenedor_map[nombre] = obj.id
 
         create_time = time.time() - create_start
-        logger.info(f"✅ Batch created {len(contenedor_map)} Contenedores in 1 API call ({create_time:.2f}s)")
+        logger.info(f"✅ Batch created {len(contenedor_map)} Contenedores ({create_time:.2f}s)")
 
         assoc_start = time.time()
         access_token = client.access_token
@@ -274,14 +308,6 @@ def update_contenedor(
 ) -> bool:
     """
     Update a Contenedor custom object.
-
-    Args:
-        client: HubSpot client instance
-        contenedor_id: Contenedor object ID
-        properties: Properties to update (values will be converted to strings)
-
-    Returns:
-        True if successful, False otherwise
     """
     try:
         # Convert all values to strings (HubSpot requirement)
@@ -308,13 +334,6 @@ def delete_contenedor(
 ) -> bool:
     """
     Delete (archive) a Contenedor custom object.
-
-    Args:
-        client: HubSpot client instance
-        contenedor_id: Contenedor object ID
-
-    Returns:
-        True if successful, False otherwise
     """
     try:
         client.crm.objects.basic_api.archive(
@@ -336,14 +355,6 @@ def get_contenedores_by_deal(
 ) -> List[Dict[str, Any]]:
     """
     Get all Contenedores associated with a deal.
-
-    Args:
-        client: HubSpot client instance
-        deal_id: HubSpot deal ID
-        properties: List of properties to retrieve (None = default set)
-
-    Returns:
-        List of contenedor objects with their properties
     """
     try:
         # Default properties if none specified
@@ -358,23 +369,7 @@ def get_contenedores_by_deal(
 
         # Try first: Use associations API to get contenedor IDs
         try:
-            deal_object_id = PublicObjectId(id=deal_id)
-            batch_input = BatchInputPublicObjectId(inputs=[deal_object_id])
-
-            associations_response = client.crm.associations.batch_api.read(
-                from_object_type="deals",
-                to_object_type=OBJECT_TYPE_CONTENEDOR,
-                batch_input_public_object_id=batch_input
-            )
-
-            if hasattr(associations_response, 'results') and associations_response.results:
-                for result in associations_response.results:
-                    if hasattr(result, 'to') and result.to:
-                        for assoc in result.to:
-                            assoc_id = getattr(assoc, 'id', None) or getattr(assoc, 'toObjectId', None)
-                            if assoc_id:
-                                contenedor_ids.append(str(assoc_id))
-
+            contenedor_ids = fetch_associated_ids(client, "deals", deal_id, OBJECT_TYPE_CONTENEDOR)
             logger.info(f"🔗 [ASSOCIATIONS] Found {len(contenedor_ids)} Contenedores via associations for deal {deal_id}")
         except Exception as e:
             logger.warning(f"⚠️ [ASSOCIATIONS] Failed to get Contenedores via associations: {e}")
@@ -421,26 +416,7 @@ def get_contenedores_by_deal(
             logger.info(f"❌ No Contenedores found for deal {deal_id} (tried both associations and search)")
             return []
 
-        # Batch read contenedores
-        from hubspot.crm.objects import BatchReadInputSimplePublicObjectId
-
-        batch_read_input = BatchReadInputSimplePublicObjectId(
-            properties=properties,
-            inputs=[{"id": cid} for cid in contenedor_ids]
-        )
-
-        batch_response = client.crm.objects.batch_api.read(
-            object_type=OBJECT_TYPE_CONTENEDOR,
-            batch_read_input_simple_public_object_id=batch_read_input
-        )
-
-        contenedores = []
-        if hasattr(batch_response, 'results'):
-            for obj in batch_response.results:
-                contenedores.append({
-                    "id": obj.id,
-                    "properties": obj.properties
-                })
+        contenedores = batch_read_objects(client, OBJECT_TYPE_CONTENEDOR, contenedor_ids, properties)
 
         logger.info(f"✅ Retrieved {len(contenedores)} Contenedores for deal {deal_id}")
         return contenedores
@@ -483,32 +459,6 @@ def create_elemento(
 ) -> Optional[str]:
     """
     Create an Elemento custom object and associate it with a deal and contenedor.
-
-    Args:
-        client: HubSpot client instance
-        deal_id: HubSpot deal ID to associate with
-        contenedor_id: Contenedor object ID to associate with
-        nombre: Element name (e.g., "46298478914-001 - Vino Tinto")
-        tipo_articulo: Article type (fabricante, servicio, flete, etc.)
-        nombre_contenedor: Container name for quick reference
-        cantidad: Quantity
-        product_sku: Product SKU
-        precio_unitario: Unit price
-        precio_de_coste: Cost price
-        precio_total: Total price
-        margen_unitario: Unit margin percentage
-        peso_neto_unitario: Unit net weight in kg
-        peso_neto_total: Total net weight in kg
-        peso_bruto_unitario: Unit gross weight in kg
-        peso_bruto_total: Total gross weight in kg
-        cardcode: Provider cardcode
-        nombre_proveedor: Provider name
-        tipo_iva_repercutido: VAT type
-        codigo_proveedor: Provider's product code
-        line_item_id: Original line item ID for dual tracking
-
-    Returns:
-        Created elemento object ID if successful, None otherwise
     """
     try:
         # Prepare properties (all values as strings for HubSpot)
@@ -568,7 +518,6 @@ def create_elemento(
         if marca:
             properties["marca"] = marca
 
-        # Create the object first without associations
         object_input = SimplePublicObjectInputForCreate(
             properties=properties
         )
@@ -639,20 +588,8 @@ def batch_create_elementos_with_associations(
 ) -> List[str]:
     """
     Batch create multiple Elemento objects and their associations to a deal and contenedor.
-
     This is much faster than creating them one by one.
     Reduces API calls from N creates + 2N associations to 1 batch create + 2N associations.
-
-    Args:
-        client: HubSpot client instance
-        elementos_data: List of dicts with Elemento properties
-        deal_id: Deal ID to associate with
-        contenedor_id: Contenedor ID to associate with
-        contact_id: Contact ID to associate with (optional)
-        company_id: Company ID to associate with (optional)
-
-    Returns:
-        List of created elemento IDs
     """
     if not elementos_data:
         return []
@@ -707,17 +644,20 @@ def batch_create_elementos_with_associations(
         prep_time = time.time() - prep_start
         logger.info(f"⏱️  [TIMER] Prepared {len(batch_inputs)} elementos data in {prep_time:.2f}s")
 
-        # Batch create elementos
         create_start = time.time()
-        batch_input = BatchInputSimplePublicObjectInputForCreate(inputs=batch_inputs)
-        result = client.crm.objects.batch_api.create(
-            object_type=OBJECT_TYPE_ELEMENTO,
-            batch_input_simple_public_object_input_for_create=batch_input
-        )
+        elemento_ids = []
+        for i in range(0, len(batch_inputs), 100):
+            batch_input = BatchInputSimplePublicObjectInputForCreate(
+                inputs=batch_inputs[i:i + 100]
+            )
+            result = client.crm.objects.batch_api.create(
+                object_type=OBJECT_TYPE_ELEMENTO,
+                batch_input_simple_public_object_input_for_create=batch_input
+            )
+            elemento_ids.extend(obj.id for obj in result.results)
 
-        elemento_ids = [obj.id for obj in result.results]
         create_time = time.time() - create_start
-        logger.info(f"✅ Batch created {len(elemento_ids)} Elementos in 1 API call ({create_time:.2f}s)")
+        logger.info(f"✅ Batch created {len(elemento_ids)} Elementos ({create_time:.2f}s)")
 
         assoc_start = time.time()
         access_token = client.access_token
@@ -961,14 +901,6 @@ def update_elemento(
 ) -> bool:
     """
     Update an Elemento custom object.
-
-    Args:
-        client: HubSpot client instance
-        elemento_id: Elemento object ID
-        properties: Properties to update (values will be converted to strings)
-
-    Returns:
-        True if successful, False otherwise
     """
     try:
         string_properties = {k: str(v) for k, v in properties.items() if v is not None}
@@ -993,13 +925,6 @@ def delete_elemento(
 ) -> bool:
     """
     Delete (archive) an Elemento custom object.
-
-    Args:
-        client: HubSpot client instance
-        elemento_id: Elemento object ID
-
-    Returns:
-        True if successful, False otherwise
     """
     try:
         client.crm.objects.basic_api.archive(
@@ -1021,14 +946,6 @@ def get_elementos_by_contenedor(
 ) -> List[Dict[str, Any]]:
     """
     Get all Elementos associated with a contenedor.
-
-    Args:
-        client: HubSpot client instance
-        contenedor_id: Contenedor object ID
-        properties: List of properties to retrieve (None = default set)
-
-    Returns:
-        List of elemento objects with their properties
     """
     try:
         # Default properties if none specified
@@ -1038,49 +955,13 @@ def get_elementos_by_contenedor(
                 "product_sku", "cardcode", "line_item_id"
             ]
 
-        # Use associations API to get elemento IDs
-        contenedor_object_id = PublicObjectId(id=contenedor_id)
-        batch_input = BatchInputPublicObjectId(inputs=[contenedor_object_id])
-
-        associations_response = client.crm.associations.batch_api.read(
-            from_object_type=OBJECT_TYPE_CONTENEDOR,
-            to_object_type=OBJECT_TYPE_ELEMENTO,
-            batch_input_public_object_id=batch_input
-        )
-
-        elemento_ids = []
-        if hasattr(associations_response, 'results') and associations_response.results:
-            for result in associations_response.results:
-                if hasattr(result, 'to') and result.to:
-                    for assoc in result.to:
-                        assoc_id = getattr(assoc, 'id', None) or getattr(assoc, 'toObjectId', None)
-                        if assoc_id:
-                            elemento_ids.append(str(assoc_id))
+        elemento_ids = fetch_associated_ids(client, OBJECT_TYPE_CONTENEDOR, contenedor_id, OBJECT_TYPE_ELEMENTO)
 
         if not elemento_ids:
             logger.info(f"No Elementos associated to contenedor {contenedor_id}")
             return []
 
-        # Batch read elementos
-        from hubspot.crm.objects import BatchReadInputSimplePublicObjectId
-
-        batch_read_input = BatchReadInputSimplePublicObjectId(
-            properties=properties,
-            inputs=[{"id": eid} for eid in elemento_ids]
-        )
-
-        batch_response = client.crm.objects.batch_api.read(
-            object_type=OBJECT_TYPE_ELEMENTO,
-            batch_read_input_simple_public_object_id=batch_read_input
-        )
-
-        elementos = []
-        if hasattr(batch_response, 'results'):
-            for obj in batch_response.results:
-                elementos.append({
-                    "id": obj.id,
-                    "properties": obj.properties
-                })
+        elementos = batch_read_objects(client, OBJECT_TYPE_ELEMENTO, elemento_ids, properties)
 
         logger.info(f"✅ Retrieved {len(elementos)} Elementos for contenedor {contenedor_id}")
         return elementos
@@ -1096,14 +977,6 @@ def get_elementos_by_deal(
 ) -> List[Dict[str, Any]]:
     """
     Get all Elementos associated with a deal (across all contenedores).
-
-    Args:
-        client: HubSpot client instance
-        deal_id: HubSpot deal ID
-        properties: List of properties to retrieve (None = default set)
-
-    Returns:
-        List of elemento objects with their properties
     """
     try:
         # Default properties if none specified
@@ -1113,49 +986,13 @@ def get_elementos_by_deal(
                 "precio_total", "product_sku", "cardcode", "line_item_id"
             ]
 
-        # Use associations API to get elemento IDs
-        deal_object_id = PublicObjectId(id=deal_id)
-        batch_input = BatchInputPublicObjectId(inputs=[deal_object_id])
-
-        associations_response = client.crm.associations.batch_api.read(
-            from_object_type="deals",
-            to_object_type=OBJECT_TYPE_ELEMENTO,
-            batch_input_public_object_id=batch_input
-        )
-
-        elemento_ids = []
-        if hasattr(associations_response, 'results') and associations_response.results:
-            for result in associations_response.results:
-                if hasattr(result, 'to') and result.to:
-                    for assoc in result.to:
-                        assoc_id = getattr(assoc, 'id', None) or getattr(assoc, 'toObjectId', None)
-                        if assoc_id:
-                            elemento_ids.append(str(assoc_id))
+        elemento_ids = fetch_associated_ids(client, "deals", deal_id, OBJECT_TYPE_ELEMENTO)
 
         if not elemento_ids:
             logger.info(f"No Elementos found for deal {deal_id}")
             return []
 
-        # Batch read elementos
-        from hubspot.crm.objects import BatchReadInputSimplePublicObjectId
-
-        batch_read_input = BatchReadInputSimplePublicObjectId(
-            properties=properties,
-            inputs=[{"id": eid} for eid in elemento_ids]
-        )
-
-        batch_response = client.crm.objects.batch_api.read(
-            object_type=OBJECT_TYPE_ELEMENTO,
-            batch_read_input_simple_public_object_id=batch_read_input
-        )
-
-        elementos = []
-        if hasattr(batch_response, 'results'):
-            for obj in batch_response.results:
-                elementos.append({
-                    "id": obj.id,
-                    "properties": obj.properties
-                })
+        elementos = batch_read_objects(client, OBJECT_TYPE_ELEMENTO, elemento_ids, properties)
 
         logger.info(f"✅ Retrieved {len(elementos)} Elementos for deal {deal_id}")
         return elementos
@@ -1172,13 +1009,6 @@ def find_contenedor_by_nombre(
 ) -> Optional[str]:
     """
     Find Contenedor ID by its unique nombre property.
-
-    Args:
-        client: HubSpot client instance
-        nombre: Unique container name (e.g., "46298478914-001")
-
-    Returns:
-        Contenedor ID if found, None otherwise
     """
     try:
         from hubspot.crm.objects import PublicObjectSearchRequest
@@ -1222,13 +1052,6 @@ def find_elemento_by_nombre(
 ) -> Optional[str]:
     """
     Find Elemento ID by its unique nombre property.
-
-    Args:
-        client: HubSpot client instance
-        nombre: Elemento name (e.g., "46298478914-001 - Vino Tinto")
-
-    Returns:
-        Elemento ID if found, None otherwise
     """
     try:
         from hubspot.crm.objects import PublicObjectSearchRequest
@@ -1665,38 +1488,32 @@ def batch_delete_custom_objects(
 ) -> int:
     """
     Batch delete (archive) multiple custom objects.
-
     This is much faster than deleting them one by one.
-
-    Args:
-        client: HubSpot client instance
-        object_type: Object type (OBJECT_TYPE_CONTENEDOR or OBJECT_TYPE_ELEMENTO)
-        object_ids: List of object IDs to delete
-
-    Returns:
-        Number of objects deleted
     """
     if not object_ids:
         return 0
 
-    try:
-        from hubspot.crm.objects import BatchInputSimplePublicObjectId
+    from hubspot.crm.objects import BatchInputSimplePublicObjectId
 
-        batch_input = BatchInputSimplePublicObjectId(
-            inputs=[{"id": obj_id} for obj_id in object_ids]
-        )
+    deleted = 0
+    for i in range(0, len(object_ids), 100):
+        chunk = object_ids[i:i + 100]
+        try:
+            batch_input = BatchInputSimplePublicObjectId(
+                inputs=[{"id": obj_id} for obj_id in chunk]
+            )
 
-        client.crm.objects.batch_api.archive(
-            object_type=object_type,
-            batch_input_simple_public_object_id=batch_input
-        )
+            client.crm.objects.batch_api.archive(
+                object_type=object_type,
+                batch_input_simple_public_object_id=batch_input
+            )
+            deleted += len(chunk)
 
-        logger.info(f"✅ Batch deleted {len(object_ids)} {object_type} objects in 1 API call")
-        return len(object_ids)
+        except Exception as e:
+            logger.error(f"❌ Error batch deleting {object_type} objects [{i}:{i + len(chunk)}]: {e}")
 
-    except Exception as e:
-        logger.error(f"❌ Error batch deleting {object_type} objects: {e}")
-        return 0
+    logger.info(f"✅ Batch deleted {deleted}/{len(object_ids)} {object_type} objects")
+    return deleted
 
 def delete_contenedores_by_nombres(
     client: HubSpot,
@@ -1704,18 +1521,8 @@ def delete_contenedores_by_nombres(
 ) -> int:
     """
     Delete Contenedores by their unique nombre properties.
-
     When a Contenedor is deleted, all its associated Elementos are also deleted.
     This maintains referential integrity.
-
-    OPTIMIZED: Uses batch deletion for better performance.
-
-    Args:
-        client: HubSpot client instance
-        nombres: List of container names to delete (e.g., ["46298478914-001", "46298478914-002"])
-
-    Returns:
-        Number of objects deleted (contenedores + elementos)
     """
     if not nombres:
         return 0
@@ -1777,15 +1584,7 @@ def delete_elementos_by_nombres(
 ) -> int:
     """
     Delete Elementos by their unique nombre properties.
-
     Use this for deleting individual elementos (e.g., services not tied to containers).
-
-    Args:
-        client: HubSpot client instance
-        nombres: List of elemento names to delete
-
-    Returns:
-        Number of elementos deleted
     """
     if not nombres:
         return 0
@@ -1801,7 +1600,6 @@ def delete_elementos_by_nombres(
             if not elemento_id:
                 continue
 
-            # Delete the elemento
             if delete_elemento(client, elemento_id):
                 deleted_count += 1
                 logger.info(f"   ✅ Deleted Elemento {elemento_id} ('{nombre}')")
@@ -1896,7 +1694,6 @@ def process_deal_custom_objects_from_line_items(
 
         logger.info(f"📦 [PUBLISH] Starting custom objects publish for deal {deal_id}")
 
-        # Fetch documentos_a_generar and almacen from deal
         documentos_a_generar = None
         deal_almacen = None
         deal_transitario = None
@@ -1922,7 +1719,6 @@ def process_deal_custom_objects_from_line_items(
         try:
             from app.routes.deals import get_associated_contacts, get_associated_companies
 
-            # Get contact ID
             contact_ids = get_associated_contacts(deal_id)
             if contact_ids:
                 contact_id = contact_ids[0]
@@ -1930,7 +1726,6 @@ def process_deal_custom_objects_from_line_items(
             else:
                 logger.warning(f"⚠️ No contact found associated with deal {deal_id}")
 
-            # Get company ID
             company_ids = get_associated_companies(deal_id)
             if company_ids:
                 company_id = company_ids[0]
@@ -2285,50 +2080,10 @@ def process_deal_custom_objects_from_line_items(
 def _fetch_all_line_items_for_deal(client: HubSpot, deal_id: str) -> List[Dict[str, Any]]:
     """Fetch all line items associated with a deal."""
     try:
-        from hubspot.crm.associations import BatchInputPublicObjectId, PublicObjectId
-
-        # Get line item IDs associated with deal
-        deal_object_id = PublicObjectId(id=deal_id)
-        batch_input = BatchInputPublicObjectId(inputs=[deal_object_id])
-
-        associations_response = client.crm.associations.batch_api.read(
-            from_object_type="deals",
-            to_object_type="line_items",
-            batch_input_public_object_id=batch_input
-        )
-
-        line_item_ids = []
-        if hasattr(associations_response, 'results') and associations_response.results:
-            for result in associations_response.results:
-                if hasattr(result, 'to') and result.to:
-                    for assoc in result.to:
-                        assoc_id = getattr(assoc, 'id', None) or getattr(assoc, 'toObjectId', None)
-                        if assoc_id:
-                            line_item_ids.append(str(assoc_id))
-
-        # Fallback: v4 HTTP API if v1 SDK returned no results
-        if not line_item_ids:
-            try:
-                access_token = client.access_token
-                url = f"https://api.hubapi.com/crm/v4/objects/deals/{deal_id}/associations/line_items"
-                headers = {"Authorization": f"Bearer {access_token}"}
-                r = requests.get(url, headers=headers, timeout=10)
-                if r.ok:
-                    for item in r.json().get("results", []):
-                        val = item.get("toObjectId") or item.get("id")
-                        if val is not None:
-                            line_item_ids.append(str(val))
-                    if line_item_ids:
-                        logger.info(f"[v4 fallback] Found {len(line_item_ids)} line items for deal {deal_id}")
-                else:
-                    logger.warning(f"[v4 fallback] HTTP {r.status_code} fetching line items for deal {deal_id}")
-            except Exception as fallback_error:
-                logger.warning(f"[v4 fallback] Failed fetching line items for deal {deal_id}: {fallback_error}")
-
+        line_item_ids = fetch_associated_ids(client, "deals", deal_id, "line_items")
         if not line_item_ids:
             return []
 
-        # Batch read line items with all properties
         from hubspot.crm.objects import BatchReadInputSimplePublicObjectId
 
         properties = [
@@ -2340,23 +2095,7 @@ def _fetch_all_line_items_for_deal(client: HubSpot, deal_id: str) -> List[Dict[s
             "name_en", "name_fr", "description", "formato", "marca_certificado",
         ]
 
-        batch_read_input = BatchReadInputSimplePublicObjectId(
-            properties=properties,
-            inputs=[{"id": lid} for lid in line_item_ids]
-        )
-
-        batch_response = client.crm.objects.batch_api.read(
-            object_type="line_items",
-            batch_read_input_simple_public_object_id=batch_read_input
-        )
-
-        line_items = []
-        if hasattr(batch_response, 'results'):
-            for obj in batch_response.results:
-                line_items.append({
-                    "id": obj.id,
-                    "properties": obj.properties
-                })
+        line_items = batch_read_objects(client, "line_items", line_item_ids, properties)
 
         return line_items
 
@@ -2381,16 +2120,18 @@ def _fetch_product_prices_for_line_items(client: HubSpot, line_items: List[Dict[
     product_price_map: Dict[str, Optional[float]] = {}
     try:
         from hubspot.crm.objects import BatchReadInputSimplePublicObjectId
-        batch_input = BatchReadInputSimplePublicObjectId(
-            properties=["hs_price_eur"],
-            inputs=[{"id": str(pid)} for pid in product_ids],
-        )
-        resp = client.crm.products.batch_api.read(
-            batch_read_input_simple_public_object_id=batch_input,
-        )
-        for result in (resp.results or []):
-            props = result.properties or {}
-            product_price_map[str(result.id)] = round_price(props.get("hs_price_eur"))
+        ids = [str(pid) for pid in product_ids]
+        for i in range(0, len(ids), 100):
+            batch_input = BatchReadInputSimplePublicObjectId(
+                properties=["hs_price_eur"],
+                inputs=[{"id": x} for x in ids[i:i + 100]],
+            )
+            resp = client.crm.products.batch_api.read(
+                batch_read_input_simple_public_object_id=batch_input,
+            )
+            for result in (resp.results or []):
+                props = result.properties or {}
+                product_price_map[str(result.id)] = round_price(props.get("hs_price_eur"))
     except Exception as e:
         logger.warning(f"[parse] could not batch-read product hs_price_eur: {e}")
 
@@ -2406,20 +2147,13 @@ def _parse_line_items_to_custom_objects(
 ) -> tuple:
     """
     Parsea line items y los agrupa por contenedor usando propiedades HubSpot.
-
     Clasificación:
     - hs_product_type in {container, contenedor} → CONTENEDOR
     - hs_product_type in {flete, service, servicio} → ELEMENTO
     - tipo_articulo in {comisiones, fabricante} → ELEMENTO
     - tipo_articulo = transitario → ignorado
-
     Asociación elemento-contenedor: propiedad numero_container del line item
     (formato "{deal_id}-{num:03d}") coincide con el nombre del contenedor.
-
-    Returns:
-        (containers_map, standalone_elements) donde:
-        - containers_map: Dict[container_name, {"contenedor_data": {...}, "elementos_data": [...]}]
-        - standalone_elements: List[elemento_data] para elementos sin contenedor
     """
     containers_map = {}
     standalone_elements = []

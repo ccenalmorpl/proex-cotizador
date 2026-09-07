@@ -185,10 +185,6 @@ const ContenedoresTab = ({
     const currentParentLength = contenedoresData?.contenedoresDefinidos?.length || 0;
     const prevParentLength = prevParentLengthRef.current;
 
-    // Only clear local state if:
-    // 1. Parent explicitly has empty containers
-    // 2. Previous parent state had containers (transition from something to nothing)
-    // 3. Local state still has containers
     if (
       currentParentLength === 0 &&
       prevParentLength !== null &&
