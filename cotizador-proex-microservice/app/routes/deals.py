@@ -8667,6 +8667,11 @@ async def get_tipo_iva(data: TipoIVARequest):
 # ID fijo de la plantilla de cotización personalizada
 QUOTE_TEMPLATE_ID = "530249630794"
 
+# Tope de una propiedad de texto de HubSpot. Pasarse devuelve un 400 y deja el valor
+# anterior intacto, que en `quote_data_payload` significa un PDF con datos de otra
+# cotización.
+HUBSPOT_PROPERTY_MAX_CHARS = 65536
+
 @router.post("/{deal_id}/publish", response_model=PublishQuoteResponse)
 async def publish_quote(
     deal_id: str = Path(..., description="HubSpot Deal ID"),
@@ -8747,13 +8752,25 @@ async def publish_quote(
         except Exception as e:
             logger.warning(f"[publish] Could not fetch company aseguradora/tipo_cliente: {e}")
 
-        deal_update_properties = {
-            "quote_data_payload": json.dumps(
-                data.dict(),
-                ensure_ascii=False,
-                default=str
+        # `lineItems` es el 82 % del JSON (unos 444 caracteres por línea) y la plantilla
+        # de la cotización no lo usa: pinta la tabla desde los line items reales de la
+        # Quote. Con 600 líneas el payload se iba a 266.000 caracteres, HubSpot rechazaba
+        # la escritura por pasarse de 65.536 y el negocio se quedaba con el payload de la
+        # cotización ANTERIOR: el PDF salía con las estadísticas de otro pedido
+        # (08/09/2026, 50 contenedores imprimiendo el total de 10).
+        _payload_json = json.dumps(
+            {k: v for k, v in data.dict().items() if k != "lineItems"},
+            ensure_ascii=False,
+            default=str,
+        )
+        if len(_payload_json) > HUBSPOT_PROPERTY_MAX_CHARS:
+            raise HTTPException(
+                502,
+                f"El payload de la cotización ocupa {len(_payload_json)} caracteres y "
+                f"HubSpot admite {HUBSPOT_PROPERTY_MAX_CHARS}. No se publica: el PDF "
+                f"saldría con los datos de la cotización anterior.",
             )
-        }
+        deal_update_properties = {"quote_data_payload": _payload_json}
 
         try:
             client.crm.deals.basic_api.update(
@@ -8761,8 +8778,14 @@ async def publish_quote(
                 simple_public_object_input={"properties": deal_update_properties}
             )
             logger.info(f"[publish] Updated deal {deal_id} with quote payload")
+        except HTTPException:
+            raise
         except Exception as e:
-            logger.warning(f"[publish] Could not update deal with quote payload: {e}")
+            # Sin payload nuevo la plantilla pinta el del publish anterior, así que este
+            # fallo no puede quedarse en un warning: se ve en el PDF, no en los logs.
+            raise HTTPException(
+                502, f"No se pudo guardar el payload de la cotización en el negocio: {e}"
+            ) from e
 
         LANGUAGE_TOKENS = {
             "es": "es", "ES": "es", "ESPAÑOL": "es", "ESPANOL": "es", "SPANISH": "es",
@@ -8954,7 +8977,7 @@ async def publish_quote(
                         properties[field] = val
             items_payload.append(properties)
 
-        logger.info(f"[publish] Creating {len(items_payload)} line items for quote {quote_id} via batch")
+        logger.warning(f"[publish] Creating {len(items_payload)} line items for quote {quote_id} via batch")
 
         created_ids, create_errors = batch_create_line_items_via_api(
             access_token=access_token,
@@ -8972,10 +8995,30 @@ async def publish_quote(
 
         errors_list = create_errors + assoc_errors
 
-        logger.info(
+        # A warning, esto sale igual: la cotización se publica con las líneas que hayan
+        # cabido y la tabla cuadra consigo misma, así que el hueco solo se ve comparando
+        # con el total (08/09/2026: 200 líneas de 600 y 33 contenedores de 50).
+        logger.warning(
             f"[publish] Line items summary: {len(created_ids)} created, "
             f"{associated_count} associated, {len(errors_list)} errors"
         )
+        if len(created_ids) != len(items_payload) or associated_count != len(created_ids):
+            # La Quote se crea antes que sus líneas, así que a estas alturas ya existe en
+            # HubSpot. Se archiva para no dejar una cotización a medias que alguien pueda
+            # mandar al cliente.
+            try:
+                client.crm.quotes.basic_api.archive(quote_id=quote_id)
+                logger.warning(f"[publish] Quote {quote_id} archivada por copia incompleta")
+            except Exception as _arch_err:
+                logger.error(
+                    f"[publish] Quote {quote_id} incompleta y NO se pudo archivar: {_arch_err}"
+                )
+            raise HTTPException(
+                502,
+                f"Copia incompleta a la cotización: {len(created_ids)} de "
+                f"{len(items_payload)} líneas creadas y {associated_count} asociadas. "
+                f"{'; '.join(errors_list[:3]) if errors_list else 'sin error de HubSpot'}",
+            )
 
         return PublishQuoteResponse(
             success=True,

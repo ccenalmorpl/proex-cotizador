@@ -323,9 +323,9 @@ def batch_create_line_items_via_api(
 
         chunk_ids = [str(r["id"]) for r in results if r.get("id")]
         created_ids.extend(chunk_ids)
-        logger.info(
+        logger.warning(
             f"[batch_create_line_items_via_api] Chunk [{chunk_start}:{chunk_start + len(chunk)}] "
-            f"created {len(chunk_ids)} line items"
+            f"created {len(chunk_ids)} line items ({len(created_ids)}/{len(items)} acumulado)"
         )
 
         if on_chunk_done:
