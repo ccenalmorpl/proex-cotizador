@@ -229,12 +229,14 @@
 {% set precios_totalDAP_TERRESTRE = json_get_num(precios_raw, "totalDAP_TERRESTRE", "0")|string|trim|float %}
 {% set precios_totalDAP_MARITIMO  = json_get_num(precios_raw, "totalDAP_MARITIMO",  "0")|string|trim|float %}
 
-{% set stats_totalColis = json_get_num(estadisticas_raw, "totalColis", "0") %}
-{% set stats_netWeightKg = json_get_num(estadisticas_raw, "netWeightKg", "0") %}
-{% set stats_grossWeightKg = json_get_num(estadisticas_raw, "grossWeightKg", "0") %}
+{# json_get_num devuelve la cifra rodeada de saltos de línea, así que sin
+   |string|trim el |float da 0 y los cálculos se van al recuento de líneas. #}
+{% set stats_totalColis = json_get_num(estadisticas_raw, "totalColis", "0")|string|trim|float %}
+{% set stats_netWeightKg = json_get_num(estadisticas_raw, "netWeightKg", "0")|string|trim|float %}
+{% set stats_grossWeightKg = json_get_num(estadisticas_raw, "grossWeightKg", "0")|string|trim|float %}
 {% set stats_containerType = json_get_str(estadisticas_raw, "containerType", "N/A") %}
-{% set stats_filledUpTo = json_get_num(estadisticas_raw, "filledUpTo", "0") %}
-{% set stats_numContainers = json_get_num(estadisticas_raw, "numContainers", "0") %}
+{% set stats_filledUpTo = json_get_num(estadisticas_raw, "filledUpTo", "0")|string|trim|float %}
+{% set stats_numContainers = json_get_num(estadisticas_raw, "numContainers", "0")|string|trim|int %}
 {% set stats_totalEuros = json_get_num(estadisticas_raw, "totalEuros", "0")|string|trim|float %}
 
 {# ===================================================== #}
@@ -499,7 +501,14 @@
    menos contenedores de los que hay y el documento imprime dos totales distintos
    (07/09/2026: 6 líneas de contenedor de 10 → 25.843,20 € de diferencia entre la
    escalera y el TOTAL). El recuento queda de reserva para cotizaciones sin payload. #}
-{% set total_cajas_articulos = stats_totalColis|float if stats_totalColis|float > 0 else ns_caj.total %}
+{% set total_cajas_articulos = stats_totalColis if stats_totalColis > 0 else ns_caj.total %}
+
+{# HubSpot recorta en diferido los line items de una cotización grande (600 copiadas
+   y confirmadas, 200 minutos después), así que la tabla puede quedarse corta DESPUÉS
+   de publicar y ningún control del publish llega a verlo. Si las cajas de las líneas
+   no cuadran con las del pedido, el documento lo dice en vez de imprimir una tabla a
+   la que le faltan contenedores. #}
+{% set copia_incompleta = stats_totalColis > 0 and ns_caj.total > 0 and (ns_caj.total / stats_totalColis) < 0.999 %}
 
 {# Contenedores: filtrar por hs_product_type container/contenedor #}
 {% set containers = [] %}
@@ -565,10 +574,14 @@
 {% set hasta_puerto_destino           = (precio_destino * _nc) / _tc %}
 {% set hasta_localidad_destino        = hasta_puerto_salida %}
 {% set hasta_puerto_destino_localidad = hasta_puerto_destino %}
-{# ns_serv.total/seguro ya suman los line items duplicados por contenedor;
-   precio_origen/destino vienen del deal y se multiplican por nc aparte. #}
-{% set servicios_por_caja             = ns_serv.total  / _tc %}
-{% set seguro_por_caja                = ns_serv.seguro / _tc %}
+{# Servicios y seguro salen de los desgloses (payload), no de sumar los line items
+   presentes: los fletes ya se reparten con precio_origen/destino × nc, que cuentan
+   los contenedores del pedido, y mezclar ambas fuentes reparte entre las cajas de
+   todos los contenedores unos servicios que solo suman los de las líneas que hayan
+   llegado a la Quote. Álgebra idéntica con la copia completa, porque
+   `real_fobExpenses` = servicios sin seguro + precio_origen × nc. #}
+{% set servicios_por_caja             = (real_fobExpenses - (precio_origen * _nc) + real_insurance) / _tc %}
+{% set seguro_por_caja                = real_insurance / _tc %}
 
 {# Comisión cliente — replica pricing.py:_comision_por_caja desde deal.
    HubL expone props enum como label visible ("importe por negocio", "SÍ - Aumenta precio EXW"),
@@ -830,6 +843,17 @@
 {% set is_desagregado = deal.desagregar_cotizacion == "true" or deal.desagregar_cotizacion == true %}
 
 <body class="hs-quotes hs-quotes--commercial">
+
+{% if copia_incompleta %}
+  <div style="border:3px solid #b30000;background:#fff3f3;color:#b30000;padding:16px;margin:0 0 18px;font-family:Arial,Helvetica,sans-serif;">
+    <strong style="display:block;font-size:15px;margin-bottom:6px;">COTIZACIÓN INCOMPLETA — NO ENVIAR AL CLIENTE</strong>
+    <span style="font-size:13px;">
+      La tabla recoge {{ ns_caj.total|round(0)|int }} bultos de los
+      {{ stats_totalColis|round(0)|int }} del pedido: faltan líneas y tanto los importes por
+      tipo de venta como el precio por caja salen mal. Vuelve a publicar la cotización.
+    </span>
+  </div>
+{% endif %}
 
 {% if not is_desagregado or num_containers <= 1 %}
   {# ============================================ #}
