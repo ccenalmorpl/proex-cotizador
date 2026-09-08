@@ -1904,7 +1904,7 @@ async def update_deal_documentacion_data(
         example="46298478914"
     )
 ):
-    """Actualiza los campos de documentación del deal desde DocumentacionTab. Sólo se aplican los no-null."""
+    """Actualiza los campos de documentación del deal desde DocumentacionTab. Los null limpian la prop."""
     try:
         client = hubspot_client.get_client()
 

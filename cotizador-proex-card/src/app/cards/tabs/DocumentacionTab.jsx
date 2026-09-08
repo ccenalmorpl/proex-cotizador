@@ -96,8 +96,13 @@ const DocumentacionTab = ({
       // Solo ejecutar después del render inicial
       if (isLoadingInitial) return;
 
-      // Preseleccionar "cotizacion_rapida" si transitarioData.cotizacionRapida es true
-      if (transitarioData?.cotizacionRapida === true) {
+      // El flag lo marca TransitarioTab, pero se puede entrar aquí sin pasar por
+      // ese tab: entonces la única copia es la que vino del deal en la carga.
+      const esCotizacionRapida =
+        transitarioData?.cotizacionRapida === true ||
+        documentacionData.cotizacionRapida === true;
+
+      if (esCotizacionRapida) {
         const bancoCobro = documentacionData.bancoCobro?.value;
         const metodoPago = documentacionData.metodoPagoPlantilla?.value;
 
@@ -229,7 +234,8 @@ const DocumentacionTab = ({
     documentacionData.idiomaCotizacion?.value,
     documentacionData.bancoCobro?.value,
     documentacionData.metodoPagoPlantilla?.value,
-    transitarioData?.cotizacion_rapida,
+    documentacionData.cotizacionRapida,
+    transitarioData?.cotizacionRapida,
   ]);
 
   // Inicializar shipper con valor por defecto si está vacío
