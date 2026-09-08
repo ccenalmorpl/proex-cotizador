@@ -411,6 +411,64 @@ def _line_item_is_container(props: dict) -> bool:
     ta = (props.get("tipo_articulo") or "").strip().lower()
     return pt in HS_PRODUCT_TYPE_CONTAINER and ta == "transitario"
 
+# Por encima de esto la copia no sobrevive: HubSpot recorta a 200 los line items de una
+# cotización, y lo hace MINUTOS DESPUÉS de publicar, cuando ya ha confirmado todas las
+# asociaciones. Con 12 líneas por contenedor, a partir de ~16 contenedores no cabe.
+QUOTE_LINE_ITEMS_MAX = 150
+
+
+def _agrupar_items_para_quote(items: List[dict]) -> List[dict]:
+    """Funde en una sola línea las que comparten artículo y precio, sumando las cajas.
+
+    Solo afecta a la copia que se vuelca a la cotización; los line items del negocio se
+    quedan como están. El PDF ya presenta la tabla agrupada por artículo, así que el
+    documento sale igual pero con una copia que cabe: 50 contenedores pasan de 600 líneas
+    a unas 61 (9 artículos + 50 contenedores + flete + seguro).
+
+    Las líneas de contenedor no se tocan: son las que dan el número de contenedores y las
+    páginas del modo desagregado. Agrupar por precio además de por artículo evita mezclar
+    contenedores que se cotizaron a precios distintos.
+    """
+    agrupados: Dict[tuple, dict] = {}
+    salida: List[dict] = []
+
+    for props in items:
+        if _is_container_product_type(props.get("hs_product_type") or ""):
+            salida.append(props)
+            continue
+
+        clave = (
+            props.get("hs_product_id") or props.get("hs_sku") or props.get("name"),
+            props.get("price"),
+            props.get("tipo_articulo"),
+            props.get("hs_product_type"),
+            props.get("tipo_iva_repercutido"),
+            props.get("tipo_iva_soportado"),
+            props.get("cardcode"),
+        )
+        previo = agrupados.get(clave)
+        if previo is None:
+            fundido = dict(props)
+            # El nombre lleva el prefijo "{contenedor} - " y la línea ya no es de un
+            # contenedor concreto; el PDF lo recorta igualmente cuando hay varios.
+            nombre = (fundido.get("name") or "")
+            numero = (fundido.get("numero_container") or "").strip()
+            if numero and nombre.startswith(f"{numero} - "):
+                fundido["name"] = nombre[len(numero) + 3:]
+            fundido.pop("numero_container", None)
+            agrupados[clave] = fundido
+            salida.append(fundido)
+        else:
+            try:
+                previo["quantity"] = str(
+                    float(previo.get("quantity") or 0) + float(props.get("quantity") or 0)
+                )
+            except (TypeError, ValueError):
+                logger.warning(f"[publish] cantidad no numérica al agrupar {clave}; se deja la previa")
+
+    return salida
+
+
 def _quote_line_item_names(access_token: str, quote_id: str):
     """Nombres de los line items que la Quote tiene REALMENTE asociados, o None si no
     se pudieron leer.
@@ -8740,14 +8798,16 @@ async def publish_quote(
         deal_owner_id = None
         deal_puerto_destino = None
         owner_info = {}
+        deal_desagregar = ""
 
         try:
             deal_response = client.crm.deals.basic_api.get_by_id(
                 deal_id=deal_id,
-                properties=["hubspot_owner_id", "puerto_destino"]
+                properties=["hubspot_owner_id", "puerto_destino", "desagregar_cotizacion"]
             )
             deal_owner_id = deal_response.properties.get("hubspot_owner_id")
             deal_puerto_destino = deal_response.properties.get("puerto_destino")
+            deal_desagregar = deal_response.properties.get("desagregar_cotizacion") or ""
             logger.info(f"[publish] Deal owner ID: {deal_owner_id}")
 
             if deal_owner_id:
@@ -9018,6 +9078,20 @@ async def publish_quote(
                     else:
                         properties[field] = val
             items_payload.append(properties)
+
+        if len(items_payload) > QUOTE_LINE_ITEMS_MAX:
+            _sin_agrupar = len(items_payload)
+            items_payload = _agrupar_items_para_quote(items_payload)
+            logger.warning(
+                f"[publish] deal {deal_id}: {_sin_agrupar} líneas no caben en una cotización; "
+                f"se agrupan por artículo y precio para la copia -> {len(items_payload)}"
+            )
+            if (deal_desagregar or "").strip().lower() in ("true", "yes", "si", "sí"):
+                logger.warning(
+                    f"[publish] deal {deal_id} pide cotización desagregada, pero con "
+                    f"{_sin_agrupar} líneas las páginas por contenedor saldrían incompletas: "
+                    f"el documento va con la mercancía agrupada"
+                )
 
         logger.warning(f"[publish] Creating {len(items_payload)} line items for quote {quote_id} via batch")
 
