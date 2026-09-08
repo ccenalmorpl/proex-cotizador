@@ -1044,6 +1044,7 @@ const TransitarioTab = ({
       setTransitarioData({
         ...transitarioData,
         cotizacion_rapida: cotizacionRapida ? "true" : "false",
+        cotizacionRapida,
         // Espejo del POST: fuera de modo doble se limpian las props terrestres
         ...(fleteDobleDisponible && !modoDoble
           ? {
@@ -1241,7 +1242,12 @@ const TransitarioTab = ({
           <Checkbox
             name="cotizacion-rapida"
             checked={cotizacionRapida}
-            onChange={(checked) => setCotizacionRapida(checked)}
+            onChange={(checked) => {
+              setCotizacionRapida(checked);
+              // DocumentacionTab lee este flag para preseleccionar los textos de
+              // cotización rápida, así que tiene que verlo ya, no tras guardar.
+              updateTransitarioField("cotizacionRapida", checked);
+            }}
             description="Activa esta opción para incluir rutas que hayan caducado hace menos de 60 días. Esta configuración se guarda en el deal."
           >
             <Text format={{ fontWeight: "bold" }}>Cotización Rápida</Text>

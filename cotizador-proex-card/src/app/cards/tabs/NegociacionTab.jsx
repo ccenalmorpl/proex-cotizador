@@ -44,6 +44,7 @@ import {
   normalizeIncoterm,
   bucketIncoterm,
   esModoDobleFlete,
+  redondear3,
 } from "../utils/pricing.utils";
 import { getIVAPorcentaje, getPorcentajesIVA, getDefaultIVAByResidencia } from "../utils/iva.utils";
 
@@ -703,11 +704,11 @@ const NegociacionTab = ({
       let anclaClamped = false;
       let precioFinalEditable = esPromo
         ? 0
-        : Math.round(calcularPrecioFinalPorTipoVenta(precioEXWFinal) * 1000) / 1000;
+        : redondear3(calcularPrecioFinalPorTipoVenta(precioEXWFinal));
       if (anclada) {
         anclaClamped = calcularPrecioEXWDesdeFinal(anclaFinal) < precioCaja;
         precioFinalEditable = anclaClamped
-          ? Math.round(calcularPrecioFinalPorTipoVenta(precioCaja) * 1000) / 1000
+          ? redondear3(calcularPrecioFinalPorTipoVenta(precioCaja))
           : anclaFinal;
       }
 
@@ -966,77 +967,26 @@ const NegociacionTab = ({
   }, [contenedoresUnicos, preciosEXW, clienteData, totalContenedores]);
 
   // Margen del negocio en euros (total y por caja)
+  // Se agrega desde `margenesPorContenedor` cerrando a céntimos el margen de cada
+  // contenedor, que es el importe que se pinta en su tarjeta: así el total es la
+  // suma de lo que el comercial tiene delante y no arrastra la cola de decimales
+  // (con 50 contenedores, 0,16 € de diferencia).
   const margenNegocioEnEuros = useMemo(() => {
-    if (
-      !contenedoresUnicos ||
-      !Array.isArray(contenedoresUnicos) ||
-      contenedoresUnicos.length === 0
-    ) {
+    if (!margenesPorContenedor.length) {
       return { total: 0, porCaja: 0 };
     }
 
-    let totalMargenEnEuros = 0;
-    let totalCajasNegocio = 0;
+    const total = margenesPorContenedor.reduce(
+      (sum, contenedor) => sum + Math.round(contenedor.margenTotalEnEuros * 100) / 100,
+      0
+    );
+    const cajas = margenesPorContenedor.reduce(
+      (sum, contenedor) => sum + contenedor.cajas,
+      0
+    );
 
-    const importeComision =
-      clienteData?.importeComision?.value ?? clienteData?.importeComision;
-    const tipoComision =
-      clienteData?.tipoComision?.value ?? clienteData?.tipoComision;
-
-    contenedoresUnicos.forEach((contenedor) => {
-      const artsContenedor = Array.isArray(
-        contenedor.container_config?.articulos
-      )
-        ? contenedor.container_config.articulos
-        : [];
-      const cajasDeEseContenedor = artsContenedor.reduce(
-        (s, a) => s + (a.numCajas || 0),
-        0
-      );
-      const comisionPorCajaContenedor = clienteData?.codigoIntermediario
-        ? comisionPorCajaIntra(
-            tipoComision,
-            importeComision,
-            cajasDeEseContenedor,
-            totalContenedores
-          )
-        : 0;
-
-      artsContenedor.forEach((artContenedor) => {
-        const lineItemId = artContenedor.line_item_id;
-        const costePorCaja = artContenedor.precio_de_coste || 0;
-        const margenInicial =
-          artContenedor.margen_unitario != null &&
-          artContenedor.margen_unitario > 0
-            ? artContenedor.margen_unitario * 100
-            : (clienteData?.margen ?? 12);
-
-        const precioEXWFinal =
-          preciosEXW[lineItemId] != null
-            ? preciosEXW[lineItemId]
-            : costePorCaja + (costePorCaja * margenInicial) / 100;
-        const margenEnEuros = precioEXWFinal - costePorCaja;
-
-        let margenEfectivoEnEuros = margenEnEuros;
-        if (
-          comisionPorCajaContenedor > 0 &&
-          clienteData?.repercutirACliente === "no"
-        ) {
-          margenEfectivoEnEuros = margenEnEuros - comisionPorCajaContenedor;
-        }
-
-        const cajasEnContenedor = artContenedor.numCajas || 0;
-        totalMargenEnEuros += margenEfectivoEnEuros * cajasEnContenedor;
-        totalCajasNegocio += cajasEnContenedor;
-      });
-    });
-
-    return {
-      total: totalMargenEnEuros,
-      porCaja:
-        totalCajasNegocio > 0 ? totalMargenEnEuros / totalCajasNegocio : 0,
-    };
-  }, [contenedoresUnicos, preciosEXW, clienteData, totalContenedores]);
+    return { total, porCaja: cajas > 0 ? total / cajas : 0 };
+  }, [margenesPorContenedor]);
 
   // Deshabilitar el botón "Aplicar" si no hay artículos seleccionados o no hay ningún valor nuevo
   const isBatchApplyDisabled = useMemo(() => {

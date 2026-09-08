@@ -331,7 +331,10 @@ class UpdateClientDataRequest(BaseModel):
 class UpdateDocumentacionData(BaseModel):
     """Deal documentacion data to update in HubSpot from DocumentacionTab.
 
-    All fields are optional and only non-null values will be updated.
+    Ojo: `build_update_properties` escribe "" en todo campo que llegue a null, así
+    que esta lista es la de props que el guardado PISA, no la de las que acepta.
+    Un campo que el tab no edita (cotizacion_rapida, que vive en TransitarioTab)
+    no puede estar aquí: el front nunca lo manda y se borraría en cada guardado.
 
     Attributes:
         # Idioma global
@@ -352,7 +355,6 @@ class UpdateDocumentacionData(BaseModel):
         # Método de Pago & Textos
         metodo_pago_plantilla: Payment method template selection.
         banco_cobro: Collection bank selection.
-        cotizacion_rapida: Quick quotation flag.
         texto_adicional_metodo_pago: Additional payment method text.
 
         # Textos Generados
@@ -384,7 +386,6 @@ class UpdateDocumentacionData(BaseModel):
     # Método de Pago & Textos
     metodo_pago_plantilla: Optional[str] = Field(None, description="Payment method template")
     banco_cobro: Optional[str] = Field(None, description="Collection bank")
-    cotizacion_rapida: Optional[bool] = Field(None, description="Quick quotation flag")
     texto_adicional_metodo_pago: Optional[str] = Field(None, description="Additional payment method text")
 
     # Textos Generados
