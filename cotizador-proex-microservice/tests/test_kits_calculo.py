@@ -8,6 +8,8 @@ envió tras la reunión y de los escenarios validados en vivo con la card.
 import pytest
 
 from app.core.kits_constants import (
+    PROP_KIT_COTIZACION_GENERADORA,
+    PROP_KIT_GENERADO_POR_IDS,
     KIT_DEALSTAGE_ABIERTO,
     KIT_DEALSTAGE_AGOTADO,
     KIT_DEALSTAGE_CANCELADO,
@@ -387,3 +389,60 @@ def test_pendiente_no_es_pegajoso():
         )
         == KIT_DEALSTAGE_ABIERTO
     )
+
+
+# NEGOCIOS GENERADORES DEL KIT
+#
+# Un KIT nace de varias ofertas abiertas de la misma referencia, no de una sola.
+# La cotizacion creadora tiene que estar SIEMPRE dentro: es lo que hace que el
+# KIT salga tambien en su propio pedido, no solo en los de las otras.
+
+
+def test_generado_por_incluye_siempre_la_cotizacion_creadora():
+    p = construir_payload_kit(
+        cotizacion_id="111", secuencia=1, sku="S", nombre_producto="N", cajas_kit=846
+    )
+    assert p[PROP_KIT_GENERADO_POR_IDS] == "111:846"
+
+
+def test_generado_por_suma_las_ofertas_anotadas():
+    p = construir_payload_kit(
+        cotizacion_id="111", secuencia=1, sku="S", nombre_producto="N", cajas_kit=846,
+        negocios_generadores={"222": 500, "333": 1200},
+    )
+    assert p[PROP_KIT_GENERADO_POR_IDS] == "111:846;222:500;333:1200"
+
+
+def test_generado_por_respeta_las_cajas_de_la_creadora_si_vienen():
+    """Si la card manda el aporte real de la creadora, manda ese y no el total."""
+    p = construir_payload_kit(
+        cotizacion_id="111", secuencia=1, sku="S", nombre_producto="N", cajas_kit=846,
+        negocios_generadores={"111": 4836, "222": 500},
+    )
+    assert p[PROP_KIT_GENERADO_POR_IDS] == "111:4836;222:500"
+
+
+def test_generado_por_descarta_ids_vacios():
+    p = construir_payload_kit(
+        cotizacion_id="111", secuencia=1, sku="S", nombre_producto="N", cajas_kit=846,
+        negocios_generadores={"": 500, "  ": 300, "222": 400},
+    )
+    assert p[PROP_KIT_GENERADO_POR_IDS] == "111:846;222:400"
+
+
+def test_cotizacion_generadora_sigue_guardando_solo_la_creadora():
+    """Cambia de papel, no de valor: la numeracion y la idempotencia la usan."""
+    p = construir_payload_kit(
+        cotizacion_id="111", secuencia=1, sku="S", nombre_producto="N", cajas_kit=846,
+        negocios_generadores={"222": 500},
+    )
+    assert p[PROP_KIT_COTIZACION_GENERADORA] == "111"
+
+
+def test_generado_por_es_legible_por_el_asistente_de_pedidos():
+    """El formato tiene que poder parsearse igual que las marcas: es el mismo."""
+    p = construir_payload_kit(
+        cotizacion_id="111", secuencia=1, sku="S", nombre_producto="N", cajas_kit=846,
+        negocios_generadores={"222": 500},
+    )
+    assert parsear_marcas_kit(p[PROP_KIT_GENERADO_POR_IDS]) == {"111": 846, "222": 500}
