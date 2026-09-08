@@ -977,7 +977,10 @@
               <td class="colis">{{ li_qty|round(0)|int }}</td>
               <td class="weight">{{ li_weight|round(2) }}</td>
               <td class="unit">{{ li_unit }}</td>
-              <td class="price">{{ format_money(li_price, currency) }}</td>
+              {# 3 decimales, los mismos con los que se calcula el importe: a 2 la
+                 multiplicación no cuadra en el papel (7,10 × 13.200 = 93.720 frente a
+                 los 93.772,81 impresos, 52,81 € de diferencia en una sola línea). #}
+              <td class="price">{{ format_money(li_price, currency, 3) }}</td>
               <td class="total">{{ format_money(li_total, currency) }}</td>
             </tr>
 
@@ -1358,7 +1361,7 @@
                 <td class="colis">{{ li_qty|round(0)|int }}</td>
                 <td class="weight">{{ li_weight|round(2) }}</td>
                 <td class="unit">{{ lbl_unit_case }}</td>
-                <td class="price">{{ format_money(li_price, currency) }}</td>
+                <td class="price">{{ format_money(li_price, currency, 3) }}</td>
                 <td class="total">{{ format_money(li_total, currency) }}</td>
               </tr>
             {% endfor %}
