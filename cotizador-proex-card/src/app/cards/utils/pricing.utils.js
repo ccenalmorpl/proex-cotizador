@@ -37,6 +37,13 @@ export function bucketIncoterm(value) {
   return ic === "FCA" ? "EXW" : ic;
 }
 
+// 3 decimales es la precisión con la que se persiste el precio por caja, la que
+// edita el comercial en el StepperInput y la que imprimen la proforma y la
+// factura. Cualquier total tiene que salir de multiplicar ESE precio por las
+// cajas: multiplicar el valor crudo y redondear al final infla el total (0,44 €
+// en un contenedor de 3.120 cajas) y descuadra frente al PDF.
+export const redondear3 = (valor) => Math.round(valor * 1000) / 1000;
+
 // Fuente única de las fórmulas de cada incoterm, compartida entre NegociacionTab y RevisionTab.
 export function calcularPrecioPorCajaPorIncoterm(
   precioEXW,
@@ -257,9 +264,10 @@ function _ivaConceptosPorCajaPorIncoterm(params, pctFletes, pctFleteTerrestre, p
 // (importes a nivel de contenedor + datos de comisión); el pricingParams se
 // construye por contenedor con sus cajas. El total del negocio coincide con el
 // del reparto global; lo que cambia es el precio por contenedor.
-// Redondeo: con `options.incotermRef` los demás incoterms se derivan como
-// `total_ref + (gastosX - gastosRef) × cajas`; sin él se redondea precio/caja a
-// 3 decimales antes de multiplicar por cajas.
+// Redondeo: el precio/caja se cierra a 3 decimales antes de multiplicar por las
+// cajas. Con `options.incotermRef` se redondea el del incoterm de referencia y
+// los demás se derivan de él sumando la diferencia de gastos; sin él se redondea
+// el de cada incoterm por separado.
 export function calcularTotalesPorTipoVenta(
   contenedoresUnicos,
   preciosEXW,
@@ -341,7 +349,12 @@ export function calcularTotalesPorTipoVenta(
       }
 
       if (incRef) {
-        const precioRefPorCaja = calcularPrecioPorCajaPorIncoterm(precioEXW, incRef, params);
+        // El precio del incoterm de referencia se cierra a 3 decimales ANTES de
+        // multiplicar; los demás se derivan de ese mismo precio para que la
+        // diferencia entre incoterms siga siendo exactamente la de sus gastos.
+        const precioRefPorCaja = redondear3(
+          calcularPrecioPorCajaPorIncoterm(precioEXW, incRef, params)
+        );
         const gastosRef = calcularPrecioPorCajaPorIncoterm(0, incRef, params);
 
         INCOTERMS.forEach((inc) => {
@@ -358,7 +371,9 @@ export function calcularTotalesPorTipoVenta(
         });
       } else {
         INCOTERMS.forEach((inc) => {
-          const precioPorCaja = calcularPrecioPorCajaPorIncoterm(precioEXW, inc, params);
+          const precioPorCaja = redondear3(
+            calcularPrecioPorCajaPorIncoterm(precioEXW, inc, params)
+          );
           const subtotal = precioPorCaja * cajas;
           totals[inc] += subtotal;
           totalsIVA[`${inc}_IVA`] +=

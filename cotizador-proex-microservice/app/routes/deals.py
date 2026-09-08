@@ -150,6 +150,7 @@ def _get_associated_ids(deal_id: str, to_object_type: str) -> List[str]:
     """
     client = hubspot_client.get_client()
     ids = []
+    truncado = False
 
     try:
         access_token = client.access_token
@@ -212,10 +213,19 @@ def _get_associated_ids(deal_id: str, to_object_type: str) -> List[str]:
                 f"[Batch API] {len(ids)} {to_object_type} asociados al deal {deal_id} "
                 f"(sin paginar: puede estar truncado a 100)"
             )
-            return ids
+            truncado = len(ids) == 100
 
     except Exception as batch_error:
         logger.error(f"[Batch API] asociaciones {to_object_type} falló: {batch_error}")
+
+    # 100 exactos es la firma del truncado, no un dato: esta rama no pagina, y devolver
+    # la lista corta como si estuviera completa es lo que publicó una cotización a la
+    # que le faltaban 20 líneas y 25.843,20 € (07/09/2026).
+    if truncado:
+        raise RuntimeError(
+            f"[Batch API] {to_object_type} del deal {deal_id}: 100 asociaciones exactas "
+            f"sin paginar, la lista está truncada y no se puede usar"
+        )
 
     return ids
 
@@ -8867,13 +8877,34 @@ async def publish_quote(
                     if _resp.ok:
                         deal_line_items_raw.extend(_resp.json().get("results", []))
                     else:
-                        logger.warning(
-                            f"[publish] batch read deal line items [{_i}:{_i + 100}] "
-                            f"failed: {_resp.status_code}"
+                        raise HTTPException(
+                            502,
+                            f"Lectura incompleta de las líneas del negocio: el lote "
+                            f"[{_i}:{_i + 100}] devolvió {_resp.status_code}. No se publica.",
                         )
                 logger.info(f"[publish] Fetched {len(deal_line_items_raw)} deal line items for quote copy")
+        except HTTPException:
+            raise
         except Exception as _e:
-            logger.warning(f"[publish] Could not fetch deal line items: {_e}")
+            raise HTTPException(502, f"No se pudieron leer las líneas del negocio: {_e}") from _e
+
+        # Una cotización a la que le faltan líneas no se nota a simple vista: la tabla
+        # de productos cuadra consigo misma y solo descuadra contra el TOTAL, que sale
+        # del payload. El 07/09/2026 se publicó una con 100 de 120 líneas (el truncado
+        # a 100 de la batch v3) y 25.843,20 € de menos. Mejor no publicar.
+        if len(deal_line_items_raw) != len(li_ids):
+            raise HTTPException(
+                502,
+                f"Copia incompleta: se leyeron {len(deal_line_items_raw)} de "
+                f"{len(li_ids)} líneas del negocio. No se publica la cotización.",
+            )
+        _payload_lineas = len(data.lineItems or [])
+        if _payload_lineas and len(li_ids) < _payload_lineas:
+            raise HTTPException(
+                409,
+                f"Asociaciones incompletas: el negocio devuelve {len(li_ids)} líneas y "
+                f"la card envió {_payload_lineas}. No se publica la cotización.",
+            )
 
         # Backstop para deals con huérfanos de catálogo previos al fix de
         # update_deal_containers: si hay contenedores, esas líneas no van al quote.

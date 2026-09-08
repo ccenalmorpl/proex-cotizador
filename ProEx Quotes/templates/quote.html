@@ -494,7 +494,12 @@
     {% set ns_caj.total = ns_caj.total + (item.quantity|default(0)|string|trim|float) %}
   {% endif %}
 {% endfor %}
-{% set total_cajas_articulos = ns_caj.total %}
+{# Cajas y contenedores mandan del payload, no del recuento de line items: si la
+   copia de líneas a la Quote se queda corta, contarlas reparte los gastos entre
+   menos contenedores de los que hay y el documento imprime dos totales distintos
+   (07/09/2026: 6 líneas de contenedor de 10 → 25.843,20 € de diferencia entre la
+   escalera y el TOTAL). El recuento queda de reserva para cotizaciones sin payload. #}
+{% set total_cajas_articulos = stats_totalColis|float if stats_totalColis|float > 0 else ns_caj.total %}
 
 {# Contenedores: filtrar por hs_product_type container/contenedor #}
 {% set containers = [] %}
@@ -505,12 +510,16 @@
   {% endif %}
 {% endfor %}
 
-{% set num_containers = containers|length %}
+{% set num_containers = stats_numContainers|int if stats_numContainers|int > 0 else containers|length %}
 
 {# ===================================================== #}
-{# DESGLOSES REALES (fuente: deal + line items servicios)  #}
-{# Reemplaza precios_fobExpenses/seafreightRate que vienen #}
-{# del payload con errores de redondeo acumulado.          #}
+{# DESGLOSES: mandan los del payload, redondeados a 2.     #}
+{# Se calculan también desde el deal + los line items de    #}
+{# servicios como reserva para cotizaciones sin payload.    #}
+{# El payload trae ruido de coma flotante (7999,999999825)  #}
+{# que el redondeo limpia; recalcularlos por line items es  #}
+{# peor, porque multiplica por los contenedores que hayan   #}
+{# llegado a la Quote en vez de por los que tiene el pedido. #}
 {# ===================================================== #}
 {# Servicios desde line items. `total` incluye seguro (mismo criterio que
    pricing.py:total_servicios). `no_seguro` y `seguro` se mantienen porque
@@ -536,11 +545,14 @@
 {% set precio_destino = deal.precio_ruta_hasta_puerto_destino|default(0)|string|trim|float %}
 {% set nc = num_containers if num_containers and num_containers > 0 else 1 %}
 
-{% set real_fobExpenses    = ns_serv.no_seguro + (precio_origen * nc) %}
-{% set real_seafreightRate = precio_destino * nc %}
-{% set real_insurance      = ns_serv.seguro %}
+{% set calc_fobExpenses    = ns_serv.no_seguro + (precio_origen * nc) %}
+{% set calc_seafreightRate = precio_destino * nc %}
+{% set calc_insurance      = ns_serv.seguro %}
 
-{# Sobrescribir las variables del payload con los valores reales #}
+{% set real_fobExpenses    = precios_fobExpenses|round(2)    if precios_fobExpenses > 0    else calc_fobExpenses %}
+{% set real_seafreightRate = precios_seafreightRate|round(2) if precios_seafreightRate > 0 else calc_seafreightRate %}
+{% set real_insurance      = precios_insurance|round(2)      if precios_insurance > 0      else calc_insurance %}
+
 {% set precios_fobExpenses    = real_fobExpenses %}
 {% set precios_seafreightRate = real_seafreightRate %}
 {% set precios_insurance      = real_insurance %}
@@ -1465,7 +1477,9 @@
   {% set has_page2_content = (textoBaseOferta and not is_nacional) or textoFormaPago or textoBanco %}
   {% set texts_page_num = (num_containers + 1) if (is_desagregado and num_containers > 1) else 2 %}
 
-  {% set show_legal_page = has_page2_content and deal.cotizacion_rapida != "Yes" %}
+  {# "Yes" es el label del checkbox en la UI; HubL entrega "true" #}
+  {% set is_cotizacion_rapida = deal.cotizacion_rapida == "true" or deal.cotizacion_rapida == true %}
+  {% set show_legal_page = has_page2_content and not is_cotizacion_rapida %}
 
   {# Firma nativa: la activa el comercial al crear la cotización (caja impresa,
      contrafirma o firma electrónica). #}
