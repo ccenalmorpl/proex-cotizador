@@ -411,6 +411,48 @@ def _line_item_is_container(props: dict) -> bool:
     ta = (props.get("tipo_articulo") or "").strip().lower()
     return pt in HS_PRODUCT_TYPE_CONTAINER and ta == "transitario"
 
+def _quote_line_item_names(access_token: str, quote_id: str):
+    """Nombres de los line items que la Quote tiene REALMENTE asociados, o None si no
+    se pudieron leer.
+
+    Se lee de HubSpot en vez de fiarse del recuento que devuelve al crearlos: con
+    cotizaciones grandes confirma más líneas de las que luego aparecen. Devolver un
+    conjunto vacío ante un error haría que el reintento recreara la copia entera."""
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+    ids, after = [], None
+    while True:
+        params = {"limit": 500}
+        if after:
+            params["after"] = after
+        resp = requests.get(
+            f"https://api.hubapi.com/crm/v4/objects/quotes/{quote_id}/associations/line_items",
+            headers=headers, params=params, timeout=30,
+        )
+        if not resp.ok:
+            logger.error(f"[publish] no pude releer las líneas del quote {quote_id}: {resp.status_code}")
+            return None
+        data = resp.json() or {}
+        ids += [str(x.get("toObjectId")) for x in data.get("results", []) if x.get("toObjectId")]
+        after = ((data.get("paging") or {}).get("next") or {}).get("after")
+        if not after:
+            break
+
+    nombres = set()
+    for i in range(0, len(ids), 100):
+        resp = requests.post(
+            "https://api.hubapi.com/crm/v3/objects/line_items/batch/read",
+            headers=headers,
+            json={"properties": ["name"], "inputs": [{"id": x} for x in ids[i:i + 100]]},
+            timeout=30,
+        )
+        if not resp.ok:
+            logger.error(f"[publish] batch read de nombres falló: {resp.status_code}")
+            return None
+        for o in (resp.json() or {}).get("results", []):
+            nombres.add((o.get("properties") or {}).get("name") or "")
+    return nombres
+
+
 def _catalogo_huerfano_ids(line_items: list, container_names) -> list:
     """Ids de line items de catálogo huérfanos: artículo fabricante sin numero_container
     y sin prefijo '{contenedor} - ' en el name. Los crea update_deal_articles al guardar
@@ -8979,30 +9021,54 @@ async def publish_quote(
 
         logger.warning(f"[publish] Creating {len(items_payload)} line items for quote {quote_id} via batch")
 
-        created_ids, create_errors = batch_create_line_items_via_api(
-            access_token=access_token,
-            items=items_payload,
-        )
+        # HubSpot no es de fiar en el recuento: con 600 líneas devuelve 100 ids por cada
+        # uno de los 6 lotes y confirma las 600 asociaciones, pero en la Quote acaban
+        # apareciendo 200 y los otros 400 line items no existen (08/09/2026, tres publish
+        # seguidos con el mismo resultado; comprobado que la Quote admite más de 200 y que
+        # no hay recorte diferido). Así que la copia se verifica contra lo que HubSpot
+        # tiene de verdad y se reintenta lo que falte, identificando cada línea por `name`,
+        # que es único (lleva el contenedor y el artículo).
+        errors_list: List[str] = []
+        pendientes = list(items_payload)
+        created_ids: List[str] = []
 
-        if created_ids:
-            associated_count, assoc_errors = batch_associate_line_items_to_quote_v4(
+        for intento in range(1, 4):
+            nuevos_ids, create_errors = batch_create_line_items_via_api(
                 access_token=access_token,
-                quote_id=quote_id,
-                line_item_ids=created_ids,
+                items=pendientes,
             )
-        else:
-            associated_count, assoc_errors = 0, []
+            errors_list += create_errors
+            if nuevos_ids:
+                _, assoc_errors = batch_associate_line_items_to_quote_v4(
+                    access_token=access_token,
+                    quote_id=quote_id,
+                    line_item_ids=nuevos_ids,
+                )
+                errors_list += assoc_errors
+                created_ids += nuevos_ids
 
-        errors_list = create_errors + assoc_errors
+            nombres_en_quote = _quote_line_item_names(access_token, quote_id)
+            if nombres_en_quote is None:
+                raise HTTPException(
+                    502,
+                    "No se pudo comprobar qué líneas quedaron en la cotización; "
+                    "no se reintenta la copia para no duplicarlas.",
+                )
+            pendientes = [
+                props for props in items_payload
+                if (props.get("name") or "") not in nombres_en_quote
+            ]
+            logger.warning(
+                f"[publish] Copia intento {intento}: la cotización tiene "
+                f"{len(nombres_en_quote)} de {len(items_payload)} líneas "
+                f"({len(pendientes)} pendientes)"
+            )
+            if not pendientes:
+                break
 
-        # A warning, esto sale igual: la cotización se publica con las líneas que hayan
-        # cabido y la tabla cuadra consigo misma, así que el hueco solo se ve comparando
-        # con el total (08/09/2026: 200 líneas de 600 y 33 contenedores de 50).
-        logger.warning(
-            f"[publish] Line items summary: {len(created_ids)} created, "
-            f"{associated_count} associated, {len(errors_list)} errors"
-        )
-        if len(created_ids) != len(items_payload) or associated_count != len(created_ids):
+        associated_count = len(items_payload) - len(pendientes)
+
+        if pendientes:
             # La Quote se crea antes que sus líneas, así que a estas alturas ya existe en
             # HubSpot. Se archiva para no dejar una cotización a medias que alguien pueda
             # mandar al cliente.
@@ -9015,8 +9081,8 @@ async def publish_quote(
                 )
             raise HTTPException(
                 502,
-                f"Copia incompleta a la cotización: {len(created_ids)} de "
-                f"{len(items_payload)} líneas creadas y {associated_count} asociadas. "
+                f"Copia incompleta a la cotización tras 3 intentos: la cotización tiene "
+                f"{associated_count} de {len(items_payload)} líneas. "
                 f"{'; '.join(errors_list[:3]) if errors_list else 'sin error de HubSpot'}",
             )
 
