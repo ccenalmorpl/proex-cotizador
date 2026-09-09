@@ -59,8 +59,13 @@ const MOSTRAR_ARTICULOS_SIN_DATO = false;
  * Si se piden bloques de más, se distingue el mínimo que sale de la división de
  * los que se van a producir de verdad: la división sólo justifica el mínimo.
  */
-const explicacionBloques = (k, bloquesElegidos, aProducirTotal) => {
+const explicacionBloques = (k, bloquesElegidos, aProducirTotal, bloquesMinimos) => {
   const aProducir = aProducirTotal ?? k.cajas;
+  // El minimo se recibe recalculado, NO se lee de `k`: `k.bloquesMinimos` sale
+  // del analisis de esta oferta sola, y al anotar otras ofertas se queda corto.
+  // Comparar contra el viejo hacia decir "2 min, se producen 4" cuando 4 ERA el
+  // minimo, dando a entender que alguien habia pedido bloques de mas.
+  const minimo = bloquesMinimos ?? k.bloquesMinimos;
   if (!k.bloque || k.bloque <= 0 || aProducir <= 0) return "";
 
   const cociente = (aProducir / k.bloque).toFixed(2).replace(".", ",");
@@ -69,8 +74,8 @@ const explicacionBloques = (k, bloquesElegidos, aProducirTotal) => {
   // Una sola línea: cada línea extra multiplica por el número de artículos, y
   // una fila de tres pisos por producto hace la tabla ilegible. Se quita "de
   // 1894" porque ese número ya está en la propia división.
-  if (bloquesElegidos > k.bloquesMinimos) {
-    return `${division} → ${k.bloquesMinimos} mín, se producen ${bloquesElegidos}`;
+  if (bloquesElegidos > minimo) {
+    return `${division} → ${minimo} mín, se producen ${bloquesElegidos}`;
   }
 
   const plural = bloquesElegidos === 1 ? "bloque" : "bloques";
@@ -339,7 +344,7 @@ const AlertaKits = ({
                       <Flex direction="column" gap="extra-small">
                         <Text format={{ fontWeight: "bold" }}>{fmt(s.tirada)}</Text>
                         <Text variant="microcopy">
-                          {explicacionBloques(k, s.bloques, s.aProducirTotal)}
+                          {explicacionBloques(k, s.bloques, s.aProducirTotal, s.bloquesMinimos)}
                         </Text>
                       </Flex>
                     </TableCell>

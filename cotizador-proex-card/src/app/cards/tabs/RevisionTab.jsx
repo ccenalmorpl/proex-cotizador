@@ -45,6 +45,7 @@ import { resumenKitsPorSku } from "../components/AlertaKits";
 import { useKitsDisponibles } from "../hooks/useKitsDisponibles";
 import { conParamsKit, marcaEfectivaDeKit } from "../utils/kits.utils";
 import { useKitParams } from "../hooks/useKitParams";
+import { useNegociosGeneradores } from "../hooks/useNegociosGeneradores";
 import ResumenKitsModal from "../components/ResumenKitsModal";
 
 // Resuelve el label legible de un campo: acepta string o {value, options}
@@ -241,6 +242,14 @@ const RevisionTab = ({
     (articulosSeleccionados || []).filter(Boolean).map((a) => (a.hs_sku || "").trim())
   );
 
+  // Las ofertas abiertas de cada referencia, para poder resolver los negocios
+  // anotados a sus cajas: la alerta guarda solo los ids, y al crear el KIT hay
+  // que mandar tambien lo que aporta cada uno.
+  const negociosPorSku = useNegociosGeneradores(
+    (articulosSeleccionados || []).filter(Boolean).map((a) => (a.hs_sku || "").trim()),
+    dealId ? String(dealId) : ""
+  );
+
   const analisisKits = useMemo(
     () =>
       analizarKits(
@@ -289,21 +298,53 @@ const RevisionTab = ({
       analisisKits.kits
         .filter((k) => kitsSolicitados?.[k.articuloId]?.solicitado ?? true)
         .map((k) => {
+          const s = kitsSolicitados?.[k.articuloId];
           // Los bloques extra que haya pedido el comercial sobre el mínimo.
-          const extra = Math.max(
-            0,
-            Number(kitsSolicitados?.[k.articuloId]?.bloquesExtra) || 0
+          const extra = Math.max(0, Number(s?.bloquesExtra) || 0);
+
+          // Mismo cálculo que la alerta, y por la misma razón: generar y
+          // consumir no se cruzan, así que se parte del total de cajas y no de
+          // `aProducir`, que lleva descontado lo marcado en KIT abiertos.
+          const disponibles = negociosPorSku[(k.sku || "").trim()] || [];
+          const elegidos = disponibles.filter((n) =>
+            (s?.negocios || []).includes(n.id)
           );
+          const demandaExtra = elegidos.reduce(
+            (t, n) => t + (Number(n.cajas) || 0),
+            0
+          );
+          const aProducirTotal = k.cajas + demandaExtra;
+
+          const bloquesMinimos =
+            k.bloque > 0 && aProducirTotal > 0
+              ? Math.ceil(aProducirTotal / k.bloque)
+              : 0;
+          const bloques = bloquesMinimos + extra;
+          const tirada = bloques * k.bloque;
+          const cajasCalculadas = Math.max(0, tirada - aProducirTotal);
+
           return {
             ...k,
-            bloques: k.bloquesMinimos + extra,
-            cajasKit: k.cajasKit + extra * k.bloque,
-            // Producción real de fábrica, no "pedidas + kit": parte de las cajas
-            // del cliente pueden salir de KIT ya marcados.
-            cajasProduccion: k.tirada + extra * k.bloque,
+            bloques,
+            // La cifra escrita a mano gana al cálculo: el input del pedido KIT
+            // es editable a propósito y publicar tiene que crear lo que la
+            // usuaria vio, no lo que salía antes de que lo tocara.
+            cajasKit: s?.cajasManual ?? cajasCalculadas,
+            cajasProduccion: tirada,
+            // Ofertas que generan el KIT, con las cajas que aporta cada una a la
+            // demanda. Esta oferta va explícita y PRIMERA: el backend la añade
+            // sola si falta, pero entonces le pone las cajas del KIT en vez de
+            // las suyas, y el campo dice cuánto aportó cada uno, no el total.
+            negocios: [
+              { id: String(dealId), cajas: Number(k.cajas) || 0 },
+              ...elegidos.map((n) => ({
+                id: n.id,
+                cajas: Number(n.cajas) || 0,
+              })),
+            ],
           };
         }),
-    [analisisKits, kitsSolicitados]
+    [analisisKits, kitsSolicitados, negociosPorSku]
   );
 
   const resumenKitsTotal = kitsSolicitadosDetalle.length + kitsMarcadosDetalle.length;
@@ -1439,6 +1480,7 @@ const RevisionTab = ({
             sku: k.sku,
             nombre: k.nombre,
             cajas: k.cajasKit,
+            negocios: k.negocios || [],
           }));
           const res = await crearKitsDeCotizacion(dealId, kits);
           setResultadoKits(

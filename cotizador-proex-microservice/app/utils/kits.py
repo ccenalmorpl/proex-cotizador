@@ -31,6 +31,7 @@ from app.core.kits_constants import (
     KIT_SEP_ENTRADAS,
     PROP_KIT_CAJAS,
     PROP_KIT_CAJAS_DISPONIBLES,
+    PROP_KIT_GENERADO_POR_IDS,
     PROP_KIT_COTIZACION_GENERADORA,
     PROP_KIT_NOMBRE,
     PROP_KIT_NUMERO,
@@ -273,6 +274,7 @@ def construir_payload_kit(
     sku: str,
     nombre_producto: str,
     cajas_kit,
+    negocios_generadores: Optional[Dict[str, int]] = None,
 ) -> Dict[str, str]:
     """Propiedades para crear el Negocio KIT en HubSpot.
 
@@ -283,12 +285,29 @@ def construir_payload_kit(
     —el cliente paga solo sus cajas— y con importe entraría en el forecast y
     duplicaría el ingreso cuando ese sobrante se venda más adelante.
 
+    `negocios_generadores` son las ofertas abiertas que se anotaron al pedir el
+    KIT, con las cajas que aporta cada una: `{deal_id: cajas}`. La cotización que
+    lo crea entra siempre, aunque no venga en el diccionario, porque es la fila
+    fija de la tabla y sin ella el KIT no saldría en su propio pedido.
+
     Devuelve solo propiedades. La asociación con la Company de PROEX
     (`KIT_COMPANY_ID`) y con la cotización las hace quien llama, porque son
     llamadas a la API y aquí no se toca HubSpot.
     """
     numero = formatear_numero_kit(cotizacion_id, secuencia)
     cajas = int(_num(cajas_kit))
+    creadora = str(cotizacion_id or "").strip()
+
+    # La creadora primero y con las cajas que ya tuviera anotadas: si viene en el
+    # diccionario se respeta su cifra, y si no, se le pone el total del KIT para
+    # que la entrada nunca quede a 0 —serializar_marcas_kit descarta los ceros y
+    # la creadora desapareceria de su propio KIT.
+    generadores: Dict[str, int] = {}
+    if creadora:
+        generadores[creadora] = int(_num((negocios_generadores or {}).get(creadora))) or cajas
+    for deal_id, aporta in (negocios_generadores or {}).items():
+        if str(deal_id).strip() and str(deal_id).strip() != creadora:
+            generadores[str(deal_id).strip()] = int(_num(aporta))
 
     return {
         "dealname": f"{numero} - {nombre_producto}".strip(" -"),
@@ -300,7 +319,10 @@ def construir_payload_kit(
         PROP_KIT_CAJAS: str(cajas),
         # Nace con todo disponible: nadie ha consumido nada todavía.
         PROP_KIT_CAJAS_DISPONIBLES: str(cajas),
-        PROP_KIT_COTIZACION_GENERADORA: str(cotizacion_id or "").strip(),
+        PROP_KIT_COTIZACION_GENERADORA: creadora,
+        # Quien lo genera, la creadora incluida. Es lo que permite que el KIT
+        # salga en los pedidos de las tres ofertas y no solo en el suyo.
+        PROP_KIT_GENERADO_POR_IDS: serializar_marcas_kit(generadores),
         PROP_KIT_VALIDACION_PRODUCCION: "false",
     }
 

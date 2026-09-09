@@ -105,12 +105,23 @@ def guardar_marcas(payload: GuardarMarcasRequest):
     return {"success": True, **resultado}
 
 
+class NegocioGenerador(BaseModel):
+    """Una oferta abierta anotada al pedir el KIT, con las cajas que aporta."""
+
+    id: str
+    cajas: int = 0
+
+
 class KitACrear(BaseModel):
     """Un artículo que no completa bloque y necesita su pedido KIT."""
 
     sku: str
     nombre: str = ""
     cajas: int = Field(gt=0)
+    # Otras ofertas abiertas de la misma referencia que se anotaron al pedir el
+    # KIT. La cotización actual NO hace falta mandarla: el backend la mete
+    # siempre, porque en la tabla es la fila fija que no se puede quitar.
+    negocios: List[NegocioGenerador] = Field(default_factory=list)
 
 
 class CrearKitsRequest(BaseModel):

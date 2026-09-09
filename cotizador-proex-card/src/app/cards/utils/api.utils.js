@@ -323,7 +323,10 @@ export const fetchNegociosGeneradores = async (skus = [], excluirNegocioId = "")
 // Devuelve `creados` y `omitidos` — los omitidos son los que ya existían.
 //
 // @param {string} cotizacionId
-// @param {Array<{sku: string, nombre: string, cajas: number}>} kits
+// @param {Array<{sku: string, nombre: string, cajas: number,
+//                negocios: Array<{id: string, cajas: number}>}>} kits
+//        `negocios` son las otras ofertas abiertas anotadas al pedir el KIT.
+//        La cotización actual no va: el backend la incluye siempre.
 export const crearKitsDeCotizacion = async (cotizacionId, kits = []) => {
   if (!cotizacionId || kits.length === 0) return null;
 

@@ -19,6 +19,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional
 
 from app.core.kits_constants import (
+    ASOC_COTIZACION_A_KIT,
     COTIZACION_PIPELINE_ID,
     KIT_COMPANY_ID,
     KIT_DEALSTAGE_ABIERTO,
@@ -28,6 +29,7 @@ from app.core.kits_constants import (
     PROP_KIT_CAJAS_DISPONIBLES,
     PROP_KIT_CONSUMIDO_POR_IDS,
     PROP_KIT_COTIZACION_GENERADORA,
+    PROP_KIT_GENERADO_POR_IDS,
     PROP_KIT_MARCADO_POR_IDS,
     PROP_KIT_NOMBRE,
     PROP_KIT_NUMERO,
@@ -388,6 +390,46 @@ def _put(url: str, token: str) -> None:
         raise RuntimeError(f"HubSpot {e.code}: {detalle}") from e
 
 
+def _asociar_etiquetada(desde_id: str, hasta_id: str, type_id: int, token: str) -> None:
+    """Asociación negocio↔negocio con etiqueta. `_put` no sirve: no manda cuerpo.
+
+    HubSpot pone el otro sentido del par por su cuenta, así que basta una llamada.
+    """
+    cuerpo = [{"associationCategory": "USER_DEFINED", "associationTypeId": int(type_id)}]
+    req = urllib.request.Request(
+        f"{BASE_URL}/crm/v4/objects/deals/{desde_id}/associations/deals/{hasta_id}",
+        data=json.dumps(cuerpo).encode("utf-8"),
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        method="PUT",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20):
+            return
+    except urllib.error.HTTPError as e:
+        detalle = e.read()[:400].decode("utf-8", "replace")
+        raise RuntimeError(f"HubSpot {e.code}: {detalle}") from e
+
+
+def _asociar_generadores(kit_id: str, generadores, token: str) -> Dict[str, int]:
+    """Asocia el KIT a cada oferta que lo genera. Espejo de la propiedad.
+
+    No aborta si una falla: la propiedad ya quedó escrita y es la que manda, así
+    que un fallo aquí degrada la vista en HubSpot pero no el cálculo. Se devuelve
+    el recuento para poder avisar.
+    """
+    hechas, fallidas = 0, 0
+    for deal_id in generadores:
+        try:
+            _asociar_etiquetada(deal_id, kit_id, ASOC_COTIZACION_A_KIT, token)
+            hechas += 1
+        except RuntimeError as e:
+            fallidas += 1
+            logger.warning(
+                f"[kits] KIT {kit_id} sin asociar al negocio {deal_id}: {e}"
+            )
+    return {"hechas": hechas, "fallidas": fallidas}
+
+
 def kits_ya_generados(token: str, cotizacion_id: str) -> Dict[str, dict]:
     """KIT que esta cotizacion ya generó, indexados por SKU.
 
@@ -474,12 +516,21 @@ def crear_kits_de_cotizacion(token: str, cotizacion_id: str, kits: List[Dict]) -
             })
             continue
 
+        # Ofertas anotadas: llegan como [{id, cajas}] y aqui se indexan. Un id
+        # vacio se descarta en vez de escribir una entrada rota en la propiedad.
+        generadores = {
+            str(n.get("id") or "").strip(): int(float(n.get("cajas") or 0))
+            for n in (k.get("negocios") or [])
+            if str(n.get("id") or "").strip()
+        }
+
         payload = construir_payload_kit(
             cotizacion_id=cotizacion_id,
             secuencia=siguiente,
             sku=sku,
             nombre_producto=str(k.get("nombre") or ""),
             cajas_kit=cajas,
+            negocios_generadores=generadores,
         )
         creado = _post(f"{BASE_URL}/crm/v3/objects/deals", {"properties": payload}, token)
         kit_id = creado["id"]
@@ -497,9 +548,15 @@ def crear_kits_de_cotizacion(token: str, cotizacion_id: str, kits: List[Dict]) -
             logger.warning(f"[kits] KIT {kit_id} creado pero sin asociar a PROEX: {e}")
             asociado = False
 
+        # Espejo de `kit_generado_por_ids`: la propiedad ya está escrita en el
+        # payload, esto solo hace que el vínculo se vea en el registro.
+        del_payload = parsear_marcas_kit(payload.get(PROP_KIT_GENERADO_POR_IDS))
+        asoc = _asociar_generadores(kit_id, del_payload, token)
+
         logger.info(
             f"[kits] creado {payload[PROP_KIT_NUMERO]} ({cajas} cajas) "
-            f"para la cotizacion {cotizacion_id}"
+            f"para la cotizacion {cotizacion_id}, "
+            f"{asoc['hechas']} negocios asociados"
         )
         creados.append({
             "kit_id": kit_id,
@@ -507,6 +564,9 @@ def crear_kits_de_cotizacion(token: str, cotizacion_id: str, kits: List[Dict]) -
             "sku": sku,
             "cajas": cajas,
             "asociado_a_proex": asociado,
+            "negocios_generadores": sorted(del_payload),
+            "negocios_asociados": asoc["hechas"],
+            "negocios_sin_asociar": asoc["fallidas"],
         })
         existentes[sku] = {"deal_id": kit_id, "numero": payload[PROP_KIT_NUMERO], "cajas": cajas}
         siguiente += 1

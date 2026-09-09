@@ -56,6 +56,21 @@ PROP_KIT_COTIZACION_GENERADORA = "cotizacion_generadora_id"
 # soporta y el cotizador tuvo que resolver a mano con `requests`).
 # Formato: "dealId:cajas;dealId:cajas"
 PROP_KIT_MARCADO_POR_IDS = "kit_marcado_por_ids"
+
+# Negocios que GENERAN el KIT, no que lo consumen. Son cosas distintas: PROEX
+# suma las cajas de varias ofertas abiertas de la misma referencia y pide un
+# unico KIT por la diferencia, asi que un KIT nace de varias cotizaciones.
+#
+# Existe porque `cotizacion_generadora_id` guarda UN id, y con eso el KIT solo
+# podia salir en un pedido. Cristobal (2026-09-07): "si en el cotizador
+# seleccionas 3 negocios asociados al kit, despues debe salir el kit como kit a
+# generar en los 3 pedidos, no solo en el que realmente se uso para generarlo".
+#
+# `cotizacion_generadora_id` se queda, pero cambia de papel: ya no decide quien
+# ve el KIT, solo dice quien lo creo — lo que usan la numeracion y la
+# idempotencia. La cotizacion creadora va TAMBIEN aqui dentro, para que el
+# filtro de pedidos sea uno solo y no dos.
+PROP_KIT_GENERADO_POR_IDS = "kit_generado_por_ids"
 PROP_KIT_CONSUMIDO_POR_IDS = "kit_consumido_por_ids"
 
 # Separadores del formato serializado.
@@ -90,3 +105,26 @@ COTIZACION_DEALSTAGE_PERDIDO = "987141733"
 # ID del contenedor y nunca coincide con el del producto.
 PROP_LINE_ITEM_PRODUCTO = "hs_sku"
 PROP_LINE_ITEM_CANTIDAD = "quantity"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ASOCIACIÓN ETIQUETADA COTIZACIÓN ↔ PEDIDO KIT
+#
+# Cristóbal (2026-09-07): "yo crearía etiqueta de 'generador kit' y usaría esa".
+# Creada en el portal el 2026-09-08 como PAR de etiquetas, siguiendo el estilo
+# direccional que ya usaban las tres existentes (`Cotización > Pedido`).
+#
+# La asociación es ESPEJO de `kit_generado_por_ids`, no fuente de verdad: nada
+# lee asociaciones para calcular. Si divergieran, se regeneran desde la
+# propiedad. Duplicar el vínculo fue decisión suya —"si puedes mantener esto y
+# tratar de hacer la asociación también" (reunión del 2026-09-03)— porque la
+# propiedad no se ve en el registro de HubSpot y la asociación sí.
+#
+# OJO CON LA DIRECCIÓN: al ser un par, cada typeId vale para un sentido, y la
+# API de etiquetas no dice cuál (las dos salen como deal→deal). Se usa la 724
+# desde la cotización hacia el KIT porque es lo que dice su propio texto. Si al
+# abrir el primer KIT real las etiquetas se leen al revés, se intercambian estas
+# dos constantes y ya: el vínculo es correcto en ambos casos, solo cambia el
+# rótulo.
+ASOC_COTIZACION_A_KIT = 724      # "Cotización > Pedido KIT"
+ASOC_KIT_A_COTIZACION = 723      # "Pedido KIT > Cotización"
