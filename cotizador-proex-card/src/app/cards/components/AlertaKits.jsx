@@ -291,8 +291,9 @@ const AlertaKits = ({
               }
               variant="warning"
             >
-              La fábrica produce en bloques enteros: lo que sobre se pide como pedido KIT y
-              queda almacenado para ofertas posteriores.
+              La fábrica produce en bloques enteros: lo que sobre se puede pedir como
+              pedido KIT y queda almacenado para ofertas posteriores. Pedirlo es
+              opcional y la cotización se publica con KIT o sin él.
             </Alert>
           ) : (
             /* Todo cuadra: se consumen cajas ya fabricadas y la producción cae en
@@ -476,9 +477,12 @@ const AlertaKits = ({
           </Table>
 
           {noSolicitados.length > 0 && (
-            <Alert title="Hay KIT sin solicitar" variant="error">
-              Sin el pedido KIT no se completa el bloque y la fábrica no aceptará el
-              pedido. Habrá que subir las cajas de la oferta o consumir KIT existentes.
+            <Alert title="Esta oferta no pide pedido KIT" variant="info">
+              La cotización se puede publicar igual. Sólo tenlo en cuenta: si nadie
+              pide el KIT, la producción no cae en bloques exactos y habrá que
+              cuadrarlo por otro lado —subiendo las cajas, consumiendo KIT ya
+              fabricados, o pidiendo el KIT desde otra de las ofertas que comparten
+              esta referencia.
             </Alert>
           )}
         </>
