@@ -331,12 +331,17 @@ const RevisionTab = ({
             // usuaria vio, no lo que salía antes de que lo tocara.
             cajasKit: s?.cajasManual ?? cajasCalculadas,
             cajasProduccion: tirada,
-            // Ofertas anotadas, con lo que aporta cada una. La cotización actual
-            // no va: el backend la mete siempre.
-            negocios: elegidos.map((n) => ({
-              id: n.id,
-              cajas: Number(n.cajas) || 0,
-            })),
+            // Ofertas que generan el KIT, con las cajas que aporta cada una a la
+            // demanda. Esta oferta va explícita y PRIMERA: el backend la añade
+            // sola si falta, pero entonces le pone las cajas del KIT en vez de
+            // las suyas, y el campo dice cuánto aportó cada uno, no el total.
+            negocios: [
+              { id: String(dealId), cajas: Number(k.cajas) || 0 },
+              ...elegidos.map((n) => ({
+                id: n.id,
+                cajas: Number(n.cajas) || 0,
+              })),
+            ],
           };
         }),
     [analisisKits, kitsSolicitados, negociosPorSku]
