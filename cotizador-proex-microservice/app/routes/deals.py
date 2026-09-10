@@ -4,6 +4,7 @@ import re
 import requests
 import time
 from typing import Any, Dict, Optional, List
+from collections import Counter
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Path
@@ -78,6 +79,7 @@ from app.core.custom_objects_constants import (
     ASSOC_CATEGORY_USER_DEFINED,
     COMPANY_PROP_ADDRESS_ENTREGA,
 )
+from app.services.quote_documento import construir_documento, serializar_documento
 from app.services.quote_helpers import (
     build_association,
     create_quote_via_api,
@@ -411,71 +413,18 @@ def _line_item_is_container(props: dict) -> bool:
     ta = (props.get("tipo_articulo") or "").strip().lower()
     return pt in HS_PRODUCT_TYPE_CONTAINER and ta == "transitario"
 
-# Por encima de esto la copia no sobrevive: HubSpot recorta a 200 los line items de una
-# cotización, y lo hace MINUTOS DESPUÉS de publicar, cuando ya ha confirmado todas las
-# asociaciones. Con 12 líneas por contenedor, a partir de ~16 contenedores no cabe.
-QUOTE_LINE_ITEMS_MAX = 150
-
-
-def _agrupar_items_para_quote(items: List[dict]) -> List[dict]:
-    """Funde en una sola línea las que comparten artículo y precio, sumando las cajas.
-
-    Solo afecta a la copia que se vuelca a la cotización; los line items del negocio se
-    quedan como están. El PDF ya presenta la tabla agrupada por artículo, así que el
-    documento sale igual pero con una copia que cabe: 50 contenedores pasan de 600 líneas
-    a unas 61 (9 artículos + 50 contenedores + flete + seguro).
-
-    Las líneas de contenedor no se tocan: son las que dan el número de contenedores y las
-    páginas del modo desagregado. Agrupar por precio además de por artículo evita mezclar
-    contenedores que se cotizaron a precios distintos.
-    """
-    agrupados: Dict[tuple, dict] = {}
-    salida: List[dict] = []
-
-    for props in items:
-        if _is_container_product_type(props.get("hs_product_type") or ""):
-            salida.append(props)
-            continue
-
-        clave = (
-            props.get("hs_product_id") or props.get("hs_sku") or props.get("name"),
-            props.get("price"),
-            props.get("tipo_articulo"),
-            props.get("hs_product_type"),
-            props.get("tipo_iva_repercutido"),
-            props.get("tipo_iva_soportado"),
-            props.get("cardcode"),
-        )
-        previo = agrupados.get(clave)
-        if previo is None:
-            fundido = dict(props)
-            # El nombre lleva el prefijo "{contenedor} - " y la línea ya no es de un
-            # contenedor concreto; el PDF lo recorta igualmente cuando hay varios.
-            nombre = (fundido.get("name") or "")
-            numero = (fundido.get("numero_container") or "").strip()
-            if numero and nombre.startswith(f"{numero} - "):
-                fundido["name"] = nombre[len(numero) + 3:]
-            fundido.pop("numero_container", None)
-            agrupados[clave] = fundido
-            salida.append(fundido)
-        else:
-            try:
-                previo["quantity"] = str(
-                    float(previo.get("quantity") or 0) + float(props.get("quantity") or 0)
-                )
-            except (TypeError, ValueError):
-                logger.warning(f"[publish] cantidad no numérica al agrupar {clave}; se deja la previa")
-
-    return salida
-
-
-def _quote_line_item_names(access_token: str, quote_id: str):
-    """Nombres de los line items que la Quote tiene REALMENTE asociados, o None si no
+def _quote_line_item_name_counts(access_token: str, quote_id: str):
+    """Cuántas líneas de cada `name` tiene REALMENTE asociadas la Quote, o None si no
     se pudieron leer.
 
     Se lee de HubSpot en vez de fiarse del recuento que devuelve al crearlos: con
     cotizaciones grandes confirma más líneas de las que luego aparecen. Devolver un
-    conjunto vacío ante un error haría que el reintento recreara la copia entera."""
+    contador vacío ante un error haría que el reintento recreara la copia entera.
+
+    Se cuenta en vez de guardar un conjunto de nombres porque la copia es un calco del
+    negocio y un contenedor nacional puede llevar dos líneas del mismo artículo (promo
+    5+1) con el mismo `name`: con un set, copiar una de las dos daba la copia por
+    completa."""
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
     ids, after = [], None
     while True:
@@ -495,7 +444,7 @@ def _quote_line_item_names(access_token: str, quote_id: str):
         if not after:
             break
 
-    nombres = set()
+    nombres: Counter = Counter()
     for i in range(0, len(ids), 100):
         resp = requests.post(
             "https://api.hubapi.com/crm/v3/objects/line_items/batch/read",
@@ -507,7 +456,7 @@ def _quote_line_item_names(access_token: str, quote_id: str):
             logger.error(f"[publish] batch read de nombres falló: {resp.status_code}")
             return None
         for o in (resp.json() or {}).get("results", []):
-            nombres.add((o.get("properties") or {}).get("name") or "")
+            nombres[(o.get("properties") or {}).get("name") or ""] += 1
     return nombres
 
 
@@ -8797,8 +8746,8 @@ async def publish_quote(
 
         deal_owner_id = None
         deal_puerto_destino = None
-        owner_info = {}
         deal_desagregar = ""
+        owner_info = {}
 
         try:
             deal_response = client.crm.deals.basic_api.get_by_id(
@@ -8837,16 +8786,20 @@ async def publish_quote(
 
         company_aseguradora = False
         company_tipo_cliente = None
+        company_residennum = None
+        company_equ = None
         try:
             company_ids = get_associated_companies(deal_id)
             if company_ids:
                 company_resp = client.crm.companies.basic_api.get_by_id(
                     company_id=company_ids[0],
-                    properties=["aseguradora", "tipo_cliente"]
+                    properties=["aseguradora", "tipo_cliente", "residennum", "equ"]
                 )
                 raw_aseguradora = company_resp.properties.get("aseguradora")
                 company_aseguradora = bool(raw_aseguradora and str(raw_aseguradora).strip())
                 company_tipo_cliente = company_resp.properties.get("tipo_cliente")
+                company_residennum = company_resp.properties.get("residennum")
+                company_equ = company_resp.properties.get("equ")
                 logger.info(
                     f"[publish] Company aseguradora={raw_aseguradora!r} "
                     f"tipo_cliente={company_tipo_cliente!r}"
@@ -8854,14 +8807,133 @@ async def publish_quote(
         except Exception as e:
             logger.warning(f"[publish] Could not fetch company aseguradora/tipo_cliente: {e}")
 
+        deal_line_items_raw = []
+        try:
+            li_ids = _get_associated_ids(deal_id, "line_items")
+            if li_ids:
+                _batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
+                _headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+                _batch_payload = {
+                    "properties": [
+                        "name", "hs_sku", "hs_product_id", "hs_product_type",
+                        "tipo_articulo", "quantity", "price", "amount",
+                        "container_config", "numero_container", "ocupacion",
+                        "peso_neto", "peso_bruto", "colis",
+                        "name_en", "name_fr", "description",
+                        "cardcode", "almacen", "precio_de_coste",
+                        "margen_unitario", "tipo_iva_repercutido", "tipo_iva_soportado",
+                        "precio_negociado_tipo_venta", "incoterm_precio_negociado",
+                    ],
+                }
+                for _i in range(0, len(li_ids), 100):
+                    _batch_payload["inputs"] = [{"id": str(lid)} for lid in li_ids[_i:_i + 100]]
+                    _resp = requests.post(_batch_url, headers=_headers, json=_batch_payload, timeout=15)
+                    if _resp.ok:
+                        deal_line_items_raw.extend(_resp.json().get("results", []))
+                    else:
+                        raise HTTPException(
+                            502,
+                            f"Lectura incompleta de las líneas del negocio: el lote "
+                            f"[{_i}:{_i + 100}] devolvió {_resp.status_code}. No se publica.",
+                        )
+                logger.info(f"[publish] Fetched {len(deal_line_items_raw)} deal line items for quote copy")
+        except HTTPException:
+            raise
+        except Exception as _e:
+            raise HTTPException(502, f"No se pudieron leer las líneas del negocio: {_e}") from _e
+
+        # Una cotización a la que le faltan líneas no se nota a simple vista: la tabla
+        # de productos cuadra consigo misma y solo descuadra contra el TOTAL, que sale
+        # del payload. El 07/09/2026 se publicó una con 100 de 120 líneas (el truncado
+        # a 100 de la batch v3) y 25.843,20 € de menos. Mejor no publicar.
+        if len(deal_line_items_raw) != len(li_ids):
+            raise HTTPException(
+                502,
+                f"Copia incompleta: se leyeron {len(deal_line_items_raw)} de "
+                f"{len(li_ids)} líneas del negocio. No se publica la cotización.",
+            )
+        _payload_lineas = len(data.lineItems or [])
+        if _payload_lineas and len(li_ids) < _payload_lineas:
+            raise HTTPException(
+                409,
+                f"Asociaciones incompletas: el negocio devuelve {len(li_ids)} líneas y "
+                f"la card envió {_payload_lineas}. No se publica la cotización.",
+            )
+
+        # Backstop para deals con huérfanos de catálogo previos al fix de
+        # update_deal_containers: si hay contenedores, esas líneas no van al quote.
+        nombres_contenedor = set()
+        for _li in deal_line_items_raw:
+            _props = _li.get("properties", {}) or {}
+            if _is_container_product_type(_props.get("hs_product_type") or ""):
+                # numero_container Y name: en legacy numero_container es el entero
+                # ("1") y el prefijo de las líneas per-contenedor sale del name.
+                for _nc in ((_props.get("numero_container") or "").strip(), (_props.get("name") or "").strip()):
+                    if _nc:
+                        nombres_contenedor.add(_nc)
+        if nombres_contenedor:
+            _huerfanos = set(_catalogo_huerfano_ids(deal_line_items_raw, nombres_contenedor))
+            if _huerfanos:
+                logger.warning(f"[publish] Excluyendo {len(_huerfanos)} líneas de catálogo sin contenedor de la copia al quote")
+                deal_line_items_raw = [li for li in deal_line_items_raw if str(li.get("id")) not in _huerfanos]
+
+        # El documento (tabla, totales y estadísticas) se calcula aquí y viaja en el
+        # payload: la plantilla ya no lo saca de los line items de la Quote, que HubSpot
+        # recorta a 200 minutos DESPUÉS de publicar (09/09/2026, dos cotizaciones de 240
+        # líneas que imprimieron 51.840 y 52.920 bultos de los 62.400 del pedido).
+        try:
+            _documento = construir_documento(
+                line_items=deal_line_items_raw,
+                deal={
+                    "tipo_de_venta": data.header.terms if data.header else None,
+                    "puerto_destino": deal_puerto_destino,
+                    "desagregar_cotizacion": deal_desagregar,
+                    "precio_ruta_hasta_puerto_de_salida": getattr(data.ruta, "precioOrigen", None),
+                    "precio_ruta_hasta_puerto_destino": getattr(data.ruta, "precioDestino", None),
+                    "tipo_comision": getattr(data.intermediario, "tipoComision", None),
+                    "importe_comision": getattr(data.intermediario, "importeComision", None),
+                    "repercutir_a_cliente": getattr(data.intermediario, "repercutirACliente", None),
+                    "codigo_intermediario": getattr(data.intermediario, "codigo", None),
+                },
+                tipo_cliente=company_tipo_cliente or getattr(data.cliente, "tipoCliente", None),
+                residennum=company_residennum,
+                equ=company_equ,
+                desgloses={
+                    "fobExpenses": getattr(data.precios, "fobExpenses", 0),
+                    "seafreightRate": getattr(data.precios, "seafreightRate", 0),
+                    "insurance": getattr(data.precios, "insurance", 0),
+                },
+                total_cajas=float(getattr(data.estadisticas, "totalColis", 0) or 0),
+                num_contenedores=int(getattr(data.estadisticas, "numContainers", 0) or 0),
+            )
+            logger.info(
+                f"[publish] documento {_documento['eje']} {_documento['incoterm']}: "
+                f"{len(_documento['filas'])} filas, {_documento['stats']['bultos']:.0f} bultos, "
+                f"{_documento['stats']['contenedores']} contenedores, "
+                f"tabla={_documento['totales']['tabla']}"
+            )
+        except Exception as _doc_err:
+            # Sin documento la plantilla cae al respaldo por line items, que es justo lo
+            # que este bloque viene a sustituir: mejor no publicar que imprimir un PDF
+            # cuya tabla depende de lo que HubSpot decida dejar en la cotización.
+            logger.error(f"[publish] no se pudo calcular el documento: {_doc_err}", exc_info=True)
+            raise HTTPException(
+                502, f"No se pudo calcular el documento de la cotización: {_doc_err}"
+            ) from _doc_err
+
         # `lineItems` es el 82 % del JSON (unos 444 caracteres por línea) y la plantilla
-        # de la cotización no lo usa: pinta la tabla desde los line items reales de la
-        # Quote. Con 600 líneas el payload se iba a 266.000 caracteres, HubSpot rechazaba
-        # la escritura por pasarse de 65.536 y el negocio se quedaba con el payload de la
-        # cotización ANTERIOR: el PDF salía con las estadísticas de otro pedido
-        # (08/09/2026, 50 contenedores imprimiendo el total de 10).
+        # no lo usa. Con 600 líneas el payload se iba a 266.000 caracteres, HubSpot
+        # rechazaba la escritura por pasarse de 65.536 y el negocio se quedaba con el
+        # payload de la cotización ANTERIOR: el PDF salía con las estadísticas de otro
+        # pedido (08/09/2026, 50 contenedores imprimiendo el total de 10).
+        # `documento` va PRIMERO: si el contexto de la plantilla recortara la propiedad,
+        # lo último del JSON es lo primero que se pierde, y es lo que ahora imprime la
+        # tabla entera.
         _payload_json = json.dumps(
-            {k: v for k, v in data.dict().items() if k != "lineItems"},
+            {
+                "documentoTxt": serializar_documento(_documento),
+                **{k: v for k, v in data.dict().items() if k != "lineItems"},
+            },
             ensure_ascii=False,
             default=str,
         )
@@ -8978,76 +9050,6 @@ async def publish_quote(
             f"associated with deal {deal_id} and template {QUOTE_TEMPLATE_ID}"
         )
 
-        deal_line_items_raw = []
-        try:
-            li_ids = _get_associated_ids(deal_id, "line_items")
-            if li_ids:
-                _batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/read"
-                _headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-                _batch_payload = {
-                    "properties": [
-                        "name", "hs_sku", "hs_product_id", "hs_product_type",
-                        "tipo_articulo", "quantity", "price", "amount",
-                        "container_config", "numero_container", "ocupacion",
-                        "peso_neto", "peso_bruto", "colis",
-                        "name_en", "name_fr",
-                        "cardcode", "almacen", "precio_de_coste",
-                        "margen_unitario", "tipo_iva_repercutido", "tipo_iva_soportado",
-                        "precio_negociado_tipo_venta", "incoterm_precio_negociado",
-                    ],
-                }
-                for _i in range(0, len(li_ids), 100):
-                    _batch_payload["inputs"] = [{"id": str(lid)} for lid in li_ids[_i:_i + 100]]
-                    _resp = requests.post(_batch_url, headers=_headers, json=_batch_payload, timeout=15)
-                    if _resp.ok:
-                        deal_line_items_raw.extend(_resp.json().get("results", []))
-                    else:
-                        raise HTTPException(
-                            502,
-                            f"Lectura incompleta de las líneas del negocio: el lote "
-                            f"[{_i}:{_i + 100}] devolvió {_resp.status_code}. No se publica.",
-                        )
-                logger.info(f"[publish] Fetched {len(deal_line_items_raw)} deal line items for quote copy")
-        except HTTPException:
-            raise
-        except Exception as _e:
-            raise HTTPException(502, f"No se pudieron leer las líneas del negocio: {_e}") from _e
-
-        # Una cotización a la que le faltan líneas no se nota a simple vista: la tabla
-        # de productos cuadra consigo misma y solo descuadra contra el TOTAL, que sale
-        # del payload. El 07/09/2026 se publicó una con 100 de 120 líneas (el truncado
-        # a 100 de la batch v3) y 25.843,20 € de menos. Mejor no publicar.
-        if len(deal_line_items_raw) != len(li_ids):
-            raise HTTPException(
-                502,
-                f"Copia incompleta: se leyeron {len(deal_line_items_raw)} de "
-                f"{len(li_ids)} líneas del negocio. No se publica la cotización.",
-            )
-        _payload_lineas = len(data.lineItems or [])
-        if _payload_lineas and len(li_ids) < _payload_lineas:
-            raise HTTPException(
-                409,
-                f"Asociaciones incompletas: el negocio devuelve {len(li_ids)} líneas y "
-                f"la card envió {_payload_lineas}. No se publica la cotización.",
-            )
-
-        # Backstop para deals con huérfanos de catálogo previos al fix de
-        # update_deal_containers: si hay contenedores, esas líneas no van al quote.
-        nombres_contenedor = set()
-        for _li in deal_line_items_raw:
-            _props = _li.get("properties", {}) or {}
-            if _is_container_product_type(_props.get("hs_product_type") or ""):
-                # numero_container Y name: en legacy numero_container es el entero
-                # ("1") y el prefijo de las líneas per-contenedor sale del name.
-                for _nc in ((_props.get("numero_container") or "").strip(), (_props.get("name") or "").strip()):
-                    if _nc:
-                        nombres_contenedor.add(_nc)
-        if nombres_contenedor:
-            _huerfanos = set(_catalogo_huerfano_ids(deal_line_items_raw, nombres_contenedor))
-            if _huerfanos:
-                logger.warning(f"[publish] Excluyendo {len(_huerfanos)} líneas de catálogo sin contenedor de la copia al quote")
-                deal_line_items_raw = [li for li in deal_line_items_raw if str(li.get("id")) not in _huerfanos]
-
         # El ancla (precio_negociado_tipo_venta + incoterm_precio_negociado) tiene que
         # viajar al line item del quote: `quote.html` la usa para imprimir el precio
         # negociado exacto en vez de recomponer EXW + delta, que arrastra el residuo
@@ -9079,29 +9081,31 @@ async def publish_quote(
                         properties[field] = val
             items_payload.append(properties)
 
-        if len(items_payload) > QUOTE_LINE_ITEMS_MAX:
-            _sin_agrupar = len(items_payload)
-            items_payload = _agrupar_items_para_quote(items_payload)
-            logger.warning(
-                f"[publish] deal {deal_id}: {_sin_agrupar} líneas no caben en una cotización; "
-                f"se agrupan por artículo y precio para la copia -> {len(items_payload)}"
-            )
-            if (deal_desagregar or "").strip().lower() in ("true", "yes", "si", "sí"):
-                logger.warning(
-                    f"[publish] deal {deal_id} pide cotización desagregada, pero con "
-                    f"{_sin_agrupar} líneas las páginas por contenedor saldrían incompletas: "
-                    f"el documento va con la mercancía agrupada"
-                )
-
-        logger.warning(f"[publish] Creating {len(items_payload)} line items for quote {quote_id} via batch")
+        # La copia es un CALCO línea a línea del negocio, sin agrupar. Publicar la
+        # cotización desde el editor de HubSpot hace que el negocio pase a tener los
+        # line items de la cotización (los clona con hs_object_source=CRM_UI y archiva
+        # los propios), así que cualquier transformación aquí acaba dentro del negocio:
+        # al fundir por artículo, el negocio se quedaba con 9 líneas sin
+        # numero_container ni el prefijo "{contenedor} - ", y GET /containers, que busca
+        # el line item de cada artículo por ese nombre, dejaba 240 de 270 filas de la
+        # rejilla sin coste ni IVA (deal 64836801849, 09/09/2026).
+        logger.warning(f"[publish] Creating {len(items_payload)} line items for quote {quote_id} via batch (calco 1:1 del negocio)")
 
         # HubSpot no es de fiar en el recuento: con 600 líneas devuelve 100 ids por cada
         # uno de los 6 lotes y confirma las 600 asociaciones, pero en la Quote acaban
         # apareciendo 200 y los otros 400 line items no existen (08/09/2026, tres publish
-        # seguidos con el mismo resultado; comprobado que la Quote admite más de 200 y que
-        # no hay recorte diferido). Así que la copia se verifica contra lo que HubSpot
-        # tiene de verdad y se reintenta lo que falte, identificando cada línea por `name`,
-        # que es único (lleva el contenedor y el artículo).
+        # seguidos con el mismo resultado). Así que la copia se verifica contra lo que
+        # HubSpot tiene de verdad y se reintenta lo que falte, contando por `name`, que
+        # lleva el contenedor y el artículo. Se cuenta en vez de mirar si el nombre está
+        # porque el calco puede traer dos líneas del mismo artículo en un contenedor
+        # (promo 5+1).
+        #
+        # Esta verificación no cubre lo que pase DESPUÉS: la cotización 42841113438
+        # (negocio 64731186508) se quedó con 200 de sus 240 líneas más tarde y el
+        # documento imprimió 85.654,80 € menos. De eso avisa `copia_incompleta` en
+        # quote.html, pero se apoya en `estadisticas.totalColis` del payload y ese
+        # negocio lo tiene VACÍO, así que el aviso quedó desarmado: sin payload no hay
+        # con qué comparar los bultos de la tabla.
         errors_list: List[str] = []
         pendientes = list(items_payload)
         created_ids: List[str] = []
@@ -9121,20 +9125,24 @@ async def publish_quote(
                 errors_list += assoc_errors
                 created_ids += nuevos_ids
 
-            nombres_en_quote = _quote_line_item_names(access_token, quote_id)
-            if nombres_en_quote is None:
+            en_quote = _quote_line_item_name_counts(access_token, quote_id)
+            if en_quote is None:
                 raise HTTPException(
                     502,
                     "No se pudo comprobar qué líneas quedaron en la cotización; "
                     "no se reintenta la copia para no duplicarlas.",
                 )
-            pendientes = [
-                props for props in items_payload
-                if (props.get("name") or "") not in nombres_en_quote
-            ]
+            por_copiar = Counter((props.get("name") or "") for props in items_payload)
+            faltan = por_copiar - en_quote
+            pendientes = []
+            for props in items_payload:
+                nombre = props.get("name") or ""
+                if faltan[nombre] > 0:
+                    pendientes.append(props)
+                    faltan[nombre] -= 1
             logger.warning(
                 f"[publish] Copia intento {intento}: la cotización tiene "
-                f"{len(nombres_en_quote)} de {len(items_payload)} líneas "
+                f"{sum(en_quote.values())} de {len(items_payload)} líneas "
                 f"({len(pendientes)} pendientes)"
             )
             if not pendientes:

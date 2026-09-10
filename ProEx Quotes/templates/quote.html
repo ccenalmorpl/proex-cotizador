@@ -172,6 +172,109 @@
 {% set textos_raw = json_get_obj(payload_json, "textos") %}
 
 {# ===================================================== #}
+{# El documento: tabla, totales y estadísticas ya         #}
+{# calculados por el backend. La plantilla solo pinta.    #}
+{#                                                        #}
+{# Antes todo esto salía de los line items que la Quote    #}
+{# tiene asociados, y HubSpot los recorta a 200 minutos    #}
+{# DESPUÉS de publicar: el 09/09/2026 dos cotizaciones de  #}
+{# 240 líneas imprimieron 51.840 y 52.920 bultos de los    #}
+{# 62.400 del pedido. Las cotizaciones publicadas antes    #}
+{# de este cambio no traen el bloque y siguen saliendo     #}
+{# por el camino de los line items.                       #}
+{# ===================================================== #}
+{# `fromjson` se llama sobre la propiedad CRUDA, igual que en basic.html, que es el uso
+   que sabemos que funciona. La salida del macro `normalize_json` sirve para los splits
+   pero no para parsear: el macro devuelve un Markup con su propio espaciado. Se deja
+   como segundo intento por si algún payload viejo llega con el doble comillado. #}
+{# El documento viaja como registros delimitados, no como JSON: `fromjson` no responde
+   en el contexto de la plantilla de cotización. El 10/09/2026 el payload llegaba entero
+   (12.675 caracteres) y el parseo devolvía nulo en silencio, tanto como filtro
+   (`|fromjson`) como en la forma de función que usa basic.html. Partir cadenas es lo que
+   sostiene el resto del documento desde siempre, así que la tabla va por ahí.
+   Registros separados por `~`, campos por `|`, el primer campo dice de qué es cada uno. #}
+{% set doc = none %}
+{% set documento_txt = json_get_str(payload_json, "documentoTxt", "") %}
+{% if documento_txt %}
+  {% set ns_d = namespace(eje="exportacion", incoterm="EXW",
+                          bultos=0.0, conts=1, neto=0.0, bruto=0.0,
+                          fob_exp=0.0, flete=0.0, seguro=0.0,
+                          tabla=0.0, exw=0.0, fob=0.0, cfr=0.0, cif=0.0,
+                          base=none, imp=none, total=none,
+                          pag_abierta=false, pag=none) %}
+  {% set d_filas = [] %}
+  {% set d_buckets = [] %}
+  {% set d_catalogo = [] %}
+  {% set d_paginas = [] %}
+
+  {% for registro in documento_txt|split("~") %}
+    {% set c = registro|split("|") %}
+    {% set tipo = c[0]|trim %}
+
+    {% if tipo == "E" %}
+      {% set ns_d.eje = c[1]|trim %}
+    {% elif tipo == "I" %}
+      {% set ns_d.incoterm = c[1]|trim %}
+    {% elif tipo == "S" %}
+      {% set ns_d.bultos = c[1]|float %}{% set ns_d.conts = c[2]|int %}
+      {% set ns_d.neto = c[3]|float %}{% set ns_d.bruto = c[4]|float %}
+    {% elif tipo == "D" %}
+      {% set ns_d.fob_exp = c[1]|float %}{% set ns_d.flete = c[2]|float %}
+      {% set ns_d.seguro = c[3]|float %}
+    {% elif tipo == "T" %}
+      {% set ns_d.tabla = c[1]|float %}{% set ns_d.exw = c[2]|float %}
+      {% set ns_d.fob = c[3]|float %}{% set ns_d.cfr = c[4]|float %}
+      {% set ns_d.cif = c[5]|float %}
+    {% elif tipo == "N" %}
+      {% set ns_d.base = c[1]|float %}{% set ns_d.imp = c[2]|float %}
+      {% set ns_d.total = c[3]|float %}
+    {% elif tipo == "B" %}
+      {% do d_buckets.append({"iva": c[1]|float, "rec": c[2]|float,
+                              "base": c[3]|float, "imp": c[4]|float}) %}
+    {% elif tipo == "F" %}
+      {% do d_filas.append({"cod": c[1], "es": c[2], "en": c[3], "fr": c[4],
+                            "cajas": c[5]|float, "pesoBruto": c[6]|float,
+                            "precio": c[7]|float, "importe": c[8]|float,
+                            "promo": c[9]|trim == "1",
+                            "ivaPct": c[10]|float, "recPct": c[11]|float}) %}
+    {% elif tipo == "C" %}
+      {% do d_catalogo.append({"cod": c[1], "es": c[2], "en": c[3], "fr": c[4],
+                               "pesoBruto": c[5]|float}) %}
+    {% elif tipo == "P" %}
+      {# Las filas `Q` van detrás de su `P`, así que la página se cierra al abrir la
+         siguiente y una última vez al salir del bucle. #}
+      {% if ns_d.pag_abierta %}{% do d_paginas.append(ns_d.pag) %}{% endif %}
+      {% set ns_d.pag = {"nombre": c[1], "filas": [],
+                         "stats": {"bultos": c[2]|float, "pesoNeto": c[3]|float,
+                                   "pesoBruto": c[4]|float},
+                         "totales": {"tabla": c[5]|float, "exw": c[6]|float,
+                                     "fob": c[7]|float, "cfr": c[8]|float,
+                                     "cif": c[9]|float}} %}
+      {% set ns_d.pag_abierta = true %}
+    {% elif tipo == "Q" and ns_d.pag_abierta %}
+      {% do ns_d.pag.filas.append({"a": c[1]|int, "cajas": c[2]|float,
+                                   "precio": c[3]|float, "importe": c[4]|float,
+                                   "promo": c[5]|trim == "1"}) %}
+    {% endif %}
+  {% endfor %}
+  {% if ns_d.pag_abierta %}{% do d_paginas.append(ns_d.pag) %}{% endif %}
+
+  {% if d_filas %}
+    {% set doc = {
+      "eje": ns_d.eje, "incoterm": ns_d.incoterm, "filas": d_filas,
+      "totales": {"tabla": ns_d.tabla, "exw": ns_d.exw, "fob": ns_d.fob,
+                  "cfr": ns_d.cfr, "cif": ns_d.cif, "base": ns_d.base,
+                  "impuestos": ns_d.imp, "total": ns_d.total, "ivaBuckets": d_buckets},
+      "desglose": {"fobExpenses": ns_d.fob_exp, "seafreightRate": ns_d.flete,
+                   "insurance": ns_d.seguro},
+      "stats": {"bultos": ns_d.bultos, "contenedores": ns_d.conts,
+                "pesoNeto": ns_d.neto, "pesoBruto": ns_d.bruto},
+      "catalogo": d_catalogo, "paginas": d_paginas
+    } %}
+  {% endif %}
+{% endif %}
+
+{# ===================================================== #}
 {# VARIABLES: preferir asociaciones (deal/company/quote)    #}
 {# ===================================================== #}
 
@@ -264,6 +367,7 @@
 {% set fuera_territorio_aduanero_ue = (_puerto_destino == "CEU") or (_puerto_destino == "MEL") or (_puerto_destino == "CEUTA") or (_puerto_destino == "MELILLA") %}
 
 {% set is_nacional = (_tipo_cliente == "nacional") and not fuera_territorio_aduanero_ue %}
+{% if doc %}{% set is_nacional = doc.eje == "nacional" %}{% endif %}
 
 {# En exportación con carga por palets el tipo de contenedor no es relevante (grupaje): se oculta. #}
 {% set is_carga_palets = deal.carga_por_palets == "true" or deal.carga_por_palets == true %}
@@ -503,12 +607,18 @@
    escalera y el TOTAL). El recuento queda de reserva para cotizaciones sin payload. #}
 {% set total_cajas_articulos = stats_totalColis if stats_totalColis > 0 else ns_caj.total %}
 
-{# HubSpot recorta en diferido los line items de una cotización grande (600 copiadas
-   y confirmadas, 200 minutos después), así que la tabla puede quedarse corta DESPUÉS
-   de publicar y ningún control del publish llega a verlo. Si las cajas de las líneas
-   no cuadran con las del pedido, el documento lo dice en vez de imprimir una tabla a
-   la que le faltan contenedores. #}
+{# El aviso solo aplica al camino viejo. Con el documento en el payload la tabla ya no
+   depende de las líneas que HubSpot decida dejar en la cotización, así que un recorte
+   diferido no puede dejar el PDF corto. #}
 {% set copia_incompleta = stats_totalColis > 0 and ns_caj.total > 0 and (ns_caj.total / stats_totalColis) < 0.999 %}
+{% if doc %}
+  {% set copia_incompleta = false %}
+  {% set total_cajas_articulos = doc.stats.bultos|default(0)|float %}
+  {# El round(2) no es decorativo: la celda imprime la variable sin filtro, así que sin
+     él los pesos salían "374400.0" y "425491.2" en vez de "374400.00" y "425491.20". #}
+  {% set computed_grossWeightKg = doc.stats.pesoBruto|default(0)|float|round(2) %}
+  {% set computed_netWeightKg = doc.stats.pesoNeto|default(0)|float|round(2) %}
+{% endif %}
 
 {# Contenedores: filtrar por hs_product_type container/contenedor #}
 {% set containers = [] %}
@@ -520,6 +630,7 @@
 {% endfor %}
 
 {% set num_containers = stats_numContainers|int if stats_numContainers|int > 0 else containers|length %}
+{% if doc %}{% set num_containers = doc.stats.contenedores|default(1)|int %}{% endif %}
 
 {# ===================================================== #}
 {# DESGLOSES: mandan los del payload, redondeados a 2.     #}
@@ -561,6 +672,12 @@
 {% set real_fobExpenses    = precios_fobExpenses|round(2)    if precios_fobExpenses > 0    else calc_fobExpenses %}
 {% set real_seafreightRate = precios_seafreightRate|round(2) if precios_seafreightRate > 0 else calc_seafreightRate %}
 {% set real_insurance      = precios_insurance|round(2)      if precios_insurance > 0      else calc_insurance %}
+
+{% if doc %}
+  {% set real_fobExpenses    = doc.desglose.fobExpenses|default(0)|float %}
+  {% set real_seafreightRate = doc.desglose.seafreightRate|default(0)|float %}
+  {% set real_insurance      = doc.desglose.insurance|default(0)|float %}
+{% endif %}
 
 {% set precios_fobExpenses    = real_fobExpenses %}
 {% set precios_seafreightRate = real_seafreightRate %}
@@ -604,6 +721,7 @@
 
 {# upper + sin espacios + sin acento (el value de HubSpot es "DAP MARÍTIMO") #}
 {% set _term = (terms|default("EXW"))|upper|replace(" ", "_")|replace("Í", "I") %}
+{% if doc and doc.incoterm %}{% set _term = doc.incoterm %}{% endif %}
 
 {# Nivel de la escalera de incoterms a mostrar en el footer de exportación.
    La última fila visible es la del tipo de venta de la cotización:
@@ -706,6 +824,45 @@
   {% set lp = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
   {% set ns_tabla.total = ns_tabla.total + (lp * qty) %}
 {% endfor %}
+{% if doc %}{% set ns_tabla.total = doc.totales.tabla|default(0)|float %}{% endif %}
+
+{# ===================================================== #}
+{# Filas de la tabla, con las mismas claves por los dos   #}
+{# caminos, para que el marcado sea uno solo.             #}
+{# El backend ya decide si agrupar por artículo (solo en  #}
+{# exportación con más de un contenedor): en nacional la   #}
+{# promoción del mismo SKU tiene que quedar en su fila.    #}
+{# ===================================================== #}
+{% set filas_tabla = [] %}
+{% if doc %}
+  {% set filas_tabla = doc.filas %}
+{% else %}
+  {% for item in line_items %}
+    {% set _lp = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
+    {% set ns_q = namespace(cajas=item.quantity|default(1.0)|string|trim|float) %}
+    {% if num_containers > 1 and not is_nacional %}
+      {% set ns_q.cajas = 0.0 %}
+      {% for same in all_mc_items %}
+        {% if (same.hs_sku|default("")) == (item.hs_sku|default("")) %}
+          {% set ns_q.cajas = ns_q.cajas + (same.quantity|default(0)|string|trim|float) %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {% do filas_tabla.append({
+      "cod": item.hs_sku|default(""),
+      "es": item.description|default("")|trim,
+      "en": item.name_en|default("")|trim,
+      "fr": item.name_fr|default("")|trim,
+      "name": item.name|default(""),
+      "cajas": ns_q.cajas,
+      "pesoBruto": item.peso_bruto|default(0)|string|trim|float,
+      "precio": _lp,
+      "importe": _lp * ns_q.cajas,
+      "promo": (item.price|default(0)|string|trim|float) == 0,
+      "ivaCode": item.tipo_iva_repercutido|default("")
+    }) %}
+  {% endfor %}
+{% endif %}
 
 {# ===================================================== #}
 {# Nacional: buckets por (iva%, recargo%) con el mismo      #}
@@ -803,6 +960,15 @@
 {% set nacional_impuestos = ns_nac.imp %}
 {% set nacional_total = nacional_base + nacional_impuestos %}
 
+{# Los buckets también los cierra el backend: resuelve el % de IVA y el de recargo de
+   cada línea contra la misma HubDB y agrupa por el par. Aquí solo se pintan. #}
+{% if doc and is_nacional and doc.totales.ivaBuckets %}
+  {% set ns_buck.items = doc.totales.ivaBuckets %}
+  {% set nacional_base = doc.totales.base|default(0)|float %}
+  {% set nacional_impuestos = doc.totales.impuestos|default(0)|float %}
+  {% set nacional_total = doc.totales.total|default(0)|float %}
+{% endif %}
+
 {% set _t = (terms|default(""))|upper|replace(" ", "_")|replace("Í", "I") %}
 {% if _t == "CIF" %}
   {% set precios_totalCIF = ns_tabla.total %}
@@ -836,6 +1002,13 @@
   {% set precios_totalCIF = precios_totalCFR + real_insurance %}
 {% endif %}
 
+{% if doc %}
+  {% set precios_totalEXW = doc.totales.exw|default(0)|float %}
+  {% set precios_totalFOB = doc.totales.fob|default(0)|float %}
+  {% set precios_totalCFR = doc.totales.cfr|default(0)|float %}
+  {% set precios_totalCIF = doc.totales.cif|default(0)|float %}
+{% endif %}
+
 {# ===================================================== #}
 {# Modo desagregado: una página por contenedor            #}
 {# deal.desagregar_cotizacion = "true" (HubSpot checkbox) #}
@@ -851,6 +1024,13 @@
       La tabla recoge {{ ns_caj.total|round(0)|int }} bultos de los
       {{ stats_totalColis|round(0)|int }} del pedido: faltan líneas y tanto los importes por
       tipo de venta como el precio por caja salen mal. Vuelve a publicar la cotización.
+    </span>
+    {# Este aviso solo debería salir en cotizaciones anteriores al documento en el
+       payload. Si sale en una nueva, esta línea dice por dónde se perdió el bloque. #}
+    <span style="display:block;font-size:11px;margin-top:8px;opacity:.75;">
+      diag · payload {{ (deal.quote_data_payload|default(""))|length }} car. ·
+      txt {{ (documento_txt|default(""))|length }} car. ·
+      filas {{ (doc.filas|default([]))|length if doc else 0 }}
     </span>
   </div>
 {% endif %}
@@ -939,26 +1119,25 @@
       </thead>
 
       <tbody>
-        {% if line_items and line_items|length > 0 %}
-          {% for item in line_items %}
-            {# Código y precio/peso unitarios (iguales para todos los contenedores) #}
-            {% set li_code   = item.hs_sku|default("") %}
+        {% if filas_tabla and filas_tabla|length > 0 %}
+          {% for item in filas_tabla %}
+            {% set li_code   = item.cod|default("") %}
             {# Línea promocional (precio 0): regalo, no se le suma flete/servicios → 0 #}
-            {% set _is_promo = (item.price|default(0)|string|trim|float) == 0 %}
-            {% set li_price_full = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
+            {% set _is_promo = item.promo|default(false) %}
+            {% set li_price_full = item.precio|default(0)|string|trim|float %}
             {% set li_price  = li_price_full|round(3) %}
-            {% set li_weight = item.peso_bruto|default(0) %}
+            {% set li_weight = item.pesoBruto|default(0) %}
 
             {# Nombre por idioma: ES→description, EN→name_en, FR→name_fr (sin código).
-               Fallback a item.name con strip del prefijo "CONTAINER_NAME - " si vacío. #}
+               Fallback al name con strip del prefijo "CONTAINER_NAME - " si vacío. #}
             {% if _quote_lang == "es" %}
-              {% set li_name_raw = item.description|default("")|trim %}
+              {% set li_name_raw = item.es|default("")|trim %}
             {% elif _quote_lang == "fr" %}
-              {% set li_name_raw = item.name_fr|default("")|trim %}
+              {% set li_name_raw = item.fr|default("")|trim %}
             {% else %}
-              {% set li_name_raw = item.name_en|default("")|trim %}
+              {% set li_name_raw = item.en|default("")|trim %}
             {% endif %}
-            {% if not li_name_raw %}
+            {% if not li_name_raw and item.name %}
               {% set ns_n = namespace(result="", skip=true) %}
               {% for part in item.name|split(" - ") %}
                 {% if ns_n.skip %}
@@ -971,26 +1150,12 @@
                   {% endif %}
                 {% endif %}
               {% endfor %}
-              {% set li_name_raw = ns_n.result if (num_containers > 1 and ns_n.result) else item.name|default("") %}
+              {% set li_name_raw = ns_n.result if (num_containers > 1 and ns_n.result) else item.name %}
             {% endif %}
             {% set li_name = (li_name_raw ~ " (Promoción)") if _is_promo else li_name_raw %}
 
-            {# Cantidad y total: agregar entre contenedores si multi (no en nacional) #}
-            {% if num_containers > 1 and not is_nacional %}
-              {% set ns_agg = namespace(qty=0.0, amount=0.0) %}
-              {% set li_sku = item.hs_sku|default("") %}
-              {% for same in all_mc_items %}
-                {% if (same.hs_sku|default("")) == li_sku %}
-                  {% set ns_agg.qty    = ns_agg.qty    + (same.quantity|default(0)|string|trim|float) %}
-                  {% set ns_agg.amount = ns_agg.amount + (same.amount|default(0)|string|trim|float) %}
-                {% endif %}
-              {% endfor %}
-              {% set li_qty   = ns_agg.qty %}
-              {% set li_total = li_price_full * ns_agg.qty %}
-            {% else %}
-              {% set li_qty   = item.quantity|default(1.0) %}
-              {% set li_total = li_price_full * li_qty %}
-            {% endif %}
+            {% set li_qty   = item.cajas|default(0)|string|trim|float %}
+            {% set li_total = item.importe|default(li_price_full * li_qty)|string|trim|float %}
 
             {# Unit: traducible #}
             {% set li_unit = lbl_unit_case %}
@@ -1128,38 +1293,77 @@
   {# Artículos filtrados por prefijo "CONTAINER_NAME - " en name  #}
   {# Precios divididos proporcionalmente entre contenedores        #}
   {# ============================================================ #}
-  {% for cont in containers %}
-    {% set cont_name = cont.name|default("")|trim %}
-    {% set cont_prefix = cont_name ~ " - " %}
-
-    {# Artículos de este contenedor #}
-    {# HubL split() elimina el elemento vacío inicial, por lo que cuando el prefijo
-       está al principio el resultado es ["ARTICLE"] (len=1), no ["","ARTICLE"] (len=2).
-       Detección: si split encontró el prefijo, sparts|first != item_name_t #}
-    {% set cont_items = [] %}
-    {% for item in all_line_items %}
-      {% set pt = item.hs_product_type|default("")|lower %}
-      {% set ta = item.tipo_articulo|default("")|lower %}
-      {% if (pt == "inventory" or pt == "non_inventory" or pt == "articulo") and (ta == "" or ta == "fabricante") %}
-        {% set item_name_t = item.name|default("")|trim %}
-        {% if (item_name_t|split(cont_prefix)|first) != item_name_t %}
-          {% do cont_items.append(item) %}
+  {# Páginas con las mismas claves por los dos caminos. En el documento las filas
+     apuntan al catálogo de artículos por índice, para no repetir los tres nombres en
+     cada contenedor: con 50 contenedores eso multiplicaba por 50 la parte más pesada
+     del bloque y se pasaba de los 65.536 caracteres de la propiedad. #}
+  {% set paginas_render = [] %}
+  {% if doc and doc.paginas %}
+    {% for pg in doc.paginas %}
+      {% set pg_filas = [] %}
+      {% for f in pg.filas %}
+        {% set art = doc.catalogo[f.a] %}
+        {% do pg_filas.append({
+          "cod": art.cod, "es": art.es, "en": art.en, "fr": art.fr,
+          "pesoBruto": art.pesoBruto, "cajas": f.cajas, "precio": f.precio,
+          "importe": f.importe, "promo": f.promo|default(false), "ivaPct": f.ivaPct|default(0),
+          "recPct": f.recPct|default(0)
+        }) %}
+      {% endfor %}
+      {% do paginas_render.append({"nombre": pg.nombre, "filas": pg_filas,
+                                   "stats": pg.stats, "totales": pg.totales}) %}
+    {% endfor %}
+  {% else %}
+    {% for cont in containers %}
+      {% set cont_prefix = (cont.name|default("")|trim) ~ " - " %}
+      {# HubL split() elimina el elemento vacío inicial, por lo que cuando el prefijo
+         está al principio el resultado es ["ARTICLE"] (len=1), no ["","ARTICLE"] (len=2).
+         Detección: si split encontró el prefijo, sparts|first != item_name_t #}
+      {% set pg_filas = [] %}
+      {% set ns_pg = namespace(gross=0.0, net=0.0, colis=0.0, total=0.0) %}
+      {% for item in all_line_items %}
+        {% set pt = item.hs_product_type|default("")|lower %}
+        {% set ta = item.tipo_articulo|default("")|lower %}
+        {% if (pt == "inventory" or pt == "non_inventory" or pt == "articulo") and (ta == "" or ta == "fabricante") %}
+          {% set item_name_t = item.name|default("")|trim %}
+          {% if (item_name_t|split(cont_prefix)|first) != item_name_t %}
+            {% set _q = item.quantity|default(0)|string|trim|float %}
+            {% set _p = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
+            {% do pg_filas.append({
+              "cod": item.hs_sku|default(""), "es": item.description|default("")|trim,
+              "en": item.name_en|default("")|trim, "fr": item.name_fr|default("")|trim,
+              "name": item.name|default(""), "pesoBruto": item.peso_bruto|default(0)|string|trim|float,
+              "cajas": _q, "precio": _p, "importe": _p * _q,
+              "promo": (item.price|default(0)|string|trim|float) == 0,
+              "ivaCode": item.tipo_iva_repercutido|default("")
+            }) %}
+            {% set ns_pg.colis = ns_pg.colis + _q %}
+            {% set ns_pg.gross = ns_pg.gross + _q * (item.peso_bruto|default(0)|string|trim|float) %}
+            {% set ns_pg.net   = ns_pg.net   + _q * (item.peso_neto|default(0)|string|trim|float) %}
+            {% set ns_pg.total = ns_pg.total + (_p * _q) %}
+          {% endif %}
         {% endif %}
-      {% endif %}
+      {% endfor %}
+      {% do paginas_render.append({
+        "nombre": cont.name|default("")|trim, "filas": pg_filas,
+        "stats": {"bultos": ns_pg.colis, "pesoNeto": ns_pg.net, "pesoBruto": ns_pg.gross},
+        "totales": none
+      }) %}
     {% endfor %}
+  {% endif %}
 
-    {# Stats por contenedor #}
-    {% set ns_cs = namespace(gross=0.0, net=0.0, colis=0.0, total=0.0) %}
-    {% for item in cont_items %}
-      {% set qty = item.quantity|default(0)|string|trim|float %}
-      {% set unit_price = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
-      {% set line_total = unit_price * qty %}
-
-      {% set ns_cs.colis = ns_cs.colis + qty %}
-      {% set ns_cs.gross = ns_cs.gross + qty * (item.peso_bruto|default(0)|string|trim|float) %}
-      {% set ns_cs.net   = ns_cs.net   + qty * (item.peso_neto|default(0)|string|trim|float) %}
-      {% set ns_cs.total = ns_cs.total + line_total %}
-    {% endfor %}
+  {% for pag in paginas_render %}
+    {% set cont_name = pag.nombre %}
+    {% set cont_items = pag.filas %}
+    {% set ns_cs = namespace(gross=pag.stats.pesoBruto|default(0)|float,
+                             net=pag.stats.pesoNeto|default(0)|float,
+                             colis=pag.stats.bultos|default(0)|float,
+                             total=(pag.totales.tabla|default(0)|float) if pag.totales else 0.0) %}
+    {% if not pag.totales %}
+      {% for item in cont_items %}
+        {% set ns_cs.total = ns_cs.total + (item.importe|default(0)|string|trim|float) %}
+      {% endfor %}
+    {% endif %}
 
 {# ===================================================== #}
 {# Totales del contenedor — anclados a ns_cs.total (suma  #}
@@ -1203,12 +1407,20 @@
   {% set cont_totalCIF = cont_totalCFR + cont_insurance %}
 {% endif %}
 
+{% if pag.totales %}
+  {% set cont_totalEXW = pag.totales.exw|default(0)|float %}
+  {% set cont_totalFOB = pag.totales.fob|default(0)|float %}
+  {% set cont_totalCFR = pag.totales.cfr|default(0)|float %}
+  {% set cont_totalCIF = pag.totales.cif|default(0)|float %}
+{% endif %}
+
     {# Buckets por (iva%, recargo%) para este contenedor — dos pases #}
     {% set ns_ckeys = namespace(list=[]) %}
     {% if is_nacional %}
       {% for item in cont_items %}
-        {% set raw_code = (item.tipo_iva_repercutido|default(""))|split(" ")|first|upper %}
-        {% set ns_r = namespace(iva=0.0, rec=0.0, found=false) %}
+        {% set raw_code = (item.ivaCode|default(""))|split(" ")|first|upper %}
+        {% set ns_r = namespace(iva=item.ivaPct|default(0)|float, rec=item.recPct|default(0)|float,
+                                found=(item.ivaPct is defined)) %}
         {% for r in _ns_iva.rows %}
           {% set rc = (r.code|default(""))|upper %}
           {% set rt = (r.tipo_residencia|default(""))|upper %}
@@ -1238,8 +1450,9 @@
       {% set rec_target = parts[1]|float %}
       {% set ns_b = namespace(base=0.0, imp=0.0) %}
       {% for item in cont_items %}
-        {% set raw_code = (item.tipo_iva_repercutido|default(""))|split(" ")|first|upper %}
-        {% set ns_r = namespace(iva=0.0, rec=0.0, found=false) %}
+        {% set raw_code = (item.ivaCode|default(""))|split(" ")|first|upper %}
+        {% set ns_r = namespace(iva=item.ivaPct|default(0)|float, rec=item.recPct|default(0)|float,
+                                found=(item.ivaPct is defined)) %}
         {% for r in _ns_iva.rows %}
           {% set rc = (r.code|default(""))|upper %}
           {% set rt = (r.tipo_residencia|default(""))|upper %}
@@ -1347,21 +1560,21 @@
           </thead>
           <tbody>
             {% for item in cont_items %}
-              {% set li_code   = item.hs_sku|default("") %}
-              {% set _is_promo = (item.price|default(0)|string|trim|float) == 0 %}
-              {% set li_price_full = precio_caja_final(item, delta_por_caja, _term)|string|trim|float %}
+              {% set li_code   = item.cod|default("") %}
+              {% set _is_promo = item.promo|default(false) %}
+              {% set li_price_full = item.precio|default(0)|string|trim|float %}
               {% set li_price  = li_price_full|round(3) %}
-              {% set li_weight = item.peso_bruto|default(0) %}
+              {% set li_weight = item.pesoBruto|default(0) %}
               {# Nombre por idioma: ES→description, EN→name_en, FR→name_fr (sin código).
                  Fallback a item.name con strip del prefijo "CONTAINER_NAME - " si vacío. #}
               {% if _quote_lang == "es" %}
-                {% set li_name_raw = item.description|default("")|trim %}
+                {% set li_name_raw = item.es|default("")|trim %}
               {% elif _quote_lang == "fr" %}
-                {% set li_name_raw = item.name_fr|default("")|trim %}
+                {% set li_name_raw = item.fr|default("")|trim %}
               {% else %}
-                {% set li_name_raw = item.name_en|default("")|trim %}
+                {% set li_name_raw = item.en|default("")|trim %}
               {% endif %}
-              {% if not li_name_raw %}
+              {% if not li_name_raw and item.name %}
                 {% set ns_n = namespace(result="", skip=true) %}
                 {% for part in item.name|split(" - ") %}
                   {% if ns_n.skip %}
@@ -1374,11 +1587,11 @@
                     {% endif %}
                   {% endif %}
                 {% endfor %}
-                {% set li_name_raw = ns_n.result if ns_n.result else item.name|default("") %}
+                {% set li_name_raw = ns_n.result if ns_n.result else item.name %}
               {% endif %}
               {% set li_name = (li_name_raw ~ " (Promoción)") if _is_promo else li_name_raw %}
-              {% set li_qty   = item.quantity|default(1.0) %}
-              {% set li_total = li_price_full * li_qty %}
+              {% set li_qty   = item.cajas|default(0)|string|trim|float %}
+              {% set li_total = item.importe|default(li_price_full * li_qty)|string|trim|float %}
               <tr>
                 <td class="code">{{ li_code }}</td>
                 <td class="item">{{ li_name }}</td>
