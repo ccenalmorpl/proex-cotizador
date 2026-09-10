@@ -370,7 +370,11 @@
 {% if doc %}{% set is_nacional = doc.eje == "nacional" %}{% endif %}
 
 {# En exportación con carga por palets el tipo de contenedor no es relevante (grupaje): se oculta. #}
-{% set is_carga_palets = deal.carga_por_palets == "true" or deal.carga_por_palets == true %}
+{# Misma normalización que en cotizacion_rapida: hoy es `bool` y el booleano compara
+   bien, pero si algún día pasa a `enumeration` HubL entregaría "No" y `== true` lo
+   daría por marcado (307 negocios tienen esta propiedad a false). #}
+{% set _cp = (deal.carga_por_palets|default(""))|string|lower|trim %}
+{% set is_carga_palets = _cp == "true" or _cp == "yes" or _cp == "si" or _cp == "sí" %}
 {% set ocultar_tipo_contenedor = is_carga_palets and not is_nacional %}
 
 {# ===================================================== #}
@@ -1013,7 +1017,8 @@
 {# Modo desagregado: una página por contenedor            #}
 {# deal.desagregar_cotizacion = "true" (HubSpot checkbox) #}
 {# ===================================================== #}
-{% set is_desagregado = deal.desagregar_cotizacion == "true" or deal.desagregar_cotizacion == true %}
+{% set _dc = (deal.desagregar_cotizacion|default(""))|string|lower|trim %}
+{% set is_desagregado = _dc == "true" or _dc == "yes" or _dc == "si" or _dc == "sí" %}
 
 <body class="hs-quotes hs-quotes--commercial">
 
@@ -1717,8 +1722,15 @@
   {% set has_page2_content = (textoBaseOferta and not is_nacional) or textoFormaPago or textoBanco %}
   {% set texts_page_num = (num_containers + 1) if (is_desagregado and num_containers > 1) else 2 %}
 
-  {# "Yes" es el label del checkbox en la UI; HubL entrega "true" #}
-  {% set is_cotizacion_rapida = deal.cotizacion_rapida == "true" or deal.cotizacion_rapida == true %}
+  {# `cotizacion_rapida` es la única de las tres marcas del negocio que HubSpot tiene
+     como `enumeration` en vez de `bool` (las otras son carga_por_palets y
+     desagregar_cotizacion), así que HubL entrega el label "Yes"/"No" y no el value. Y
+     Jinjava coacciona al comparar: con `deal.cotizacion_rapida == true` cualquier valor
+     no vacío daba verdadero, así que la página de textos desaparecía en cuanto alguien
+     marcaba el check como No. 48 cotizaciones publicadas desde el 03/08/2026 salieron
+     sin los términos de pago ni el IBAN. Se normaliza y se compara solo contra cadenas. #}
+  {% set _cr = (deal.cotizacion_rapida|default(""))|string|lower|trim %}
+  {% set is_cotizacion_rapida = _cr == "true" or _cr == "yes" or _cr == "si" or _cr == "sí" %}
   {% set show_legal_page = has_page2_content and not is_cotizacion_rapida %}
 
   {# Firma nativa: la activa el comercial al crear la cotización (caja impresa,
