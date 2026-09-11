@@ -226,15 +226,16 @@ def test_ceuta_y_melilla_salen_en_formato_exportacion():
     assert es_nacional("", "Abidjan, CI") is False
 
 
-def test_el_ancla_gana_al_recompuesto_pero_solo_en_su_tipo_de_venta():
+def test_el_precio_negociado_manda_pero_solo_en_su_tipo_de_venta():
     linea = {"price": "6.332", "precio_negociado_tipo_venta": "7.21",
              "incoterm_precio_negociado": "CIF"}
 
     assert precio_caja_final(linea, 0.877795, "CIF") == 7.21
-    # Con otro incoterm el ancla no aplica y manda el recompuesto.
+    # Con otro incoterm el precio negociado no aplica y manda el recompuesto.
     assert precio_caja_final(linea, 0.5, "FOB") == 6.832
-    # Si el recompuesto supera el ancla, tampoco: el precio ha subido de verdad.
-    assert precio_caja_final(linea, 2.0, "CIF") == 8.332
+    # Aunque los gastos suban después de negociar: se comen el margen, no se le pasan
+    # al cliente. El 64524566294 imprimía 6,978 donde el comercial había fijado 6,95.
+    assert precio_caja_final(linea, 2.0, "CIF") == 7.21
     # Precio 0 es una promoción y no recibe reparto de gastos.
     assert precio_caja_final({"price": "0.0"}, 5.0, "CIF") == 0.0
 
@@ -563,3 +564,81 @@ def test_el_desagregado_carga_menos_gastos_al_contenedor_con_promocion():
     for clave in ("tabla", "exw", "fob", "cfr", "cif"):
         assert round(primera["totales"][clave] + segunda["totales"][clave], 2) == \
             doc["totales"][clave], clave
+
+
+def test_una_subida_de_gastos_posterior_no_sube_el_precio_al_cliente():
+    """Deal 64524566294: el comercial fijó 6,95 €/caja en DAP TERRESTRE y el PDF
+    imprimía 6,978 porque el coste 6,60 más 0,378 de gastos superaba lo pactado. La
+    subida se come el margen, no se le pasa al cliente: 100,80 € en el total."""
+    cont = "64524566294-001"
+    items = [_contenedor(cont)]
+    for sku, cajas in (("A", 3120), ("B", 480)):
+        items.append(_li(hs_sku=sku, name=f"{cont} - {sku}", numero_container=cont,
+                         quantity=str(cajas), price="6.6" if sku == "A" else "6.25",
+                         tipo_iva_repercutido="R21",
+                         precio_negociado_tipo_venta="6.95" if sku == "A" else "6.6",
+                         incoterm_precio_negociado="DAP_TERRESTRE"))
+
+    doc = construir_documento(
+        line_items=items,
+        deal=_deal(tipo_de_venta="DAP TERRESTRE", puerto_destino="ALMERIA, ES",
+                   precio_ruta_hasta_puerto_de_salida="1300.0"),
+        tipo_cliente="nacional", residennum="1", equ="No",
+        desgloses={"fobExpenses": 0, "seafreightRate": 0, "insurance": 60.0},
+        total_cajas=3600, num_contenedores=1, porcentajes_iva=_porcentajes,
+    )
+
+    assert [f["precio"] for f in doc["filas"]] == [6.95, 6.6]
+    assert doc["totales"]["tabla"] == 24852.00
+
+
+def test_el_mismo_articulo_a_dos_precios_sale_en_dos_filas():
+    """Deal 64736817288: el SKU 42078145056 va a 6,910 en cuatro contenedores y a 6,900
+    en el quinto. Agrupar solo por artículo se quedaba con el precio de la primera línea
+    que devolviera HubSpot y se comía 1.920 x 0,010 = 19,20 €."""
+    items = []
+    for n in range(1, 6):
+        cont = f"64736817288-{n:03d}"
+        precio = "6.9" if n == 5 else "6.91"
+        items += [
+            _contenedor(cont),
+            _li(hs_sku="42078145056", name=f"{cont} - ART", numero_container=cont,
+                quantity="480", price="5.801",
+                precio_negociado_tipo_venta=precio, incoterm_precio_negociado="CIF"),
+        ]
+
+    doc = construir_documento(
+        line_items=items, deal=_deal(),
+        tipo_cliente="exportacion", residennum="4", equ="No",
+        desgloses={"fobExpenses": 0, "seafreightRate": 0, "insurance": 0},
+        total_cajas=2400, num_contenedores=5, porcentajes_iva=_porcentajes,
+    )
+
+    assert [(f["cajas"], f["precio"], f["importe"]) for f in doc["filas"]] == [
+        (1920.0, 6.91, 13267.20), (480.0, 6.9, 3312.00),
+    ]
+    assert doc["totales"]["tabla"] == 16579.20
+
+
+def test_las_filas_impresas_suman_el_total_impreso():
+    """Deal 64736753079: 7,646 x 806 = 6.162,676. El TOTAL acumulaba el importe crudo,
+    así que las tres filas del PDF sumaban 18.618,61 y el TOTAL decía 18.618,60."""
+    cont = "64736753079-001"
+    items = [_contenedor(cont)]
+    for sku, precio in (("42142011285", "7.646"), ("42142011396", "7.808"),
+                        ("42142011402", "7.646")):
+        items.append(_li(hs_sku=sku, name=f"{cont} - {sku}", numero_container=cont,
+                         quantity="806", price="5.833",
+                         precio_negociado_tipo_venta=precio,
+                         incoterm_precio_negociado="CIF"))
+
+    doc = construir_documento(
+        line_items=items, deal=_deal(),
+        tipo_cliente="exportacion", residennum="4", equ="No",
+        desgloses={"fobExpenses": 0, "seafreightRate": 0, "insurance": 0},
+        total_cajas=2418, num_contenedores=1, porcentajes_iva=_porcentajes,
+    )
+
+    assert [f["importe"] for f in doc["filas"]] == [6162.68, 6293.25, 6162.68]
+    assert round(sum(f["importe"] for f in doc["filas"]), 2) == doc["totales"]["tabla"]
+    assert doc["totales"]["tabla"] == 18618.61

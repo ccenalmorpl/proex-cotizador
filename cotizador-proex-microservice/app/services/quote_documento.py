@@ -158,22 +158,28 @@ def _es_articulo(props: dict) -> bool:
 
 
 def precio_caja_final(props: dict, delta: float, incoterm: str) -> float:
-    """El precio por caja que se imprime: el ancla negociada si manda, o EXW + delta.
+    """El precio por caja que se imprime: el que fijó el comercial, o EXW + delta.
 
-    Mismo criterio que el macro de `quote.html`: el ancla solo gana si es del mismo
-    tipo de venta y el recompuesto no la supera. El margen de 0,005 absorbe el residuo
-    del EXW guardado a 3 decimales. Precio 0 es una línea promocional y no recibe
-    reparto de gastos.
+    `precio_negociado_tipo_venta` es el precio final que el comercial teclea en
+    Negociación y manda siempre que sea del tipo de venta que se cotiza. Antes solo
+    ganaba si el recompuesto no lo superaba, y cuando los gastos subían después de
+    negociar el PDF imprimía más de lo pactado: el 64524566294 sacaba 6,978 €/caja
+    donde el comercial había fijado 6,95, 100,80 € de más en el total. Una subida de
+    gastos posterior se come el margen, no se le pasa al cliente.
+
+    El filtro por incoterm sí hace falta: el 64577031505 vende CIF con un ancla que
+    quedó en EXW, y ahí el precio se recompone. Precio 0 es una línea promocional y no
+    recibe reparto de gastos.
     """
     exw = _f(props.get("price"))
     if exw == 0:
         return 0.0
-    recompuesto = exw + delta
     ancla = _f(props.get("precio_negociado_tipo_venta"))
     if ancla > 0 and _normalizar_incoterm(props.get("incoterm_precio_negociado")) == incoterm:
-        if recompuesto <= ancla + 0.005:
-            return ancla
-    return round(recompuesto, 3)
+        return ancla
+    # Mismo redondeo que `redondear3` de la card (pricing.utils.js): el precio por caja
+    # se cierra a 3 decimales ANTES de multiplicar por las cajas.
+    return round(exw + delta, 3)
 
 
 def _delta_por_caja(
@@ -388,19 +394,29 @@ def construir_documento(
         incoterm, hasta_salida, hasta_destino, servicios_caja, seguro_caja, comision_caja
     )
 
+    # En exportación multicontenedor se agrupa por artículo, pero también por precio: el
+    # mismo SKU puede ir a precios distintos en dos contenedores y fundirlos se comía la
+    # diferencia (deal 64736817288: 1.920 cajas a 6,910 y 480 a 6,900 salían como 2.400 a
+    # 6,900, 19,20 € menos). Y el precio que ganaba era el de la primera línea que
+    # devolviera HubSpot, así que el mismo pedido podía imprimirse de más o de menos.
     agrupar = nc > 1 and not nacional
     if agrupar:
-        por_sku: Dict[str, List[dict]] = {}
+        grupos: Dict[Tuple[str, float], List] = {}
         for p in articulos:
-            por_sku.setdefault(p.get("hs_sku") or "", []).append(p)
-        origen = [(v[0], sum(_f(x.get("quantity")) for x in v)) for v in por_sku.values()]
+            precio = precio_caja_final(p, delta, incoterm)
+            grupo = grupos.setdefault((p.get("hs_sku") or "", precio), [p, 0.0, precio])
+            grupo[1] += _f(p.get("quantity"))
+        origen = [tuple(g) for g in grupos.values()]
     else:
-        origen = [(p, _f(p.get("quantity"))) for p in articulos]
+        origen = [
+            (p, _f(p.get("quantity")), precio_caja_final(p, delta, incoterm))
+            for p in articulos
+        ]
 
     # Orden estable: el de las asociaciones de HubSpot cambia entre publicaciones y la
     # tabla salía en un orden distinto en cada PDF de la misma cotización. Por artículo
     # y precio descendente, que además deja la línea promocional junto a la de pago.
-    origen.sort(key=lambda par: ((par[0].get("hs_sku") or ""), -_f(par[0].get("price"))))
+    origen.sort(key=lambda fila: ((fila[0].get("hs_sku") or ""), -fila[2]))
 
     residencia = (residennum or "").strip().upper()
     if residencia not in ("EUROPA", "EXTRANJERO"):
@@ -409,9 +425,11 @@ def construir_documento(
 
     filas: List[dict] = []
     tabla = 0.0
-    for props, num_cajas in origen:
-        precio = precio_caja_final(props, delta, incoterm)
-        importe = precio * num_cajas
+    for props, num_cajas, precio in origen:
+        # El importe se cierra a 2 decimales ANTES de sumarlo: el TOTAL acumulaba el
+        # importe crudo y las filas impresas no llegaban a sumarlo (deal 64736753079,
+        # 7,646 x 806 = 6.162,676: las tres filas daban 18.618,61 y el TOTAL 18.618,60).
+        importe = round(precio * num_cajas, 2)
         tabla += importe
         fila = {
             "cod": props.get("hs_sku") or "",
@@ -419,7 +437,7 @@ def construir_documento(
             "cajas": num_cajas,
             "pesoBruto": _f(props.get("peso_bruto")),
             "precio": round(precio, 3),
-            "importe": round(importe, 2),
+            "importe": importe,
         }
         if _f(props.get("price")) == 0:
             fila["promo"] = True
@@ -498,7 +516,7 @@ def construir_documento(
             for props in propios:
                 num_cajas = _f(props.get("quantity"))
                 precio = precio_caja_final(props, delta, incoterm)
-                importe = precio * num_cajas
+                importe = round(precio * num_cajas, 2)
                 sku = props.get("hs_sku") or ""
                 if sku not in indice_por_sku:
                     indice_por_sku[sku] = len(catalogo)
@@ -514,7 +532,7 @@ def construir_documento(
                     "a": indice_por_sku[sku],
                     "cajas": num_cajas,
                     "precio": round(precio, 3),
-                    "importe": round(importe, 2),
+                    "importe": importe,
                 }
                 if _f(props.get("price")) == 0:
                     entrada["promo"] = True

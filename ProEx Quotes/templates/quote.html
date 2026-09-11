@@ -120,10 +120,14 @@
   {% endif %}
 {% endmacro %}
 
-{# Precio final por caja replicando _resolver_precios_linea del backend:
-   promo (EXW 0) → 0; ancla vigente del incoterm de venta → ancla exacta (evita el
-   residuo de recomponer desde el EXW guardado a 3 decimales); sin ancla o con clamp
-   (el ancla no cubre coste+add-ons) → recompuesto EXW + delta_por_caja.
+{# Precio final por caja replicando precio_caja_final del backend:
+   promo (EXW 0) → 0; precio negociado del incoterm de venta → ese precio exacto (evita
+   el residuo de recomponer desde el EXW guardado a 3 decimales); sin precio negociado o
+   con uno de otro incoterm → recompuesto EXW + delta_por_caja.
+
+   El precio negociado manda aunque los gastos hayan subido después de fijarlo: la
+   subida se come el margen, no se le pasa al cliente. Este camino solo lo recorren las
+   cotizaciones antiguas sin `documentoTxt`, pero tiene que decir lo mismo.
 
    El recompuesto se redondea a 3 decimales: es la precisión con la que se persiste
    el precio (round_price del backend), así que el redondeo devuelve el precio
@@ -137,13 +141,12 @@
   {%- if exw == 0 -%}
 0
   {%- else -%}
-    {%- set recompuesto = exw + delta -%}
     {%- set ancla = item.precio_negociado_tipo_venta|default(0)|string|trim|float -%}
     {%- set ancla_ic = (item.incoterm_precio_negociado|default(""))|string|upper|replace(" ", "_")|replace("Í", "I") -%}
-    {%- if ancla > 0 and ancla_ic == term and recompuesto <= ancla + 0.005 -%}
+    {%- if ancla > 0 and ancla_ic == term -%}
 {{ ancla }}
     {%- else -%}
-{{ recompuesto|round(3) }}
+{{ (exw + delta)|round(3) }}
     {%- endif -%}
   {%- endif -%}
 {% endmacro %}
