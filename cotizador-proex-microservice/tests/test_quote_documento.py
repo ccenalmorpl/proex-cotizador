@@ -370,3 +370,77 @@ def test_la_serializacion_es_mas_compacta_que_el_json():
     assert len(txt) < len(_json.dumps(doc, ensure_ascii=False))
     # 20 contenedores desagregados tienen que caber junto al resto del payload.
     assert len(txt) < 20000
+
+
+# Los gastos FOB los calcula el documento, no los toma del payload: la card reparte el
+# coste entre las cajas, redondea a 3 decimales y vuelve a multiplicar.
+
+def test_los_gastos_fob_no_arrastran_el_residuo_del_reparto_por_caja():
+    """Incidencia de Ana en el deal 64836202383 (11/09/2026): 855 EUR de ruta por cada
+    uno de los 2 contenedores más 50 de certificado dan 1.810,00, y la plantilla imprimía
+    1.808,66 porque la card manda 0,374 x 4.836 cajas."""
+    items = []
+    for n in (1, 2):
+        cont = f"64836202383-{n:03d}"
+        items += [
+            _contenedor(cont),
+            _li(hs_sku="CERVEZA", name=f"{cont} - CERVEZA", numero_container=cont,
+                quantity="2418", price="5.126",
+                precio_negociado_tipo_venta="5.5", incoterm_precio_negociado="FOB"),
+            {"id": f"srv{n}", "properties": {
+                "hs_product_type": "service", "tipo_articulo": "certificados",
+                "name": f"{cont} - CERTIFICADO DE ORIGEN", "numero_container": cont,
+                "quantity": "1", "price": "50.0"}},
+            {"id": f"flt{n}", "properties": {
+                "hs_product_type": "Flete", "tipo_articulo": "transitario",
+                "name": f"{cont} - FLETES", "numero_container": cont,
+                "quantity": "1", "price": "855.0"}},
+        ]
+
+    doc = construir_documento(
+        line_items=items,
+        deal=_deal(tipo_de_venta="FOB", puerto_destino="CUMAR",
+                   precio_ruta_hasta_puerto_de_salida="855.0",
+                   precio_ruta_hasta_puerto_destino="2350.0"),
+        tipo_cliente="exportacion", residennum="4", equ="No",
+        # Lo que manda la card, con el residuo dentro.
+        desgloses={"fobExpenses": 1808.663999999997, "seafreightRate": 4700.592, "insurance": 0},
+        total_cajas=4836, num_contenedores=2, porcentajes_iva=_porcentajes,
+    )
+
+    assert doc["desglose"]["fobExpenses"] == 1810.00
+    assert doc["totales"]["fob"] == 26598.00
+    assert doc["totales"]["exw"] == 24788.00
+    # El TOTAL no se mueve: el residuo solo desplazaba el reparto entre EXW y gastos.
+    assert doc["totales"]["fob"] - doc["totales"]["exw"] == 1810.00
+
+
+def test_las_cajas_promocionales_no_recogen_gastos_fob():
+    """Deal 64134026617: 1.350 de ruta, 3.600 cajas de las que 120 son promoción, así que
+    lo cobrado son 1.350 x 3.480 / 3.600 = 1.305,00."""
+    cont = "64134026617-001"
+    items = [
+        _contenedor(cont),
+        _li(hs_sku="A", name=f"{cont} - A", numero_container=cont,
+            quantity="3480", price="6.808", tipo_iva_repercutido="R21"),
+        _li(hs_sku="B", name=f"{cont} - PROMO", numero_container=cont,
+            quantity="120", price="0.0", tipo_iva_repercutido="R21"),
+    ]
+
+    doc = construir_documento(
+        line_items=items,
+        deal=_deal(tipo_de_venta="DAP TERRESTRE", puerto_destino="ALMERIA, ES",
+                   precio_ruta_hasta_puerto_de_salida="1350.0"),
+        tipo_cliente="nacional", residennum="1", equ="No",
+        desgloses={"fobExpenses": 1305.0, "seafreightRate": 0, "insurance": 60.0},
+        total_cajas=3600, num_contenedores=1, porcentajes_iva=_porcentajes,
+    )
+
+    assert doc["desglose"]["fobExpenses"] == 1305.00
+
+
+def test_sin_ruta_ni_servicios_se_respeta_el_desglose_de_la_card():
+    doc = _doc_20(deal=_deal(), desgloses={"fobExpenses": 15974.4, "seafreightRate": 37627.2,
+                                           "insurance": 1200.0})
+
+    assert doc["desglose"]["fobExpenses"] == 15974.40

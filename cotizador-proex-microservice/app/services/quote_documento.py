@@ -296,7 +296,24 @@ def construir_documento(
 
     precio_origen = _f(deal.get("precio_ruta_hasta_puerto_de_salida"))
     precio_destino = _f(deal.get("precio_ruta_hasta_puerto_destino"))
-    fob_exp = round(_f(desgloses.get("fobExpenses")), 2) or (servicios_sin_seguro + precio_origen * nc)
+
+    # Los gastos FOB se calculan aquí en vez de tomarlos del payload. La card reparte el
+    # coste entre las cajas, redondea ese importe por caja a 3 decimales y vuelve a
+    # multiplicar, y el residuo crece con el pedido: 1,34 € en las 4.836 cajas del deal
+    # 64836202383 (855 x 2 contenedores + 50 x 2 de certificado = 1.810 que se imprimían
+    # como 1.808,66) y 25,60 € en las 62.400 del 64836801849. El TOTAL no se mueve porque
+    # va anclado a la suma de la tabla, así que el residuo se lo come el EXW y la escalera
+    # imprime un reparto que no cuadra con lo que Administración tiene contratado.
+    #
+    # El prorrateo por las cajas que pagan no es un ajuste: las promocionales van a 0 y no
+    # recogen gastos, así que el importe cobrado es menor que el coste (deal 64134026617:
+    # 1.350 de ruta sobre 3.480 cajas de pago de 3.600 = 1.305).
+    cajas_que_pagan = sum(_f(p.get("quantity")) for p in articulos if _f(p.get("price")) > 0)
+    coste_fob = servicios_sin_seguro + precio_origen * nc
+    if cajas and cajas_que_pagan and coste_fob:
+        fob_exp = round(coste_fob * cajas_que_pagan / cajas, 2)
+    else:
+        fob_exp = round(_f(desgloses.get("fobExpenses")), 2) or coste_fob
     flete = round(_f(desgloses.get("seafreightRate")), 2) or (precio_destino * nc)
     seguro = round(_f(desgloses.get("insurance")), 2) or seguro_lineas
 
