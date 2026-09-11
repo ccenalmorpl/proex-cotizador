@@ -315,12 +315,8 @@
   {% set cliente_pais = json_get_str(json_get_obj(payload_json, "cliente"), "pais", "N/A") %}
 {% endif %}
 
-{# Exportación: país fiscal (junto al CIF) y país de operaciones (fila propia) #}
+{# Exportación: país fiscal, junto al CIF #}
 {% set cliente_pais_fiscal = company.country|default("")|trim %}
-{% set cliente_pais_operaciones = "" %}
-{% if company and company.custom_properties and company.custom_properties.pais_de_operaciones and company.custom_properties.pais_de_operaciones.label %}
-  {% set cliente_pais_operaciones = company.custom_properties.pais_de_operaciones.label %}
-{% endif %}
 
 {# ===================================================== #}
 {# Precios/Stats: siguen viniendo del payload (por ahora)   #}
@@ -400,7 +396,6 @@
   {% set lbl_currency        = "Moneda:" %}
   {% set lbl_seal            = "Precinto N°:" %}
   {% set lbl_eta             = "ETA:" %}
-  {% set lbl_country_ops     = "País de operaciones:" %}
   {% set lbl_products_title  = "Productos" %}
   {% set lbl_col_code        = "CÓDIGO" %}
   {% set lbl_col_item        = "ARTÍCULO" %}
@@ -449,7 +444,6 @@
   {% set lbl_currency        = "Devise :" %}
   {% set lbl_seal            = "Scellé N° :" %}
   {% set lbl_eta             = "ETA :" %}
-  {% set lbl_country_ops     = "Pays d'opérations :" %}
   {% set lbl_products_title  = "Produits" %}
   {% set lbl_col_code        = "CODE" %}
   {% set lbl_col_item        = "ARTICLE" %}
@@ -499,7 +493,6 @@
   {% set lbl_currency        = "Currency:" %}
   {% set lbl_seal            = "Seal N°:" %}
   {% set lbl_eta             = "ETA:" %}
-  {% set lbl_country_ops     = "Country of operations:" %}
   {% set lbl_products_title  = "Products" %}
   {% set lbl_col_code        = "CODE" %}
   {% set lbl_col_item        = "ITEM" %}
@@ -1112,7 +1105,6 @@
           <p>{{ cliente_nombreEmpresa }}</p>
           <p>{{ deal.direccion_fiscal if deal and deal.direccion_fiscal else "" }}</p>
           {% if deal.cif or cliente_pais_fiscal %}<p>{{ deal.cif }}{% if deal.cif and cliente_pais_fiscal %} - {% endif %}{{ cliente_pais_fiscal }}</p>{% endif %}
-          {% if cliente_pais_operaciones %}<p>{{ lbl_country_ops }} {{ cliente_pais_operaciones }}</p>{% endif %}
         </div>
       {% endif %}
 
@@ -1553,7 +1545,6 @@
             <p>{{ cliente_nombreEmpresa }}</p>
             <p>{{ deal.direccion_fiscal if deal and deal.direccion_fiscal else "" }}</p>
             {% if deal.cif or cliente_pais_fiscal %}<p>{{ deal.cif }}{% if deal.cif and cliente_pais_fiscal %} - {% endif %}{{ cliente_pais_fiscal }}</p>{% endif %}
-            {% if cliente_pais_operaciones %}<p>{{ lbl_country_ops }} {{ cliente_pais_operaciones }}</p>{% endif %}
           </div>
         {% endif %}
 
