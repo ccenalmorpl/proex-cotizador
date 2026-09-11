@@ -118,7 +118,31 @@ def es_contenedor(props):
     return (props.get("hs_product_type") or "").strip().lower() in ("container", "contenedor")
 
 
-def plan(deal_id):
+def cargar_foto(carpeta):
+    """Los line items tal como estaban antes de publicar, indexados por `name`.
+
+    Con foto la reconstrucción es exacta; sin ella hay que clonar de una hermana viva
+    del mismo producto, que sirve para las líneas de artículo pero no para una línea de
+    CONTENEDOR perdida: su `container_config` es lo que da la lista de artículos y no se
+    puede inventar. El 10/09/2026, al publicar el deal 64731186508, HubSpot se llevó 9
+    de las 20 líneas de contenedor.
+    """
+    if not carpeta:
+        return {}
+    ruta = Path(carpeta) / "line_items.json"
+    if not ruta.exists():
+        raise SystemExit(f"no encuentro {ruta}")
+    por_nombre = {}
+    for fila in json.loads(ruta.read_text()):
+        nombre = (fila.get("properties", {}) or {}).get("name") or ""
+        if nombre:
+            por_nombre.setdefault(nombre, []).append(fila["properties"])
+    logger.info(f"  foto: {ruta} con {sum(len(v) for v in por_nombre.values())} líneas")
+    return por_nombre
+
+
+def plan(deal_id, foto=None):
+    foto = foto or {}
     props_li = line_item_props()
     vivos = {r["id"]: r["properties"] for r in
              batch_read("line_items", assoc_ids("deals", deal_id, "line_items"), props_li)}
@@ -139,18 +163,27 @@ def plan(deal_id):
             lineas_cont[(p.get("numero_container") or p.get("name") or "").strip()].append(lid)
 
     conservar_cont, archivar, repuntar_co = {}, [], {}
+    cont_a_crear, config_por_cont = {}, {}
     for co_id, co in contenedores.items():
         nombre = (co.get("nombre") or "").strip()
         candidatas = sorted(lineas_cont.get(nombre, []))
-        if not candidatas:
-            logger.warning(f"  !! {nombre}: no queda ninguna línea de contenedor viva")
+        if candidatas:
+            referida = str(co.get("line_item_id") or "")
+            elegida = referida if referida in candidatas else candidatas[0]
+            conservar_cont[nombre] = elegida
+            config_por_cont[nombre] = vivos[elegida].get("container_config") or "{}"
+            archivar += [x for x in candidatas if x != elegida]
+            if referida != elegida:
+                repuntar_co[co_id] = elegida
             continue
-        referida = str(co.get("line_item_id") or "")
-        elegida = referida if referida in candidatas else candidatas[0]
-        conservar_cont[nombre] = elegida
-        archivar += [x for x in candidatas if x != elegida]
-        if referida != elegida:
-            repuntar_co[co_id] = elegida
+        # Sin línea de contenedor viva la lista de artículos se pierde: solo se puede
+        # reconstruir desde la foto previa a publicar.
+        desde_foto = (foto.get(nombre) or [None])[0]
+        if not desde_foto:
+            logger.warning(f"  !! {nombre}: sin línea de contenedor viva y sin foto; se salta")
+            continue
+        cont_a_crear[nombre] = (co_id, desde_foto)
+        config_por_cont[nombre] = desde_foto.get("container_config") or "{}"
 
     # Las agregadas del espejo (sin numero_container) se van: la forma sana no las tiene.
     agregadas = [lid for lid, p in vivos.items() if not (p.get("numero_container") or "").strip()]
@@ -183,8 +216,18 @@ def plan(deal_id):
             vivos_por_nombre[p.get("name") or ""].append(lid)
 
     crear, sin_plantilla = [], []
-    for nombre_cont, cont_lid in sorted(conservar_cont.items()):
-        cfg = json.loads(vivos[cont_lid].get("container_config") or "{}")
+
+    # Las líneas de contenedor que se llevó el espejo se restauran tal cual estaban.
+    for nombre_cont, (co_id, original) in sorted(cont_a_crear.items()):
+        nueva = {k: v for k, v in original.items()
+                 if v not in (None, "") and k not in PROPS_NO_CLONABLES}
+        nueva["container_config"] = original.get("container_config") or "{}"
+        nueva["hs_line_item_currency_code"] = "EUR"
+        crear.append({"nombre_contenedor": nombre_cont, "tipo": "contenedor",
+                      "properties": nueva, "co_id": co_id})
+
+    for nombre_cont in sorted(config_por_cont):
+        cfg = json.loads(config_por_cont[nombre_cont] or "{}")
         objetivo = [
             (str(a.get("articuloId")), f"{nombre_cont} - {a.get('nombre')}", a.get("numCajas"), "fabricante")
             for a in cfg.get("articulos", []) if (a.get("numCajas") or 0) > 0
@@ -196,7 +239,12 @@ def plan(deal_id):
             if vivos_por_nombre.get(nombre):
                 vivos_por_nombre[nombre].pop()
                 continue
-            if tipo == "fabricante":
+            # La foto restaura la línea tal cual estaba; sin ella se clona una hermana
+            # viva del mismo producto y se rehidrata desde su Línea Contenedor.
+            desde_foto = (foto.get(nombre) or [None])[0]
+            if desde_foto:
+                plantilla = (None, desde_foto)
+            elif tipo == "fabricante":
                 plantilla = hermana_por_producto.get(pid)
             elif tipo == "flete":
                 plantilla = plantilla_flete
@@ -235,7 +283,7 @@ def plan(deal_id):
         "vivos": vivos, "contenedores": contenedores, "lineas_co": lineas_co,
         "conservar_cont": conservar_cont, "archivar": sorted(set(archivar)),
         "agregadas": agregadas, "repuntar_co": repuntar_co,
-        "crear": crear, "sin_plantilla": sin_plantilla,
+        "crear": crear, "sin_plantilla": sin_plantilla, "cont_a_crear": cont_a_crear,
     }
 
 
@@ -247,6 +295,11 @@ def aplicar(deal_id, p):
                    json={"inputs": [{"properties": c["properties"]} for c in chunk]})
         nuevos = [r["id"] for r in data.get("results", [])]
         creados += nuevos
+        # HubSpot devuelve los resultados en el orden de entrada, así que la línea de
+        # contenedor recién creada se puede devolver a su Contenedor.
+        for entrada, lid in zip(chunk, nuevos):
+            if entrada.get("co_id"):
+                p["repuntar_co"][entrada["co_id"]] = lid
         logger.info(f"  creadas {len(nuevos)} líneas [{i}:{i + len(chunk)}]")
         api("POST", "/crm/v4/associations/line_items/deals/batch/create", json={"inputs": [
             {"from": {"id": str(lid)}, "to": {"id": str(deal_id)},
@@ -335,6 +388,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--deal", required=True)
     ap.add_argument("--apply", action="store_true", help="sin esto solo imprime el plan")
+    ap.add_argument("--desde-foto", dest="foto", default=None,
+                    help="carpeta con line_items.json de antes de publicar: restaura exacto")
     args = ap.parse_args()
 
     if not TOKEN:
@@ -343,7 +398,7 @@ def main():
     logger.info(f"=== Negocio {args.deal}: estado actual")
     verificar(args.deal)
 
-    p = plan(args.deal)
+    p = plan(args.deal, foto=cargar_foto(args.foto))
     logger.info("\n=== Plan")
     logger.info(f"  crear: {len(p['crear'])} líneas")
     por_tipo = defaultdict(int)
