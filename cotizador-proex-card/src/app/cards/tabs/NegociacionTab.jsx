@@ -319,6 +319,31 @@ const NegociacionTab = ({
     );
   }, [contenedorUnicoSeleccionado, contenedoresUnicos]);
 
+  // Filas de la rejilla que se quedaron sin line item detrás. Pasa cuando el espejo
+  // del publish deja el negocio a medias (HubSpot archiva y clona con tope de 200):
+  // el container_config sigue pidiendo el artículo pero ya no hay línea con ese
+  // nombre. Sin id no se puede guardar nada (y todas colisionarían en la clave null).
+  const lineasSinEnlace = useMemo(() => {
+    if (!Array.isArray(contenedoresUnicos)) return [];
+    const sueltas = [];
+    contenedoresUnicos.forEach((contenedor) => {
+      (contenedor.container_config?.articulos || []).forEach((art) => {
+        if (!art.line_item_id) {
+          sueltas.push({
+            contenedor: contenedor.container_name,
+            nombre: art.nombre,
+          });
+        }
+      });
+    });
+    return sueltas;
+  }, [contenedoresUnicos]);
+
+  const contenedoresSinEnlace = useMemo(
+    () => [...new Set(lineasSinEnlace.map((l) => l.contenedor).filter(Boolean))].sort(),
+    [lineasSinEnlace]
+  );
+
   // Cajas del contenedor seleccionado (denominador del reparto intra-contenedor)
   const cajasContenedorSeleccionado = useMemo(() => {
     const arts = contenedorSeleccionado?.container_config?.articulos || [];
@@ -1221,6 +1246,18 @@ const NegociacionTab = ({
       setIsSubmitting(true);
       setSaveError(null);
 
+      if (lineasSinEnlace.length > 0) {
+        setSaveError(
+          `${lineasSinEnlace.length} líneas han perdido su enlace con HubSpot` +
+            (contenedoresSinEnlace.length > 0
+              ? ` (contenedores ${contenedoresSinEnlace.join(", ")})`
+              : "") +
+            ". El negocio necesita reparación antes de guardar la negociación."
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
       const dealId = context.crm.objectId;
 
       // Recolectar TODOS los artículos de TODOS los contenedores únicos
@@ -1305,6 +1342,7 @@ const NegociacionTab = ({
                 precio_negociado_tipo_venta: anclaPayload,
                 incoterm_precio_negociado:
                   anclaPayload != null ? tipoVentaSeleccionado : null,
+                articulo_name: art.articuloName,
               });
             });
           }
@@ -1347,6 +1385,8 @@ const NegociacionTab = ({
     onNavigate,
     ivaData,
     calcularPrecioFinalPorTipoVenta,
+    lineasSinEnlace,
+    contenedoresSinEnlace,
   ]);
 
   // Formateo de moneda: 3 dec por defecto (por caja), pasar decimals=2 para totales
@@ -1489,6 +1529,20 @@ const NegociacionTab = ({
             </Flex>
           </Tile>
         </Flex>
+
+        {lineasSinEnlace.length > 0 && (
+          <Alert title="La cotización necesita reparación" variant="error">
+            <Text>
+              {lineasSinEnlace.length} líneas de este negocio han perdido su enlace
+              con HubSpot
+              {contenedoresSinEnlace.length > 0
+                ? ` (contenedores ${contenedoresSinEnlace.join(", ")})`
+                : ""}
+              . Suele pasar al publicar una cotización de más de 200 líneas. No se
+              puede guardar la negociación hasta repararlo: avisa a soporte.
+            </Text>
+          </Alert>
+        )}
 
         {articulosParaNegociacion.length > 0 &&
           articulosParaNegociacion.some((art) => art.costePorCaja === 0) && (

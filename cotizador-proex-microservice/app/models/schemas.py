@@ -1885,7 +1885,10 @@ class NegociacionArticleItem(BaseModel):
         margen_unitario: Effective unit margin (0-1 range, where 1 = 100%).
         tipo_iva_repercutido: VAT type code to be applied.
     """
-    line_item_id: str = Field(..., description="HubSpot line item ID")
+    # Nullable a propósito: cuando el espejo del publish deja el negocio a medias, la
+    # rejilla trae filas sin line item y el guardado tiene que poder explicarlo en vez
+    # de devolver un 422 de Pydantic sobre el body entero.
+    line_item_id: Optional[str] = Field(None, description="HubSpot line item ID")
     # price 0 y margen negativo permitidos: línea promocional / regalo (descuento 100%).
     price: float = Field(..., description="Negotiated price per unit (0 = línea promocional)", ge=0)
     margen_unitario: float = Field(..., description="Effective unit margin (negativo permitido para descuento/promoción; 1 = 100%)", le=1)
@@ -1897,6 +1900,8 @@ class NegociacionArticleItem(BaseModel):
     # re-derivar si el deal cambia de incoterm. Opcionales por compat con históricos.
     precio_negociado_tipo_venta: Optional[float] = Field(None, description="Anchored per-box price of the selected incoterm (0 = promo)", ge=0)
     incoterm_precio_negociado: Optional[str] = Field(None, description="tipo_de_venta the anchored price was set under")
+    # Solo para el diagnóstico de las filas sin line item: dice qué contenedor las trae.
+    articulo_name: Optional[str] = Field(None, description="'{contenedor} - {artículo}' de la fila")
 
     class Config:
         """Pydantic configuration."""

@@ -3,23 +3,22 @@
 
 Publicar una cotización desde el editor de HubSpot hace que el Negocio pase a tener los
 line items de la COTIZACIÓN: los clona sobre el negocio (hs_object_source=CRM_UI, en la
-sesión del comercial) y archiva los propios, con un tope de 200 por operación. Mientras
-la copia se agrupaba por artículo, el negocio heredaba esa forma agregada y perdía sus
-líneas per-contenedor.
+sesión del comercial) y archiva los propios, con un tope de 200 por operación. Por
+encima de ahí los dos cortes caen sobre conjuntos distintos y el negocio queda a la vez
+con líneas duplicadas (la vieja que no se archivó y su clon) y sin otras, incluidas
+líneas de contenedor enteras.
 
-Caso: deal 64836801849 (20 contenedores, 09/09/2026). De sus 240 líneas quedaron 71: 30
-de producto, 30 de contenedor (10 originales + 20 clones, con 10 números duplicados) y 11
-agregadas sin `numero_container`. La verdad sobrevive en los 20 Contenedor y las 220
-Líneas Contenedor, que es de donde se reconstruye aquí.
+Casos: deal 64836801849 (20 contenedores, 09/09/2026) y deal 64731186508 (20
+contenedores, 11/09/2026), este último con 29 de las 162 filas de la rejilla de
+Negociación sin line item, lo que devolvía un 422 al guardar.
 
-Reconstruir importa por dos motivos: el cotizador lee la rejilla de Negociación de los
-line items (sin ellos, coste 0 e IVA vacío), y el re-sync de objetos personalizados borra
-toda Línea Contenedor que no tenga un line item vivo detrás, que es la única copia del
-coste con el que se cotizó.
+Desde el 11/09/2026 esto mismo corre solo tras cada publish, en el worker de custom
+objects (`app.services.espejo_publish`). El script queda para reparar a mano lo que se
+rompió antes o lo que el worker no pudo cerrar.
 
 Uso:
-    python scripts/repair_lineitems_espejo_publish.py --deal 64836801849
-    python scripts/repair_lineitems_espejo_publish.py --deal 64836801849 --apply
+    python scripts/repair_lineitems_espejo_publish.py --deal 64731186508
+    python scripts/repair_lineitems_espejo_publish.py --deal 64731186508 --apply
 """
 
 import argparse
@@ -27,315 +26,65 @@ import json
 import logging
 import os
 import sys
-import time
 from collections import defaultdict
 from pathlib import Path
 
-import requests
-from dotenv import load_dotenv
-
 root_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(root_dir))
+
+from dotenv import load_dotenv  # noqa: E402
+
 load_dotenv(root_dir / ".env")
 
-from app.core.custom_objects_constants import (  # noqa: E402
-    OBJECT_TYPE_CONTENEDOR,
-    OBJECT_TYPE_ELEMENTO,
+from app.core.custom_objects_constants import OBJECT_TYPE_ELEMENTO  # noqa: E402
+from app.services.espejo_publish import (  # noqa: E402
+    _api,
+    _assoc_ids,
+    _batch_read,
+    _es_contenedor,
+    aplicar,
+    planificar,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
-BASE = "https://api.hubapi.com"
 TOKEN = os.getenv("HUBSPOT_ACCESS_TOKEN") or os.getenv("PROEX_ACCESS_TOKEN")
-ASSOC_TYPE_LINE_ITEM_TO_DEAL = 20  # HUBSPOT_DEFINED line_item -> deal
-
-# De la hermana se clona solo lo que HubSpot admite escribir (lo dice el esquema:
-# calculated / modificationMetadata.readOnlyValue), y de eso se quitan las que pertenecen
-# al objeto original y no a la línea nueva.
-PROPS_NO_CLONABLES = {
-    "createdate",                    # la nueva línea es de hoy, no del lote que se perdió
-    "hs_origin_key", "hs_group_key", "hs_bundle_id", "hs_position_on_quote",
-    "hs_pinned_engagement_id", "hs_owning_teams", "hs_all_assigned_business_unit_ids",
-    "hs_ramp_group_name", "hs_ramp_key", "hs_ramp_phase_name",
-    "container_config",              # solo la lleva la línea de contenedor
-    # El esquema declara estas dos escribibles, pero identifican al objeto de origen.
-    "hs_object_id", "hs_lastmodifieddate",
-}
-
-session = requests.Session()
-session.headers.update({"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"})
-
-
-def api(method, path, **kw):
-    for intento in range(4):
-        resp = session.request(method, BASE + path, timeout=60, **kw)
-        if resp.status_code == 429:
-            time.sleep(2 * (intento + 1))
-            continue
-        if resp.status_code >= 400:
-            raise SystemExit(f"{resp.status_code} {method} {path}\n{resp.text[:2000]}")
-        return resp.json() if resp.text else {}
-    raise SystemExit(f"rate limited en {method} {path}")
-
-
-def assoc_ids(from_type, oid, to_type):
-    out, after = [], None
-    while True:
-        params = {"limit": 500}
-        if after:
-            params["after"] = after
-        data = api("GET", f"/crm/v4/objects/{from_type}/{oid}/associations/{to_type}", params=params)
-        out += [str(r["toObjectId"]) for r in data.get("results", [])]
-        after = ((data.get("paging") or {}).get("next") or {}).get("after")
-        if not after:
-            return out
-
-
-def batch_read(obj, ids, props):
-    out = []
-    for i in range(0, len(ids), 100):
-        data = api("POST", f"/crm/v3/objects/{obj}/batch/read",
-                   json={"properties": props, "inputs": [{"id": str(x)} for x in ids[i:i + 100]]})
-        out += data.get("results", [])
-    return out
-
-
-def line_item_props():
-    """Las propiedades que se leen y clonan, según lo que el esquema declara escribible."""
-    todas = api("GET", "/crm/v3/properties/line_items")["results"]
-    escribibles = [
-        p["name"] for p in todas
-        if not p.get("calculated")
-        and not (p.get("modificationMetadata") or {}).get("readOnlyValue")
-        and p["name"] not in PROPS_NO_CLONABLES
-    ]
-    # container_config se lee (de ahí sale la lista de artículos) aunque no se clone.
-    return escribibles + ["container_config"]
-
-
-def es_contenedor(props):
-    return (props.get("hs_product_type") or "").strip().lower() in ("container", "contenedor")
 
 
 def cargar_foto(carpeta):
-    """Los line items tal como estaban antes de publicar, indexados por `name`.
+    """container_config por contenedor, de una foto del negocio anterior al publish.
 
-    Con foto la reconstrucción es exacta; sin ella hay que clonar de una hermana viva
-    del mismo producto, que sirve para las líneas de artículo pero no para una línea de
-    CONTENEDOR perdida: su `container_config` es lo que da la lista de artículos y no se
-    puede inventar. El 10/09/2026, al publicar el deal 64731186508, HubSpot se llevó 9
-    de las 20 líneas de contenedor.
+    Solo hace falta cuando ya no quedan Líneas Contenedor de las que rehacer la lista
+    de artículos; con ellas la reconstrucción sale sola.
     """
     if not carpeta:
         return {}
     ruta = Path(carpeta) / "line_items.json"
     if not ruta.exists():
         raise SystemExit(f"no encuentro {ruta}")
-    por_nombre = {}
+    configs = {}
     for fila in json.loads(ruta.read_text()):
-        nombre = (fila.get("properties", {}) or {}).get("name") or ""
-        if nombre:
-            por_nombre.setdefault(nombre, []).append(fila["properties"])
-    logger.info(f"  foto: {ruta} con {sum(len(v) for v in por_nombre.values())} líneas")
-    return por_nombre
-
-
-def plan(deal_id, foto=None):
-    foto = foto or {}
-    props_li = line_item_props()
-    vivos = {r["id"]: r["properties"] for r in
-             batch_read("line_items", assoc_ids("deals", deal_id, "line_items"), props_li)}
-    contenedores = {r["id"]: r["properties"] for r in
-                    batch_read(OBJECT_TYPE_CONTENEDOR, assoc_ids("deals", deal_id, OBJECT_TYPE_CONTENEDOR),
-                               ["nombre", "numero_container", "line_item_id", "price", "total_cajas"])}
-    lineas_co = {r["id"]: r["properties"] for r in
-                 batch_read(OBJECT_TYPE_ELEMENTO, assoc_ids("deals", deal_id, OBJECT_TYPE_ELEMENTO),
-                            ["nombre", "nombre_contenedor", "tipo_articulo", "cantidad", "precio_de_coste",
-                             "precio_unitario", "margen_unitario", "tipo_iva_repercutido",
-                             "tipo_iva_soportado", "line_item_id", "product_sku"])}
-
-    # Las líneas de contenedor vivas, por número. Se conserva la que su Contenedor
-    # referencia; si esa está archivada, la que quede (el clon del espejo).
-    lineas_cont = defaultdict(list)
-    for lid, p in vivos.items():
-        if es_contenedor(p):
-            lineas_cont[(p.get("numero_container") or p.get("name") or "").strip()].append(lid)
-
-    conservar_cont, archivar, repuntar_co = {}, [], {}
-    cont_a_crear, config_por_cont = {}, {}
-    for co_id, co in contenedores.items():
-        nombre = (co.get("nombre") or "").strip()
-        candidatas = sorted(lineas_cont.get(nombre, []))
-        if candidatas:
-            referida = str(co.get("line_item_id") or "")
-            elegida = referida if referida in candidatas else candidatas[0]
-            conservar_cont[nombre] = elegida
-            config_por_cont[nombre] = vivos[elegida].get("container_config") or "{}"
-            archivar += [x for x in candidatas if x != elegida]
-            if referida != elegida:
-                repuntar_co[co_id] = elegida
-            continue
-        # Sin línea de contenedor viva la lista de artículos se pierde: solo se puede
-        # reconstruir desde la foto previa a publicar.
-        desde_foto = (foto.get(nombre) or [None])[0]
-        if not desde_foto:
-            logger.warning(f"  !! {nombre}: sin línea de contenedor viva y sin foto; se salta")
-            continue
-        cont_a_crear[nombre] = (co_id, desde_foto)
-        config_por_cont[nombre] = desde_foto.get("container_config") or "{}"
-
-    # Las agregadas del espejo (sin numero_container) se van: la forma sana no las tiene.
-    agregadas = [lid for lid, p in vivos.items() if not (p.get("numero_container") or "").strip()]
-    archivar += agregadas
-
-    # Índices para clonar: una hermana viva por producto, y las agregadas de flete/seguro.
-    hermana_por_producto, plantilla_flete, plantilla_seguro = {}, None, None
-    for lid, p in vivos.items():
-        pid = str(p.get("hs_product_id") or "")
-        tipo = (p.get("tipo_articulo") or "").strip().lower()
-        if tipo == "fabricante" and pid and pid not in hermana_por_producto:
-            hermana_por_producto[pid] = (lid, p)
-        if lid in agregadas and tipo == "seguro":
-            plantilla_seguro = (lid, p)
-        if lid in agregadas and tipo == "transitario" and not es_contenedor(p):
-            plantilla_flete = (lid, p)
-
-    lc_por_clave = {}
-    for eid, p in lineas_co.items():
-        clave = ((p.get("nombre_contenedor") or "").strip(), str(p.get("product_sku") or "").strip(),
-                 (p.get("tipo_articulo") or "").strip().lower())
-        lc_por_clave[clave] = (eid, p)
-
-    # Se compara el `name` CRUDO: arrastra el espacio final del nombre de catálogo,
-    # igual que el `nombre` del container_config y el de la Línea Contenedor. Recortarlo
-    # deja fuera a los 8 de los 9 artículos que lo llevan.
-    vivos_por_nombre = defaultdict(list)
-    for lid, p in vivos.items():
-        if lid not in archivar:
-            vivos_por_nombre[p.get("name") or ""].append(lid)
-
-    crear, sin_plantilla = [], []
-
-    # Las líneas de contenedor que se llevó el espejo se restauran tal cual estaban.
-    for nombre_cont, (co_id, original) in sorted(cont_a_crear.items()):
-        nueva = {k: v for k, v in original.items()
-                 if v not in (None, "") and k not in PROPS_NO_CLONABLES}
-        nueva["container_config"] = original.get("container_config") or "{}"
-        nueva["hs_line_item_currency_code"] = "EUR"
-        crear.append({"nombre_contenedor": nombre_cont, "tipo": "contenedor",
-                      "properties": nueva, "co_id": co_id})
-
-    for nombre_cont in sorted(config_por_cont):
-        cfg = json.loads(config_por_cont[nombre_cont] or "{}")
-        objetivo = [
-            (str(a.get("articuloId")), f"{nombre_cont} - {a.get('nombre')}", a.get("numCajas"), "fabricante")
-            for a in cfg.get("articulos", []) if (a.get("numCajas") or 0) > 0
-        ]
-        objetivo.append((None, f"{nombre_cont} - FLETES", 1, "flete"))
-        objetivo.append((None, f"{nombre_cont} - SEGURO MERCANCÍA", 1, "seguro"))
-
-        for pid, nombre, cajas, tipo in objetivo:
-            if vivos_por_nombre.get(nombre):
-                vivos_por_nombre[nombre].pop()
-                continue
-            # La foto restaura la línea tal cual estaba; sin ella se clona una hermana
-            # viva del mismo producto y se rehidrata desde su Línea Contenedor.
-            desde_foto = (foto.get(nombre) or [None])[0]
-            if desde_foto:
-                plantilla = (None, desde_foto)
-            elif tipo == "fabricante":
-                plantilla = hermana_por_producto.get(pid)
-            elif tipo == "flete":
-                plantilla = plantilla_flete
-            else:
-                plantilla = plantilla_seguro
-            if not plantilla:
-                sin_plantilla.append((nombre, tipo, pid))
-                continue
-
-            _, base = plantilla
-            nueva = {k: v for k, v in base.items()
-                     if v not in (None, "") and k not in PROPS_NO_CLONABLES}
-            nueva["name"] = nombre
-            nueva["numero_container"] = nombre_cont
-            nueva["quantity"] = str(cajas)
-            nueva["hs_line_item_currency_code"] = "EUR"
-
-            sku = pid or str(base.get("hs_product_id") or "")
-            lc = lc_por_clave.get((nombre_cont, sku, tipo))
-            if lc:
-                _, lcp = lc
-                for campo_li, campo_lc in (
-                    ("price", "precio_unitario"),
-                    ("margen_unitario", "margen_unitario"),
-                    ("tipo_iva_repercutido", "tipo_iva_repercutido"),
-                    ("tipo_iva_soportado", "tipo_iva_soportado"),
-                ):
-                    val = lcp.get(campo_lc)
-                    if val not in (None, ""):
-                        nueva[campo_li] = str(val)
-                if tipo == "fabricante" and lcp.get("cantidad"):
-                    nueva["quantity"] = str(int(float(lcp["cantidad"])))
-            crear.append({"nombre_contenedor": nombre_cont, "tipo": tipo, "properties": nueva})
-
-    return {
-        "vivos": vivos, "contenedores": contenedores, "lineas_co": lineas_co,
-        "conservar_cont": conservar_cont, "archivar": sorted(set(archivar)),
-        "agregadas": agregadas, "repuntar_co": repuntar_co,
-        "crear": crear, "sin_plantilla": sin_plantilla, "cont_a_crear": cont_a_crear,
-    }
-
-
-def aplicar(deal_id, p):
-    creados = []
-    for i in range(0, len(p["crear"]), 100):
-        chunk = p["crear"][i:i + 100]
-        data = api("POST", "/crm/v3/objects/line_items/batch/create",
-                   json={"inputs": [{"properties": c["properties"]} for c in chunk]})
-        nuevos = [r["id"] for r in data.get("results", [])]
-        creados += nuevos
-        # HubSpot devuelve los resultados en el orden de entrada, así que la línea de
-        # contenedor recién creada se puede devolver a su Contenedor.
-        for entrada, lid in zip(chunk, nuevos):
-            if entrada.get("co_id"):
-                p["repuntar_co"][entrada["co_id"]] = lid
-        logger.info(f"  creadas {len(nuevos)} líneas [{i}:{i + len(chunk)}]")
-        api("POST", "/crm/v4/associations/line_items/deals/batch/create", json={"inputs": [
-            {"from": {"id": str(lid)}, "to": {"id": str(deal_id)},
-             "types": [{"associationCategory": "HUBSPOT_DEFINED",
-                        "associationTypeId": ASSOC_TYPE_LINE_ITEM_TO_DEAL}]}
-            for lid in nuevos
-        ]})
-        logger.info(f"  asociadas {len(nuevos)} al negocio {deal_id}")
-
-    if p["archivar"]:
-        for i in range(0, len(p["archivar"]), 100):
-            chunk = p["archivar"][i:i + 100]
-            api("POST", "/crm/v3/objects/line_items/batch/archive",
-                json={"inputs": [{"id": x} for x in chunk]})
-        logger.info(f"  archivadas {len(p['archivar'])} líneas")
-
-    if p["repuntar_co"]:
-        api("POST", f"/crm/v3/objects/{OBJECT_TYPE_CONTENEDOR}/batch/update", json={"inputs": [
-            {"id": co_id, "properties": {"line_item_id": str(lid)}}
-            for co_id, lid in p["repuntar_co"].items()
-        ]})
-        logger.info(f"  repuntados {len(p['repuntar_co'])} Contenedor")
-    return creados
+        props = fila.get("properties", {}) or {}
+        config = (props.get("container_config") or "").strip()
+        if config not in ("", "{}") and props.get("name"):
+            configs[props["name"]] = config
+    logger.info(f"  foto: {ruta} con {len(configs)} configuraciones de contenedor")
+    return configs
 
 
 def repuntar_lineas_contenedor(deal_id):
     """Devuelve cada Línea Contenedor a su line item, emparejando por nombre."""
-    props_li = ["name", "numero_container", "tipo_articulo", "hs_product_id", "quantity"]
     vivos = {r["id"]: r["properties"] for r in
-             batch_read("line_items", assoc_ids("deals", deal_id, "line_items"), props_li)}
+             _batch_read(TOKEN, "line_items", _assoc_ids(TOKEN, "deals", deal_id, "line_items"),
+                         ["name", "numero_container", "tipo_articulo", "hs_product_id", "quantity"])}
     por_nombre = defaultdict(list)
     for lid, pr in vivos.items():
         por_nombre[pr.get("name") or ""].append(lid)
 
-    lcs = batch_read(OBJECT_TYPE_ELEMENTO, assoc_ids("deals", deal_id, OBJECT_TYPE_ELEMENTO),
-                     ["nombre", "line_item_id"])
+    lcs = _batch_read(TOKEN, OBJECT_TYPE_ELEMENTO,
+                      _assoc_ids(TOKEN, "deals", deal_id, OBJECT_TYPE_ELEMENTO),
+                      ["nombre", "line_item_id"])
     updates = []
     for lc in lcs:
         nombre = lc["properties"].get("nombre") or ""
@@ -347,8 +96,8 @@ def repuntar_lineas_contenedor(deal_id):
         if str(lc["properties"].get("line_item_id") or "") != elegida:
             updates.append({"id": lc["id"], "properties": {"line_item_id": elegida}})
     for i in range(0, len(updates), 100):
-        api("POST", f"/crm/v3/objects/{OBJECT_TYPE_ELEMENTO}/batch/update",
-            json={"inputs": updates[i:i + 100]})
+        _api(TOKEN, "POST", f"/crm/v3/objects/{OBJECT_TYPE_ELEMENTO}/batch/update",
+             json={"inputs": updates[i:i + 100]})
     logger.info(f"  repuntadas {len(updates)} Líneas Contenedor")
     return len(updates)
 
@@ -357,8 +106,8 @@ def verificar(deal_id):
     props = ["name", "numero_container", "tipo_articulo", "hs_product_type", "quantity",
              "price", "container_config", "tipo_iva_repercutido", "margen_unitario"]
     vivos = [r["properties"] for r in
-             batch_read("line_items", assoc_ids("deals", deal_id, "line_items"), props)]
-    conts = [p for p in vivos if es_contenedor(p)]
+             _batch_read(TOKEN, "line_items", _assoc_ids(TOKEN, "deals", deal_id, "line_items"), props)]
+    conts = [p for p in vivos if _es_contenedor(p)]
     arts = defaultdict(list)
     for p in vivos:
         tipo = (p.get("tipo_articulo") or "").strip().lower()
@@ -389,46 +138,46 @@ def main():
     ap.add_argument("--deal", required=True)
     ap.add_argument("--apply", action="store_true", help="sin esto solo imprime el plan")
     ap.add_argument("--desde-foto", dest="foto", default=None,
-                    help="carpeta con line_items.json de antes de publicar: restaura exacto")
+                    help="carpeta con line_items.json del negocio antes de publicar")
     args = ap.parse_args()
 
     if not TOKEN:
-        raise SystemExit("falta HUBSPOT_ACCESS_TOKEN en el .env")
+        raise SystemExit("falta HUBSPOT_ACCESS_TOKEN")
 
     logger.info(f"=== Negocio {args.deal}: estado actual")
     verificar(args.deal)
 
-    p = plan(args.deal, foto=cargar_foto(args.foto))
-    logger.info("\n=== Plan")
-    logger.info(f"  crear: {len(p['crear'])} líneas")
+    plan = planificar(TOKEN, args.deal, configs_previos=cargar_foto(args.foto))
     por_tipo = defaultdict(int)
-    for c in p["crear"]:
+    for c in plan["crear"]:
         por_tipo[c["tipo"]] += 1
+
+    logger.info("\n=== Plan")
+    logger.info(f"  crear: {len(plan['crear'])} líneas")
     for tipo, n in sorted(por_tipo.items()):
         logger.info(f"      {tipo}: {n}")
-    logger.info(f"  archivar: {len(p['archivar'])} líneas "
-                f"({len(p['agregadas'])} agregadas sin contenedor, "
-                f"{len(p['archivar']) - len(p['agregadas'])} de contenedor duplicadas)")
-    logger.info(f"  repuntar Contenedor.line_item_id: {len(p['repuntar_co'])}")
-    if p["sin_plantilla"]:
-        logger.error(f"  !! {len(p['sin_plantilla'])} líneas sin hermana de la que clonar:")
-        for n, t, pid in p["sin_plantilla"][:10]:
-            logger.error(f"       {t} {pid} {n}")
+    logger.info(f"  archivar: {len(plan['archivar'])} líneas")
+    logger.info(f"  repuntar Contenedor.line_item_id: {len(plan['repuntar_co'])}")
+    if plan["sin_plantilla"]:
+        logger.warning(f"  !! {len(plan['sin_plantilla'])} líneas sin plantilla de la que clonar:")
+        for nombre, tipo in plan["sin_plantilla"][:10]:
+            logger.warning(f"       {tipo} {nombre}")
         raise SystemExit("no se puede reconstruir sin plantilla; abortado")
 
-    muestra = p["crear"][0] if p["crear"] else None
-    if muestra:
-        logger.info(f"\n  ejemplo de línea a crear ({muestra['tipo']}):")
-        logger.info(json.dumps({k: v for k, v in sorted(muestra["properties"].items())},
-                               indent=2, ensure_ascii=False))
+    if plan["crear"]:
+        ejemplo = plan["crear"][0]
+        logger.info(f"\n  ejemplo de línea a crear ({ejemplo['tipo']}):")
+        logger.info(json.dumps(ejemplo["properties"], indent=2, ensure_ascii=False)[:1500])
 
     if not args.apply:
         logger.info("\n(dry-run: nada escrito. Añade --apply para ejecutar)")
         return
 
     logger.info("\n=== Aplicando")
-    aplicar(args.deal, p)
+    stats = aplicar(TOKEN, args.deal, plan)
+    logger.info(f"  {stats}")
     repuntar_lineas_contenedor(args.deal)
+
     logger.info(f"\n=== Negocio {args.deal}: estado final")
     verificar(args.deal)
 

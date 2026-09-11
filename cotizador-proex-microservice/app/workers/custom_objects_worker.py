@@ -13,6 +13,20 @@ def run(deal_id: str, job_id: str) -> dict:
     def _cb(step: str) -> None:
         update_job(job_id, progress_step=step)
 
+    # Antes del re-sync: el espejo del publish deja el negocio a medias por encima de
+    # 200 líneas, y el re-sync borra toda Línea Contenedor sin line item vivo detrás,
+    # que es la única copia del coste con el que se cotizó.
+    try:
+        from app.services.espejo_publish import reconciliar_lineas_tras_espejo
+        from app.services.hubspot_client import hubspot_client
+        _cb("reconciliando_lineas")
+        reconciliar_lineas_tras_espejo(hubspot_client.get_client().access_token, deal_id)
+    except Exception as e:
+        logger.error(
+            f"[custom_objects_worker.run] reconciliación del espejo falló para "
+            f"deal={deal_id}: {e}", exc_info=True
+        )
+
     stats = process_deal_custom_objects_from_line_items(deal_id, progress_callback=_cb)
 
     errors = stats.get("errors") or []

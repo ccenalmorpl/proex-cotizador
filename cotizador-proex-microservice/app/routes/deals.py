@@ -8229,6 +8229,27 @@ async def update_deal_negociacion(
         if isinstance(data, dict):
             data = UpdateNegociacionRequest(**data)
 
+        huerfanos = [a for a in data.articulos if not a.line_item_id]
+        if huerfanos:
+            contenedores = sorted({
+                (a.articulo_name or "").split(" - ")[0]
+                for a in huerfanos if a.articulo_name
+            })
+            detalle = f" ({', '.join(contenedores)})" if contenedores else ""
+            logger.error(
+                f"[negociacion] deal {deal_id}: {len(huerfanos)} de {len(data.articulos)} "
+                f"artículos llegan sin line_item_id{detalle}; no se guarda nada"
+            )
+            return BaseResponse(
+                success=False,
+                error=(
+                    f"{len(huerfanos)} de {len(data.articulos)} líneas de la cotización han "
+                    f"perdido su enlace con HubSpot{detalle}. Suele pasar al publicar una "
+                    f"cotización de más de 200 líneas. Avisa a soporte para reparar el "
+                    f"negocio antes de guardar la negociación."
+                ),
+            )
+
         access_token = client.access_token
         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
 

@@ -84,6 +84,27 @@ def test_108_line_items_se_trocean_en_lotes_de_100(entorno):
     assert [i["id"] for c in chunks for i in c] == ids
 
 
+def test_una_fila_sin_line_item_para_el_guardado_con_un_error_legible(entorno):
+    """El espejo del publish deja filas sin line item y el body llegaba con nulos.
+
+    Caso real (ticket Elena, deal 64731186508, 11/09/2026): 29 de 162 filas sin
+    line_item_id y Pydantic rechazaba el body ENTERO con un 422 que la card enseñaba
+    como "Error al guardar la negociación. Por favor, intente nuevamente.".
+    """
+    _client, chunks = entorno
+    articulos = [_articulo(str(58476615300 + n)) for n in range(5)]
+    articulos[2]["line_item_id"] = None
+    articulos[2]["articulo_name"] = "64731186508-014 - MANGO"
+    data = UpdateNegociacionRequest(articulos=articulos)
+
+    res = asyncio.run(deals_module.update_deal_negociacion(data, deal_id="64731186508"))
+
+    assert res.success is False
+    assert "64731186508-014" in res.error
+    assert "1 de 5" in res.error
+    assert chunks == [], "no se escribe nada si la rejilla viene incompleta"
+
+
 def test_line_item_repetido_no_se_duplica_entre_chunks(entorno):
     _client, chunks = entorno
     ids = [str(58476615300 + n) for n in range(100)] + ["58476615300"]
