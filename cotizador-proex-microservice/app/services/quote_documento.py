@@ -24,6 +24,7 @@ su documentación sale en formato exportación.
 """
 
 import logging
+import math
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from app.shared import hubdb_client
@@ -200,7 +201,13 @@ def _delta_por_caja(
 
 def _escalera(incoterm: str, tabla: float, fob_exp: float, flete: float, seguro: float):
     """(exw, fob, cfr, cif) derivados de la suma de la tabla, que es el total del
-    tipo de venta cotizado."""
+    tipo de venta cotizado.
+
+    Las dos ramas DAP no descontaban el seguro del EXW aunque el delta por caja sí lo
+    reparte (`servicios_caja` lo incluye), así que el EXW impreso salía 60 € alto en 18
+    de los 65 negocios auditados: el 64134026617 imprimía 23.751 donde la card calcula
+    23.691,84 y la suma de los precios EXW negociados da 23.691,84.
+    """
     if incoterm == "CIF":
         cif = tabla; cfr = cif - seguro; fob = cfr - flete; exw = fob - fob_exp
     elif incoterm == "CFR":
@@ -208,12 +215,52 @@ def _escalera(incoterm: str, tabla: float, fob_exp: float, flete: float, seguro:
     elif incoterm == "FOB":
         fob = tabla; cfr = fob + flete; cif = cfr + seguro; exw = fob - fob_exp
     elif incoterm == "DAP_MARITIMO":
-        exw = tabla - fob_exp - (2 * flete); fob = exw + fob_exp; cfr = fob + flete; cif = cfr + seguro
+        exw = tabla - fob_exp - seguro - (2 * flete); fob = exw + fob_exp; cfr = fob + flete; cif = cfr + seguro
     elif incoterm == "DAP_TERRESTRE":
-        exw = tabla - fob_exp; fob = exw + fob_exp; cfr = fob + flete; cif = cfr + seguro
+        exw = tabla - fob_exp - seguro; fob = exw + fob_exp; cfr = fob + flete; cif = cfr + seguro
     else:
         exw = tabla; fob = exw + fob_exp; cfr = fob + flete; cif = cfr + seguro
     return exw, fob, cfr, cif
+
+
+def total_incoterm(incoterm: str, exw: float, fob: float, cfr: float, cif: float, flete: float) -> float:
+    """El importe que la cotización vende, el que tiene que cuadrar con la suma de la
+    tabla. Es la inversa de `_escalera` y existe para poder afirmarlo en los tests."""
+    if incoterm == "CIF":
+        return cif
+    if incoterm == "CFR":
+        return cfr
+    if incoterm == "FOB":
+        return fob
+    if incoterm == "DAP_MARITIMO":
+        return cif + flete
+    if incoterm == "DAP_TERRESTRE":
+        return cif - flete
+    return exw
+
+
+def repartir_por_paginas(total: float, pesos: List[float]) -> List[float]:
+    """Parte `total` en céntimos proporcionalmente a `pesos`, mayor resto primero.
+
+    Dividir entre el número de contenedores daba por supuesto que todos llevan la misma
+    carga, y una sola línea promocional en un contenedor ya descuadraba la suma de las
+    páginas contra el agregado.
+    """
+    if not pesos:
+        return []
+    centimos = int(round(total * 100))
+    suma = sum(pesos)
+    if suma <= 0:
+        exactos = [centimos / len(pesos)] * len(pesos)
+    else:
+        exactos = [centimos * p / suma for p in pesos]
+    base = [math.floor(x) for x in exactos]
+    resto = centimos - sum(base)
+    orden = sorted(range(len(pesos)), key=lambda i: exactos[i] - base[i], reverse=True)
+    paso = 1 if resto >= 0 else -1
+    for k in range(abs(resto)):
+        base[orden[k % len(orden)]] += paso
+    return [c / 100.0 for c in base]
 
 
 def _comision_por_caja(deal: dict, num_contenedores: int, total_cajas: float) -> float:
@@ -309,12 +356,22 @@ def construir_documento(
     # recogen gastos, así que el importe cobrado es menor que el coste (deal 64134026617:
     # 1.350 de ruta sobre 3.480 cajas de pago de 3.600 = 1.305).
     cajas_que_pagan = sum(_f(p.get("quantity")) for p in articulos if _f(p.get("price")) > 0)
-    coste_fob = servicios_sin_seguro + precio_origen * nc
-    if cajas and cajas_que_pagan and coste_fob:
-        fob_exp = round(coste_fob * cajas_que_pagan / cajas, 2)
-    else:
-        fob_exp = round(_f(desgloses.get("fobExpenses")), 2) or coste_fob
-    flete = round(_f(desgloses.get("seafreightRate")), 2) or (precio_destino * nc)
+
+    def _cobrado(coste: float, clave: str) -> float:
+        if cajas and cajas_que_pagan and coste:
+            return round(coste * cajas_que_pagan / cajas, 2)
+        return round(_f(desgloses.get(clave)), 2) or round(coste, 2)
+
+    fob_exp = _cobrado(servicios_sin_seguro + precio_origen * nc, "fobExpenses")
+    # El flete arrastra el mismo residuo: la card guarda 0,603 €/caja donde el reparto
+    # real son 0,602564 y al volver a multiplicar por las 62.400 cajas del 64836801849
+    # cobra 37.627,20 por un flete de 37.600 contratado. Difiere en 8 de los 65 negocios
+    # auditados, de 0,08 a 27,20 €.
+    flete = _cobrado(precio_destino * nc, "seafreightRate")
+    # El seguro no se recalcula a propósito: `precios.insurance` es la prima contratada y
+    # llega limpia a dos decimales en los 65 negocios auditados, mientras que las líneas
+    # de seguro no son fuente fiable (el 64519499938 vende FOB con 420 € en líneas y 0 en
+    # el payload, y el 64133336498 perdió sus líneas al corregirlo en SAP).
     seguro = round(_f(desgloses.get("insurance")), 2) or seguro_lineas
 
     divisor = cajas or 1
@@ -437,6 +494,7 @@ def construir_documento(
             if not propios:
                 continue
             pag_filas, pag_tabla, pag_cajas, pag_neto, pag_bruto = [], 0.0, 0.0, 0.0, 0.0
+            pag_pagan = 0.0
             for props in propios:
                 num_cajas = _f(props.get("quantity"))
                 precio = precio_caja_final(props, delta, incoterm)
@@ -463,11 +521,10 @@ def construir_documento(
                 pag_filas.append(entrada)
                 pag_tabla += importe
                 pag_cajas += num_cajas
+                if _f(props.get("price")) > 0:
+                    pag_pagan += num_cajas
                 pag_neto += num_cajas * _f(props.get("peso_neto"))
                 pag_bruto += num_cajas * _f(props.get("peso_bruto"))
-            p_exw, p_fob, p_cfr, p_cif = _escalera(
-                incoterm, pag_tabla, fob_exp / nc, flete / nc, seguro / nc
-            )
             paginas.append({
                 "nombre": nombre,
                 "filas": pag_filas,
@@ -476,11 +533,29 @@ def construir_documento(
                     "pesoNeto": round(pag_neto, 2),
                     "pesoBruto": round(pag_bruto, 2),
                 },
-                "totales": {
-                    "tabla": round(pag_tabla, 2), "exw": round(p_exw, 2),
-                    "fob": round(p_fob, 2), "cfr": round(p_cfr, 2), "cif": round(p_cif, 2),
-                },
+                "tabla": pag_tabla,
+                "pagan": pag_pagan,
             })
+
+        # Los tres importes se reparten entre las páginas en proporción a las cajas que
+        # pagan de cada contenedor, no a partes iguales: el reparto por caja solo lo
+        # recogen las líneas con precio, así que un contenedor con promoción carga menos
+        # gastos que el resto. Los céntimos van al mayor resto para que la suma de las
+        # páginas sea exactamente el agregado.
+        pesos = [p["pagan"] for p in paginas]
+        rep_fob = repartir_por_paginas(fob_exp, pesos)
+        rep_flete = repartir_por_paginas(flete, pesos)
+        rep_seguro = repartir_por_paginas(seguro, pesos)
+        for idx, pagina in enumerate(paginas):
+            pag_tabla = pagina.pop("tabla")
+            pagina.pop("pagan")
+            p_exw, p_fob, p_cfr, p_cif = _escalera(
+                incoterm, pag_tabla, rep_fob[idx], rep_flete[idx], rep_seguro[idx]
+            )
+            pagina["totales"] = {
+                "tabla": round(pag_tabla, 2), "exw": round(p_exw, 2),
+                "fob": round(p_fob, 2), "cfr": round(p_cfr, 2), "cif": round(p_cif, 2),
+            }
         documento["catalogo"] = catalogo
         documento["paginas"] = paginas
 

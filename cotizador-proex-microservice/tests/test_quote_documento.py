@@ -16,6 +16,8 @@ from app.services.quote_documento import (
     construir_documento,
     es_nacional,
     precio_caja_final,
+    repartir_por_paginas,
+    total_incoterm,
 )
 
 IVA_R21 = {("R21", "NACIONAL"): (21.0, 5.2)}
@@ -444,3 +446,120 @@ def test_sin_ruta_ni_servicios_se_respeta_el_desglose_de_la_card():
                                            "insurance": 1200.0})
 
     assert doc["desglose"]["fobExpenses"] == 15974.40
+
+
+def test_el_flete_no_arrastra_el_residuo_del_reparto_por_caja():
+    """Deal 64836801849: 1.880 EUR de flete por cada uno de los 20 contenedores son
+    37.600,00, pero el reparto por caja da 0,602564 que la card guarda como 0,603 y al
+    volver a multiplicar por las 62.400 cajas cobra 37.627,20."""
+    doc = _doc_20(deal=_deal(precio_ruta_hasta_puerto_de_salida="800.0",
+                             precio_ruta_hasta_puerto_destino="1880.0"))
+
+    assert doc["desglose"]["seafreightRate"] == 37600.00
+    assert doc["desglose"]["fobExpenses"] == 16000.00
+    assert doc["totales"] == {
+        "tabla": 449904.00, "exw": 395104.00, "fob": 411104.00,
+        "cfr": 448704.00, "cif": 449904.00,
+    }
+
+
+def test_el_dap_terrestre_descuenta_el_seguro_del_exw():
+    """El delta por caja reparte el seguro (entra en `servicios_caja`), así que el EXW
+    tenía que descontarlo y no lo hacía: el deal 64134026617 imprimía 23.751,00 donde la
+    suma de sus precios EXW negociados da 23.691,84. Pasaba en 18 de 65 negocios."""
+    cont = "64134026617-001"
+    items = [
+        _contenedor(cont),
+        _li(hs_sku="A", name=f"{cont} - A", numero_container=cont,
+            quantity="3480", price="6.808", tipo_iva_repercutido="R21",
+            precio_negociado_tipo_venta="7.2",
+            incoterm_precio_negociado="DAP_TERRESTRE"),
+        _li(hs_sku="B", name=f"{cont} - PROMO", numero_container=cont,
+            quantity="120", price="0.0", tipo_iva_repercutido="R21"),
+    ]
+
+    doc = construir_documento(
+        line_items=items,
+        deal=_deal(tipo_de_venta="DAP TERRESTRE", puerto_destino="ALMERIA, ES",
+                   precio_ruta_hasta_puerto_de_salida="1350.0"),
+        tipo_cliente="nacional", residennum="1", equ="No",
+        desgloses={"fobExpenses": 0, "seafreightRate": 0, "insurance": 60.0},
+        total_cajas=3600, num_contenedores=1, porcentajes_iva=_porcentajes,
+    )
+
+    t = doc["totales"]
+    assert t["tabla"] == 25056.00
+    # 1.350 de ruta sobre las 3.480 cajas que pagan de 3.600 son 1.305 cobrados.
+    assert doc["desglose"]["fobExpenses"] == 1305.00
+    assert t["exw"] == 25056.00 - 1305.00 - 60.00
+    assert t["cif"] == t["tabla"]
+
+
+def test_el_dap_maritimo_descuenta_el_seguro_y_el_flete_de_vuelta():
+    """DAP MARÍTIMO cobra el flete dos veces en el delta por caja, y el seguro una,
+    así que el EXW es la tabla menos los gastos FOB, el seguro y dos fletes."""
+    doc = _doc_20(deal=_deal(tipo_de_venta="DAP MARITIMO",
+                             precio_ruta_hasta_puerto_de_salida="800.0",
+                             precio_ruta_hasta_puerto_destino="1880.0"))
+
+    t, g = doc["totales"], doc["desglose"]
+    assert t["exw"] == round(
+        t["tabla"] - g["fobExpenses"] - g["insurance"] - 2 * g["seafreightRate"], 2)
+    assert t["cif"] + g["seafreightRate"] == t["tabla"]
+
+
+def test_la_escalera_cuadra_con_la_tabla_en_todos_los_tipos_de_venta():
+    """El invariante del papel: las filas impresas suman el total del tipo de venta
+    cotizado, y los tres importes del desglose lo descomponen sin dejar residuo."""
+    for venta in ("EXW", "FCA", "FOB", "CFR", "CIF", "DAP TERRESTRE", "DAP MARITIMO"):
+        doc = _doc_20(deal=_deal(tipo_de_venta=venta,
+                                 precio_ruta_hasta_puerto_de_salida="800.0",
+                                 precio_ruta_hasta_puerto_destino="1880.0"))
+        t, g = doc["totales"], doc["desglose"]
+        assert t["exw"] + g["fobExpenses"] == t["fob"], venta
+        assert t["fob"] + g["seafreightRate"] == t["cfr"], venta
+        assert t["cfr"] + g["insurance"] == t["cif"], venta
+        vendido = total_incoterm(doc["incoterm"], t["exw"], t["fob"], t["cfr"], t["cif"],
+                                 g["seafreightRate"])
+        assert round(vendido, 2) == t["tabla"], venta
+
+
+def test_repartir_por_paginas_no_pierde_ni_inventa_centimos():
+    assert repartir_por_paginas(100.00, [1, 1, 1]) == [33.34, 33.33, 33.33]
+    assert sum(repartir_por_paginas(1810.00, [7, 3])) == 1810.00
+    assert repartir_por_paginas(1810.00, [7, 3]) == [1267.00, 543.00]
+    # Sin cajas que pagan en ninguna página el reparto sigue siendo a partes iguales.
+    assert repartir_por_paginas(10.00, [0, 0, 0]) == [3.34, 3.33, 3.33]
+    assert repartir_por_paginas(0.0, [5, 5]) == [0.0, 0.0]
+    assert repartir_por_paginas(100.0, []) == []
+
+
+def test_el_desagregado_carga_menos_gastos_al_contenedor_con_promocion():
+    """Repartir entre el número de contenedores daba por supuesto que todos llevan la
+    misma carga: el que trae una línea a 0,00 recoge menos reparto por caja."""
+    items = []
+    for n, (pago, promo) in enumerate(((3000, 600), (3600, 0)), start=1):
+        cont = f"64000000000-{n:03d}"
+        items.append(_contenedor(cont))
+        items.append(_li(hs_sku="A", name=f"{cont} - A", numero_container=cont,
+                         quantity=str(pago), price="6.0"))
+        if promo:
+            items.append(_li(hs_sku="B", name=f"{cont} - PROMO", numero_container=cont,
+                             quantity=str(promo), price="0.0"))
+
+    doc = construir_documento(
+        line_items=items,
+        deal=_deal(tipo_de_venta="FOB", desagregar_cotizacion="true",
+                   precio_ruta_hasta_puerto_de_salida="900.0"),
+        tipo_cliente="exportacion", residennum="4", equ="No",
+        desgloses={"fobExpenses": 0, "seafreightRate": 0, "insurance": 0},
+        total_cajas=7200, num_contenedores=2, porcentajes_iva=_porcentajes,
+    )
+
+    primera, segunda = doc["paginas"]
+    gastos = [round(p["totales"]["fob"] - p["totales"]["exw"], 2) for p in doc["paginas"]]
+    assert gastos == [750.00, 900.00]
+    assert round(sum(gastos), 2) == doc["desglose"]["fobExpenses"]
+    for clave in ("tabla", "exw", "fob", "cfr", "cif"):
+        assert round(primera["totales"][clave] + segunda["totales"][clave], 2) == \
+            doc["totales"][clave], clave
