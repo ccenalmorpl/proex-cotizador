@@ -993,12 +993,14 @@
   {% set precios_totalCIF = precios_totalCFR + real_insurance %}
   {% set precios_totalEXW = precios_totalFOB - real_fobExpenses %}
 {% elif _t == "DAP_MARITIMO" %}
-  {% set precios_totalEXW = ns_tabla.total - real_fobExpenses - (2 * real_seafreightRate) %}
+  {# El delta por caja reparte tambien el seguro, asi que el EXW lo descuenta: sin esto
+     el EXW salia 60 EUR alto en los dos DAP (18 de 65 negocios auditados). #}
+  {% set precios_totalEXW = ns_tabla.total - real_fobExpenses - real_insurance - (2 * real_seafreightRate) %}
   {% set precios_totalFOB = precios_totalEXW + real_fobExpenses %}
   {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
   {% set precios_totalCIF = precios_totalCFR + real_insurance %}
 {% elif _t == "DAP_TERRESTRE" %}
-  {% set precios_totalEXW = ns_tabla.total - real_fobExpenses %}
+  {% set precios_totalEXW = ns_tabla.total - real_fobExpenses - real_insurance %}
   {% set precios_totalFOB = precios_totalEXW + real_fobExpenses %}
   {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
   {% set precios_totalCIF = precios_totalCFR + real_insurance %}
