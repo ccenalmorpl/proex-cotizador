@@ -625,6 +625,12 @@
      él los pesos salían "374400.0" y "425491.2" en vez de "374400.00" y "425491.20". #}
   {% set computed_grossWeightKg = doc.stats.pesoBruto|default(0)|float|round(2) %}
   {% set computed_netWeightKg = doc.stats.pesoNeto|default(0)|float|round(2) %}
+  {# El marcador grande leia `estadisticas.totalEuros`, que lo escribe la card sumando
+     los importes de linea SIN redondear, mientras la tabla suma los importes ya
+     redondeados a 2 decimales, que es como se imprimen. En el 64736753079 (7,646 x 806
+     = 6.162,676 en tres filas) el marcador decia 18.618,60 y la tabla y el TOTAL CIF
+     18.618,61. El documento es la unica fuente del papel. #}
+  {% set stats_totalEuros = doc.totales.tabla|default(0)|float %}
 {% endif %}
 
 {# Contenedores: filtrar por hs_product_type container/contenedor #}
