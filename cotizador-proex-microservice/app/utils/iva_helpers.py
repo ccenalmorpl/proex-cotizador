@@ -593,6 +593,136 @@ def _derivar_precio_total_fabricantes(
     }
 
 
+DESCUENTO_DECIMALES_SAP = 4
+_PASO_DESCUENTO = 10 ** -DESCUENTO_DECIMALES_SAP
+# Pasos a probar alrededor del descuento derivado. Con ±3 sobra: el objetivo
+# nunca está a más de medio paso, y los extremos solo entran para desempatar.
+_PASOS_ALREDEDOR = (0, -1, 1, -2, 2, -3, 3)
+
+
+def _importe_expresable(unitario: float, cantidad: float, objetivo: float):
+    """`(descuento, importe)` que SAP reconstruye más cerca del objetivo.
+
+    SAP no guarda el importe de línea: guarda `Price` (3 dec) + `DiscPrcnt`
+    (4 dec) y lo deriva, así que el importe solo se mueve a saltos de
+    `precio_unitario × cantidad / 1.000.000`. Por debajo de 10.000 € de bruto ese
+    salto es menor que el céntimo y cualquier importe es alcanzable; por encima
+    hay céntimos que **no se pueden expresar** y el más cercano se queda a 0,01
+    (43 de las 873 líneas del portal). A igualdad de acierto gana el descuento
+    cuyo importe cae más lejos del medio céntimo: si SAP redondea al revés que
+    nosotros, ese es el que aguanta."""
+    bruto = unitario * cantidad
+    derivado = round((1 - objetivo / bruto) * 100, DESCUENTO_DECIMALES_SAP)
+    mejor = None
+    for paso in _PASOS_ALREDEDOR:
+        pct = round(derivado + paso * _PASO_DESCUENTO, DESCUENTO_DECIMALES_SAP) + 0.0
+        exacto = bruto * (1 - pct / 100)
+        importe = round(exacto, 2)
+        clave = (abs(round(importe - objetivo, 2)), abs(exacto - importe))
+        if mejor is None or clave < mejor[0]:
+            mejor = (clave, pct, importe)
+    return mejor[1], mejor[2]
+
+
+def _derivar_descuento_elementos(
+    elems_contenedor: List[Dict],
+    updates_por_elem: Dict[str, Dict[str, Any]],
+) -> Dict[str, Dict[str, str]]:
+    """`descuento` de cada Elemento del contenedor —y el `precio_total` retocado
+    donde haga falta— para que SAP reconstruya el importe exacto de cada línea y
+    la suma del contenedor siga cuadrando con el precio negociado.
+
+    Hoy ese porcentaje lo calcula el middleware al crear el pedido y NO lo
+    refresca al repreciar: un cambio de flete deja el descuento del estado
+    anterior aplicado sobre el precio nuevo, y SAP factura de más o de menos
+    (2026300364: 24.145,37 contra los 24.144,00 de HubSpot). Publicándolo aquí el
+    middleware puede leerlo en vez de derivarlo.
+
+    Cuando una línea cae en un céntimo inexpresable (ver `_importe_expresable`)
+    se reparte: esa línea toma el importe alcanzable y el céntimo sobrante pasa a
+    otra línea de fabricante de grano más fino, que sí puede absorberlo — el total
+    del contenedor no se mueve. Si no hay dónde ponerlo (contenedor de un solo
+    producto grande, 43 de los 221 del portal) **no se toca ningún importe**: el
+    precio negociado manda y SAP factura 0,01 de menos, que es el techo del
+    formato. El reparto solo mueve fabricantes: en servicio/flete/seguro el
+    `precio_total` es el precio de la línea y lo sincroniza el re-sync. Promos y
+    líneas sin importe salen a descuento 0."""
+    lineas = []
+    target = 0.0
+    for el in elems_contenedor:
+        eid = str(el.get("id") or "").strip()
+        if not eid:
+            continue
+        props = el.get("properties") or {}
+        final = {**props, **((updates_por_elem.get(eid) or {}).get("properties") or {})}
+        unitario = _to_float(final.get("precio_unitario"))
+        cantidad = _to_float(final.get("cantidad"))
+        objetivo = round(_to_float(final.get("precio_total")), 2)
+        target += objetivo
+        lineas.append({
+            "eid": eid,
+            "unitario": unitario,
+            "cantidad": cantidad,
+            "bruto": unitario * cantidad,
+            "objetivo": objetivo,
+            "descuento_persistido": props.get("descuento"),
+            "es_fabricante": (
+                str(props.get("tipo_articulo") or "").strip().lower() == "fabricante"
+            ),
+        })
+
+    resueltas: Dict[str, tuple] = {}
+    suma = 0.0
+    for ln in lineas:
+        if ln["bruto"] <= 0:
+            resueltas[ln["eid"]] = (0.0, ln["objetivo"])
+        else:
+            resueltas[ln["eid"]] = _importe_expresable(
+                ln["unitario"], ln["cantidad"], ln["objetivo"]
+            )
+        suma += resueltas[ln["eid"]][1]
+
+    residuo = round(round(target, 2) - round(suma, 2), 2)
+    reparto_cuadra = not residuo
+    if residuo:
+        absorbentes = sorted(
+            (l for l in lineas if l["bruto"] > 0 and l["es_fabricante"]),
+            key=lambda l: l["bruto"],
+        )
+        for ln in absorbentes:
+            objetivo = round(resueltas[ln["eid"]][1] + residuo, 2)
+            pct, importe = _importe_expresable(ln["unitario"], ln["cantidad"], objetivo)
+            if importe == objetivo:
+                resueltas[ln["eid"]] = (pct, importe)
+                reparto_cuadra = True
+                break
+        if not reparto_cuadra:
+            aviso = logger.info if abs(residuo) <= 0.01 else logger.warning
+            aviso(
+                f"[recalcular] descuento: {residuo} sin línea que pueda expresarlo "
+                f"(techo de los 4 decimales de DiscPrcnt); los importes se dejan "
+                f"como están y SAP facturará esa diferencia"
+            )
+
+    cambios: Dict[str, Dict[str, str]] = {}
+    for ln in lineas:
+        pct, importe = resueltas[ln["eid"]]
+        props: Dict[str, str] = {}
+        persistido = ln["descuento_persistido"]
+        vacio = persistido is None or str(persistido).strip() == ""
+        if vacio or _to_float(persistido) != pct:
+            props["descuento"] = str(pct)
+        # Solo se mueve el importe cuando el céntimo tiene destino: si no, bajar
+        # la línea dejaría el contenedor por debajo del precio negociado. Va
+        # aunque coincida con lo persistido, para cancelar el precio_total
+        # inexpresable que trae este mismo lote.
+        if reparto_cuadra and ln["es_fabricante"] and importe != ln["objetivo"]:
+            props["precio_total"] = str(importe)
+        if props:
+            cambios[ln["eid"]] = props
+    return cambios
+
+
 def _base_sin_iva_fabricantes(fabricantes: List[Dict], pp: PricingParams) -> float:
     """Base sin IVA del contenedor: Σ final×cajas de sus líneas fabricante (las
     promos no repercuten). Es el importe que debe igualar la suma de los
@@ -695,6 +825,7 @@ def recalcular_contenedores(
                 "nombre_contenedor",
                 "line_item_id", "nombre",
                 "precio_unitario", "precio_total", "margen_unitario",
+                "descuento",
             ],
         )
     except Exception as e:
@@ -763,6 +894,14 @@ def recalcular_contenedores(
                     el_by_id[eid]["properties"].update(rep["properties"])
                 else:
                     el_by_id[eid] = {"id": eid, "properties": dict(rep["properties"])}
+            # Va el último: necesita el precio_unitario y el precio_total finales,
+            # los de este mismo lote incluidos, y puede retocar el precio_total
+            # que acaba de fijar el cuadre.
+            for eid, props_dto in _derivar_descuento_elementos(elems_contenedor, el_by_id).items():
+                if eid in el_by_id:
+                    el_by_id[eid]["properties"].update(props_dto)
+                else:
+                    el_by_id[eid] = {"id": eid, "properties": dict(props_dto)}
             elemento_updates.extend(el_by_id.values())
 
             if not emp.resueltos and _base_sin_iva_fabricantes(fabricantes, pp_contenedor) > 0:
