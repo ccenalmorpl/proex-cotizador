@@ -158,6 +158,10 @@ def main():
         logger.info(f"      {tipo}: {n}")
     logger.info(f"  archivar: {len(plan['archivar'])} líneas")
     logger.info(f"  repuntar Contenedor.line_item_id: {len(plan['repuntar_co'])}")
+    if plan["ajenos"]:
+        logger.info(f"  conservar (vivas fuera del objetivo): {len(plan['ajenos'])} líneas")
+        for nombre in plan["ajenos"][:10]:
+            logger.info(f"       {nombre}")
     if plan["sin_plantilla"]:
         logger.warning(f"  !! {len(plan['sin_plantilla'])} líneas sin plantilla de la que clonar:")
         for nombre, tipo in plan["sin_plantilla"][:10]:

@@ -329,3 +329,79 @@ def test_no_se_duplican_los_articulos_que_se_repiten_en_un_contenedor(hubspot):
     plan = _plan_de(hubspot, entero, n_contenedores=1)
     assert plan["crear"] == []
     assert plan["archivar"] == []
+
+
+def _sin_custom_objects(estado, vivos):
+    estado["vivos"] = vivos
+    estado["contenedores"], estado["elementos"] = {}, {}
+    return planificar("tok", DEAL)
+
+
+def test_la_primera_publicacion_no_archiva_las_lineas_recien_creadas(hubspot):
+    """El negocio aún no tiene Contenedor: el re-sync que los crea corre DESPUÉS.
+
+    Con el objetivo vacío, todo line item que no fuera de contenedor se daba por
+    duplicado del espejo. El 14/09/2026 se llevó por delante las líneas de cinco
+    negocios recién cotizados (deal 64986199472: archivó artículo, flete y seguro y
+    dejó la línea de contenedor sola).
+    """
+    entero = _negocio_entero(n_contenedores=1)
+    plan = _sin_custom_objects(hubspot, entero)
+
+    assert plan["archivar"] == []
+    assert plan["crear"] == []
+    assert plan["con_contenedores"] is False
+
+
+def test_sin_contenedores_la_reconciliacion_no_toca_el_negocio(hubspot):
+    entero = _negocio_entero(n_contenedores=1)
+    hubspot["vivos"] = entero
+    hubspot["contenedores"], hubspot["elementos"] = {}, {}
+
+    llamadas = []
+    monkeypatched = espejo_publish.aplicar
+    espejo_publish.aplicar = lambda *a, **kw: llamadas.append(a) or {}
+    try:
+        stats = espejo_publish.reconciliar_lineas_tras_espejo("tok", DEAL)
+    finally:
+        espejo_publish.aplicar = monkeypatched
+
+    assert llamadas == []
+    assert stats == {"creadas": 0, "archivadas": 0, "repuntados": 0}
+
+
+def test_un_contenedor_sin_lineas_contenedor_conserva_su_flete_y_su_seguro(hubspot):
+    """El flete y el seguro del objetivo se deducen de los Elementos del contenedor.
+
+    Los negocios que el bug del 14/09 dejó sin Líneas Contenedor tienen el Contenedor
+    creado y cero Elementos: el objetivo sale con los artículos (los trae el
+    container_config) pero sin flete ni seguro, y relanzar el job los archivaba.
+    """
+    entero = _negocio_entero(n_contenedores=1)
+    hubspot["vivos"] = entero
+    hubspot["contenedores"], _ = _custom_objects(entero, 1)
+    hubspot["elementos"] = {}
+
+    plan = planificar("tok", DEAL)
+    cont = _nombre_cont(1)
+    assert plan["archivar"] == []
+    assert plan["ajenos"] == [f"{cont} - FLETES", f"{cont} - SEGURO MERCANCÍA"]
+
+
+def test_el_guardarrail_aborta_si_vacia_medio_negocio_sin_reponer_nada(hubspot):
+    """Archivar mucho y no crear nada no es la firma del espejo, es un objetivo roto."""
+    entero = _negocio_entero(n_contenedores=1)
+    hubspot["vivos"] = entero
+    hubspot["contenedores"], hubspot["elementos"] = _custom_objects(entero, 1)
+
+    plan = planificar("tok", DEAL)
+    plan["archivar"] = [lid for lid, p in entero.items() if p["tipo_articulo"] == "fabricante"]
+    monkeypatched = espejo_publish.planificar
+    espejo_publish.planificar = lambda *a, **kw: plan
+    try:
+        stats = espejo_publish.reconciliar_lineas_tras_espejo("tok", DEAL)
+    finally:
+        espejo_publish.planificar = monkeypatched
+
+    assert stats["abortado"] is True
+    assert stats["archivadas"] == 0

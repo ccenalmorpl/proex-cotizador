@@ -268,6 +268,7 @@ def planificar(access_token: str, deal_id: str,
         crear.append({"nombre_contenedor": nombre_cont, "tipo": "contenedor",
                       "properties": nueva, "co_id": co_id_por_cont[nombre_cont]})
 
+    nombres_objetivo = set()
     for nombre_cont in sorted(config_por_cont):
         cfg = json.loads(config_por_cont[nombre_cont] or "{}")
         objetivo = [
@@ -283,6 +284,7 @@ def planificar(access_token: str, deal_id: str,
             objetivo.append((None, f"{nombre_cont} - {NOMBRE_FLETE}", 1, "flete"))
         if "seguro" in tipos_elemento:
             objetivo.append((None, f"{nombre_cont} - {NOMBRE_SEGURO}", 1, "seguro"))
+        nombres_objetivo.update(nombre for _, nombre, _, _ in objetivo)
 
         for pid, nombre, cajas, tipo in objetivo:
             if vivos_por_nombre.get(nombre):
@@ -329,10 +331,21 @@ def planificar(access_token: str, deal_id: str,
 
             crear.append({"nombre_contenedor": nombre_cont, "tipo": tipo, "properties": nueva})
 
-    # Lo que queda vivo sin sitio en el objetivo son duplicados del espejo.
+    # Sobrar una copia de un nombre que el objetivo PIDE es el duplicado del espejo, y
+    # se archiva. Un nombre que el objetivo ni menciona no es sobrante: es que el
+    # objetivo no lo conoce, y archivarlo se lleva una línea buena. Pasa en la primera
+    # publicación, cuando el negocio aún no tiene Contenedor del que sacar la forma
+    # (14/09/2026: cinco negocios se quedaron con la línea de contenedor sola), y pasa
+    # con el flete y el seguro de un contenedor sin Líneas Contenedor, que es de donde
+    # se deducen.
+    ajenos = []
     for nombre, restantes in vivos_por_nombre.items():
-        if restantes and not _es_contenedor(vivos[restantes[0]]):
+        if not restantes or _es_contenedor(vivos[restantes[0]]):
+            continue
+        if nombre in nombres_objetivo:
             archivar += restantes
+        else:
+            ajenos.append(nombre)
 
     return {
         "vivos": vivos,
@@ -340,6 +353,8 @@ def planificar(access_token: str, deal_id: str,
         "archivar": sorted(set(archivar)),
         "repuntar_co": repuntar_co,
         "sin_plantilla": sin_plantilla,
+        "ajenos": sorted(ajenos),
+        "con_contenedores": bool(contenedores),
     }
 
 
@@ -383,17 +398,35 @@ def reconciliar_lineas_tras_espejo(access_token: str, deal_id: str) -> Dict[str,
     """Devuelve al negocio las líneas que el espejo del publish se llevó o duplicó."""
     plan = planificar(access_token, deal_id)
 
+    # La forma a la que se devuelve el negocio sale de sus Contenedor y Líneas
+    # Contenedor. En la primera publicación todavía no existen —los crea el re-sync que
+    # corre justo después, en este mismo worker— y sin ellos no hay nada con lo que
+    # comparar: cualquier cosa que se decida aquí es a ciegas.
+    if not plan["con_contenedores"]:
+        logger.info(
+            f"[espejo] deal {deal_id}: aún no tiene Contenedor, es su primera "
+            f"publicación; no hay forma previa con la que reconciliar"
+        )
+        return {"creadas": 0, "archivadas": 0, "repuntados": 0}
+
     # Esto corre solo tras cada publish: si el objetivo sale mal calculado, archivar a
     # ciegas se lleva por delante el negocio. Un espejo roto deja duplicados y ausencias
-    # en proporciones parecidas; archivar mucho más de lo que se repone no es eso.
+    # en proporciones parecidas; archivar mucho más de lo que se repone no es eso, y
+    # vaciar medio negocio sin reponer una sola línea tampoco.
     archivar, crear = len(plan["archivar"]), len(plan["crear"])
-    if archivar > crear + max(5, 0.1 * len(plan["vivos"])):
+    vivos = len(plan["vivos"])
+    if archivar > crear + max(5, 0.1 * vivos) or (crear == 0 and archivar * 2 > vivos):
         logger.error(
-            f"[espejo] deal {deal_id}: plan desproporcionado sobre {len(plan['vivos'])} "
+            f"[espejo] deal {deal_id}: plan desproporcionado sobre {vivos} "
             f"líneas vivas (archivaría {archivar} y crearía {crear}); no se toca nada"
         )
         return {"creadas": 0, "archivadas": 0, "repuntados": 0, "abortado": True}
 
+    if plan["ajenos"]:
+        logger.warning(
+            f"[espejo] deal {deal_id}: {len(plan['ajenos'])} líneas vivas que el "
+            f"objetivo no contempla; se conservan: {plan['ajenos'][:5]}"
+        )
     if plan["sin_plantilla"]:
         logger.error(f"[espejo] deal {deal_id}: {len(plan['sin_plantilla'])} líneas sin "
                      f"plantilla de la que clonar: {plan['sin_plantilla'][:5]}")
