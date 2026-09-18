@@ -19,7 +19,7 @@ def test_trailer_es_camion(raw):
 
 
 @pytest.mark.parametrize(
-    "raw", ["d40dr", "D20DR", "camion_16p", "palets", "r40rf", "", None],
+    "raw", ["d40dr", "D20DR", "", None],
 )
 def test_resto_es_contenedor(raw):
     assert es_camion(raw) is False

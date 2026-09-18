@@ -71,16 +71,8 @@ def create_contenedor_schema(client: HubSpot) -> str:
             "fieldType": "select",
             "description": "Tipo de contenedor o medio de transporte",
             "options": [
-                {"label": "CAMION 16P", "value": "camion_16p"},
                 {"label": "D20DR", "value": "d20dr"},
                 {"label": "D40DR", "value": "d40dr"},
-                {"label": "D20W", "value": "d20w"},
-                {"label": "D40HD", "value": "d40hd"},
-                {"label": "D45HD", "value": "d45hd"},
-                {"label": "D45W", "value": "d45w"},
-                {"label": "PALETS", "value": "palets"},
-                {"label": "R20RF", "value": "r20rf"},
-                {"label": "R40RF", "value": "r40rf"},
                 {"label": "TRAILER 80", "value": "trailer_80"}
             ]
         },
@@ -172,7 +164,7 @@ def create_contenedor_schema(client: HubSpot) -> str:
     schema = ObjectSchemaEgg(
         name="contenedor",
         labels=labels,
-        description="Representa los contenedores, palets, camiones y otros medios de transporte que componen un negocio. Permite análisis detallado y reporting sobre el centro del negocio.",
+        description="Representa los contenedores y camiones que componen un negocio. Permite análisis detallado y reporting sobre el centro del negocio.",
         primary_display_property="nombre",
         secondary_display_properties=["tipo_contenedor", "numero_container"],
         searchable_properties=["nombre", "numero_container", "tipo_contenedor"],

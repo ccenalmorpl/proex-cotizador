@@ -669,10 +669,8 @@ class ProductItem(BaseModel):
     hs_product_type: Optional[str] = Field(None, description="Product type (inventory, service, container)")
     activo: Optional[str] = Field(None, description="Product active status (Activo/Inactivo)")
     # Container capacity fields
-    unidades_cam16: Optional[int] = Field(None, description="Maximum units for CAMION 16P container")
     unidades_d20dr: Optional[int] = Field(None, description="Maximum units for D20DR container")
     unidades_d40dr: Optional[int] = Field(None, description="Maximum units for D40DR container")
-    unidades_palet: Optional[int] = Field(None, description="Maximum units for PALETS container")
     unidades_tra80: Optional[int] = Field(None, description="Maximum units for TRAILER 80 container")
 
     class Config:
@@ -989,10 +987,8 @@ class ArticleWithProvider(BaseModel):
         ultimo_precio_compra: Last purchase price.
         ultimo_precio_evaluado: Last evaluated price.
         tipo_iva_repercutido: Transferred VAT type.
-        unidades_cam16: Maximum units for CAMION 16P container.
         unidades_d20dr: Maximum units for D20DR container.
         unidades_d40dr: Maximum units for D40DR container.
-        unidades_palet: Maximum units for PALETS container.
         unidades_tra80: Maximum units for TRAILER 80 container.
     """
     id: str = Field(..., description="HubSpot product ID")
@@ -1015,10 +1011,8 @@ class ArticleWithProvider(BaseModel):
     tipo_iva_repercutido: Optional[str] = Field(None, description="Transferred VAT type")
     tipo_iva_soportado: Optional[str] = Field(None, description="Input VAT type")
     # Container capacity fields
-    unidades_cam16: Optional[int] = Field(None, description="Maximum units for CAMION 16P container")
     unidades_d20dr: Optional[int] = Field(None, description="Maximum units for D20DR container")
     unidades_d40dr: Optional[int] = Field(None, description="Maximum units for D40DR container")
-    unidades_palet: Optional[int] = Field(None, description="Maximum units for PALETS container")
     unidades_tra80: Optional[int] = Field(None, description="Maximum units for TRAILER 80 container")
 
     class Config:
@@ -2416,7 +2410,7 @@ class ContenedorCreate(BaseModel):
 
     Attributes:
         nombre: Unique container name (format: dealId-numeroContainer, e.g., "46298478914-001")
-        tipo_contenedor: Container type (camion_16p, d20dr, d40dr, etc.)
+        tipo_contenedor: Container type (d20dr, d40dr, trailer_80)
         numero_container: Sequential container number within the deal (1, 2, 3...)
         ocupacion: Container occupancy percentage (allowed range: 90-103%)
         peso_neto: Total net weight in kilograms

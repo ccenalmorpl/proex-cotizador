@@ -21,31 +21,15 @@ OBJECT_NAME_ELEMENTO = "elemento"
 # TIPOS DE CONTENEDOR
 
 TIPO_CONTENEDOR_OPTIONS = [
-    "camion_16p",
     "d20dr",
     "d40dr",
-    "d20w",
-    "d40hd",
-    "d45hd",
-    "d45w",
-    "palets",
-    "r20rf",
-    "r40rf",
     "trailer_80"
 ]
 
 # Mapeo de valores a labels para display
 TIPO_CONTENEDOR_LABELS = {
-    "camion_16p": "CAMION 16P",
     "d20dr": "D20DR",
     "d40dr": "D40DR",
-    "d20w": "D20W",
-    "d40hd": "D40HD",
-    "d45hd": "D45HD",
-    "d45w": "D45W",
-    "palets": "PALETS",
-    "r20rf": "R20RF",
-    "r40rf": "R40RF",
     "trailer_80": "TRAILER 80"
 }
 

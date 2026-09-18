@@ -209,14 +209,10 @@ const ArticulosTab = ({
               pesoNeto: art.peso_neto || 0,
               cajas20: 0,
               cajas40: 0,
-              cajasCamion16p: 0,
-              cajasPalets: 0,
               cajasTrailer80: 0,
               // Container capacity fields from backend
-              unidades_cam16: art.unidades_cam16 || 0,
               unidades_d20dr: art.unidades_d20dr || 0,
               unidades_d40dr: art.unidades_d40dr || 0,
-              unidades_palet: art.unidades_palet || 0,
               unidades_tra80: art.unidades_tra80 || 0,
               hs_price_eur: art.hs_price_eur || 0,
               margen_unitario: art.margen_unitario || null, // Puede ser null si no está definido
@@ -281,10 +277,8 @@ const ArticulosTab = ({
   const getMaxCajas = (articulo, tipoContenedor) => {
     // Mapeo de tipos de contenedor a sus campos de unidades correspondientes
     const containerFieldMap = {
-      CAMION16P: "unidades_cam16",
       D20DR: "unidades_d20dr",
       D40DR: "unidades_d40dr",
-      PALETS: "unidades_palet",
       TRAILER80: "unidades_tra80",
       "TRAILER 80": "unidades_tra80",
     };
@@ -359,10 +353,8 @@ const ArticulosTab = ({
           description: producto.description,
           barcode: producto.barcode,
           // Container capacity fields
-          unidades_cam16: producto.unidades_cam16 || 0,
           unidades_d20dr: producto.unidades_d20dr || 0,
           unidades_d40dr: producto.unidades_d40dr || 0,
-          unidades_palet: producto.unidades_palet || 0,
           unidades_tra80: producto.unidades_tra80 || 0,
         }));
       console.log("[buscarProductos] Cardcodes recibidos:", productosFormateados);

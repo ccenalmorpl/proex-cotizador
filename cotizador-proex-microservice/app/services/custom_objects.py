@@ -2177,11 +2177,8 @@ def _parse_line_items_to_custom_objects(
 
         # Extraer tipo_contenedor del SKU y normalizar a los valores permitidos en HubSpot
         _sku_to_tipo = {
-            "d20dr": "d20dr", "d40dr": "d40dr", "d20w": "d20w",
-            "d40hd": "d40hd", "d45hd": "d45hd", "d45w": "d45w",
-            "palets": "palets", "r20rf": "r20rf", "r40rf": "r40rf",
+            "d20dr": "d20dr", "d40dr": "d40dr",
             "trailer_80": "trailer_80", "trailer80": "trailer_80",
-            "camion_16p": "camion_16p", "camion16p": "camion_16p",
         }
         sku_upper = sku.upper()
         if sku_upper.startswith("CONTAINER-"):

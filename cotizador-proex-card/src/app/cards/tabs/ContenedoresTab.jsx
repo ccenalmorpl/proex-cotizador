@@ -81,16 +81,8 @@ const ContenedoresTab = ({
     tamano_kit: articulo.tamano_kit,
     bloque_multiplo: articulo.bloque_multiplo,
     // Capacidades por tipo de contenedor (extract numeric value)
-    unidades_cam16: getNumericValue(articulo.unidades_cam16),
     unidades_d20dr: getNumericValue(articulo.unidades_d20dr),
     unidades_d40dr: getNumericValue(articulo.unidades_d40dr),
-    unidades_d20w: getNumericValue(articulo.unidades_d20w),
-    unidades_d40hd: getNumericValue(articulo.unidades_d40hd),
-    unidades_d45hd: getNumericValue(articulo.unidades_d45hd),
-    unidades_d45w: getNumericValue(articulo.unidades_d45w),
-    unidades_palet: getNumericValue(articulo.unidades_palet),
-    unidades_r20rf: getNumericValue(articulo.unidades_r20rf),
-    unidades_r40rf: getNumericValue(articulo.unidades_r40rf),
     unidades_tra80: getNumericValue(articulo.unidades_tra80),
   }));
 
@@ -361,16 +353,8 @@ const ContenedoresTab = ({
 
   const getCapacidadMaxima = (articulo, tipoContenedor) => {
     const containerFieldMap = {
-      CAMION16P: "unidades_cam16",
       D20DR: "unidades_d20dr",
       D40DR: "unidades_d40dr",
-      D20W: "unidades_d20w",
-      D40HD: "unidades_d40hd",
-      D45HD: "unidades_d45hd",
-      D45W: "unidades_d45w",
-      PALETS: "unidades_palet",
-      R20RF: "unidades_r20rf",
-      R40RF: "unidades_r40rf",
       TRAILER80: "unidades_tra80",
       "TRAILER 80": "unidades_tra80"
     };

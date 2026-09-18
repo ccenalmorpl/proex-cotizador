@@ -1,18 +1,14 @@
 // Container type values (must match HubSpot property values - no spaces)
 export const CONTAINER_TYPES = {
-  CAMION_16P: "CAMION16P",
   D20DR: "D20DR",
   D40DR: "D40DR",
-  PALETS: "PALETS",
   TRAILER_80: "TRAILER80",
 };
 
 // Display labels for container types (user-friendly)
 export const CONTAINER_TYPE_LABELS = {
-  CAMION16P: "CAMION 16P",
   D20DR: "D20DR",
   D40DR: "D40DR",
-  PALETS: "PALETS",
   TRAILER80: "TRAILER 80",
 };
 
@@ -22,10 +18,8 @@ export const getContainerTypeLabel = (containerType) => {
 
 // Mapping of container types to capacity fields in product data
 export const CONTAINER_CAPACITY_FIELDS = {
-  [CONTAINER_TYPES.CAMION_16P]: "cajasCamion16p",
   [CONTAINER_TYPES.D20DR]: "cajas20",
   [CONTAINER_TYPES.D40DR]: "cajas40",
-  [CONTAINER_TYPES.PALETS]: "cajasPalets",
   [CONTAINER_TYPES.TRAILER_80]: "cajasTrailer80",
 };
 

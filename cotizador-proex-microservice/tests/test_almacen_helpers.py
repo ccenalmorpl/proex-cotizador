@@ -36,10 +36,10 @@ def test_linea_de_contenedor_sin_tipo_articulo_se_reubica():
 
 
 def test_tipo_contenedor_vacio_o_desconocido_defaultea_a_exportacion():
-    # Cualquier cosa que no sea camión (incl. vacío/desconocido/palets) → export.
+    # Cualquier cosa que no sea camión (incl. vacío o tipo desconocido) → export.
     assert resolve_almacen_para_elemento("01", "servicio", "") == ALMACEN_EXPORTACION
     assert resolve_almacen_para_elemento("01", "servicio", None) == ALMACEN_EXPORTACION
-    assert resolve_almacen_para_elemento("01", "servicio", "palets") == ALMACEN_EXPORTACION
+    assert resolve_almacen_para_elemento("01", "servicio", "d20dr") == ALMACEN_EXPORTACION
 
 
 def test_tipo_contenedor_normaliza():

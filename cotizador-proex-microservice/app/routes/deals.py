@@ -2130,8 +2130,7 @@ async def get_deal_articles(
                         # VAT types
                         "tipo_iva_repercutido", "tipo_iva_soportado",
                         # Container capacity fields
-                        "unidades_cam16", "unidades_d20dr", "unidades_d40dr",
-                        "unidades_palet", "unidades_tra80"
+                        "unidades_d20dr", "unidades_d40dr", "unidades_tra80"
                     ],
                     "inputs": [{"id": str(pid)} for pid in batch_ids]
                 }

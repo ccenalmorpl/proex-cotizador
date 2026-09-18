@@ -54,16 +54,8 @@ const formatCurrency = (value, decimals = 3) => {
 };
 
 const CAPACIDAD_FIELD_BY_TIPO = {
-  CAMION16P: "unidades_cam16",
   D20DR: "unidades_d20dr",
   D40DR: "unidades_d40dr",
-  D20W: "unidades_d20w",
-  D40HD: "unidades_d40hd",
-  D45HD: "unidades_d45hd",
-  D45W: "unidades_d45w",
-  PALETS: "unidades_palet",
-  R20RF: "unidades_r20rf",
-  R40RF: "unidades_r40rf",
   TRAILER80: "unidades_tra80",
   "TRAILER 80": "unidades_tra80",
 };
