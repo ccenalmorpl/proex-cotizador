@@ -296,7 +296,8 @@ const RevisionTab = ({
   const kitsSolicitadosDetalle = useMemo(
     () =>
       analisisKits.kits
-        .filter((k) => kitsSolicitados?.[k.articuloId]?.solicitado ?? true)
+        // Solo los que la usuaria haya marcado: sin marcar no se crea KIT.
+        .filter((k) => kitsSolicitados?.[k.articuloId]?.solicitado ?? false)
         .map((k) => {
           const s = kitsSolicitados?.[k.articuloId];
           // Los bloques extra que haya pedido el comercial sobre el mínimo.

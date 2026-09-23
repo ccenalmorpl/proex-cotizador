@@ -218,7 +218,11 @@ const AlertaKits = ({
     const cajasCalculadas = Math.max(0, tirada - aProducirTotal);
 
     return {
-      solicitado: s?.solicitado ?? true,
+      // Sin marcar por defecto: pedir el KIT es una decision, no algo que pase
+      // por no tocar nada. Tres ofertas de la misma referencia pueden generar el
+      // mismo KIT y solo una debe pedirlo —"el kit lo voy a generar solo en una"
+      // (Cristobal, 2026-09-09)—; con la casilla marcada salian tres.
+      solicitado: s?.solicitado ?? false,
       bloquesExtra,
       bloquesMinimos,
       bloques,
