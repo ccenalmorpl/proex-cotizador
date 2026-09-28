@@ -538,6 +538,7 @@
   {% set _quote_lang = "en" %}
 {% endif %}
 
+{# También formatea colis y pesos (sin símbolo), para que lleven los mismos separadores que los importes. #}
 {% macro format_money(value, currency_symbol="", decimals=2) %}
   {% if value %}
     {% set num_value = value|string|trim|float %}
@@ -553,7 +554,7 @@
       {% set _ns_pad.dec = _ns_pad.dec ~ "0" %}
     {% endif %}
   {% endfor %}
-  {% set raw = _int ~ "." ~ _ns_pad.dec %}
+  {% set raw = (_int ~ "." ~ _ns_pad.dec) if decimals > 0 else _int %}
   {% if _quote_lang == "es" %}
     {% set raw = raw|replace(",", "§")|replace(".", ",")|replace("§", ".") %}
   {% elif _quote_lang == "fr" %}
@@ -614,8 +615,7 @@
 {% if doc %}
   {% set copia_incompleta = false %}
   {% set total_cajas_articulos = doc.stats.bultos|default(0)|float %}
-  {# El round(2) no es decorativo: la celda imprime la variable sin filtro, así que sin
-     él los pesos salían "374400.0" y "425491.2" en vez de "374400.00" y "425491.20". #}
+  {# Los decimales y separadores los pone format_money al imprimir; el round(2) solo fija el valor. #}
   {% set computed_grossWeightKg = doc.stats.pesoBruto|default(0)|float|round(2) %}
   {% set computed_netWeightKg = doc.stats.pesoNeto|default(0)|float|round(2) %}
   {# El marcador grande leia `estadisticas.totalEuros`, que lo escribe la card sumando
@@ -1171,8 +1171,8 @@
             <tr>
               <td class="code">{{ li_code }}</td>
               <td class="item">{{ li_name }}</td>
-              <td class="colis">{{ li_qty|round(0)|int }}</td>
-              <td class="weight">{{ li_weight|round(2) }}</td>
+              <td class="colis">{{ format_money(li_qty, "", 0) }}</td>
+              <td class="weight">{{ format_money(li_weight) }}</td>
               <td class="unit">{{ li_unit }}</td>
               {# 3 decimales, los mismos con los que se calcula el importe: a 2 la
                  multiplicación no cuadra en el papel (7,10 × 13.200 = 93.720 frente a
@@ -1263,9 +1263,9 @@
 
       <div class="totals-stats">
         <table class="stats-table">
-          <tr><td class="label">{{ lbl_total_colis }}</td><td class="value">{{ stats_totalColis|int }}</td></tr>
-          <tr><td class="label">{{ lbl_net_weight }}</td><td class="value">{{ computed_netWeightKg }}</td></tr>
-          <tr><td class="label">{{ lbl_gross_weight }}</td><td class="value">{{ computed_grossWeightKg }}</td></tr>
+          <tr><td class="label">{{ lbl_total_colis }}</td><td class="value">{{ format_money(stats_totalColis, "", 0) }}</td></tr>
+          <tr><td class="label">{{ lbl_net_weight }}</td><td class="value">{{ format_money(computed_netWeightKg) }}</td></tr>
+          <tr><td class="label">{{ lbl_gross_weight }}</td><td class="value">{{ format_money(computed_grossWeightKg) }}</td></tr>
         </table>
 
         <table class="stats-table mt-2">
@@ -1602,8 +1602,8 @@
               <tr>
                 <td class="code">{{ li_code }}</td>
                 <td class="item">{{ li_name }}</td>
-                <td class="colis">{{ li_qty|round(0)|int }}</td>
-                <td class="weight">{{ li_weight|round(2) }}</td>
+                <td class="colis">{{ format_money(li_qty, "", 0) }}</td>
+                <td class="weight">{{ format_money(li_weight) }}</td>
                 <td class="unit">{{ lbl_unit_case }}</td>
                 <td class="price">{{ format_money(li_price, currency, 3) }}</td>
                 <td class="total">{{ format_money(li_total, currency) }}</td>
@@ -1683,9 +1683,9 @@
           </div>
           <div class="totals-stats">
             <table class="stats-table">
-              <tr><td class="label">{{ lbl_total_colis }}</td><td class="value">{{ ns_cs.colis|round(0)|int }}</td></tr>
-              <tr><td class="label">{{ lbl_net_weight }}</td><td class="value">{{ ns_cs.net|round(2) }}</td></tr>
-              <tr><td class="label">{{ lbl_gross_weight }}</td><td class="value">{{ ns_cs.gross|round(2) }}</td></tr>
+              <tr><td class="label">{{ lbl_total_colis }}</td><td class="value">{{ format_money(ns_cs.colis, "", 0) }}</td></tr>
+              <tr><td class="label">{{ lbl_net_weight }}</td><td class="value">{{ format_money(ns_cs.net) }}</td></tr>
+              <tr><td class="label">{{ lbl_gross_weight }}</td><td class="value">{{ format_money(ns_cs.gross) }}</td></tr>
             </table>
             <table class="stats-table mt-2">
               {% if not ocultar_tipo_contenedor %}<tr><td class="label">{{ lbl_container_type }}</td><td class="value">{{ stats_containerType }}</td></tr>{% endif %}
