@@ -342,18 +342,27 @@ def _emparejar_elementos_fabricante(
     deja de emparejar por lid, y sin este fallback ni el EXW ni el `precio_total`
     se sincronizan nunca más (SAP acaba leyendo importes congelados). El fallback
     solo actúa si el nombre es único en ambos lados, igual que
-    `scripts/repair_elemento_lid_cruzado.py`: con promo 5+1 el nombre se repite y
-    el lid es el único discriminador."""
+    `scripts/repair_elemento_lid_cruzado.py`. Con promo 5+1 el nombre se repite y
+    decide el par (nombre, cajas), solo entre Elementos cuyo lid no es de otra
+    línea viva."""
     emp = EmparejamientoElementos()
 
     li_counts: Dict[str, int] = {}
+    li_counts_cajas: Dict[tuple, int] = {}
+    lids_vivos: set = set()
     for li in fabricantes:
+        lid = str(li.get("hs_object_id") or "").strip()
+        if lid:
+            lids_vivos.add(lid)
         nombre = (li.get("name") or "").strip()
         if nombre:
             li_counts[nombre] = li_counts.get(nombre, 0) + 1
+            clave = (nombre, _to_float(li.get("quantity")))
+            li_counts_cajas[clave] = li_counts_cajas.get(clave, 0) + 1
 
     elem_counts: Dict[str, int] = {}
     fabricante_by_nombre: Dict[str, Dict] = {}
+    sueltos_by_nombre_cajas: Dict[tuple, List[Dict]] = {}
     for el in elems_contenedor:
         props = el.get("properties") or {}
         nombre = (props.get("nombre") or "").strip()
@@ -362,6 +371,9 @@ def _emparejar_elementos_fabricante(
         elem_counts[nombre] = elem_counts.get(nombre, 0) + 1
         if (props.get("tipo_articulo") or "").strip().lower() == "fabricante":
             fabricante_by_nombre[nombre] = el
+            if str(props.get("line_item_id") or "").strip() not in lids_vivos:
+                clave = (nombre, _to_float(props.get("cantidad")))
+                sueltos_by_nombre_cajas.setdefault(clave, []).append(el)
 
     reclamados: set = set()
     for li in fabricantes:
@@ -390,6 +402,10 @@ def _emparejar_elementos_fabricante(
                     motivo = "sin_elemento_fabricante"
             elif li_counts.get(nombre_li, 0) > 1 or elem_counts.get(nombre_li, 0) > 1:
                 motivo = "nombre_ambiguo"
+                clave = (nombre_li, _to_float(li.get("quantity")))
+                sueltos = sueltos_by_nombre_cajas.get(clave, [])
+                if li_counts_cajas.get(clave, 0) == 1 and len(sueltos) == 1:
+                    elem = sueltos[0]
 
         if elem and str(elem.get("id")) in reclamados:
             elem, motivo = None, "ya_reclamado"

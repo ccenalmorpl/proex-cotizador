@@ -25,13 +25,14 @@ def _linea(lid, nombre, cajas=1200):
     }
 
 
-def _elem(eid, lid, nombre, tipo="fabricante", nombre_contenedor=CONT):
+def _elem(eid, lid, nombre, tipo="fabricante", nombre_contenedor=CONT, cajas=None):
     return {"id": eid, "properties": {
         "line_item_id": lid,
         "nombre": nombre,
         "tipo_articulo": tipo,
         "nombre_contenedor": nombre_contenedor,
         "precio_total": "8335.0",
+        "cantidad": None if cajas is None else f"{cajas}.0",
     }}
 
 
@@ -94,9 +95,10 @@ def test_cruce_intra_contenedor_repara_los_dos_sin_duplicar():
     assert len({r["id"] for r in emp.lid_repairs}) == 2
 
 
-def test_promo_nombre_duplicado_no_se_toca():
-    """Dos líneas del mismo artículo (promo 5+1): el nombre no discrimina, así que la
-    que tiene el lid roto se queda sin emparejar en vez de robar el Elemento de la otra."""
+def test_promo_nombre_duplicado_mismas_cajas_no_se_toca():
+    """Dos líneas del mismo artículo con las mismas cajas: ni el nombre ni las cajas
+    discriminan, así que la que tiene el lid roto se queda sin emparejar en vez de
+    robar el Elemento de la otra."""
     fabricantes = [_linea("li-1", "PINA COCO"), _linea("li-2", "PINA COCO")]
     elems = [_elem("el-1", "li-1", "PINA COCO"), _elem("el-2", "li-viejo", "PINA COCO")]
 
@@ -106,6 +108,55 @@ def test_promo_nombre_duplicado_no_se_toca():
     assert emp.by_lid["li-1"]["id"] == "el-1"
     assert emp.lid_repairs == []
     assert [s["motivo"] for s in emp.sin_resolver] == ["nombre_ambiguo"]
+
+
+def test_promo_lids_stale_se_reemparejan_por_cajas():
+    """Contenedor 65027387977-001 (29/09): la publicación del 18/09 archivó los line
+    items y los dos Elementos del producto (promo 120 a 0 + 3.480 de pago) se
+    quedaron apuntando a los viejos. Con el nombre repetido no emparejaban, y al
+    bajar el flete de 900 a 840 el producto no absorbió los 60 €: SAP pasó a
+    30.245,17 con un anticipo de 30.317,76."""
+    nombre = "65027387977-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-FRESA"
+    fabricantes = [_linea("59009411368", nombre, 3480), _linea("59009411372", nombre, 120)]
+    elems = [
+        _elem("62131710482", "59029967131", nombre, cajas=120),
+        _elem("62131710483", "59017748307", nombre, cajas=3480),
+    ]
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems), "65027387977")
+
+    assert emp.resueltos == 2
+    assert emp.sin_resolver == []
+    assert emp.by_lid["59009411368"]["id"] == "62131710483"
+    assert emp.by_lid["59009411372"]["id"] == "62131710482"
+    assert {r["id"]: r["properties"]["line_item_id"] for r in emp.lid_repairs} == {
+        "62131710483": "59009411368",
+        "62131710482": "59009411372",
+    }
+
+
+def test_promo_stale_por_cajas_no_roba_el_elemento_con_lid_vivo():
+    fabricantes = [_linea("li-2", "PINA COCO", 100), _linea("li-1", "PINA COCO", 500)]
+    elems = [
+        _elem("el-1", "li-1", "PINA COCO", cajas=100),
+        _elem("el-2", "li-viejo", "PINA COCO", cajas=100),
+    ]
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems))
+
+    assert emp.by_lid["li-1"]["id"] == "el-1"
+    assert emp.by_lid["li-2"]["id"] == "el-2"
+    assert emp.lid_repairs == [{"id": "el-2", "properties": {"line_item_id": "li-2"}}]
+
+
+def test_promo_stale_sin_cajas_en_el_elemento_no_se_empareja():
+    fabricantes = [_linea("li-1", "PINA COCO", 500), _linea("li-2", "PINA COCO", 100)]
+    elems = [_elem("el-1", "viejo-1", "PINA COCO"), _elem("el-2", "viejo-2", "PINA COCO")]
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems))
+
+    assert emp.resueltos == 0
+    assert [s["motivo"] for s in emp.sin_resolver] == ["nombre_ambiguo", "nombre_ambiguo"]
 
 
 def test_un_solo_elemento_para_dos_lineas_iguales_no_se_reclama_dos_veces():
