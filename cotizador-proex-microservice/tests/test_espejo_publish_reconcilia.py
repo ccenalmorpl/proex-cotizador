@@ -405,3 +405,90 @@ def test_el_guardarrail_aborta_si_vacia_medio_negocio_sin_reponer_nada(hubspot):
 
     assert stats["abortado"] is True
     assert stats["archivadas"] == 0
+
+
+SKU_FLETE = "42084189861"
+SKU_SEGURO = "42399229255"
+
+
+def _negocio_doble_flete():
+    """Camión CIF nacional con los dos tramos, como el 65027508906 el 22/09/2026.
+
+    Flete y seguro llevan product_sku en sus Líneas Contenedor, igual que en el portal,
+    y los dos tramos comparten producto.
+    """
+    cont = _nombre_cont(1)
+    creada = "2026-09-22T11:15:15Z"
+    vivos = dict([
+        _linea("c1", cont, "contenedor", creada, container_config=_config(cont), price="0"),
+        _linea("mar", f"{cont} - FLETE MARITIMO", "transitario", creada, price="849.0",
+               cardcode="P0518", hs_product_id=SKU_FLETE, tipo_iva_soportado="SEXN"),
+        _linea("ter", f"{cont} - FLETE TERRESTRE", "transitario", creada, price="1200.0",
+               cardcode="P0690", hs_product_id=SKU_FLETE, tipo_iva_soportado="S21"),
+        _linea("seg", f"{cont} - SEGURO MERCANCÍA", "seguro", creada, price="60.0",
+               cardcode="P0082", hs_product_id=SKU_SEGURO),
+    ])
+    for pid, nombre, cajas in PRODUCTOS:
+        lid, props = _linea(f"a{pid}", f"{cont} - {nombre}", "fabricante", creada,
+                            quantity=str(cajas), hs_product_id=pid)
+        vivos[lid] = props
+
+    contenedores, elementos = _custom_objects(vivos, 1)
+    elementos = {k: v for k, v in elementos.items() if v["tipo_articulo"] == "fabricante"}
+    elementos.update({
+        "el_mar": {"nombre": f"{cont} - FLETE MARITIMO", "nombre_contenedor": cont,
+                   "tipo_articulo": "flete", "cantidad": "1", "product_sku": SKU_FLETE,
+                   "precio_unitario": "849.0", "cardcode": "P0518",
+                   "tipo_iva_repercutido": "EX", "tipo_iva_soportado": "SEXN"},
+        "el_ter": {"nombre": f"{cont} - FLETE TERRESTRE", "nombre_contenedor": cont,
+                   "tipo_articulo": "flete", "cantidad": "1", "product_sku": SKU_FLETE,
+                   "precio_unitario": "1200.0", "cardcode": "P0690",
+                   "tipo_iva_repercutido": "EX", "tipo_iva_soportado": "S21"},
+        "el_seg": {"nombre": f"{cont} - SEGURO MERCANCÍA", "nombre_contenedor": cont,
+                   "tipo_articulo": "seguro", "cantidad": "1", "product_sku": SKU_SEGURO,
+                   "precio_unitario": "60.0", "cardcode": "P0082"},
+    })
+    return vivos, contenedores, elementos
+
+
+def test_el_doble_flete_sano_no_repone_un_flete_legado(hubspot):
+    """El objetivo pedía un FLETES único y daba los dos tramos por ajenos: publicar el
+    65027508906 creó un tercer flete de 1.300 € y SAP sacó un tercer pedido de compra.
+    """
+    hubspot["vivos"], hubspot["contenedores"], hubspot["elementos"] = _negocio_doble_flete()
+
+    plan = planificar("tok", DEAL)
+    assert plan["crear"] == []
+    assert plan["archivar"] == []
+    assert plan["ajenos"] == []
+
+
+def test_un_fletes_legado_junto_a_los_tramos_no_se_repone(hubspot):
+    """La Línea Contenedor FLETES que dejó el incidente no puede resucitar su line item."""
+    vivos, contenedores, elementos = _negocio_doble_flete()
+    cont = _nombre_cont(1)
+    elementos["el_fletes"] = {"nombre": f"{cont} - FLETES", "nombre_contenedor": cont,
+                              "tipo_articulo": "flete", "cantidad": "1",
+                              "product_sku": SKU_FLETE, "precio_unitario": "1300.0",
+                              "cardcode": "P0780"}
+    hubspot["vivos"], hubspot["contenedores"], hubspot["elementos"] = vivos, contenedores, elementos
+
+    plan = planificar("tok", DEAL)
+    assert plan["crear"] == []
+    assert plan["archivar"] == []
+
+
+def test_el_tramo_perdido_vuelve_con_su_precio_su_transitario_y_su_iva(hubspot):
+    """La plantilla de flete es la línea del otro tramo; lo propio del tramo sale de su
+    Línea Contenedor."""
+    vivos, contenedores, elementos = _negocio_doble_flete()
+    del vivos["ter"]
+    hubspot["vivos"], hubspot["contenedores"], hubspot["elementos"] = vivos, contenedores, elementos
+
+    plan = planificar("tok", DEAL)
+    assert [c["properties"]["name"] for c in plan["crear"]] == [f"{_nombre_cont(1)} - FLETE TERRESTRE"]
+    nueva = plan["crear"][0]["properties"]
+    assert nueva["price"] == "1200.0"
+    assert nueva["cardcode"] == "P0690"
+    assert nueva["tipo_iva_soportado"] == "S21"
+    assert plan["archivar"] == []

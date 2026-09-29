@@ -21,6 +21,14 @@ from typing import Any, Dict, List, Optional
 import requests
 
 from app.core.custom_objects_constants import OBJECT_TYPE_CONTENEDOR, OBJECT_TYPE_ELEMENTO
+from app.utils.fletes import (
+    FLETE_SUFIJO_MARITIMO,
+    FLETE_SUFIJO_TERRESTRE,
+    TRAMO_LEGACY,
+    TRAMO_MARITIMO,
+    TRAMO_TERRESTRE,
+    clasificar_tramo_flete,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +45,12 @@ PROPS_NO_CLONABLES = {
 
 NOMBRE_FLETE = "FLETES"
 NOMBRE_SEGURO = "SEGURO MERCANCÍA"
+
+_SUFIJO_FLETE_POR_TRAMO = {
+    TRAMO_LEGACY: NOMBRE_FLETE,
+    TRAMO_MARITIMO: FLETE_SUFIJO_MARITIMO,
+    TRAMO_TERRESTRE: FLETE_SUFIJO_TERRESTRE,
+}
 
 
 def _headers(access_token: str) -> Dict[str, str]:
@@ -137,6 +151,26 @@ def _mas_antigua_primero(ids: List[str], vivos: Dict[str, Dict[str, Any]]) -> Li
     return sorted(ids, key=lambda lid: (vivos[lid].get("createdate") or "", lid))
 
 
+def _nombre_linea_flete(nombre_cont: str, nombre_elemento: Optional[str]) -> str:
+    tramo = clasificar_tramo_flete(nombre_elemento) or TRAMO_LEGACY
+    return f"{nombre_cont} - {_SUFIJO_FLETE_POR_TRAMO[tramo]}"
+
+
+def _nombres_flete_objetivo(nombre_cont: str, elementos: List[Dict[str, Any]]) -> List[str]:
+    """Líneas de flete que debe tener el contenedor, una por tramo de sus Líneas Contenedor.
+
+    El legado FLETES es el marítimo de antes del doble flete y no convive con los
+    tramos: si aparece junto a ellos es un resto, y reponerlo mete un tercer flete en
+    el pedido de SAP (65027508906, 22/09/2026).
+    """
+    nombres = {_nombre_linea_flete(nombre_cont, p.get("nombre")) for p in elementos
+               if (p.get("tipo_articulo") or "").strip().lower() == "flete"}
+    legado = f"{nombre_cont} - {NOMBRE_FLETE}"
+    if len(nombres) > 1:
+        nombres.discard(legado)
+    return sorted(nombres)
+
+
 def planificar(access_token: str, deal_id: str,
                configs_previos: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """Qué líneas hay que crear y cuáles archivar para devolver el negocio a su forma.
@@ -161,7 +195,7 @@ def planificar(access_token: str, deal_id: str,
                              ["nombre", "nombre_contenedor", "tipo_articulo", "cantidad",
                               "precio_de_coste", "precio_unitario", "margen_unitario",
                               "tipo_iva_repercutido", "tipo_iva_soportado", "line_item_id",
-                              "product_sku"])}
+                              "product_sku", "cardcode"])}
 
     elementos_por_contenedor = defaultdict(list)
     for p in elementos.values():
@@ -234,12 +268,19 @@ def planificar(access_token: str, deal_id: str,
         elif tipo == "transitario":
             plantilla_flete = plantilla_flete or p
 
+    # Flete y seguro se buscan por la línea que les toca: llevan product_sku, así que
+    # por (contenedor, sku vacío) no se encontraban, y los dos tramos del doble flete
+    # comparten producto.
     elemento_por_clave = {}
+    elemento_por_linea = {}
     for p in elementos.values():
-        clave = ((p.get("nombre_contenedor") or "").strip(),
-                 str(p.get("product_sku") or "").strip(),
-                 (p.get("tipo_articulo") or "").strip().lower())
-        elemento_por_clave[clave] = p
+        cont = (p.get("nombre_contenedor") or "").strip()
+        tipo = (p.get("tipo_articulo") or "").strip().lower()
+        elemento_por_clave[(cont, str(p.get("product_sku") or "").strip(), tipo)] = p
+        if tipo == "flete":
+            elemento_por_linea[_nombre_linea_flete(cont, p.get("nombre"))] = p
+        elif tipo == "seguro":
+            elemento_por_linea[f"{cont} - {NOMBRE_SEGURO}"] = p
 
     sin_plantilla = []
 
@@ -278,10 +319,10 @@ def planificar(access_token: str, deal_id: str,
         ]
         # La Línea Contenedor llama `flete` a lo que el line item marca como
         # `transitario`; el nombre de la línea es lo que empareja a los dos.
-        tipos_elemento = {(p.get("tipo_articulo") or "").strip().lower()
-                          for p in elementos_por_contenedor.get(nombre_cont, [])}
-        if "flete" in tipos_elemento:
-            objetivo.append((None, f"{nombre_cont} - {NOMBRE_FLETE}", 1, "flete"))
+        elems_cont = elementos_por_contenedor.get(nombre_cont, [])
+        tipos_elemento = {(p.get("tipo_articulo") or "").strip().lower() for p in elems_cont}
+        for nombre_flete in _nombres_flete_objetivo(nombre_cont, elems_cont):
+            objetivo.append((None, nombre_flete, 1, "flete"))
         if "seguro" in tipos_elemento:
             objetivo.append((None, f"{nombre_cont} - {NOMBRE_SEGURO}", 1, "seguro"))
         nombres_objetivo.update(nombre for _, nombre, _, _ in objetivo)
@@ -315,7 +356,10 @@ def planificar(access_token: str, deal_id: str,
                     if vecina.get(campo) not in (None, ""):
                         nueva[campo] = str(vecina[campo])
 
-            elem = elemento_por_clave.get((nombre_cont, pid or "", tipo))
+            if tipo == "fabricante":
+                elem = elemento_por_clave.get((nombre_cont, pid or "", tipo))
+            else:
+                elem = elemento_por_linea.get(nombre)
             if elem:
                 for campo_li, campo_el in (
                     ("precio_de_coste", "precio_de_coste"),
@@ -328,6 +372,10 @@ def planificar(access_token: str, deal_id: str,
                         nueva[campo_li] = str(val)
                 if tipo != "fabricante" and elem.get("precio_unitario"):
                     nueva["price"] = str(elem["precio_unitario"])
+                # La plantilla es la otra línea de flete: sin esto el tramo repuesto se
+                # iría al transitario del otro tramo.
+                if tipo != "fabricante" and elem.get("cardcode"):
+                    nueva["cardcode"] = str(elem["cardcode"])
 
             crear.append({"nombre_contenedor": nombre_cont, "tipo": tipo, "properties": nueva})
 
