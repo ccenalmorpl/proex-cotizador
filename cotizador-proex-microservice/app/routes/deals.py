@@ -9233,7 +9233,7 @@ async def publish_custom_objects(
             raise HTTPException(status_code=404, detail=f"Deal {deal_id} no encontrado")
 
         job_id = f"{CUSTOM_OBJECTS_JOB_TYPE}_{deal_id}_{int(time.time() * 1000)}"
-        payload = {"deal_id": deal_id}
+        payload = {"deal_id": deal_id, "reconciliar_espejo": True}
         create_job(deal_id=deal_id, job_type=CUSTOM_OBJECTS_JOB_TYPE, job_id=job_id, payload=payload)
 
         try:

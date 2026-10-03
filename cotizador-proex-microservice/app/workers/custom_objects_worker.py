@@ -8,24 +8,32 @@ from app.services.jobs_store import update_job
 logger = logging.getLogger(__name__)
 
 
-def run(deal_id: str, job_id: str) -> dict:
-    """Lanza el sync de custom objects reportando progreso en DynamoDB."""
+def run(deal_id: str, job_id: str, reconciliar_espejo: bool = False) -> dict:
+    """Lanza el sync de custom objects reportando progreso en DynamoDB.
+
+    `reconciliar_espejo` solo llega a True desde el publish: es el único momento en
+    que HubSpot espeja las líneas de la cotización sobre el negocio.
+    """
     def _cb(step: str) -> None:
         update_job(job_id, progress_step=step)
 
     # Antes del re-sync: el espejo del publish deja el negocio a medias por encima de
     # 200 líneas, y el re-sync borra toda Línea Contenedor sin line item vivo detrás,
     # que es la única copia del coste con el que se cotizó.
-    try:
-        from app.services.espejo_publish import reconciliar_lineas_tras_espejo
-        from app.services.hubspot_client import hubspot_client
-        _cb("reconciliando_lineas")
-        reconciliar_lineas_tras_espejo(hubspot_client.get_client().access_token, deal_id)
-    except Exception as e:
-        logger.error(
-            f"[custom_objects_worker.run] reconciliación del espejo falló para "
-            f"deal={deal_id}: {e}", exc_info=True
-        )
+    # Fuera del publish no hay espejo que reparar, y el reconciliador toma por perdido
+    # lo que el usuario acaba de borrar: 65489559709 bajó de 2x20 a 1x20 y el -002
+    # volvió a nacer antes de que el re-sync borrase su Contenedor (02/10/2026).
+    if reconciliar_espejo:
+        try:
+            from app.services.espejo_publish import reconciliar_lineas_tras_espejo
+            from app.services.hubspot_client import hubspot_client
+            _cb("reconciliando_lineas")
+            reconciliar_lineas_tras_espejo(hubspot_client.get_client().access_token, deal_id)
+        except Exception as e:
+            logger.error(
+                f"[custom_objects_worker.run] reconciliación del espejo falló para "
+                f"deal={deal_id}: {e}", exc_info=True
+            )
 
     stats = process_deal_custom_objects_from_line_items(deal_id, progress_callback=_cb)
 
