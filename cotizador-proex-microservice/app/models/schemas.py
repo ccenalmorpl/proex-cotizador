@@ -275,11 +275,14 @@ class UpdateDealData(BaseModel):
 
     Note: dias_libres is managed in TransitarioTab, not ClienteTab.
 
+    Ojo: `build_update_properties` escribe "" en todo campo que llegue a null, así
+    que esta lista es la de props que el guardado PISA. `preprints_language` vive
+    en DocumentacionTab: estando aquí, cada guardado de Cliente vaciaba el idioma.
+
     Attributes:
         tipo_de_venta: Sale type value to update.
         tipo_contenedor: Container type value to update.
         margen_cliente: Client margin percentage to update.
-        preprints_language: Language for document printing to update (ES, EN, FR).
         project: Project value to update.
         codigo_intermediario: Commission intermediary code to update.
         repercutir_a_cliente: Whether to pass commission cost to client to update.
@@ -291,7 +294,6 @@ class UpdateDealData(BaseModel):
     tipo_contenedor: Optional[str] = Field(None, description="Container type value to update")
     carga_por_palets: Optional[bool] = Field(None, description="Whether the shipment is loaded by pallets")
     margen_cliente: Optional[float] = Field(None, description="Client margin percentage to update", ge=0, le=100)
-    preprints_language: Optional[str] = Field(None, description="Language for document printing to update (ES, EN, FR)")
     project: Optional[str] = Field(None, description="Project value to update")
     codigo_intermediario: Optional[str] = Field(None, description="Commission intermediary code to update")
     repercutir_a_cliente: Optional[str] = Field(None, description="Whether to pass commission cost to client to update")
