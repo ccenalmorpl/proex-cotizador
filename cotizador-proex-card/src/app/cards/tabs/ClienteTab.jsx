@@ -29,6 +29,8 @@ import {
   ERROR_MESSAGES,
   LOADING_MESSAGES,
   PERCENTAGE_CONVERSION_FACTOR,
+  IMPORTE_COMISION_POR_TIPO,
+  IMPORTE_COMISION_SIN_TIPO,
 } from "../constants/common.constants";
 
 const ClienteTab = ({
@@ -67,6 +69,9 @@ const ClienteTab = ({
     fechaCaducidadCotizacion,
   } = clienteData;
   console.log("[ClienteTab]: clienteData =", clienteData);
+
+  const textosImporteComision =
+    IMPORTE_COMISION_POR_TIPO[tipoComision?.value || tipoComision] || IMPORTE_COMISION_SIN_TIPO;
 
   // Helper para actualizar campos select — guarda solo el string value
   const updateSelectField = useCallback(
@@ -599,9 +604,9 @@ const ClienteTab = ({
               />
 
               <NumberInput
-                label="Importe Comisión (EUR)"
+                label={textosImporteComision.label}
                 name="importe-comision"
-                description="Importe de la comisión en euros"
+                description={textosImporteComision.description}
                 placeholder=""
                 value={importeComision}
                 onChange={(value) => updateField("importeComision", value)}

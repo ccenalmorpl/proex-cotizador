@@ -6,6 +6,27 @@ export const INITIAL_RENDER_DELAY_MS = 300;
 // Percentage conversion
 export const PERCENTAGE_CONVERSION_FACTOR = 100;
 
+// La opción "Importe por cajas" se leía como el total de las cajas: el usuario
+// metía 290,16 € (0,12 × 2.418) y el cotizador cobraba 290,16 € por caja.
+export const IMPORTE_COMISION_POR_TIPO = {
+  importe_por_cajas: {
+    label: "Importe Comisión por caja (EUR/caja)",
+    description: "Por cada caja, no el total: se multiplica por las cajas de cada contenedor",
+  },
+  importe_por_contenedor: {
+    label: "Importe Comisión por contenedor (EUR)",
+    description: "Por cada contenedor: se reparte entre sus cajas",
+  },
+  importe_por_negocio: {
+    label: "Importe Comisión del negocio (EUR)",
+    description: "Total del negocio: se reparte a partes iguales entre los contenedores",
+  },
+};
+export const IMPORTE_COMISION_SIN_TIPO = {
+  label: "Importe Comisión (EUR)",
+  description: "Importe de la comisión en euros",
+};
+
 // Error messages
 export const ERROR_MESSAGES = {
   NO_DEAL_ID: "No se pudo obtener el ID del Deal desde el contexto.",
