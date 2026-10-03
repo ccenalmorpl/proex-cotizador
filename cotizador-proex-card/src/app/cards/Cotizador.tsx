@@ -7,6 +7,7 @@ import { hubspot } from "@hubspot/ui-extensions";
 
 // Utils and Constants
 import { fetchFromAPI, cleanHTMLToText, fetchTipoIVA } from "./utils/api.utils";
+import { timestampUTCaDateInput } from "./utils/date.utils";
 import {
   ERROR_MESSAGES,
   PERCENTAGE_CONVERSION_FACTOR,
@@ -365,10 +366,8 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
           cargaPorPalets: data.deal?.carga_por_palets || false,
           fechaCaducidadCotizacion: (() => {
             const ts = data.deal?.fecha_caducidad_cotizacion;
-            if (ts) {
-              const d = new Date(ts);
-              return { year: d.getFullYear(), month: d.getMonth(), date: d.getDate() };
-            }
+            const guardada = ts ? timestampUTCaDateInput(ts) : null;
+            if (guardada) return guardada;
             const d = new Date();
             d.setMonth(d.getMonth() + 1);
             return { year: d.getFullYear(), month: d.getMonth(), date: d.getDate() };

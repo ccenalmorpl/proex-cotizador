@@ -23,6 +23,7 @@ import { hubspot } from "@hubspot/ui-extensions";
 import { API_CONFIG } from "../config";
 import { resolveIVA } from "../utils/iva.utils";
 import { normalizeIncoterm, esModoDobleFlete } from "../utils/pricing.utils";
+import { timestampUTCaDateInput } from "../utils/date.utils";
 
 const TransitarioTab = ({
   context,
@@ -371,23 +372,13 @@ const TransitarioTab = ({
 
           // Fechas caducidad flete
           if (data.fecha_caducidad_flete_salida) {
-            const fecha = new Date(data.fecha_caducidad_flete_salida);
-            const dateObject = {
-              year: fecha.getFullYear(),
-              month: fecha.getMonth(),
-              date: fecha.getDate(),
-            };
+            const dateObject = timestampUTCaDateInput(data.fecha_caducidad_flete_salida);
             setFechaCaducidadSalida(dateObject);
             updateTransitarioField("fechaCaducidadFleteSalida", dateObject);
           }
 
           if (data.fecha_caducidad_flete_destino) {
-            const fecha = new Date(data.fecha_caducidad_flete_destino);
-            const dateObject = {
-              year: fecha.getFullYear(),
-              month: fecha.getMonth(),
-              date: fecha.getDate(),
-            };
+            const dateObject = timestampUTCaDateInput(data.fecha_caducidad_flete_destino);
             setFechaCaducidadDestino(dateObject);
             updateTransitarioField("fechaCaducidadFleteDestino", dateObject);
           }
@@ -756,8 +747,7 @@ const TransitarioTab = ({
       return { year, month: month - 1, date: day };
     }
     if (!isNaN(fechaCaducidad) && fechaCaducidad > 1000000000) {
-      const fecha = new Date(parseInt(fechaCaducidad));
-      return { year: fecha.getFullYear(), month: fecha.getMonth(), date: fecha.getDate() };
+      return timestampUTCaDateInput(fechaCaducidad);
     }
     return null;
   };
