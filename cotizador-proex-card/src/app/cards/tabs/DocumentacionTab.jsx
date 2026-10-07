@@ -40,6 +40,11 @@ const getBancoHubDbKey = (value) => {
   return BANCO_HUBDB_KEY[value] || null;
 };
 
+// La cotización rápida lleva un texto base corto propio (filas grupo
+// "oferta", subgrupo "cotizacion_rapida" en HubDB).
+const getOfertaBaseHubDbKey = (esCotizacionRapida) =>
+  esCotizacionRapida ? "oferta_base_cotizacion_rapida" : "oferta_base";
+
 const DocumentacionTab = ({
   context,
   onNavigate,
@@ -76,6 +81,12 @@ const DocumentacionTab = ({
 
   const dealId = context?.crm?.objectId;
 
+  // El flag lo marca TransitarioTab, pero se puede entrar aquí sin pasar por
+  // ese tab: entonces la única copia es la que vino del deal en la carga.
+  const esCotizacionRapida =
+    transitarioData?.cotizacionRapida === true ||
+    documentacionData.cotizacionRapida === true;
+
   useEffect(() => {
     if (!dealId) {
       setEmpresasAsociadas([]);
@@ -96,12 +107,6 @@ const DocumentacionTab = ({
       // Solo ejecutar después del render inicial
       if (isLoadingInitial) return;
 
-      // El flag lo marca TransitarioTab, pero se puede entrar aquí sin pasar por
-      // ese tab: entonces la única copia es la que vino del deal en la carga.
-      const esCotizacionRapida =
-        transitarioData?.cotizacionRapida === true ||
-        documentacionData.cotizacionRapida === true;
-
       if (esCotizacionRapida) {
         const bancoCobro = documentacionData.bancoCobro?.value;
         const metodoPago = documentacionData.metodoPagoPlantilla?.value;
@@ -121,6 +126,11 @@ const DocumentacionTab = ({
               value: "cotizacion_rapida",
               options: prev.metodoPagoPlantilla?.options || [],
             },
+            // Vaciar los textos para que la siguiente pasada los recargue con
+            // las plantillas de cotización rápida.
+            textoBanco: "",
+            textoFormaPago: "",
+            textoBaseOferta: "",
           }));
           return; // Salir para que se ejecute de nuevo con los nuevos valores
         }
@@ -192,7 +202,10 @@ const DocumentacionTab = ({
       }
 
       if (necesitaTextoBaseOferta) {
-        textoBaseOfertaPromise = fetchTextosCotizacion(idioma, "oferta_base");
+        textoBaseOfertaPromise = fetchTextosCotizacion(
+          idioma,
+          getOfertaBaseHubDbKey(esCotizacionRapida)
+        );
       }
 
       // Esperar todas las promesas
@@ -350,7 +363,10 @@ const DocumentacionTab = ({
     // Preparar las promesas para obtener los textos
     let textoBancoPromise = Promise.resolve("");
     let textoFormaPagoPromise = Promise.resolve("");
-    let textoBaseOfertaPromise = fetchTextosCotizacion(value, "oferta_base");
+    let textoBaseOfertaPromise = fetchTextosCotizacion(
+      value,
+      getOfertaBaseHubDbKey(esCotizacionRapida)
+    );
 
     // Obtener texto del banco si hay banco seleccionado
     if (bancoClave) {
