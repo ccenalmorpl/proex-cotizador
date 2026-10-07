@@ -113,7 +113,7 @@ from app.utils.fletes import (
     TRAMO_TERRESTRE,
     clasificar_tramo_flete,
 )
-from app.utils.iva_helpers import recalcular_contenedores
+from app.utils.iva_helpers import contenedores_a_sellar, recalcular_contenedores
 from app.utils.pricing import _normalize_incoterm
 from app.utils.tipologia import es_camion, es_destino_fuera_territorio_aduanero_ue
 from app.utils.property_helpers import safe_convert, build_update_properties, parse_hubspot_properties, compute_tipo_iva_repercutido, compute_default_tipo_iva, resolve_product_iva, round_price, round_margin, enforce_line_item_price_rounding, resolve_almacen_para_elemento
@@ -3384,9 +3384,10 @@ async def update_deal_services(
             )
 
         if affected_contenedor_co_ids:
+            recalculo = {}
             try:
                 await hubdb_client.preload_iva_table()
-                recalcular_contenedores(
+                recalculo = recalcular_contenedores(
                     client,
                     deal_id,
                     list(affected_contenedor_co_ids),
@@ -3394,7 +3395,9 @@ async def update_deal_services(
                 )
             except Exception as e:
                 logger.warning(f"[services] recalcular_contenedores falló: {e}")
-            touch_pagos_for_contenedores(client, list(affected_contenedor_co_ids))
+            touch_pagos_for_contenedores(
+                client, contenedores_a_sellar(affected_contenedor_co_ids, recalculo)
+            )
 
         return BaseResponse(success=True, error=None)
 
@@ -5128,9 +5131,10 @@ async def edit_single_container(
 
         co_id = result.get("contenedor_co_id")
         if co_id:
+            recalculo = {}
             try:
                 await hubdb_client.preload_iva_table()
-                recalcular_contenedores(
+                recalculo = recalcular_contenedores(
                     client,
                     deal_id,
                     [co_id],
@@ -5138,7 +5142,7 @@ async def edit_single_container(
                 )
             except Exception as e:
                 logger.warning(f"[edit_single_container] recalcular_contenedores falló: {e}")
-            touch_pagos_for_contenedores(client, [co_id])
+            touch_pagos_for_contenedores(client, contenedores_a_sellar([co_id], recalculo))
 
         unique_articles = [
             UniqueContainerArticle(
@@ -7732,9 +7736,10 @@ async def update_deal_transit(
 
         try:
             if affected_contenedor_co_ids:
+                recalculo = {}
                 try:
                     await hubdb_client.preload_iva_table()
-                    recalcular_contenedores(
+                    recalculo = recalcular_contenedores(
                         client,
                         deal_id,
                         list(affected_contenedor_co_ids),
@@ -7742,7 +7747,9 @@ async def update_deal_transit(
                     )
                 except Exception as e:
                     logger.warning(f"[transit] recalcular_contenedores falló: {e}")
-                touch_pagos_for_contenedores(client, list(affected_contenedor_co_ids))
+                touch_pagos_for_contenedores(
+                    client, contenedores_a_sellar(affected_contenedor_co_ids, recalculo)
+                )
         except NameError:
             pass
 
@@ -8492,9 +8499,10 @@ async def update_deal_negociacion(
             )
 
         if affected_contenedor_co_ids:
+            recalculo = {}
             try:
                 await hubdb_client.preload_iva_table()
-                recalcular_contenedores(
+                recalculo = recalcular_contenedores(
                     client,
                     deal_id,
                     list(affected_contenedor_co_ids),
@@ -8502,7 +8510,9 @@ async def update_deal_negociacion(
                 )
             except Exception as e:
                 logger.warning(f"[negociacion] recalcular_contenedores falló: {e}")
-            touch_pagos_for_contenedores(client, list(affected_contenedor_co_ids))
+            touch_pagos_for_contenedores(
+                client, contenedores_a_sellar(affected_contenedor_co_ids, recalculo)
+            )
 
         return BaseResponse(
             success=True,

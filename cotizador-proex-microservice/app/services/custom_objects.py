@@ -2035,9 +2035,10 @@ def process_deal_custom_objects_from_line_items(
         if affected_contenedor_co_ids:
             _emit("post_processing")
             post_start = time.time()
+            from app.utils.iva_helpers import contenedores_a_sellar, recalcular_contenedores
+            recalculo = {}
             try:
-                from app.utils.iva_helpers import recalcular_contenedores
-                recalcular_contenedores(
+                recalculo = recalcular_contenedores(
                     client,
                     deal_id,
                     list(affected_contenedor_co_ids),
@@ -2051,7 +2052,9 @@ def process_deal_custom_objects_from_line_items(
 
             touch_start = time.time()
             try:
-                touch_pagos_for_contenedores(client, list(affected_contenedor_co_ids))
+                touch_pagos_for_contenedores(
+                    client, contenedores_a_sellar(affected_contenedor_co_ids, recalculo)
+                )
             except Exception as e:
                 logger.warning(f"[publish] touch_pagos_for_contenedores falló: {e}")
             logger.info(f"⏱️  [TIMER] touch_pagos_for_contenedores: {time.time() - touch_start:.2f}s")

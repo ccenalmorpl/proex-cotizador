@@ -10,6 +10,7 @@ verdad para `contenedor.price`."""
 
 import logging
 import time
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -739,6 +740,78 @@ def _derivar_descuento_elementos(
     return cambios
 
 
+def _es_linea_de_gasto(props: Dict) -> bool:
+    """Line item que el re-sync convierte en Elemento no fabricante (flete,
+    servicio, seguro o comisión)."""
+    tipo_producto = (props.get("hs_product_type") or "").strip().lower()
+    tipo_articulo = (props.get("tipo_articulo") or "").strip().lower()
+    if tipo_producto in {"container", "contenedor"} or tipo_articulo == "fabricante":
+        return False
+    return tipo_producto in {"flete", "service", "servicio"} or tipo_articulo == "comisiones"
+
+
+def _index_lineas_gasto_by_container(line_items: List[Dict]) -> Dict[str, List[Dict]]:
+    index: Dict[str, List[Dict]] = {}
+    for props in line_items:
+        nc = (props.get("numero_container") or "").strip()
+        if nc and _es_linea_de_gasto(props):
+            index.setdefault(nc, []).append(props)
+    return index
+
+
+def _motivo_bloqueo_sap(
+    fabricantes: List[Dict],
+    lineas_gasto: List[Dict],
+    elems_contenedor: List[Dict],
+    sin_resolver: List[Dict[str, str]],
+    updates_por_elem: Dict[str, Dict[str, Any]],
+) -> Optional[str]:
+    """Motivo para no escribir el contenedor ni avisar a SAP: sus line items y
+    sus Elementos ya no describen el mismo contenedor, y el cuadre cargaría la
+    diferencia en una sola línea (64731186508, 02/10: −41,70 % y +259 % que SAP
+    llegó a grabar). Un descuento alto por sí solo no bloquea: la promo 5+1 deja
+    residuos legítimos de hasta un 12 % en contenedores pequeños."""
+    if sin_resolver:
+        motivos = sorted({s.get("motivo") or "?" for s in sin_resolver})
+        return f"{len(sin_resolver)} líneas de artículo sin Elemento ({', '.join(motivos)})"
+
+    fabricantes_el, gastos_el_lista = [], []
+    for el in elems_contenedor:
+        tipo = str((el.get("properties") or {}).get("tipo_articulo") or "").strip().lower()
+        (fabricantes_el if tipo == "fabricante" else gastos_el_lista).append(el)
+
+    cajas_li = round(sum(_to_float(li.get("quantity")) for li in fabricantes), 3)
+    cajas_el = round(sum(_to_float((el.get("properties") or {}).get("cantidad")) for el in fabricantes_el), 3)
+    if cajas_li != cajas_el:
+        return f"cajas de artículo: {cajas_li:g} en line items y {cajas_el:g} en Elementos"
+
+    gastos_li = Counter((li.get("name") or "").strip() for li in lineas_gasto)
+    gastos_el = Counter(((el.get("properties") or {}).get("nombre") or "").strip() for el in gastos_el_lista)
+    if gastos_li != gastos_el:
+        return (
+            f"gastos sin pareja: Elementos de más {sorted((gastos_el - gastos_li).elements())}, "
+            f"líneas sin Elemento {sorted((gastos_li - gastos_el).elements())}"
+        )
+
+    for el in fabricantes_el:
+        eid = str(el.get("id") or "").strip()
+        final = {**(el.get("properties") or {}), **((updates_por_elem.get(eid) or {}).get("properties") or {})}
+        importe = _to_float(final.get("precio_total"))
+        if importe < 0:
+            return f"elemento {eid} {(final.get('nombre') or '').strip()!r} con precio_total {importe}"
+    return None
+
+
+def contenedores_a_sellar(contenedor_co_ids, resultados: Optional[Dict]) -> List[str]:
+    """Los contenedores que pueden avisar a SAP tras `recalcular_contenedores`:
+    todos menos los que ha dejado bloqueados."""
+    resultados = resultados or {}
+    return [
+        str(cid) for cid in contenedor_co_ids or []
+        if not (resultados.get(str(cid)) or {}).get("bloqueado")
+    ]
+
+
 def _base_sin_iva_fabricantes(fabricantes: List[Dict], pp: PricingParams) -> float:
     """Base sin IVA del contenedor: Σ final×cajas de sus líneas fabricante (las
     promos no repercuten). Es el importe que debe igualar la suma de los
@@ -828,6 +901,7 @@ def recalcular_contenedores(
     line_items_all = _batch_read_line_items_superset(client, line_item_ids)
     pricing_ctx = build_deal_pricing_context(client, deal_id, line_items_precached=line_items_all)
     fabricantes_by_container = _index_fabricantes_by_container(line_items_all)
+    gastos_by_container = _index_lineas_gasto_by_container(line_items_all)
 
     contenedores_by_id = _batch_read_contenedores_props(client, contenedor_co_ids)
 
@@ -888,7 +962,6 @@ def recalcular_contenedores(
             li_upd, el_upd = _derivar_writebacks_lineas(
                 fabricantes, pp_contenedor, emp.by_lid
             )
-            line_item_updates.extend(li_upd)
             # Merge por Elemento: el writeback del ancla, el precio_total corregido y
             # la reparación del lid pueden tocar el mismo Elemento, y el batch no
             # admite ids duplicados.
@@ -918,7 +991,6 @@ def recalcular_contenedores(
                     el_by_id[eid]["properties"].update(props_dto)
                 else:
                     el_by_id[eid] = {"id": eid, "properties": dict(props_dto)}
-            elemento_updates.extend(el_by_id.values())
 
             if not emp.resueltos and _base_sin_iva_fabricantes(fabricantes, pp_contenedor) > 0:
                 logger.warning(
@@ -930,6 +1002,25 @@ def recalcular_contenedores(
                 deal_id, container_name, fabricantes, pp_contenedor,
                 elems_contenedor, pt_upd,
             )
+
+            motivo_bloqueo = _motivo_bloqueo_sap(
+                fabricantes,
+                gastos_by_container.get(container_name, []),
+                elems_contenedor,
+                emp.sin_resolver,
+                el_by_id,
+            )
+            if motivo_bloqueo:
+                logger.error(
+                    f"[recalcular] BLOQUEADO deal={deal_id} cont={container_name}: "
+                    f"{motivo_bloqueo}; line items y Elementos no cuadran, no se escribe "
+                    f"nada del contenedor ni se avisa a SAP hasta repararlo"
+                )
+                resultados[cid] = {"bloqueado": motivo_bloqueo}
+                continue
+
+            line_item_updates.extend(li_upd)
+            elemento_updates.extend(el_by_id.values())
             new_price = _compute_price_from_fabricantes(fabricantes, company_props, pp_contenedor)
             cobrado_raw = cont_props.get("importe_total_cobrado")
             try:
