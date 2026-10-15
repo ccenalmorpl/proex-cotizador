@@ -740,6 +740,69 @@ def _derivar_descuento_elementos(
     return cambios
 
 
+# Decimales con los que se guarda cada prop: los mismos del precio y del total de
+# línea que imprime la factura.
+PROPS_PRECIO_CLIENTE = {"precio_unitario_cliente": 3, "total_linea_cliente": 2}
+
+
+def _derivar_precio_cliente_elementos(
+    fabricantes: List[Dict],
+    pp: PricingParams,
+    elems_contenedor: List[Dict],
+    elem_by_lid: Dict[str, Dict],
+) -> Dict[str, Dict[str, str]]:
+    """`precio_unitario_cliente` y `total_linea_cliente` de los Elementos del
+    contenedor: el precio por caja del incoterm (mercancía más los gastos
+    repartidos) y ese precio por las cajas del Elemento, que SAP manda por EDI.
+
+    Sale del mismo `final` que cuadra los `precio_total`. Con ancla vigente la suma
+    es la de SAP salvo medio céntimo por línea; sin ancla o con clamp el final tiene
+    más de 3 decimales y se separa hasta 0,0005 €/caja, igual que ya imprimía la
+    factura. Solo lo llevan las líneas fabricante, las promos a 0 y el resto en
+    blanco. Devuelve {elemento_id: props} solo de los que cambian."""
+    cambios: Dict[str, Dict[str, str]] = {}
+    emparejados = set()
+    for li in fabricantes:
+        lid = str(li.get("hs_object_id") or "").strip()
+        elem = elem_by_lid.get(lid) if lid else None
+        if not elem:
+            continue
+        elem_props = elem.get("properties") or {}
+        nombre_li = (li.get("name") or "").strip()
+        nombre_elem = (elem_props.get("nombre") or "").strip()
+        if nombre_li and nombre_elem and nombre_li != nombre_elem:
+            continue
+        eid = str(elem.get("id"))
+        emparejados.add(eid)
+        es_promo = _to_float(li.get("price")) == 0 and _ancla_vigente(li, pp.incoterm) is None
+        precio = 0.0 if es_promo else round(_resolver_precios_linea(li, pp)["final"], 3)
+        # Cajas del Elemento: son la Quantity de la línea en SAP.
+        objetivo = {
+            "precio_unitario_cliente": precio,
+            "total_linea_cliente": round(precio * _to_float(elem_props.get("cantidad")), 2),
+        }
+        diff: Dict[str, str] = {}
+        for k, valor in objetivo.items():
+            persistido = elem_props.get(k)
+            # Vacío no es 0: la promo recién creada tiene que escribir su 0.
+            vacio = persistido is None or str(persistido).strip() == ""
+            if vacio or round(_to_float(persistido), PROPS_PRECIO_CLIENTE[k]) != valor:
+                diff[k] = str(valor)
+        if diff:
+            cambios[eid] = diff
+
+    # Un fabricante sin emparejar conserva lo suyo; en un gasto se limpia.
+    for el in elems_contenedor:
+        eid = str(el.get("id") or "").strip()
+        props = el.get("properties") or {}
+        if eid in emparejados or str(props.get("tipo_articulo") or "").strip().lower() == "fabricante":
+            continue
+        limpiar = {k: "" for k in PROPS_PRECIO_CLIENTE if str(props.get(k) or "").strip()}
+        if limpiar:
+            cambios[eid] = limpiar
+    return cambios
+
+
 def _es_linea_de_gasto(props: Dict) -> bool:
     """Line item que el re-sync convierte en Elemento no fabricante (flete,
     servicio, seguro o comisión)."""
@@ -915,7 +978,7 @@ def recalcular_contenedores(
                 "nombre_contenedor",
                 "line_item_id", "nombre",
                 "precio_unitario", "precio_total", "margen_unitario",
-                "descuento",
+                "descuento", *PROPS_PRECIO_CLIENTE,
             ],
         )
     except Exception as e:
@@ -1019,6 +1082,18 @@ def recalcular_contenedores(
                 resultados[cid] = {"bloqueado": motivo_bloqueo}
                 continue
 
+            # En el mismo update que precio_total y descuento: si HubSpot rechaza el
+            # lote, SAP ve los tres viejos pero coherentes entre sí.
+            try:
+                for eid, props_cliente in _derivar_precio_cliente_elementos(
+                    fabricantes, pp_contenedor, elems_contenedor, emp.by_lid,
+                ).items():
+                    el_by_id.setdefault(eid, {"id": eid, "properties": {}})["properties"].update(props_cliente)
+            except Exception as e:
+                logger.error(
+                    f"[recalcular] deal={deal_id} cont={container_name}: precio cliente "
+                    f"sin calcular ({e}); SAP leerá el que ya tuvieran los Elementos"
+                )
             line_item_updates.extend(li_upd)
             elemento_updates.extend(el_by_id.values())
             new_price = _compute_price_from_fabricantes(fabricantes, company_props, pp_contenedor)
