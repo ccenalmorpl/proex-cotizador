@@ -135,6 +135,48 @@ def test_promo_lids_stale_se_reemparejan_por_cajas():
     }
 
 
+def test_promo_mismas_cajas_desempata_el_precio_cero():
+    """Contenedor 65949742192-001 (14/10): ORIGINAL 120 de regalo + 120 de pago. La
+    publicación de las 08:17 archivó los line items y los dos Elementos no
+    emparejaban ni por nombre ni por cajas, así que recalcular bloqueó el
+    contenedor: el flete bajó de 625 a 600 y la mercancía no absorbió los 25 €."""
+    nombre = "65949742192-001 - ENERGETICA-VITALIS ENERDRINK EVOLUTION-ORIGINAL"
+    pago = _linea("59857662987", nombre, 120)
+    pago["price"] = "6.219"
+    regalo = _linea("59857662988", nombre, 120)
+    regalo["price"] = "0.0"
+    el_regalo = _elem("63724939699", "59862205843", nombre, cajas=120)
+    el_regalo["properties"].update(precio_unitario="0.0", precio_total="0.0")
+    el_pago = _elem("63724939700", "59862061993", nombre, cajas=120)
+    el_pago["properties"].update(precio_unitario="6.219", precio_total="746.33")
+    elems = [el_regalo, el_pago]
+
+    emp = _emparejar_elementos_fabricante(CONT, [pago, regalo], elems, _by_lid(elems), "65949742192")
+
+    assert emp.resueltos == 2
+    assert emp.sin_resolver == []
+    assert {r["id"]: r["properties"]["line_item_id"] for r in emp.lid_repairs} == {
+        "63724939700": "59857662987",
+        "63724939699": "59857662988",
+    }
+
+
+def test_promo_mismas_cajas_sin_precio_en_el_elemento_no_se_empareja():
+    fabricantes = [_linea("li-1", "PINA COCO", 120), _linea("li-2", "PINA COCO", 120)]
+    fabricantes[1]["price"] = "0"
+    elems = [
+        _elem("el-1", "viejo-1", "PINA COCO", cajas=120),
+        _elem("el-2", "viejo-2", "PINA COCO", cajas=120),
+    ]
+    for el in elems:
+        el["properties"]["precio_total"] = None
+
+    emp = _emparejar_elementos_fabricante(CONT, fabricantes, elems, _by_lid(elems))
+
+    assert emp.resueltos == 0
+    assert emp.lid_repairs == []
+
+
 def test_promo_stale_por_cajas_no_roba_el_elemento_con_lid_vivo():
     fabricantes = [_linea("li-2", "PINA COCO", 100), _linea("li-1", "PINA COCO", 500)]
     elems = [

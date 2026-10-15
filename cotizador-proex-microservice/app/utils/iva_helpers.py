@@ -320,6 +320,13 @@ def _index_elementos_by_lid(elementos: List[Dict]) -> Dict[str, Dict]:
     return index
 
 
+def _es_precio_cero(valor) -> Optional[bool]:
+    """None si no hay precio: un Elemento sin dato no debe pasar por promo."""
+    if valor in (None, ""):
+        return None
+    return _to_float(valor) == 0
+
+
 @dataclass
 class EmparejamientoElementos:
     by_lid: Dict[str, Dict] = field(default_factory=dict)
@@ -345,11 +352,13 @@ def _emparejar_elementos_fabricante(
     solo actúa si el nombre es único en ambos lados, igual que
     `scripts/repair_elemento_lid_cruzado.py`. Con promo 5+1 el nombre se repite y
     decide el par (nombre, cajas), solo entre Elementos cuyo lid no es de otra
-    línea viva."""
+    línea viva. Si la promo regala las mismas cajas que se pagan, desempata que
+    el precio sea 0."""
     emp = EmparejamientoElementos()
 
     li_counts: Dict[str, int] = {}
     li_counts_cajas: Dict[tuple, int] = {}
+    li_counts_promo: Dict[tuple, int] = {}
     lids_vivos: set = set()
     for li in fabricantes:
         lid = str(li.get("hs_object_id") or "").strip()
@@ -360,10 +369,13 @@ def _emparejar_elementos_fabricante(
             li_counts[nombre] = li_counts.get(nombre, 0) + 1
             clave = (nombre, _to_float(li.get("quantity")))
             li_counts_cajas[clave] = li_counts_cajas.get(clave, 0) + 1
+            clave_promo = clave + (_es_precio_cero(li.get("price")),)
+            li_counts_promo[clave_promo] = li_counts_promo.get(clave_promo, 0) + 1
 
     elem_counts: Dict[str, int] = {}
     fabricante_by_nombre: Dict[str, Dict] = {}
     sueltos_by_nombre_cajas: Dict[tuple, List[Dict]] = {}
+    sueltos_by_promo: Dict[tuple, List[Dict]] = {}
     for el in elems_contenedor:
         props = el.get("properties") or {}
         nombre = (props.get("nombre") or "").strip()
@@ -375,6 +387,11 @@ def _emparejar_elementos_fabricante(
             if str(props.get("line_item_id") or "").strip() not in lids_vivos:
                 clave = (nombre, _to_float(props.get("cantidad")))
                 sueltos_by_nombre_cajas.setdefault(clave, []).append(el)
+                precio = props.get("precio_unitario")
+                if precio in (None, ""):
+                    precio = props.get("precio_total")
+                clave_promo = clave + (_es_precio_cero(precio),)
+                sueltos_by_promo.setdefault(clave_promo, []).append(el)
 
     reclamados: set = set()
     for li in fabricantes:
@@ -407,6 +424,11 @@ def _emparejar_elementos_fabricante(
                 sueltos = sueltos_by_nombre_cajas.get(clave, [])
                 if li_counts_cajas.get(clave, 0) == 1 and len(sueltos) == 1:
                     elem = sueltos[0]
+                else:
+                    clave_promo = clave + (_es_precio_cero(li.get("price")),)
+                    sueltos = sueltos_by_promo.get(clave_promo, [])
+                    if li_counts_promo.get(clave_promo, 0) == 1 and len(sueltos) == 1:
+                        elem = sueltos[0]
 
         if elem and str(elem.get("id")) in reclamados:
             elem, motivo = None, "ya_reclamado"
