@@ -888,13 +888,20 @@ def _motivo_bloqueo_sap(
 
 
 def contenedores_a_sellar(contenedor_co_ids, resultados: Optional[Dict]) -> List[str]:
-    """Los contenedores que pueden avisar a SAP tras `recalcular_contenedores`:
-    todos menos los que ha dejado bloqueados."""
+    """Los contenedores que pueden avisar a SAP tras `recalcular_contenedores`: todos,
+    o ninguno si alguno ha quedado bloqueado. El middleware procesa el negocio entero
+    con cualquier sello, así que sellar los sanos le lleva también los bloqueados
+    (65571985983, 15/10)."""
     resultados = resultados or {}
-    return [
-        str(cid) for cid in contenedor_co_ids or []
-        if not (resultados.get(str(cid)) or {}).get("bloqueado")
-    ]
+    ids = [str(cid) for cid in contenedor_co_ids or []]
+    bloqueados = [cid for cid in ids if (resultados.get(cid) or {}).get("bloqueado")]
+    if bloqueados:
+        logger.error(
+            f"[recalcular] no se avisa a SAP de ningún contenedor: {bloqueados} "
+            f"bloqueados y el middleware procesaría el negocio entero"
+        )
+        return []
+    return ids
 
 
 def _base_sin_iva_fabricantes(fabricantes: List[Dict], pp: PricingParams) -> float:

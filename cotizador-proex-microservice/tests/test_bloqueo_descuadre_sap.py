@@ -108,9 +108,12 @@ def test_importe_negativo_bloquea_salvo_que_el_lote_lo_corrija():
     assert _motivo_bloqueo_sap(fab, GASTOS_LI, els, [], arreglo) is None
 
 
-def test_contenedores_a_sellar_quita_los_bloqueados():
+def test_contenedores_a_sellar_no_sella_nada_si_hay_un_bloqueado():
+    # 65571985983 (15/10): sellar A y C hizo que el middleware procesara el negocio
+    # entero y llevara a SAP los Elementos duplicados de B.
     resultados = {"A": {"price": 1.0}, "B": {"bloqueado": "x"}, "C": None}
-    assert contenedores_a_sellar(["A", "B", "C"], resultados) == ["A", "C"]
+    assert contenedores_a_sellar(["A", "B", "C"], resultados) == []
+    assert contenedores_a_sellar(["A", "C"], resultados) == ["A", "C"]
     assert contenedores_a_sellar(["A", "B"], {}) == ["A", "B"]
     assert contenedores_a_sellar(["A"], None) == ["A"]
 
@@ -229,4 +232,4 @@ def test_recalcular_no_escribe_ni_sella_el_contenedor_descuadrado(monkeypatch, c
     assert not {"eb1", "eb2", "ebf", "ebs", "B"} & ids_escritos
     assert not {"lb1", "lb2", "lb3"} & {str(u["id"]) for u in lineas_escritas}
 
-    assert contenedores_a_sellar(["A", "B"], resultados) == ["A"]
+    assert contenedores_a_sellar(["A", "B"], resultados) == []
