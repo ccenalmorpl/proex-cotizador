@@ -10,8 +10,9 @@ toca precio_total, descuento, line items ni Contenedores, y no sella
 Se salta, y lo informa:
 - BLOQUEADO: line items y Elementos no describen el mismo contenedor (recalcular
   tampoco lo escribiría).
-- PENDIENTE: la suma de total_linea_cliente no cuadra con los precio_total que ya
-  tiene SAP. Falta un recálculo, y el valor nuevo iría por delante de SAP.
+- PENDIENTE: la suma de precio × cajas se separa de los precio_total que ya tiene
+  SAP más de lo que explica el redondeo. Falta un recálculo, y el valor nuevo iría
+  por delante de SAP.
 - FACTURADO: su Negocio Pedido ya tiene número de factura real (salvo
   --incluir-facturados).
 
@@ -56,6 +57,7 @@ from app.utils.iva_helpers import (
     _index_fabricantes_by_container,
     _index_lineas_gasto_by_container,
     _motivo_bloqueo_sap,
+    _precio_cliente_contenedor,
     _to_float,
     build_deal_pricing_context,
 )
@@ -164,33 +166,25 @@ def _analizar_deal(client, deal_id: str, incluir_facturados: bool) -> List[dict]
             fila.update(estado="BLOQUEADO", motivo=motivo)
             continue
 
-        updates = _derivar_precio_cliente_elementos(fabricantes, pp, elems, emp.by_lid)
-        emparejados = {str(e.get("id")) for e in emp.by_lid.values()}
-        suma_cliente = 0.0
-        for el in elems:
-            eid = str(el.get("id"))
-            if eid not in emparejados:
-                continue
-            props = {**(el.get("properties") or {}), **updates.get(eid, {})}
-            fila["valores"][eid] = {k: props.get(k) for k in PROPS_PRECIO_CLIENTE}
-            suma_cliente += _to_float(props.get("total_linea_cliente"))
-        suma_sap = sum(_to_float((el.get("properties") or {}).get("precio_total")) for el in elems)
-        cajas_el = sum(
-            _to_float((el.get("properties") or {}).get("cantidad")) for el in elems if str(el.get("id")) in emparejados
-        )
-        # Misma tolerancia que aplica Pedidos antes de imprimir el valor guardado.
-        tolerancia = 0.01 + 0.0005 * cajas_el + 0.005 * len(emparejados)
+        calculo = _precio_cliente_contenedor(fabricantes, pp, elems, emp.by_lid)
+        fila["valores"] = {
+            eid: {"precio_unitario_cliente": str(precio), "total_linea_cliente": str(total)}
+            for eid, (precio, total) in calculo.valores.items()
+        }
         fila.update(
-            suma_cliente=round(suma_cliente, 2), suma_sap=round(suma_sap, 2),
-            delta=round(suma_cliente - suma_sap, 2), tolerancia=round(tolerancia, 2),
+            suma_cliente=round(sum(total for _, total in calculo.valores.values()), 2),
+            suma_sap=calculo.total_documento, residuo=calculo.residuo,
+            tolerancia=round(calculo.tolerancia, 2), cargado_en=calculo.cargado_en,
         )
-        if abs(suma_cliente - suma_sap) > tolerancia:
+        # Un residuo que no es de redondeo quiere decir que los precio_total que
+        # tiene SAP esperan un recálculo: el valor nuevo iría por delante.
+        if abs(calculo.residuo) > calculo.tolerancia:
             fila["estado"] = "PENDIENTE"
         elif cid in facturados and not incluir_facturados:
             fila["estado"] = "FACTURADO"
         else:
             fila["estado"] = "OK"
-            fila["updates"] = updates
+            fila["updates"] = _derivar_precio_cliente_elementos(fabricantes, pp, elems, emp.by_lid)
     return filas
 
 
@@ -222,7 +216,8 @@ def main() -> int:
             for fila in filas:
                 informe.append(fila)
                 extra = fila.get("motivo") or (
-                    f"Σ cliente={fila.get('suma_cliente')} Σ SAP={fila.get('suma_sap')} Δ={fila.get('delta')}"
+                    f"Σ cliente={fila.get('suma_cliente')} Σ SAP={fila.get('suma_sap')} "
+                    f"residuo={fila.get('residuo')}"
                 )
                 print(f"[{fila['estado']}] {fila['nombre'] or fila['contenedor_id']}: "
                       f"{len(fila['updates'])} Elementos a escribir · {extra}")

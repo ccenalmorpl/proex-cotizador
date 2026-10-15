@@ -12,7 +12,7 @@ import logging
 import time
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.core.custom_objects_constants import OBJECT_TYPE_CONTENEDOR, OBJECT_TYPE_ELEMENTO
 from app.services.custom_objects import (
@@ -767,23 +767,43 @@ def _derivar_descuento_elementos(
 PROPS_PRECIO_CLIENTE = {"precio_unitario_cliente": 3, "total_linea_cliente": 2}
 
 
-def _derivar_precio_cliente_elementos(
+def tolerancia_precio_cliente(cajas: float, lineas: int) -> float:
+    """Lo que Σ precio × cajas puede separarse del total del documento por puro
+    redondeo: medio milésimo por caja (precio a 3 decimales) y medio céntimo por
+    línea (total a 2). Pedidos usa la misma cota."""
+    return 0.01 + 0.0005 * cajas + 0.005 * lineas
+
+
+@dataclass
+class PrecioClienteContenedor:
+    valores: Dict[str, Tuple[float, float]] = field(default_factory=dict)  # eid → (precio, total)
+    total_documento: float = 0.0
+    residuo: float = 0.0  # total_documento − Σ precio × cajas, antes de cargarlo
+    tolerancia: float = 0.0
+    cargado_en: Optional[str] = None
+
+
+def _precio_cliente_contenedor(
     fabricantes: List[Dict],
     pp: PricingParams,
     elems_contenedor: List[Dict],
     elem_by_lid: Dict[str, Dict],
-) -> Dict[str, Dict[str, str]]:
-    """`precio_unitario_cliente` y `total_linea_cliente` de los Elementos del
-    contenedor: el precio por caja del incoterm (mercancía más los gastos
-    repartidos) y ese precio por las cajas del Elemento, que SAP manda por EDI.
+    updates_por_elem: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> PrecioClienteContenedor:
+    """Precio y total de cliente de las líneas fabricante emparejadas: el precio
+    por caja del incoterm (mercancía más los gastos repartidos) a 3 decimales y
+    ese precio por las cajas del Elemento, que SAP manda por EDI.
 
-    Sale del mismo `final` que cuadra los `precio_total`. Con ancla vigente la suma
-    es la de SAP salvo medio céntimo por línea; sin ancla o con clamp el final tiene
-    más de 3 decimales y se separa hasta 0,0005 €/caja, igual que ya imprimía la
-    factura. Solo lo llevan las líneas fabricante, las promos a 0 y el resto en
-    blanco. Devuelve {elemento_id: props} solo de los que cambian."""
-    cambios: Dict[str, Dict[str, str]] = {}
-    emparejados = set()
+    Para EDI el total de línea manda y la suma tiene que ser exactamente el total
+    del documento: los precio_total de todos los Elementos, con los cambios de este
+    lote. Con ancla vigente solo falta medio céntimo por línea; sin ancla o con
+    clamp el final tiene más de 3 decimales. Ese residuo lo carga la línea de pago
+    con más cajas, como en `_derivar_precio_total_fabricantes`. Un residuo mayor
+    que la tolerancia no es redondeo y no se carga."""
+    updates_por_elem = updates_por_elem or {}
+    res = PrecioClienteContenedor()
+    cajas_por_eid: Dict[str, float] = {}
+    pago = []
     for li in fabricantes:
         lid = str(li.get("hs_object_id") or "").strip()
         elem = elem_by_lid.get(lid) if lid else None
@@ -795,17 +815,67 @@ def _derivar_precio_cliente_elementos(
         if nombre_li and nombre_elem and nombre_li != nombre_elem:
             continue
         eid = str(elem.get("id"))
-        emparejados.add(eid)
         es_promo = _to_float(li.get("price")) == 0 and _ancla_vigente(li, pp.incoterm) is None
         precio = 0.0 if es_promo else round(_resolver_precios_linea(li, pp)["final"], 3)
         # Cajas del Elemento: son la Quantity de la línea en SAP.
-        objetivo = {
-            "precio_unitario_cliente": precio,
-            "total_linea_cliente": round(precio * _to_float(elem_props.get("cantidad")), 2),
-        }
+        cajas = _to_float(elem_props.get("cantidad"))
+        res.valores[eid] = (precio, round(precio * cajas, 2))
+        cajas_por_eid[eid] = cajas
+        if not es_promo and cajas > 0:
+            pago.append((cajas, eid))
+
+    res.total_documento = round(sum(
+        _to_float({
+            **(el.get("properties") or {}),
+            **((updates_por_elem.get(str(el.get("id"))) or {}).get("properties") or {}),
+        }.get("precio_total"))
+        for el in elems_contenedor
+    ), 2)
+    res.residuo = round(res.total_documento - sum(t for _, t in res.valores.values()), 2)
+    res.tolerancia = tolerancia_precio_cliente(sum(cajas_por_eid.values()), len(res.valores))
+    if not res.residuo:
+        return res
+    if not pago:
+        logger.warning(
+            f"[recalcular] precio cliente: residuo {res.residuo} sin línea de pago que "
+            f"lo cargue; la suma no será el total del documento ({res.total_documento})"
+        )
+    elif abs(res.residuo) > res.tolerancia:
+        logger.warning(
+            f"[recalcular] precio cliente: residuo {res.residuo} frente al total del "
+            f"documento {res.total_documento} (tolerancia {res.tolerancia:.2f}); no es "
+            f"redondeo y no se carga"
+        )
+    else:
+        _, eid = max(pago)
+        precio, total = res.valores[eid]
+        res.valores[eid] = (precio, round(total + res.residuo, 2))
+        res.cargado_en = eid
+    return res
+
+
+def _derivar_precio_cliente_elementos(
+    fabricantes: List[Dict],
+    pp: PricingParams,
+    elems_contenedor: List[Dict],
+    elem_by_lid: Dict[str, Dict],
+    updates_por_elem: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Dict[str, Dict[str, str]]:
+    """`precio_unitario_cliente` y `total_linea_cliente` que cambian en los
+    Elementos del contenedor (ver `_precio_cliente_contenedor`). Solo los llevan
+    las líneas fabricante, las promos a 0, y en los gastos se dejan en blanco.
+    Devuelve {elemento_id: props}."""
+    calculo = _precio_cliente_contenedor(fabricantes, pp, elems_contenedor, elem_by_lid, updates_por_elem)
+    persistidos = {
+        str(el.get("id")): el.get("properties") or {}
+        for el in [*elem_by_lid.values(), *elems_contenedor]
+    }
+    cambios: Dict[str, Dict[str, str]] = {}
+    for eid, (precio, total) in calculo.valores.items():
+        props = persistidos.get(eid) or {}
         diff: Dict[str, str] = {}
-        for k, valor in objetivo.items():
-            persistido = elem_props.get(k)
+        for k, valor in (("precio_unitario_cliente", precio), ("total_linea_cliente", total)):
+            persistido = props.get(k)
             # Vacío no es 0: la promo recién creada tiene que escribir su 0.
             vacio = persistido is None or str(persistido).strip() == ""
             if vacio or round(_to_float(persistido), PROPS_PRECIO_CLIENTE[k]) != valor:
@@ -817,7 +887,7 @@ def _derivar_precio_cliente_elementos(
     for el in elems_contenedor:
         eid = str(el.get("id") or "").strip()
         props = el.get("properties") or {}
-        if eid in emparejados or str(props.get("tipo_articulo") or "").strip().lower() == "fabricante":
+        if eid in calculo.valores or str(props.get("tipo_articulo") or "").strip().lower() == "fabricante":
             continue
         limpiar = {k: "" for k in PROPS_PRECIO_CLIENTE if str(props.get(k) or "").strip()}
         if limpiar:
@@ -1115,7 +1185,7 @@ def recalcular_contenedores(
             # lote, SAP ve los tres viejos pero coherentes entre sí.
             try:
                 for eid, props_cliente in _derivar_precio_cliente_elementos(
-                    fabricantes, pp_contenedor, elems_contenedor, emp.by_lid,
+                    fabricantes, pp_contenedor, elems_contenedor, emp.by_lid, el_by_id,
                 ).items():
                     el_by_id.setdefault(eid, {"id": eid, "properties": {}})["properties"].update(props_cliente)
             except Exception as e:

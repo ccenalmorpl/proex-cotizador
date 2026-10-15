@@ -15,7 +15,9 @@ from app.utils import iva_helpers
 from app.utils.iva_helpers import (
     PROPS_PRECIO_CLIENTE,
     _derivar_precio_cliente_elementos,
+    _precio_cliente_contenedor,
     recalcular_contenedores,
+    tolerancia_precio_cliente,
 )
 from app.utils.pricing import PricingParams
 
@@ -63,10 +65,10 @@ def _sokaf():
     fletes y 60 de seguro. SAP suma 12.640,00 entre las cuatro líneas."""
     fabricantes = [_linea("li-1", "6.94", 1020, ancla=8.0), _linea("li-2", "5.94", 640, ancla=7.0)]
     elems = [
-        _elem("el-1", "li-1", 1020),
-        _elem("el-2", "li-2", 640),
-        _elem("el-f", "li-f", 1, tipo="flete", nombre="FLETES"),
-        _elem("el-s", "li-s", 1, tipo="seguro", nombre="SEGURO"),
+        _elem("el-1", "li-1", 1020, precio_total="7078.55"),
+        _elem("el-2", "li-2", 640, precio_total="3801.45"),
+        _elem("el-f", "li-f", 1, tipo="flete", nombre="FLETES", precio_total="1700"),
+        _elem("el-s", "li-s", 1, tipo="seguro", nombre="SEGURO", precio_total="60"),
     ]
     return fabricantes, elems, {"li-1": elems[0], "li-2": elems[1]}
 
@@ -80,6 +82,73 @@ def test_lineas_ancladas_llevan_el_precio_negociado():
         "el-1": {"precio_unitario_cliente": "8.0", "total_linea_cliente": "8160.0"},
         "el-2": {"precio_unitario_cliente": "7.0", "total_linea_cliente": "4480.0"},
     }
+    calculo = _precio_cliente_contenedor(fabricantes, _pp(), elems, by_lid)
+    assert (calculo.total_documento, calculo.residuo, calculo.cargado_en) == (12640.0, 0.0, None)
+
+
+def _sin_ancla_2418():
+    """1 producto sin ancla, 2.418 cajas a 9,437 EXW, CIF con fletes 3.100 + 1.500 y
+    seguro 85: el final es 11,374552 y SAP suma 27.503,67, pero 11,375 × 2.418 da
+    27.504,75."""
+    pp = _pp(cajas=2418.0, origen=3100.0, destino=1500.0, servicios=85.0, seguro=85.0)
+    fabricantes = [_linea("li-1", "9.437", 2418)]
+    elems = [
+        _elem("el-1", "li-1", 2418, precio_total="22818.67"),
+        _elem("el-f", "li-f", 1, tipo="flete", nombre="FLETES", precio_total="4600"),
+        _elem("el-s", "li-s", 1, tipo="seguro", nombre="SEGURO", precio_total="85"),
+    ]
+    return pp, fabricantes, elems
+
+
+def test_el_residuo_de_redondeo_lo_carga_la_linea_de_pago_y_la_suma_es_la_de_sap():
+    pp, fabricantes, elems = _sin_ancla_2418()
+
+    upd = _derivar_precio_cliente_elementos(fabricantes, pp, elems, {"li-1": elems[0]})
+
+    # Para EDI el total de línea manda: no es 11,375 × 2.418 pero suma lo del documento.
+    assert upd == {"el-1": {"precio_unitario_cliente": "11.375", "total_linea_cliente": "27503.67"}}
+    calculo = _precio_cliente_contenedor(fabricantes, pp, elems, {"li-1": elems[0]})
+    assert (calculo.residuo, calculo.cargado_en) == (-1.08, "el-1")
+
+
+def test_el_total_del_documento_usa_el_precio_total_del_lote():
+    pp, fabricantes, elems = _sin_ancla_2418()
+    elems[0]["properties"]["precio_total"] = "22000"  # lo que había antes de este recálculo
+    lote = {"el-1": {"id": "el-1", "properties": {"precio_total": "22818.67"}}}
+
+    upd = _derivar_precio_cliente_elementos(fabricantes, pp, elems, {"li-1": elems[0]}, lote)
+
+    assert upd["el-1"]["total_linea_cliente"] == "27503.67"
+
+
+def test_un_residuo_que_no_es_de_redondeo_no_se_carga(caplog):
+    # precio_total de antes de una subida de flete de 75 €: falta recalcular.
+    pp, fabricantes, elems = _sin_ancla_2418()
+    elems[0]["properties"]["precio_total"] = "22743.67"
+
+    with caplog.at_level(logging.WARNING, logger="app.utils.iva_helpers"):
+        calculo = _precio_cliente_contenedor(fabricantes, pp, elems, {"li-1": elems[0]})
+
+    assert calculo.valores["el-1"] == (11.375, 27504.75)
+    assert calculo.residuo == -76.08 and calculo.cargado_en is None
+    assert any("no es redondeo" in r.message for r in caplog.records)
+
+
+def test_la_promo_no_carga_el_residuo_aunque_tenga_mas_cajas():
+    # Final 5,805 + 2.251/3.000 = 6,555333: SAP suma 6.555,33 (la línea de pago ya
+    # se come los gastos de las 2.000 cajas de regalo) y 6,555 × 1.000 da 6.555,00.
+    pp = _pp(cajas=3000.0, origen=1501.0, destino=750.0, servicios=0.0, seguro=0.0)
+    fabricantes = [_linea("li-1", "5.805", 1000), _linea("li-p", "0", 2000)]
+    elems = [
+        _elem("el-1", "li-1", 1000, precio_total="4304.33"),
+        _elem("el-p", "li-p", 2000, precio_total="0"),
+        _elem("el-f", "li-f", 1, tipo="flete", nombre="FLETES", precio_total="2251"),
+    ]
+
+    calculo = _precio_cliente_contenedor(fabricantes, pp, elems, {"li-1": elems[0], "li-p": elems[1]})
+
+    assert (calculo.residuo, calculo.cargado_en) == (0.33, "el-1")
+    assert calculo.valores == {"el-1": (6.555, 6555.33), "el-p": (0.0, 0.0)}
 
 
 def test_promo_escribe_cero_aunque_la_prop_este_vacia():
@@ -270,19 +339,24 @@ def _precio_cliente_escrito(escrituras):
 
 def _assert_pedidos_lo_acepta(elementos, escrituras, cont):
     """La comprobación de `precios_cliente_guardados` de Pedidos contra los
-    precio_total que deja el recálculo: si falla, la factura recalcula y el PDF
-    deja de ser lo que SAP manda por EDI."""
+    precio_total que deja el recálculo: la suma es el total del documento y como
+    mucho una línea (la que carga el residuo) se separa de precio × cajas. Si
+    falla, la factura recalcula y el PDF deja de ser lo que SAP manda por EDI."""
     escrito = _escrito(escrituras)
     del_cont = [e for e in elementos if e["properties"]["nombre_contenedor"] == cont]
     fab = [e for e in del_cont if e["properties"]["tipo_articulo"] == "fabricante"]
     final = {e["id"]: {**e["properties"], **escrito.get(e["id"], {})} for e in del_cont}
     suma_cliente = sum(float(final[e["id"]]["total_linea_cliente"]) for e in fab)
     suma_sap = sum(float(final[e["id"]]["precio_total"]) for e in del_cont)
+    assert round(suma_cliente, 2) == round(suma_sap, 2), (suma_cliente, suma_sap)
     cajas = sum(float(e["properties"]["cantidad"]) for e in fab)
-    assert abs(suma_cliente - suma_sap) <= 0.01 + 0.0005 * cajas + 0.005 * len(fab), (suma_cliente, suma_sap)
-    for e in fab:
-        precio, total = float(final[e["id"]]["precio_unitario_cliente"]), float(final[e["id"]]["total_linea_cliente"])
-        assert abs(total - round(precio * float(e["properties"]["cantidad"]), 2)) <= 0.011
+    desvios = [
+        abs(float(final[e["id"]]["total_linea_cliente"])
+            - round(float(final[e["id"]]["precio_unitario_cliente"]) * float(e["properties"]["cantidad"]), 2))
+        for e in fab
+    ]
+    fuera = [d for d in desvios if d > 0.011]
+    assert len(fuera) <= 1 and all(d <= tolerancia_precio_cliente(cajas, len(fab)) for d in fuera), desvios
 
 
 def test_recalcular_escribe_el_precio_cliente_con_el_precio_total_y_respeta_el_bloqueo(monkeypatch):
@@ -380,7 +454,8 @@ def test_promo_5_mas_1_con_nombre_repetido_no_cruza_precios(monkeypatch):
 
 def test_dos_contenedores_cada_uno_con_sus_gastos_por_caja(monkeypatch):
     """B no tiene ancla y reparte los mismos gastos entre 2.400 cajas: 5,805 +
-    2.885/2.400 = 7,007, no el 6,73 de A."""
+    2.885/2.400 = 7,0070833, que se guarda como 7,007. SAP suma 16.817,00 y
+    7,007 × 2.400 da 16.816,80: los 0,20 los carga la línea de 1.500 cajas."""
     gla, gea = _gastos("T-001", "a")
     glb, geb = _gastos("T-002", "b")
     sin_ancla = lambda li: {**li, "precio_negociado_tipo_venta": "", "incoterm_precio_negociado": ""}
@@ -402,7 +477,7 @@ def test_dos_contenedores_cada_uno_con_sus_gastos_por_caja(monkeypatch):
 
     escritos = _precio_cliente_escrito(escrituras)
     assert escritos["ea1"]["precio_unitario_cliente"] == "6.73"
-    assert escritos["eb1"] == {"precio_unitario_cliente": "7.007", "total_linea_cliente": "10510.5"}
+    assert escritos["eb1"] == {"precio_unitario_cliente": "7.007", "total_linea_cliente": "10510.7"}
     assert escritos["eb2"] == {"precio_unitario_cliente": "7.007", "total_linea_cliente": "6306.3"}
     _assert_pedidos_lo_acepta(elementos, escrituras, "T-001")
     _assert_pedidos_lo_acepta(elementos, escrituras, "T-002")
