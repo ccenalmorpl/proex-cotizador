@@ -79,6 +79,9 @@ ASSOCIATION_ELEMENTO_TO_DEAL = "elementos_negocio"
 ASSOCIATION_TYPE_ID_DEAL_TO_CONTENEDOR = 489  # Deal → Contenedor
 ASSOCIATION_TYPE_ID_DEAL_TO_ELEMENTO = 493     # Deal → Elemento
 ASSOCIATION_TYPE_ID_ELEMENTO_TO_CONTENEDOR = 491  # Elemento → Contenedor
+ASSOCIATION_TYPE_ID_PEDIDO_TO_ELEMENTO = 486  # Negocio Pedido → Elemento, sin etiqueta (la que pone Pedidos)
+
+PIPELINE_PEDIDOS = "725914649"
 
 # IDs de asociaciones de Contenedor con Contacto y Empresa
 # NOTA: Estos IDs deben actualizarse con los valores reales de HubSpot

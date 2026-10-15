@@ -78,6 +78,8 @@ from app.core.custom_objects_constants import (
     PROVEEDOR_ASSOC_TYPE_ID_TRANSITARIO_TERRESTRE,
     ASSOC_CATEGORY_USER_DEFINED,
     COMPANY_PROP_ADDRESS_ENTREGA,
+    ASSOCIATION_TYPE_ID_PEDIDO_TO_ELEMENTO,
+    PIPELINE_PEDIDOS,
 )
 from app.services.quote_documento import construir_documento, serializar_documento
 from app.services.quote_helpers import (
@@ -97,7 +99,9 @@ from app.services.custom_objects import (
     delete_elemento,
     update_contenedor,
     batch_create_elementos_with_associations,
+    batch_create_associations_v4,
     batch_update_custom_objects,
+    fetch_associated_ids,
     touch_pagos_for_contenedores,
     sync_contenedor_proveedor_associations,
     sync_deal_ruta_associations,
@@ -4696,6 +4700,83 @@ def _edit_container_in_place(
         "intermediario_recalculated": intermediario_recalculated,
     }
 
+def _line_items_vivos(client, ids: list) -> Optional[set]:
+    """Cuáles de estos line items siguen sin archivar; None si HubSpot no responde."""
+    headers = {"Authorization": f"Bearer {client.access_token}", "Content-Type": "application/json"}
+    ids = list(dict.fromkeys(str(i) for i in ids if i))
+    vivos = set()
+    for i in range(0, len(ids), 100):
+        try:
+            resp = requests.post(
+                "https://api.hubapi.com/crm/v3/objects/line_items/batch/read",
+                headers=headers,
+                json={"inputs": [{"id": x} for x in ids[i:i + 100]], "properties": ["name"]},
+                timeout=30,
+            )
+        except requests.RequestException as e:
+            logger.warning(f"[sync_elementos] no pude comprobar line items: {e}")
+            return None
+        if resp.status_code not in (200, 207):
+            logger.warning(f"[sync_elementos] no pude comprobar line items: {resp.status_code} {resp.text[:200]}")
+            return None
+        vivos.update(str(r.get("id")) for r in resp.json().get("results", []))
+    return vivos
+
+
+def _elementos_sustituidos_con_lid_obsoleto(client, elementos: list, excluir: set, nombres: set) -> List[str]:
+    """Elementos de fabricante de un artículo sustituido que el borrado por lid no
+    encuentra porque su `line_item_id` apunta a una línea ya archivada.
+
+    Publicar la cotización en HubSpot rota los ids de los line items y deja así los
+    Elementos de todo negocio publicado; sin esto el Elemento viejo sobrevive junto al
+    nuevo y SAP recibe la mercancía dos veces (65571985983, 15/10).
+    """
+    candidatos = {}
+    for el in elementos:
+        props = el.get("properties") or {}
+        if el.get("id") in excluir or (props.get("tipo_articulo") or "").strip().lower() != "fabricante":
+            continue
+        if (props.get("nombre") or "").strip() in nombres:
+            candidatos[el["id"]] = str(props.get("line_item_id") or "").strip()
+    if not candidatos:
+        return []
+    vivos = _line_items_vivos(client, list(candidatos.values()))
+    if vivos is None:
+        return []
+    return [eid for eid, lid in candidatos.items() if lid not in vivos]
+
+
+def _asociar_elementos_al_pedido(client, contenedor_co_id: str, elemento_ids: list) -> None:
+    """Asocia al Negocio Pedido del contenedor los Elementos que nacen después de
+    ganar la cotización: Pedidos solo los asocia al crear el pedido."""
+    if not elemento_ids:
+        return
+    try:
+        deal_ids = fetch_associated_ids(client, OBJECT_TYPE_CONTENEDOR, contenedor_co_id, "deals")
+        if not deal_ids:
+            return
+        resp = requests.post(
+            "https://api.hubapi.com/crm/v3/objects/deals/batch/read",
+            headers={"Authorization": f"Bearer {client.access_token}", "Content-Type": "application/json"},
+            json={"inputs": [{"id": d} for d in deal_ids], "properties": ["pipeline"]},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        pedidos = [
+            d["id"] for d in resp.json().get("results", [])
+            if (d.get("properties") or {}).get("pipeline") == PIPELINE_PEDIDOS
+        ]
+        pares = [(pedido, eid) for pedido in pedidos for eid in elemento_ids]
+        _, errores = batch_create_associations_v4(
+            client.access_token, "deals", OBJECT_TYPE_ELEMENTO,
+            ASSOCIATION_TYPE_ID_PEDIDO_TO_ELEMENTO, pares,
+        )
+        if errores:
+            logger.warning(f"[sync_elementos] asociación Pedido→Elemento con errores: {errores}")
+    except Exception as e:
+        logger.warning(f"[sync_elementos] no pude asociar Elementos al Negocio Pedido de {contenedor_co_id}: {e}")
+
+
 def _sync_elementos_for_container(
     *,
     client,
@@ -4767,6 +4848,9 @@ def _sync_elementos_for_container(
 
     matched = 0
     orphan_created = 0
+    reclamados = set()
+    nombres_sustituidos = set()
+    creados = []
     for art in payload_with_id:
         target_lid = str(art.line_item_id).strip()
         li_name_actual = (
@@ -4828,6 +4912,8 @@ def _sync_elementos_for_container(
             almacen_orphan = resolve_almacen_para_elemento(deal_almacen, "fabricante", tipo_contenedor)
             if almacen_orphan:
                 orphan_data[0]["almacen"] = str(almacen_orphan)
+            if li_name:
+                nombres_sustituidos.add(li_name)
             try:
                 created = batch_create_elementos_with_associations(
                     client=client,
@@ -4839,6 +4925,7 @@ def _sync_elementos_for_container(
                 )
                 if created:
                     orphan_created += 1
+                    creados.extend(created)
                 else:
                     logger.warning(
                         f"[sync_elementos] orphan fabricante create returned empty for line_item_id={target_lid}"
@@ -4849,6 +4936,7 @@ def _sync_elementos_for_container(
                 )
             continue
 
+        reclamados.add(elem["id"])
         if elem["properties"].get("line_item_id") != str(art.line_item_id):
             try:
                 update_elemento(
@@ -4939,19 +5027,35 @@ def _sync_elementos_for_container(
         if almacen_nuevo:
             new_elementos_data[-1]["almacen"] = str(almacen_nuevo)
     if new_elementos_data:
-        batch_create_elementos_with_associations(
+        creados.extend(batch_create_elementos_with_associations(
             client=client,
             elementos_data=new_elementos_data,
             deal_id=deal_id,
             contenedor_id=contenedor_co_id,
             contact_id=contact_id,
             company_id=company_id,
-        )
+        ) or [])
 
+    borrados = set()
     for lid in to_delete_line_item_ids:
         elem = elementos_by_lid.get(str(lid).strip())
         if elem:
             delete_elemento(client, elem["id"])
+            borrados.add(elem["id"])
+        nombre_borrado = (
+            (current_by_id.get(lid, {}).get("properties", {}) or {}).get("name") or ""
+        ).strip()
+        if nombre_borrado:
+            nombres_sustituidos.add(nombre_borrado)
+
+    for elem_id in _elementos_sustituidos_con_lid_obsoleto(
+        client, elementos, reclamados | borrados, nombres_sustituidos
+    ):
+        logger.warning(
+            f"[sync_elementos] {container_name}: borro el Elemento {elem_id} del artículo "
+            f"sustituido; su line_item_id apuntaba a una línea archivada"
+        )
+        delete_elemento(client, elem_id)
 
     if intermediario_recalculated and intermediario_elemento and intermediario_ctx:
         nuevo_importe = round_price(float(intermediario_ctx["importe_comision"]) * total_cajas_new)
@@ -4984,14 +5088,14 @@ def _sync_elementos_for_container(
         if almacen_int_elem:
             elem_data[0]["almacen"] = str(almacen_int_elem)
         try:
-            batch_create_elementos_with_associations(
+            creados.extend(batch_create_elementos_with_associations(
                 client=client,
                 elementos_data=elem_data,
                 deal_id=deal_id,
                 contenedor_id=contenedor_co_id,
                 contact_id=contact_id,
                 company_id=company_id,
-            )
+            ) or [])
         except Exception as e:
             logger.warning(f"[sync_elementos] failed creating intermediario elemento: {e}")
     elif intermediario_state_change == "deleted" and intermediario_elemento:
@@ -4999,6 +5103,8 @@ def _sync_elementos_for_container(
             delete_elemento(client, intermediario_elemento["id"])
         except Exception as e:
             logger.warning(f"[sync_elementos] failed deleting intermediario elemento: {e}")
+
+    _asociar_elementos_al_pedido(client, contenedor_co_id, creados)
 
     try:
         sync_contenedor_proveedor_associations(client, deal_id, [contenedor_co_id])
