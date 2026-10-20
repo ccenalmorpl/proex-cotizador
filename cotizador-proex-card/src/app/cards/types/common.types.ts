@@ -126,7 +126,7 @@ export interface TransitarioData {
   diasLibres: number;
   naviera: string;
   almacen: string;
-  cotizacionRapida: boolean;
+  cotizacionRapida: boolean | null;
   tipoIVAFletes: string;
   tipoIVAFletesSoportado: string;
   tipoIVAFleteTerrestre: string;

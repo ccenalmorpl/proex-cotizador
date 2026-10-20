@@ -202,7 +202,9 @@ const Extension: React.FC<ExtensionProps> = ({ context, actions }) => {
     diasLibres: 0,
     naviera: "",
     almacen: "",
-    cotizacionRapida: false,
+    // null hasta que TransitarioTab lee el deal: DocumentacionTab distingue
+    // "no se ha pasado por Rutas" de "se ha desmarcado".
+    cotizacionRapida: null,
     tipoIVAFletes: "",
     tipoIVAFletesSoportado: "",
     tipoIVAFleteTerrestre: "",

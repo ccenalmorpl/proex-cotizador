@@ -81,11 +81,15 @@ const DocumentacionTab = ({
 
   const dealId = context?.crm?.objectId;
 
-  // El flag lo marca TransitarioTab, pero se puede entrar aquí sin pasar por
-  // ese tab: entonces la única copia es la que vino del deal en la carga.
+  // Manda el check de TransitarioTab; si no se ha pasado por ese tab (null),
+  // vale documentacionData.cotizacionRapida, que viene del deal y este tab
+  // pone a true mientras tiene aplicadas las plantillas de cotización rápida.
   const esCotizacionRapida =
-    transitarioData?.cotizacionRapida === true ||
-    documentacionData.cotizacionRapida === true;
+    (transitarioData?.cotizacionRapida ?? documentacionData.cotizacionRapida) ===
+    true;
+  const seDesmarcoCotizacionRapida =
+    documentacionData.cotizacionRapida === true &&
+    transitarioData?.cotizacionRapida === false;
 
   useEffect(() => {
     if (!dealId) {
@@ -118,6 +122,7 @@ const DocumentacionTab = ({
         ) {
           setDocumentacionData((prev) => ({
             ...prev,
+            cotizacionRapida: true,
             bancoCobro: {
               value: "cotizacion_rapida",
               options: prev.bancoCobro?.options || [],
@@ -134,6 +139,33 @@ const DocumentacionTab = ({
           }));
           return; // Salir para que se ejecute de nuevo con los nuevos valores
         }
+      }
+
+      // Al quitar el check se retiran las plantillas que puso la cotización
+      // rápida, y con ellas su texto base corto.
+      if (seDesmarcoCotizacionRapida) {
+        setDocumentacionData((prev) => {
+          const quitarBanco = prev.bancoCobro?.value === "cotizacion_rapida";
+          const quitarMetodoPago =
+            prev.metodoPagoPlantilla?.value === "cotizacion_rapida";
+          return {
+            ...prev,
+            cotizacionRapida: false,
+            ...(quitarBanco && {
+              bancoCobro: { value: "", options: prev.bancoCobro?.options || [] },
+              textoBanco: "",
+            }),
+            ...(quitarMetodoPago && {
+              metodoPagoPlantilla: {
+                value: "",
+                options: prev.metodoPagoPlantilla?.options || [],
+              },
+              textoFormaPago: "",
+            }),
+            textoBaseOferta: "",
+          };
+        });
+        return;
       }
 
       const idioma = documentacionData.idiomaCotizacion?.value;
