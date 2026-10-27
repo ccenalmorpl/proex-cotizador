@@ -1569,6 +1569,14 @@ async def update_deal_client_data(
 
         if data.deal is not None:
             deal_properties = build_update_properties(data.deal, UpdateDealData)
+            comision_previa = None
+            if deal_properties:
+                try:
+                    comision_previa = _firma_comision(client.crm.deals.basic_api.get_by_id(
+                        deal_id, properties=["repercutir_a_cliente", "tipo_comision", "importe_comision", "codigo_intermediario"]
+                    ).properties or {})
+                except Exception as e:
+                    logger.warning(f"[comision] deal={deal_id}: no pude leer la comisión previa, la cuadro igualmente: {e}")
 
             if deal_properties:
                 logger.warning(f"Updating deal {deal_id} with properties: {deal_properties}")
@@ -1682,6 +1690,9 @@ async def update_deal_client_data(
 
                 except Exception as e:
                     logger.error(f"[client] Error managing commission provider association: {e}")
+
+            if deal_properties and _firma_comision(deal_properties) != comision_previa:
+                _sincronizar_comision_tras_cliente(deal_id, client)
 
         return BaseResponse(
             success=True,
@@ -4051,12 +4062,17 @@ def _resolve_contenedor_co_by_numero(client, deal_id: str) -> dict:
             out[f"lid:{lid}"] = entry
     return out
 
-def _fetch_intermediario_context(deal_id: str, client, residennum: Optional[str]) -> Optional[dict]:
+def _fetch_intermediario_context(
+    deal_id: str, client, residennum: Optional[str], estricto: bool = False
+) -> Optional[dict]:
     """Resolve intermediario product + commission settings for a deal.
 
     Returns None when intermediario is not active (repercutir_a_cliente != 'si'
     or importe_comision <= 0). Otherwise returns the data needed to recompute
     `importe_por_cajas` commissions in place.
+
+    Con `estricto`, un fallo de lectura lanza en vez de devolver None: quien va a
+    archivar líneas con None necesita distinguir "sin comisión" de "no lo sé".
     """
     try:
         deal = client.crm.deals.basic_api.get_by_id(
@@ -4075,6 +4091,8 @@ def _fetch_intermediario_context(deal_id: str, client, residennum: Optional[str]
 
         product = _find_intermediario_product(client)
         if not product:
+            if estricto:
+                raise RuntimeError("no encuentro el producto con tipo_articulo='comisiones'")
             return None
 
         deal_iva_rep = (deal.properties.get("tipo_iva_comision") or "").strip() or None
@@ -4091,8 +4109,192 @@ def _fetch_intermediario_context(deal_id: str, client, residennum: Optional[str]
             "iva_soportado": resolve_product_iva(product["properties"], residennum, "soportado", deal_iva_sop),
         }
     except Exception as e:
+        if estricto:
+            raise
         logger.warning(f"[edit_container] could not fetch intermediario context: {e}")
         return None
+
+
+def _importe_linea_comision(intermediario_ctx: dict, cajas: float, num_contenedores: int) -> Optional[float]:
+    tipo = intermediario_ctx.get("tipo_comision") or ""
+    importe = float(intermediario_ctx.get("importe_comision") or 0)
+    if tipo == "importe_por_negocio":
+        return round_price(importe / max(num_contenedores, 1))
+    if tipo == "importe_por_contenedor":
+        return round_price(importe)
+    if tipo == "importe_por_cajas":
+        return round_price(importe * cajas)
+    logger.warning(f"[comision] tipo_comision desconocido: {tipo!r}")
+    return None
+
+
+def _sincronizar_lineas_comision(
+    deal_id: str,
+    *,
+    headers: dict,
+    intermediario_ctx: Optional[dict],
+    cajas_por_contenedor: Optional[Dict[str, float]] = None,
+    deal_almacen=None,
+    tipo_contenedor: str = "",
+) -> Optional[dict]:
+    """Deja una sola línea de comisión por contenedor, con el importe actual del negocio.
+
+    Guardar Artículos archiva contenedores y artículos pero no la comisión, así que el
+    contenedor renacía con el mismo número y cada vuelta le añadía otra línea
+    (66502772767 acabó con tres); y cambiar el importe en Cliente no tocaba la que
+    había (66730502410). Se conserva la más antigua de cada contenedor y se archivan
+    las sobrantes, las de contenedores que ya no existen y, si el negocio no repercute
+    comisión (`intermediario_ctx` None), todas.
+
+    `cajas_por_contenedor` fija el conjunto de contenedores cuando el caller acaba de
+    crearlos; sin él se deduce de los line items. Devuelve None, sin tocar nada, si
+    no pudo leer las líneas del negocio.
+    """
+    batch_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch"
+    try:
+        ids = _get_associated_ids(deal_id, "line_items")
+        lineas = []
+        for i in range(0, len(ids), 100):
+            resp = requests.post(f"{batch_url}/read", headers=headers, json={
+                "properties": [
+                    "hs_product_type", "tipo_articulo", "numero_container",
+                    "name", "quantity", "price", "cardcode",
+                ],
+                "inputs": [{"id": str(x)} for x in ids[i:i + 100]],
+            }, timeout=30)
+            if not resp.ok:
+                raise RuntimeError(f"HTTP {resp.status_code}: {resp.text}")
+            lineas.extend(resp.json().get("results", []))
+    except Exception as e:
+        logger.error(f"[comision] deal={deal_id}: no pude leer los line items, no toco la comisión: {e}")
+        return None
+
+    if cajas_por_contenedor is None:
+        cajas_por_contenedor = {}
+        for li in lineas:
+            props = li.get("properties") or {}
+            if _is_container_product_type(props.get("hs_product_type") or ""):
+                nombre = (props.get("name") or props.get("numero_container") or "").strip()
+                if nombre:
+                    cajas_por_contenedor[nombre] = 0.0
+        for li in lineas:
+            props = li.get("properties") or {}
+            numero = (props.get("numero_container") or "").strip()
+            if _line_item_is_article(props) and numero in cajas_por_contenedor:
+                cajas_por_contenedor[numero] += _safe_float(props.get("quantity")) or 0.0
+    elif cajas_por_contenedor and not lineas:
+        logger.error(f"[comision] deal={deal_id}: sin line items tras crear contenedores, no toco la comisión")
+        return None
+
+    comisiones: Dict[str, list] = {}
+    archivar = []
+    for li in lineas:
+        props = li.get("properties") or {}
+        if (props.get("tipo_articulo") or "").strip().lower() != "comisiones":
+            continue
+        numero = (props.get("numero_container") or "").strip()
+        if numero in cajas_por_contenedor:
+            comisiones.setdefault(numero, []).append(li)
+        elif numero:
+            archivar.append(str(li["id"]))
+
+    num_contenedores = len(cajas_por_contenedor)
+    crear, actualizar = [], []
+    for numero, cajas in cajas_por_contenedor.items():
+        propias = sorted(comisiones.get(numero, []), key=lambda li: int(li["id"]))
+        if intermediario_ctx is None:
+            archivar.extend(str(li["id"]) for li in propias)
+            continue
+        precio = _importe_linea_comision(intermediario_ctx, cajas, num_contenedores)
+        if precio is None:
+            continue
+        cardcode = intermediario_ctx.get("codigo_intermediario") or ""
+        if not propias:
+            props = {
+                "hs_product_id": intermediario_ctx["product_id"],
+                "hs_sku": intermediario_ctx["product_id"],
+                "name": f"{numero} - {intermediario_ctx['product_name']}",
+                "price": str(precio),
+                "quantity": "1",
+                "cardcode": cardcode,
+                "numero_container": numero,
+                "tipo_articulo": "comisiones",
+                "hs_product_type": "Servicio",
+            }
+            if intermediario_ctx.get("iva_repercutido"):
+                props["tipo_iva_repercutido"] = intermediario_ctx["iva_repercutido"]
+            if intermediario_ctx.get("iva_soportado"):
+                props["tipo_iva_soportado"] = intermediario_ctx["iva_soportado"]
+            almacen = resolve_almacen_para_elemento(deal_almacen, "comisiones", tipo_contenedor)
+            if almacen:
+                props["almacen"] = str(almacen)
+            crear.append({
+                "properties": enforce_line_item_price_rounding(props),
+                "associations": [{
+                    "to": {"id": deal_id},
+                    "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}],
+                }],
+            })
+            continue
+
+        conservada = propias[0]
+        archivar.extend(str(li["id"]) for li in propias[1:])
+        actuales = conservada.get("properties") or {}
+        cambios = {}
+        if round_price(actuales.get("price")) != precio:
+            cambios["price"] = str(precio)
+        if (actuales.get("cardcode") or "") != cardcode:
+            cambios["cardcode"] = cardcode
+        if cambios:
+            actualizar.append({"id": str(conservada["id"]), "properties": cambios})
+
+    for accion, inputs in (("archive", [{"id": x} for x in archivar]), ("update", actualizar), ("create", crear)):
+        for i in range(0, len(inputs), 100):
+            try:
+                resp = requests.post(f"{batch_url}/{accion}", headers=headers, json={"inputs": inputs[i:i + 100]}, timeout=60)
+                if not resp.ok:
+                    logger.error(f"[comision] deal={deal_id} {accion} falló: {resp.status_code} - {resp.text}")
+            except Exception as e:
+                logger.error(f"[comision] deal={deal_id} {accion} falló: {e}")
+
+    resumen = {"creadas": len(crear), "actualizadas": len(actualizar), "archivadas": len(archivar)}
+    logger.warning(f"[comision] deal={deal_id} contenedores={num_contenedores} {resumen}")
+    return resumen
+
+
+def _firma_comision(props: dict) -> tuple:
+    return (
+        (props.get("repercutir_a_cliente") or "").strip().lower(),
+        (props.get("tipo_comision") or "").strip().lower(),
+        _safe_float(props.get("importe_comision")) or 0.0,
+        (props.get("codigo_intermediario") or "").strip(),
+    )
+
+
+def _sincronizar_comision_tras_cliente(deal_id: str, client) -> None:
+    """Lleva a las líneas de comisión lo que se acaba de guardar en Cliente y, si el
+    negocio ya está publicado, re-sincroniza sus Elementos."""
+    lock_resource = deal_lock.deal_resource(deal_id)
+    lock_token = deal_lock.acquire(lock_resource)
+    if lock_token is None:
+        logger.warning(f"[comision] deal={deal_id}: hay una edición de contenedores en curso, no toco la comisión")
+        return
+    try:
+        ctx = _fetch_deal_container_context(deal_id, client)
+        intermediario_ctx = _fetch_intermediario_context(deal_id, client, ctx.get("residennum"), estricto=True)
+        resumen = _sincronizar_lineas_comision(
+            deal_id,
+            headers={"Authorization": f"Bearer {client.access_token}", "Content-Type": "application/json"},
+            intermediario_ctx=intermediario_ctx,
+            deal_almacen=ctx.get("deal_almacen"),
+            tipo_contenedor=ctx.get("tipo_contenedor") or "",
+        )
+        if resumen and any(resumen.values()):
+            _enqueue_custom_objects_resync_if_published(client, deal_id)
+    except Exception as e:
+        logger.error(f"[comision] deal={deal_id}: no pude cuadrar la comisión tras guardar Cliente: {e}")
+    finally:
+        deal_lock.release(lock_resource, lock_token)
 
 def _lineas_cambiaron(actuales: Optional[set], previas) -> bool:
     """True solo si se pudo releer Y el conjunto difiere. Un fallo de lectura
@@ -4147,6 +4349,7 @@ def _edit_container_in_place(
     cont_map: Optional[dict] = None,
     num_contenedores_total: Optional[int] = None,
     defer_custom_objects: bool = False,
+    gestionar_comision: bool = True,
 ) -> dict:
     """Apply edit-in-place modifications to a single container.
 
@@ -4155,6 +4358,9 @@ def _edit_container_in_place(
     HubSpot IDs stable. Mirrors the same diff onto the ELEMENTO custom objects
     when they already exist (cotización publicada). Returns the updated
     container in the same shape used by `unique_containers`.
+
+    `gestionar_comision=False` deja la línea de comisión al caller, que la cuadra
+    para todos los contenedores con `_sincronizar_lineas_comision`.
     """
     if client is None:
         client = hubspot_client.get_client()
@@ -4520,7 +4726,7 @@ def _edit_container_in_place(
         raise HTTPException(status_code=500, detail=f"Failed to update container line item: {e}")
 
     total_cajas_new = sum(a["numCajas"] for a in final_articles)
-    if intermediario_ctx is None:
+    if intermediario_ctx is None and gestionar_comision:
         intermediario_ctx = _fetch_intermediario_context(deal_id, client, residennum)
 
     elementos_synced = False
@@ -4536,20 +4742,21 @@ def _edit_container_in_place(
     if co:
         contenedor_co_id = co.get("id")
 
-    had_intermediario = current_intermediario is not None
+    had_intermediario = gestionar_comision and current_intermediario is not None
     deal_wants_intermediario = None
-    try:
-        deal_int = client.crm.deals.basic_api.get_by_id(
-            deal_id, properties=["repercutir_a_cliente", "importe_comision"]
-        )
-        deal_wants_intermediario = (
-            (deal_int.properties.get("repercutir_a_cliente") or "").strip().lower() == "si"
-            and float(deal_int.properties.get("importe_comision") or 0) > 0
-        )
-    except Exception as e:
-        logger.warning(f"[edit_container] could not read deal commission state: {e}")
+    if gestionar_comision:
+        try:
+            deal_int = client.crm.deals.basic_api.get_by_id(
+                deal_id, properties=["repercutir_a_cliente", "importe_comision"]
+            )
+            deal_wants_intermediario = (
+                (deal_int.properties.get("repercutir_a_cliente") or "").strip().lower() == "si"
+                and float(deal_int.properties.get("importe_comision") or 0) > 0
+            )
+        except Exception as e:
+            logger.warning(f"[edit_container] could not read deal commission state: {e}")
 
-    wants_intermediario = (
+    wants_intermediario = gestionar_comision and (
         deal_wants_intermediario if deal_wants_intermediario is not None
         else intermediario_ctx is not None
     )
@@ -5685,7 +5892,12 @@ async def update_deal_containers(
         )
 
         ctx = _fetch_deal_container_context(deal_id, client)
-        intermediario_ctx = _fetch_intermediario_context(deal_id, client, residennum)
+        try:
+            intermediario_ctx = _fetch_intermediario_context(deal_id, client, residennum, estricto=True)
+            comision_leida = True
+        except Exception as e:
+            logger.error(f"[comision] deal={deal_id}: no pude leer la comisión del negocio, no toco sus líneas: {e}")
+            intermediario_ctx, comision_leida = None, False
 
         for info in eliminados:
             numero = info["numero_container"]
@@ -5714,9 +5926,6 @@ async def update_deal_containers(
         # re-sync que se encola al final, reconstruyéndolo desde los line items.
         # cont_map es igual para todos los previos → se resuelve una vez y se comparte.
         previos_cont_map = _resolve_contenedor_co_by_numero(client, deal_id) if previos else {}
-        # Total de contenedores del negocio tras el merge (para repartir la comisión
-        # importe_por_negocio igual que el resto del endpoint).
-        num_contenedores_total = len(previos) + len(nuevos)
         for lid, entry in previos:
             _edit_container_in_place(
                 deal_id=deal_id,
@@ -5727,8 +5936,8 @@ async def update_deal_containers(
                 ctx=ctx,
                 intermediario_ctx=intermediario_ctx,
                 cont_map=previos_cont_map,
-                num_contenedores_total=num_contenedores_total,
                 defer_custom_objects=True,
+                gestionar_comision=False,
             )
 
         unique_article_skus = set()
@@ -5825,130 +6034,6 @@ async def update_deal_containers(
                     detail=f"Error preparing line items: {str(e)}"
                 )
 
-        intermediario_line_items_to_create = []
-        intermediario_updates = []
-
-        try:
-            deal = client.crm.deals.basic_api.get_by_id(
-                deal_id,
-                properties=["repercutir_a_cliente", "tipo_comision", "importe_comision", "codigo_intermediario", "tipo_iva_comision", "tipo_iva_comision_soportado"]
-            )
-
-            repercutir_a_cliente = (deal.properties.get("repercutir_a_cliente") or "").strip().lower()
-            tipo_comision = (deal.properties.get("tipo_comision") or "").strip().lower()
-            importe_comision = float(deal.properties.get("importe_comision") or 0)
-            codigo_intermediario = (deal.properties.get("codigo_intermediario") or "").strip()
-
-            logger.info(f"[intermediario] repercutir_a_cliente: {repercutir_a_cliente}, tipo_comision: {tipo_comision}, importe: {importe_comision}, codigo_intermediario: {codigo_intermediario}")
-
-            if repercutir_a_cliente == "si" and importe_comision > 0:
-                intermediario_product = _find_intermediario_product(client)
-
-                if intermediario_product:
-                    intermediario_product_id = intermediario_product["id"]
-                    intermediario_name = intermediario_product["name"]
-
-                    deal_iva_comision = (deal.properties.get("tipo_iva_comision") or "").strip() or None
-                    deal_iva_comision_sop = (deal.properties.get("tipo_iva_comision_soportado") or "").strip() or None
-                    intermediario_iva_rep = resolve_product_iva(intermediario_product["properties"], residennum, "repercutido", deal_iva_comision)
-                    intermediario_iva_sop = resolve_product_iva(intermediario_product["properties"], residennum, "soportado", deal_iva_comision_sop)
-
-                    # Conjunto final de contenedores tras el merge: previos (su numero_container)
-                    # + nuevos (numero_container monótono recién asignado).
-                    previo_names = [existing_containers_by_lid[lid]["numero_container"] for lid, _ in previos]
-                    final_container_names = previo_names + nuevos_container_names
-                    num_final = max(len(final_container_names), 1)
-
-                    cajas_por_container = {}
-                    for lid, entry in previos:
-                        cajas_por_container[existing_containers_by_lid[lid]["numero_container"]] = sum(
-                            a.numCajas or 0 for a in entry.container_config.articulos
-                        )
-                    for entry, cname in zip(nuevos, nuevos_container_names):
-                        cajas_por_container[cname] = sum(a.numCajas or 0 for a in entry.container_config.articulos)
-
-                    def _price_for(cname: str) -> Optional[float]:
-                        if tipo_comision == "importe_por_negocio":
-                            return round_price(importe_comision / num_final)
-                        if tipo_comision == "importe_por_contenedor":
-                            return round_price(importe_comision)
-                        if tipo_comision == "importe_por_cajas":
-                            return round_price(importe_comision * cajas_por_container.get(cname, 0))
-                        logger.warning(f"[intermediario] Unknown tipo_comision: {tipo_comision}")
-                        return None
-
-                    almacen_intermediario = resolve_almacen_para_elemento(deal_almacen, "comisiones", tipo_contenedor)
-
-                    # NUEVOS: crear su línea de comisión.
-                    for cname in nuevos_container_names:
-                        price = _price_for(cname)
-                        if price is None:
-                            continue
-                        intermediario_properties = {
-                            "hs_product_id": intermediario_product_id,
-                            "hs_sku": intermediario_product_id,
-                            "name": f"{cname} - {intermediario_name}",
-                            "price": str(price),
-                            "quantity": "1",
-                            "cardcode": codigo_intermediario or "",
-                            "numero_container": cname,
-                            "tipo_iva_repercutido": intermediario_iva_rep,
-                            "tipo_iva_soportado": intermediario_iva_sop,
-                            "tipo_articulo": "comisiones",
-                            "hs_product_type": "Servicio"
-                        }
-                        if almacen_intermediario:
-                            intermediario_properties["almacen"] = str(almacen_intermediario)
-                        intermediario_line_items_to_create.append({
-                            "properties": intermediario_properties,
-                            "associations": [{
-                                "to": {"id": deal_id},
-                                "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 20}]
-                            }]
-                        })
-
-                    # PREVIOS: en modos dependientes del nº de contenedores el precio por
-                    # contenedor cambia al añadir/eliminar. _edit_container_in_place solo
-                    # recalcula importe_por_cajas, así que aquí actualizamos el resto.
-                    if tipo_comision in ("importe_por_negocio", "importe_por_contenedor"):
-                        for lid, _entry in previos:
-                            cname = existing_containers_by_lid[lid]["numero_container"]
-                            new_price = _price_for(cname)
-                            if new_price is None:
-                                continue
-                            com_li = next(
-                                (li for li in line_items_by_numero.get(cname, [])
-                                 if (li.get("properties", {}).get("tipo_articulo") or "").strip().lower() == "comisiones"),
-                                None
-                            )
-                            if com_li:
-                                intermediario_updates.append({"id": com_li["id"], "properties": {"price": str(new_price)}})
-
-                    logger.info(
-                        f"[intermediario] {len(intermediario_line_items_to_create)} nuevas comisiones, "
-                        f"{len(intermediario_updates)} comisiones de previos actualizadas (num_final={num_final})"
-                    )
-                else:
-                    logger.warning("[intermediario] No product found with tipo_articulo='comisiones'. Please create one in HubSpot.")
-            else:
-                logger.info(f"[intermediario] Skipping - repercutir_a_cliente={repercutir_a_cliente}, importe={importe_comision}")
-
-        except Exception as e:
-            logger.error(f"[intermediario] Error preparing intermediario line items: {e}")
-
-        if intermediario_updates:
-            upd_url = "https://api.hubapi.com/crm/v3/objects/line_items/batch/update"
-            for i in range(0, len(intermediario_updates), batch_size):
-                chunk = intermediario_updates[i:i + batch_size]
-                for x in chunk:
-                    enforce_line_item_price_rounding(x.get("properties", {}))
-                try:
-                    resp = requests.post(upd_url, headers=headers, json={"inputs": chunk}, timeout=60)
-                    if not resp.ok:
-                        logger.error(f"[intermediario] batch update of previos commissions failed: {resp.status_code} - {resp.text}")
-                except Exception as e:
-                    logger.error(f"[intermediario] error updating previos commissions: {e}")
-
         cloned_line_items_to_create = _clone_template_lines_for_new_containers(
             nuevos_container_names=nuevos_container_names,
             previos=previos,
@@ -5962,13 +6047,11 @@ async def update_deal_containers(
         all_line_items_to_create = (
             container_line_items_to_create
             + article_line_items_to_create
-            + intermediario_line_items_to_create
             + cloned_line_items_to_create
         )
         logger.warning(
             f"Prepared {len(container_line_items_to_create)} container line items, "
-            f"{len(article_line_items_to_create)} article line items, "
-            f"{len(intermediario_line_items_to_create)} intermediario line items, and "
+            f"{len(article_line_items_to_create)} article line items, and "
             f"{len(cloned_line_items_to_create)} cloned service/flete/seguro line items"
         )
 
@@ -6063,6 +6146,22 @@ async def update_deal_containers(
                         logger.warning(f"[containers] archivadas {len(chunk)} líneas de catálogo sin contenedor")
                 except Exception as e:
                     logger.error(f"[containers] error archivando líneas de catálogo: {e}")
+
+        if comision_leida:
+            cajas_por_contenedor = {
+                existing_containers_by_lid[lid]["name"]: sum(a.numCajas or 0 for a in entry.container_config.articulos)
+                for lid, entry in previos
+            }
+            for entry, cname in zip(nuevos, nuevos_container_names):
+                cajas_por_contenedor[cname] = sum(a.numCajas or 0 for a in entry.container_config.articulos)
+            _sincronizar_lineas_comision(
+                deal_id,
+                headers=headers,
+                intermediario_ctx=intermediario_ctx,
+                cajas_por_contenedor=cajas_por_contenedor,
+                deal_almacen=deal_almacen,
+                tipo_contenedor=tipo_contenedor,
+            )
 
         # Merge incremental: previos editados en sitio (ids estables), nuevos creados,
         # eliminados archivados. Si el deal ya estaba publicado, re-sincronizamos los
