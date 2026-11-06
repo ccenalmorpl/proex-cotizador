@@ -654,8 +654,6 @@ const RevisionTab = ({
       hastaPuertoSalida: (transitarioData?.precioOrigen || 0) * contenedoresUnicos.length / totalCajas || 0,
       hastaPuertoDestino:
         (transitarioData?.precioDestino || 0) * contenedoresUnicos.length / totalCajas || 0,
-      hastaPuertoDestinoLocalidad:
-        (transitarioData?.precioDestino || 0) * contenedoresUnicos.length / totalCajas || 0,
     }),
     [transitarioData, totalCajas, contenedoresUnicos]
   );

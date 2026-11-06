@@ -124,7 +124,6 @@ def _pp(cajas):
         hasta_localidad_destino=FLETE / cajas,
         hasta_puerto_salida=FLETE / cajas,
         hasta_puerto_destino=0.0,
-        hasta_puerto_destino_localidad=0.0,
         servicios_por_caja=SEGURO / cajas,
         seguro_por_caja=SEGURO / cajas,
         comision_cliente=0.0,

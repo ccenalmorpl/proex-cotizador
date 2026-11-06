@@ -13,7 +13,6 @@ KWARGS = dict(
     hasta_localidad_destino=1.0,
     hasta_puerto_salida=2.0,
     hasta_puerto_destino=3.0,
-    hasta_puerto_destino_localidad=4.0,
     servicios_por_caja=0.5,
     seguro_por_caja=0.25,
     comision_cliente=0.75,
@@ -39,7 +38,6 @@ def test_fca_excluido_de_los_sets_de_iva_como_exw():
     for nombre in (
         "_INCLUYE_FLETE_ORIGEN",
         "_INCLUYE_FLETE_DESTINO",
-        "_INCLUYE_FLETE_DESTINO_LOCALIDAD",
         "_INCLUYE_SERVICIOS",
         "_INCLUYE_SEGURO",
     ):

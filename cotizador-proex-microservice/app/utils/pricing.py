@@ -20,7 +20,6 @@ class PricingParams:
     hasta_localidad_destino: float
     hasta_puerto_salida: float
     hasta_puerto_destino: float
-    hasta_puerto_destino_localidad: float
     servicios_por_caja: float
     seguro_por_caja: float
     comision_cliente: float
@@ -58,7 +57,6 @@ def calcular_precio_por_caja_por_incoterm(
     hasta_localidad_destino: float = 0.0,
     hasta_puerto_salida: float = 0.0,
     hasta_puerto_destino: float = 0.0,
-    hasta_puerto_destino_localidad: float = 0.0,
     servicios_por_caja: float = 0.0,
     seguro_por_caja: float = 0.0,
     comision_cliente: float = 0.0,
@@ -87,21 +85,14 @@ def calcular_precio_por_caja_por_incoterm(
             + hasta_puerto_destino
             + comision_cliente
         )
-    if ic == "CIF":
+    # DAP marítimo lleva los mismos tramos que CIF: la ruta no tiene un precio
+    # propio para puerto destino → localidad, va incluido en el marítimo.
+    if ic in ("CIF", "DAP_MARITIMO"):
         return (
             precio_exw
             + hasta_puerto_salida
             + servicios_por_caja
             + hasta_puerto_destino
-            + comision_cliente
-        )
-    if ic == "DAP_MARITIMO":
-        return (
-            precio_exw
-            + hasta_puerto_salida
-            + servicios_por_caja
-            + hasta_puerto_destino
-            + hasta_puerto_destino_localidad
             + comision_cliente
         )
     return precio_exw + comision_cliente
@@ -114,7 +105,6 @@ def calcular_precio_exw_desde_incoterm(
     hasta_localidad_destino: float = 0.0,
     hasta_puerto_salida: float = 0.0,
     hasta_puerto_destino: float = 0.0,
-    hasta_puerto_destino_localidad: float = 0.0,
     servicios_por_caja: float = 0.0,
     seguro_por_caja: float = 0.0,
     comision_cliente: float = 0.0,
@@ -144,11 +134,8 @@ def calcular_precio_exw_desde_incoterm(
             - hasta_puerto_destino
             - comision_cliente
         )
-    if ic == "CIF":
+    if ic in ("CIF", "DAP_MARITIMO"):
         cfr = precio_final - comision_cliente
-        return cfr - hasta_puerto_salida - servicios_por_caja - hasta_puerto_destino
-    if ic == "DAP_MARITIMO":
-        cfr = precio_final - comision_cliente - hasta_puerto_destino_localidad
         return cfr - hasta_puerto_salida - servicios_por_caja - hasta_puerto_destino
     return precio_final - comision_cliente
 
@@ -158,7 +145,6 @@ def _pricing_kwargs(pp: "PricingParams") -> Dict[str, float]:
         "hasta_localidad_destino": pp.hasta_localidad_destino,
         "hasta_puerto_salida": pp.hasta_puerto_salida,
         "hasta_puerto_destino": pp.hasta_puerto_destino,
-        "hasta_puerto_destino_localidad": pp.hasta_puerto_destino_localidad,
         "servicios_por_caja": pp.servicios_por_caja,
         "seguro_por_caja": pp.seguro_por_caja,
         "comision_cliente": pp.comision_cliente,
@@ -331,7 +317,6 @@ def _fetch_pricing_params_for_deal(
             hasta_localidad_destino=0.0,
             hasta_puerto_salida=0.0,
             hasta_puerto_destino=0.0,
-            hasta_puerto_destino_localidad=0.0,
             servicios_por_caja=0.0,
             seguro_por_caja=0.0,
             comision_cliente=0.0,
@@ -367,7 +352,6 @@ def _fetch_pricing_params_for_deal(
         hasta_localidad_destino=hasta_puerto_salida,
         hasta_puerto_salida=hasta_puerto_salida,
         hasta_puerto_destino=hasta_puerto_destino,
-        hasta_puerto_destino_localidad=hasta_puerto_destino,
         servicios_por_caja=servicios_por_caja,
         seguro_por_caja=seguro_por_caja,
         comision_cliente=comision_cliente,
@@ -448,7 +432,6 @@ class DealPricingContext:
                 hasta_localidad_destino=0.0,
                 hasta_puerto_salida=0.0,
                 hasta_puerto_destino=0.0,
-                hasta_puerto_destino_localidad=0.0,
                 servicios_por_caja=0.0,
                 seguro_por_caja=0.0,
                 comision_cliente=0.0,
@@ -483,7 +466,6 @@ class DealPricingContext:
             hasta_localidad_destino=flete_salida,
             hasta_puerto_salida=flete_salida,
             hasta_puerto_destino=flete_destino,
-            hasta_puerto_destino_localidad=flete_destino,
             servicios_por_caja=servicios_por_caja,
             seguro_por_caja=seguro_por_caja,
             comision_cliente=comision_cliente,

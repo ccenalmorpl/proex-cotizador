@@ -45,7 +45,6 @@ GASTOS = dict(
     hasta_localidad_destino=0.4,
     hasta_puerto_salida=0.4,
     hasta_puerto_destino=0.25,
-    hasta_puerto_destino_localidad=0.15,
     servicios_por_caja=0.1,
     seguro_por_caja=0.05,
     comision_cliente=0.02,

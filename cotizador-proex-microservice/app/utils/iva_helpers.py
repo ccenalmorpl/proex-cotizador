@@ -57,7 +57,6 @@ def resolver_tipo_residencia(company_props: Optional[Dict]) -> str:
 # FOB/CFR (la fórmula lo resta); la comisión va en todos los incoterms.
 _INCLUYE_FLETE_ORIGEN = {"DAP_TERRESTRE", "FOB", "CFR", "CIF", "DAP_MARITIMO"}
 _INCLUYE_FLETE_DESTINO = {"CFR", "CIF", "DAP_MARITIMO"}
-_INCLUYE_FLETE_DESTINO_LOCALIDAD = {"DAP_MARITIMO"}
 _INCLUYE_SERVICIOS = {"DAP_TERRESTRE", "FOB", "CFR", "CIF", "DAP_MARITIMO"}
 _INCLUYE_SEGURO = {"DAP_TERRESTRE", "CIF", "DAP_MARITIMO"}
 
@@ -104,7 +103,6 @@ def _resolver_precios_linea(li: Dict, pp: PricingParams) -> Dict[str, Any]:
         hasta_localidad_destino=pp.hasta_localidad_destino,
         hasta_puerto_salida=pp.hasta_puerto_salida,
         hasta_puerto_destino=pp.hasta_puerto_destino,
-        hasta_puerto_destino_localidad=pp.hasta_puerto_destino_localidad,
         servicios_por_caja=pp.servicios_por_caja,
         seguro_por_caja=pp.seguro_por_caja,
         comision_cliente=pp.comision_cliente,
@@ -147,16 +145,14 @@ def _compute_price_from_fabricantes(
         pp.hasta_localidad_destino if ic == "DAP_TERRESTRE" else pp.hasta_puerto_salida
     )
     # Tramo terrestre/origen con su propio IVA (doble flete); vacío → el del
-    # flete marítimo, nunca el default por residencia. Destino y localidad de
-    # destino salen de precioDestino → IVA marítimo.
+    # flete marítimo, nunca el default por residencia. El destino sale de
+    # precioDestino → IVA marítimo.
     tipo_iva_flete_origen = pp.tipo_iva_fletes_terrestre or pp.tipo_iva_fletes
     iva_conceptos_por_caja = pp.comision_cliente * pct_efectivo(pp.tipo_iva_comision) / 100.0
     if ic in _INCLUYE_FLETE_ORIGEN:
         iva_conceptos_por_caja += flete_origen_por_caja * pct_efectivo(tipo_iva_flete_origen) / 100.0
     if ic in _INCLUYE_FLETE_DESTINO:
         iva_conceptos_por_caja += pp.hasta_puerto_destino * pct_efectivo(pp.tipo_iva_fletes) / 100.0
-    if ic in _INCLUYE_FLETE_DESTINO_LOCALIDAD:
-        iva_conceptos_por_caja += pp.hasta_puerto_destino_localidad * pct_efectivo(pp.tipo_iva_fletes) / 100.0
     if ic in _INCLUYE_SERVICIOS:
         for code, importe in pp.servicios_no_seguro_por_iva_por_caja.items():
             iva_conceptos_por_caja += importe * pct_efectivo(code) / 100.0

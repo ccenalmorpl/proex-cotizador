@@ -28,7 +28,6 @@ def _pp(incoterm="CIF", cajas=1660.0, origen=500.0, destino=1200.0, servicios=60
         hasta_localidad_destino=origen / cajas,
         hasta_puerto_salida=origen / cajas,
         hasta_puerto_destino=destino / cajas,
-        hasta_puerto_destino_localidad=destino / cajas,
         servicios_por_caja=servicios / cajas,
         seguro_por_caja=seguro / cajas,
         comision_cliente=0.0,
@@ -207,14 +206,14 @@ def test_ancla_de_otro_incoterm_usa_exw_mas_gastos_del_nuevo():
     assert upd["el-1"] == {"precio_unitario_cliente": "8.16", "total_linea_cliente": "8323.2"}
 
 
-def test_dap_maritimo_cuenta_el_destino_dos_veces_como_sap_y_la_proforma():
+def test_dap_maritimo_cuenta_el_destino_una_vez():
     pp = _pp(incoterm="DAP_MARITIMO", cajas=1000.0, origen=900.0, destino=1500.0, servicios=0.0, seguro=0.0)
     fabricantes = [_linea("li-1", "5.0", 1000)]
     elems = [_elem("el-1", "li-1", 1000)]
 
     upd = _derivar_precio_cliente_elementos(fabricantes, pp, elems, {"li-1": elems[0]})
 
-    assert upd["el-1"]["precio_unitario_cliente"] == "8.9"
+    assert upd["el-1"]["precio_unitario_cliente"] == "7.4"
 
 
 def test_ancla_que_no_cubre_coste_mas_gastos_sigue_al_cotizador_y_a_sap():

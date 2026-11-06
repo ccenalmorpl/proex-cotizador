@@ -198,10 +198,8 @@ def _delta_por_caja(
         return hasta_salida + servicios - seguro + comision
     if incoterm == "CFR":
         return hasta_salida + servicios - seguro + hasta_destino + comision
-    if incoterm == "CIF":
+    if incoterm in ("CIF", "DAP_MARITIMO"):
         return hasta_salida + servicios + hasta_destino + comision
-    if incoterm == "DAP_MARITIMO":
-        return hasta_salida + servicios + (2 * hasta_destino) + comision
     return comision
 
 
@@ -214,14 +212,12 @@ def _escalera(incoterm: str, tabla: float, fob_exp: float, flete: float, seguro:
     de los 65 negocios auditados: el 64134026617 imprimía 23.751 donde la card calcula
     23.691,84 y la suma de los precios EXW negociados da 23.691,84.
     """
-    if incoterm == "CIF":
+    if incoterm in ("CIF", "DAP_MARITIMO"):
         cif = tabla; cfr = cif - seguro; fob = cfr - flete; exw = fob - fob_exp
     elif incoterm == "CFR":
         cfr = tabla; cif = cfr + seguro; fob = cfr - flete; exw = fob - fob_exp
     elif incoterm == "FOB":
         fob = tabla; cfr = fob + flete; cif = cfr + seguro; exw = fob - fob_exp
-    elif incoterm == "DAP_MARITIMO":
-        exw = tabla - fob_exp - seguro - (2 * flete); fob = exw + fob_exp; cfr = fob + flete; cif = cfr + seguro
     elif incoterm == "DAP_TERRESTRE":
         exw = tabla - fob_exp - seguro; fob = exw + fob_exp; cfr = fob + flete; cif = cfr + seguro
     else:
@@ -232,14 +228,12 @@ def _escalera(incoterm: str, tabla: float, fob_exp: float, flete: float, seguro:
 def total_incoterm(incoterm: str, exw: float, fob: float, cfr: float, cif: float, flete: float) -> float:
     """El importe que la cotización vende, el que tiene que cuadrar con la suma de la
     tabla. Es la inversa de `_escalera` y existe para poder afirmarlo en los tests."""
-    if incoterm == "CIF":
+    if incoterm in ("CIF", "DAP_MARITIMO"):
         return cif
     if incoterm == "CFR":
         return cfr
     if incoterm == "FOB":
         return fob
-    if incoterm == "DAP_MARITIMO":
-        return cif + flete
     if incoterm == "DAP_TERRESTRE":
         return cif - flete
     return exw

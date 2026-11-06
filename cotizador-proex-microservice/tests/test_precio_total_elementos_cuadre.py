@@ -27,7 +27,6 @@ def _pp(incoterm="CIF", cajas=CAJAS_TOTAL, origen=500.0, destino=1200.0, servici
         hasta_localidad_destino=origen / cajas,
         hasta_puerto_salida=origen / cajas,
         hasta_puerto_destino=destino / cajas,
-        hasta_puerto_destino_localidad=destino / cajas,
         servicios_por_caja=servicios / cajas,
         seguro_por_caja=seguro / cajas,
         comision_cliente=0.0,

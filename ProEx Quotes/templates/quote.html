@@ -696,7 +696,6 @@
 {% set hasta_puerto_salida            = (precio_origen  * _nc) / _tc %}
 {% set hasta_puerto_destino           = (precio_destino * _nc) / _tc %}
 {% set hasta_localidad_destino        = hasta_puerto_salida %}
-{% set hasta_puerto_destino_localidad = hasta_puerto_destino %}
 {# Servicios y seguro salen de los desgloses (payload), no de sumar los line items
    presentes: los fletes ya se reparten con precio_origen/destino × nc, que cuentan
    los contenedores del pedido, y mezclar ambas fuentes reparte entre las cajas de
@@ -758,10 +757,8 @@
   {% set delta_por_caja = hasta_puerto_salida + servicios_por_caja - seguro_por_caja + comision_por_caja %}
 {% elif _term == "CFR" %}
   {% set delta_por_caja = hasta_puerto_salida + servicios_por_caja - seguro_por_caja + hasta_puerto_destino + comision_por_caja %}
-{% elif _term == "CIF" %}
+{% elif _term == "CIF" or _term == "DAP_MARITIMO" %}
   {% set delta_por_caja = hasta_puerto_salida + servicios_por_caja + hasta_puerto_destino + comision_por_caja %}
-{% elif _term == "DAP_MARITIMO" %}
-  {% set delta_por_caja = hasta_puerto_salida + servicios_por_caja + hasta_puerto_destino + hasta_puerto_destino_localidad + comision_por_caja %}
 {% else %}
   {% set delta_por_caja = comision_por_caja %}
 {% endif %}
@@ -976,7 +973,8 @@
 {% endif %}
 
 {% set _t = (terms|default(""))|upper|replace(" ", "_")|replace("Í", "I") %}
-{% if _t == "CIF" %}
+{# DAP marítimo lleva los mismos tramos que CIF: el marítimo ya incluye la entrega. #}
+{% if _t == "CIF" or _t == "DAP_MARITIMO" %}
   {% set precios_totalCIF = ns_tabla.total %}
   {% set precios_totalCFR = precios_totalCIF - real_insurance %}
   {% set precios_totalFOB = precios_totalCFR - real_seafreightRate %}
@@ -991,14 +989,9 @@
   {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
   {% set precios_totalCIF = precios_totalCFR + real_insurance %}
   {% set precios_totalEXW = precios_totalFOB - real_fobExpenses %}
-{% elif _t == "DAP_MARITIMO" %}
-  {# El delta por caja reparte tambien el seguro, asi que el EXW lo descuenta: sin esto
-     el EXW salia 60 EUR alto en los dos DAP (18 de 65 negocios auditados). #}
-  {% set precios_totalEXW = ns_tabla.total - real_fobExpenses - real_insurance - (2 * real_seafreightRate) %}
-  {% set precios_totalFOB = precios_totalEXW + real_fobExpenses %}
-  {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
-  {% set precios_totalCIF = precios_totalCFR + real_insurance %}
 {% elif _t == "DAP_TERRESTRE" %}
+  {# El delta por caja reparte tambien el seguro, asi que el EXW lo descuenta: sin esto
+     el EXW salia 60 EUR alto (18 de 65 negocios auditados). #}
   {% set precios_totalEXW = ns_tabla.total - real_fobExpenses - real_insurance %}
   {% set precios_totalFOB = precios_totalEXW + real_fobExpenses %}
   {% set precios_totalCFR = precios_totalFOB + real_seafreightRate %}
@@ -1383,7 +1376,7 @@
 {% set cont_insurance      = real_insurance      / nc %}
 
 {% set _t = (terms|default(""))|upper|replace(" ", "_")|replace("Í", "I") %}
-{% if _t == "CIF" %}
+{% if _t == "CIF" or _t == "DAP_MARITIMO" %}
   {% set cont_totalCIF = ns_cs.total %}
   {% set cont_totalCFR = cont_totalCIF - cont_insurance %}
   {% set cont_totalFOB = cont_totalCFR - cont_seafreightRate %}
@@ -1398,11 +1391,6 @@
   {% set cont_totalCFR = cont_totalFOB + cont_seafreightRate %}
   {% set cont_totalCIF = cont_totalCFR + cont_insurance %}
   {% set cont_totalEXW = cont_totalFOB - cont_fobExpenses %}
-{% elif _t == "DAP_MARITIMO" %}
-  {% set cont_totalEXW = ns_cs.total - cont_fobExpenses - (2 * cont_seafreightRate) %}
-  {% set cont_totalFOB = cont_totalEXW + cont_fobExpenses %}
-  {% set cont_totalCFR = cont_totalFOB + cont_seafreightRate %}
-  {% set cont_totalCIF = cont_totalCFR + cont_insurance %}
 {% elif _t == "DAP_TERRESTRE" %}
   {% set cont_totalEXW = ns_cs.total - cont_fobExpenses %}
   {% set cont_totalFOB = cont_totalEXW + cont_fobExpenses %}
@@ -1855,7 +1843,6 @@
     <li>hasta_puerto_salida = {{ hasta_puerto_salida }}</li>
     <li>hasta_puerto_destino = {{ hasta_puerto_destino }}</li>
     <li>hasta_localidad_destino = {{ hasta_localidad_destino }}</li>
-    <li>hasta_puerto_destino_localidad = {{ hasta_puerto_destino_localidad }}</li>
     <li>servicios_por_caja = {{ servicios_por_caja }}</li>
     <li>seguro_por_caja = {{ seguro_por_caja }}</li>
     <li><strong>delta_por_caja = {{ delta_por_caja }}</strong></li>

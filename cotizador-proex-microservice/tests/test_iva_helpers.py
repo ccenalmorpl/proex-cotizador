@@ -32,7 +32,6 @@ def _params(incoterm, **overrides):
         hasta_localidad_destino=0.5,
         hasta_puerto_salida=0.5,
         hasta_puerto_destino=0.5,
-        hasta_puerto_destino_localidad=0.5,
         servicios_por_caja=2.0,
         seguro_por_caja=1.0,
         comision_cliente=0.0,
@@ -135,10 +134,10 @@ def test_dap_terrestre_grava_localidad_con_iva_terrestre():
     assert res == pytest.approx(1250.0 + 236.0)
 
 
-def test_dap_maritimo_destino_y_localidad_con_iva_maritimo():
-    # DAP_MARITIMO: base 10 + 0.5 + 2 + 0.5 + 0.5 = 13.5 → 1350. IVA: prod 210 +
-    # origen 50*10% = 5 + destino 10.5 + destino_localidad 10.5 + serv 21.
+def test_dap_maritimo_grava_el_destino_una_vez_con_iva_maritimo():
+    # DAP_MARITIMO: base 10 + 0.5 + 2 + 0.5 = 13 → 1300. IVA: prod 210 +
+    # origen 50*10% = 5 + destino 10.5 + serv 21.
     res = _compute_price_from_fabricantes(
         [PRODUCTO], None, _params("DAP_MARITIMO", tipo_iva_fletes_terrestre="R10")
     )
-    assert res == pytest.approx(1350.0 + 257.0)
+    assert res == pytest.approx(1300.0 + 246.5)

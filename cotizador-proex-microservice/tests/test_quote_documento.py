@@ -496,17 +496,18 @@ def test_el_dap_terrestre_descuenta_el_seguro_del_exw():
     assert t["cif"] == t["tabla"]
 
 
-def test_el_dap_maritimo_descuenta_el_seguro_y_el_flete_de_vuelta():
-    """DAP MARÍTIMO cobra el flete dos veces en el delta por caja, y el seguro una,
-    así que el EXW es la tabla menos los gastos FOB, el seguro y dos fletes."""
+def test_el_dap_maritimo_cobra_el_flete_maritimo_una_sola_vez():
+    """Ticket de Elisa (05/11/2026, 67562859370): el flete marítimo entraba dos veces y
+    el precio mínimo salía 2.955 € por encima. La ruta no tiene precio propio para
+    puerto destino → localidad, así que DAP MARÍTIMO lleva los mismos tramos que CIF."""
     doc = _doc_20(deal=_deal(tipo_de_venta="DAP MARITIMO",
                              precio_ruta_hasta_puerto_de_salida="800.0",
                              precio_ruta_hasta_puerto_destino="1880.0"))
 
     t, g = doc["totales"], doc["desglose"]
     assert t["exw"] == round(
-        t["tabla"] - g["fobExpenses"] - g["insurance"] - 2 * g["seafreightRate"], 2)
-    assert t["cif"] + g["seafreightRate"] == t["tabla"]
+        t["tabla"] - g["fobExpenses"] - g["insurance"] - g["seafreightRate"], 2)
+    assert t["cif"] == t["tabla"]
 
 
 def test_la_escalera_cuadra_con_la_tabla_en_todos_los_tipos_de_venta():

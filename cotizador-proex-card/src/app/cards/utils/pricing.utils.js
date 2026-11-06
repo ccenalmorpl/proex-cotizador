@@ -79,21 +79,15 @@ export function calcularPrecioPorCajaPorIncoterm(
         gastosPorTramo.hastaPuertoDestino +
         comisionCliente
       );
+    // DAP marítimo lleva los mismos tramos que CIF: la ruta no tiene un precio
+    // propio para puerto destino → localidad, va incluido en el marítimo.
     case "CIF":
-      return (
-        precioEXW +
-        gastosPorTramo.hastaPuertoSalida +
-        serviciosPorCaja +
-        gastosPorTramo.hastaPuertoDestino +
-        comisionCliente
-      );
     case "DAP_MARITIMO":
       return (
         precioEXW +
         gastosPorTramo.hastaPuertoSalida +
         serviciosPorCaja +
         gastosPorTramo.hastaPuertoDestino +
-        gastosPorTramo.hastaPuertoDestinoLocalidad +
         comisionCliente
       );
     default:
@@ -134,18 +128,9 @@ export function calcularPrecioEXWDesdeIncoterm(
         gastosPorTramo.hastaPuertoDestino -
         comisionCliente
       );
-    case "CIF": {
-      const cfr = precioFinal - comisionCliente;
-      return (
-        cfr -
-        gastosPorTramo.hastaPuertoSalida -
-        serviciosPorCaja -
-        gastosPorTramo.hastaPuertoDestino
-      );
-    }
+    case "CIF":
     case "DAP_MARITIMO": {
-      const cfr =
-        precioFinal - comisionCliente - gastosPorTramo.hastaPuertoDestinoLocalidad;
+      const cfr = precioFinal - comisionCliente;
       return (
         cfr -
         gastosPorTramo.hastaPuertoSalida -
@@ -166,7 +151,6 @@ const INCOTERMS = ["EXW", "DAP_TERRESTRE", "FOB", "CFR", "DAP_MARITIMO", "CIF"];
 // El seguro NO entra en FOB/CFR (la fórmula lo resta).
 const INCLUYE_FLETE_ORIGEN = new Set(["DAP_TERRESTRE", "FOB", "CFR", "CIF", "DAP_MARITIMO"]);
 const INCLUYE_FLETE_DESTINO = new Set(["CFR", "CIF", "DAP_MARITIMO"]);
-const INCLUYE_FLETE_DESTINO_LOCALIDAD = new Set(["DAP_MARITIMO"]);
 const INCLUYE_SERVICIOS = new Set(["DAP_TERRESTRE", "FOB", "CFR", "CIF", "DAP_MARITIMO"]);
 const INCLUYE_SEGURO = new Set(["DAP_TERRESTRE", "CIF", "DAP_MARITIMO"]);
 
@@ -198,7 +182,7 @@ export function buildPricingParamsPorContenedor(base, cajasContenedor) {
   const b = base || {};
   if (cajas <= 0) {
     return {
-      gastosPorTramo: { hastaLocalidadDestino: 0, hastaPuertoSalida: 0, hastaPuertoDestino: 0, hastaPuertoDestinoLocalidad: 0 },
+      gastosPorTramo: { hastaLocalidadDestino: 0, hastaPuertoSalida: 0, hastaPuertoDestino: 0 },
       serviciosPorCaja: 0,
       seguroPorCaja: 0,
       comisionCliente: 0,
@@ -223,7 +207,6 @@ export function buildPricingParamsPorContenedor(base, cajasContenedor) {
       hastaLocalidadDestino: fleteOrigen,
       hastaPuertoSalida: fleteOrigen,
       hastaPuertoDestino: fleteDestino,
-      hastaPuertoDestinoLocalidad: fleteDestino,
     },
     serviciosPorCaja: (Number(b.serviciosImporte) || 0) / cajas,
     seguroPorCaja: (Number(b.seguroImporte) || 0) / cajas,
@@ -247,7 +230,6 @@ function _ivaConceptosPorCajaPorIncoterm(params, pctFletes, pctFleteTerrestre, p
     let v = (params.comisionCliente || 0) * pctComision / 100;
     if (INCLUYE_FLETE_ORIGEN.has(inc)) v += fleteOrigen * pctFleteTerrestre / 100;
     if (INCLUYE_FLETE_DESTINO.has(inc)) v += (gp.hastaPuertoDestino || 0) * pctFletes / 100;
-    if (INCLUYE_FLETE_DESTINO_LOCALIDAD.has(inc)) v += (gp.hastaPuertoDestinoLocalidad || 0) * pctFletes / 100;
     if (INCLUYE_SERVICIOS.has(inc)) {
       for (const code in serviciosNoSeguroPorIva) v += serviciosNoSeguroPorIva[code] * pctConcepto(code) / 100;
     }
